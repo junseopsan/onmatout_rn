@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 
-export default function DashboardScreen() {
+export default function RecordScreen() {
   const { isAuthenticated, loading } = useAuth();
 
   // 인증 상태 확인 및 보호
@@ -21,18 +21,14 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>대시보드</Text>
-      <Text style={styles.subtitle}>요가 수련 현황 및 통계</Text>
+      <Text style={styles.title}>수련 기록</Text>
+      <Text style={styles.subtitle}>오늘의 요가 수련을 기록하세요</Text>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>총 수련 횟수</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>연속 수련 일수</Text>
-        </View>
+      <View style={styles.content}>
+        <Text style={styles.placeholder}>수련 기록 추가</Text>
+        <Text style={styles.description}>
+          오늘 수련한 아사나를 선택하고 감정/에너지 상태를 기록할 수 있습니다.
+        </Text>
       </View>
     </View>
   );
@@ -55,25 +51,20 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 32,
   },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  statCard: {
+  content: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    padding: 20,
-    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
   },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 8,
+  placeholder: {
+    fontSize: 18,
+    color: COLORS.text,
+    marginBottom: 16,
   },
-  statLabel: {
+  description: {
     fontSize: 14,
     color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
