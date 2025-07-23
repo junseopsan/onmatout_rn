@@ -5,6 +5,7 @@ import {
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
+import * as ExpoSplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { View } from "react-native";
@@ -15,6 +16,10 @@ import { COLORS } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAuthStore } from "@/stores/authStore";
+import SplashScreen from "../components/SplashScreen";
+
+// 앱 시작 시 네이티브 스플래시 자동 숨김 방지
+ExpoSplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -27,6 +32,12 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const [showSplash, setShowSplash] = React.useState(true);
+
+  React.useEffect(() => {
+    // 앱 시작 시 네이티브 스플래시를 즉시 숨김
+    ExpoSplashScreen.hideAsync();
+  }, []);
 
   // 인증 상태에 따른 리다이렉트 처리
   useEffect(() => {
@@ -53,13 +64,9 @@ export default function RootLayout() {
     }
   }, [authLoading, isAuthenticated, resetAuth]);
 
-  // 폰트 로딩만 확인
-  if (!loaded) {
-    return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-        <Loading fullScreen text="ONMATOUT" color={COLORS.primary} />
-      </View>
-    );
+  // 폰트 로딩, splash가 끝나지 않았으면 SplashScreen 먼저 보여줌
+  if (!loaded || showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
   // 인증 로딩 중이면 로딩 화면 표시
