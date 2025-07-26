@@ -1,8 +1,8 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
+import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
+import { TamaguiInputComponent } from "../../components/ui/TamaguiInput";
 import { COLORS } from "../../constants/Colors";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -113,7 +113,7 @@ export default function AuthScreen() {
 
         {/* Form */}
         <View style={{ marginBottom: 32 }}>
-          <Input
+          <TamaguiInputComponent
             label="전화번호"
             placeholder="010-1234-5678"
             value={phone}
@@ -123,12 +123,25 @@ export default function AuthScreen() {
             style={{ marginBottom: 24 }}
           />
 
-          <Button
+          <TamaguiButtonComponent
             title="인증 코드 받기"
             onPress={handleSubmit}
             loading={loading}
             disabled={!validatePhone(phone) || loading}
             size="large"
+          />
+        </View>
+
+        {/* 디버깅 버튼 */}
+        <View style={{ alignItems: "center", marginTop: 32 }}>
+          <TamaguiButtonComponent
+            title="세션 완전 초기화 (디버깅용)"
+            onPress={() => {
+              useAuthStore.getState().clearSession();
+              console.log("세션 완전 초기화 완료");
+            }}
+            variant="outline"
+            size="small"
           />
         </View>
 
