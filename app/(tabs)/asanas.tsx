@@ -1,12 +1,27 @@
 import { router } from "expo-router";
-import React, { useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AsanaCard } from "../../components/AsanaCard";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
+import { Asana, asanasAPI } from "../../lib/api/asanas";
+
+const { width: screenWidth } = Dimensions.get("window");
+const cardWidth = (screenWidth - 48 - 16) / 2; // 48 = 좌우 패딩, 16 = 카드 간 간격
 
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
+  const [asanas, setAsanas] = useState<Asana[]>([]);
+  const [loadingAsanas, setLoadingAsanas] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 인증 상태 확인 및 보호
   useEffect(() => {
@@ -14,6 +29,52 @@ export default function AsanasScreen() {
       router.replace("/auth");
     }
   }, [isAuthenticated, loading]);
+
+  // 아사나 데이터 로드
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadAsanas();
+    }
+  }, [isAuthenticated]);
+
+  const loadAsanas = async () => {
+    try {
+      setLoadingAsanas(true);
+      setError(null);
+
+      const result = await asanasAPI.getAllAsanas();
+
+      if (result.success && result.data) {
+        setAsanas(result.data);
+        console.log("아사나 데이터 로드 완료:", result.data.length, "개");
+      } else {
+        setError(result.message || "아사나 데이터를 불러오는데 실패했습니다.");
+        console.error("아사나 데이터 로드 실패:", result.message);
+      }
+    } catch (error) {
+      setError("아사나 데이터를 불러오는 중 오류가 발생했습니다.");
+      console.error("아사나 데이터 로드 예외:", error);
+    } finally {
+      setLoadingAsanas(false);
+    }
+  };
+
+  const handleAsanaPress = (asana: Asana) => {
+    Alert.alert(
+      asana.sanskrit_name_kr,
+      `${asana.sanskrit_name_en}\n\n레벨: ${asana.level}\n카테고리: ${asana.category_name_en}\n\n의미: ${asana.asana_meaning}`,
+      [
+        { text: "닫기", style: "cancel" },
+        { text: "상세보기", onPress: () => console.log("상세보기:", asana.id) },
+      ]
+    );
+  };
+
+  const renderAsanaCard = ({ item }: { item: Asana }) => (
+    <View style={styles.cardContainer}>
+      <AsanaCard asana={item} onPress={handleAsanaPress} />
+    </View>
+  );
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
@@ -26,14 +87,37 @@ export default function AsanasScreen() {
         <Text style={styles.title}>아사나</Text>
         <Text style={styles.subtitle}>요가 자세 탐색</Text>
 
-        <View style={styles.content}>
-          <Text style={styles.placeholder}>
-            아사나 목록이 여기에 표시됩니다
-          </Text>
-          <Text style={styles.description}>
-            총 300개의 요가 아사나를 탐색하고 즐겨찾기에 추가할 수 있습니다.
-          </Text>
-        </View>
+        {loadingAsanas ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>
+              아사나 데이터를 불러오는 중...
+            </Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : asanas.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>아사나 데이터가 없습니다.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={asanas}
+            renderItem={renderAsanaCard}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={true}
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={true}
+            bounces={true}
+            alwaysBounceVertical={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={() => <View style={styles.footer} />}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -58,22 +142,49 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: COLORS.textSecondary,
-    marginBottom: 32,
+    marginBottom: 24,
   },
-  content: {
+  listContainer: {
+    paddingBottom: 24,
+  },
+  row: {
+    justifyContent: "space-between",
+  },
+  cardContainer: {
+    width: cardWidth,
+  },
+  separator: {
+    height: 16,
+  },
+  footer: {
+    height: 24,
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  placeholder: {
-    fontSize: 18,
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  description: {
-    fontSize: 14,
+  loadingText: {
+    fontSize: 16,
     color: COLORS.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.error,
     textAlign: "center",
-    lineHeight: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
   },
 });
