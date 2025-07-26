@@ -1,24 +1,27 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AsanaCard } from "../../components/AsanaCard";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
-import { RootStackParamList } from "../../navigation/types";
 
 const { width: screenWidth } = Dimensions.get("window");
-const cardWidth = (screenWidth - 32 - 24) / 2; // 32 = 좌우 패딩, 24 = 카드 간 간격
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const cardWidth = (screenWidth - 48 - 16) / 2; // 48 = 좌우 패딩, 16 = 카드 간 간격
 
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
   const [asanas, setAsanas] = useState<Asana[]>([]);
   const [loadingAsanas, setLoadingAsanas] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation<NavigationProp>();
+
+  // 인증 상태 확인 및 보호
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace("/auth");
+    }
+  }, [isAuthenticated, loading]);
 
   // 아사나 데이터 로드
   useEffect(() => {
@@ -50,8 +53,8 @@ export default function AsanasScreen() {
   };
 
   const handleAsanaPress = (asana: Asana) => {
-    // React Navigation을 사용하여 상세 화면으로 이동
-    navigation.navigate("AsanaDetail", { id: asana.id });
+    // 상세 화면으로 이동
+    router.push(`/asanas/${asana.id}`);
   };
 
   const renderAsanaCard = ({ item }: { item: Asana }) => (
@@ -66,50 +69,56 @@ export default function AsanasScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
         <Text style={styles.title}>아사나</Text>
         <Text style={styles.subtitle}>요가 자세 탐색</Text>
-      </View>
 
-      {loadingAsanas ? (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>아사나 데이터를 불러오는 중...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : asanas.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>아사나 데이터가 없습니다.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={asanas}
-          renderItem={renderAsanaCard}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={true}
-          showsHorizontalScrollIndicator={false}
-          ListFooterComponent={<View style={styles.footer} />}
-        />
-      )}
-    </View>
+        {loadingAsanas ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>
+              아사나 데이터를 불러오는 중...
+            </Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : asanas.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>아사나 데이터가 없습니다.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={asanas}
+            renderItem={renderAsanaCard}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={true}
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={true}
+            bounces={true}
+            alwaysBounceVertical={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={() => <View style={styles.footer} />}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    paddingTop: 60, // 상태바 높이 + 여백
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    padding: 24,
   },
   title: {
     fontSize: 32,
@@ -123,15 +132,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   listContainer: {
-    paddingHorizontal: 16, // 좌우 여백 추가
-    paddingBottom: 120, // 탭바 높이 + 여백 증가
+    paddingBottom: 24,
   },
   row: {
     justifyContent: "space-between",
   },
   cardContainer: {
     width: cardWidth,
-    marginBottom: 16, // 카드 간 세로 간격
   },
   separator: {
     height: 16,

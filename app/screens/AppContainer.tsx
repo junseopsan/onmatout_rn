@@ -2,15 +2,20 @@ import { Loading } from "@/components/ui/Loading";
 import { COLORS } from "@/constants/Colors";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/authStore";
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
+import { RootStackParamList } from "../../navigation/types";
 import SplashScreen from "./SplashScreen";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AppContainer() {
   const [isLoading, setIsLoading] = useState(true);
   const { loading: authLoading, isAuthenticated, user, session } = useAuth();
-  const redirectTimeoutRef = useRef<number | null>(null);
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
     // 3초 후 스플래시 종료
@@ -60,15 +65,24 @@ export default function AppContainer() {
           console.log("닉네임 존재 여부:", hasNickname);
 
           if (hasNickname) {
-            console.log("닉네임 있음 - tabs로 리다이렉트");
-            router.replace("/(tabs)");
+            console.log("닉네임 있음 - Dashboard로 리다이렉트");
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Dashboard" }],
+            });
           } else {
             console.log("닉네임 없음 - 닉네임 설정 화면으로 리다이렉트");
-            router.replace("/auth/nickname");
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Nickname" }],
+            });
           }
         } else {
-          console.log("인증되지 않음 - auth로 리다이렉트");
-          router.replace("/auth");
+          console.log("인증되지 않음 - Auth로 리다이렉트");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Auth" }],
+          });
         }
       }, 100);
     }
@@ -79,7 +93,7 @@ export default function AppContainer() {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [isLoading, authLoading, isAuthenticated]); // 의존성 배열 수정
+  }, [isLoading, authLoading, isAuthenticated, navigation]); // 의존성 배열 수정
 
   // 스플래시 화면 표시 중
   if (isLoading) {

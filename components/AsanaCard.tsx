@@ -50,15 +50,13 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
 
       {/* 내용 영역 */}
       <View style={styles.content}>
-        <Text style={styles.koreanName} numberOfLines={1}>
-          {asana.sanskrit_name_kr}
-        </Text>
-        <Text style={styles.englishName} numberOfLines={1}>
-          {asana.sanskrit_name_en}
-        </Text>
+        {/* 한국어 이름과 레벨을 한 행에 배치 */}
+        <View style={styles.nameRow}>
+          <Text style={styles.koreanName} numberOfLines={1}>
+            {asana.sanskrit_name_kr}
+          </Text>
 
-        {/* 레벨 표시 */}
-        <View style={styles.levelContainer}>
+          {/* 레벨 배지를 우측 끝에 배치 */}
           <View
             style={[
               styles.levelBadge,
@@ -68,6 +66,11 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
             <Text style={styles.levelText}>{getLevelText(asana.level)}</Text>
           </View>
         </View>
+
+        {/* 영어 이름은 별도 행에 배치 */}
+        <Text style={styles.englishName} numberOfLines={1}>
+          {asana.sanskrit_name_en}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -89,7 +92,7 @@ const styles = StyleSheet.create({
     width: "100%", // 부모 컨테이너의 너비에 맞춤
   },
   imageContainer: {
-    height: 120,
+    height: 140, // 120에서 140으로 증가
     backgroundColor: COLORS.surfaceDark,
   },
   imagePlaceholder: {
@@ -99,36 +102,41 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceDark,
   },
   imageNumber: {
-    fontSize: 24,
+    fontSize: 28, // 24에서 28로 증가
     fontWeight: "bold",
     color: COLORS.textSecondary,
   },
   content: {
-    padding: 12,
+    padding: 10, // 12에서 10으로 감소
+  },
+  nameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4, // 0에서 4로 변경하여 영어 이름과 간격 확보
   },
   koreanName: {
     fontSize: 16,
     fontWeight: "bold",
     color: COLORS.text,
-    marginBottom: 4,
+    flex: 1, // 남은 공간을 모두 차지하도록 설정
+    marginRight: 8, // 배지와의 간격
   },
   englishName: {
     fontSize: 12,
     color: COLORS.textSecondary,
-    marginBottom: 8,
+    marginBottom: 0,
     fontStyle: "italic",
   },
-  levelContainer: {
-    marginBottom: 8,
-  },
   levelBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    alignSelf: "flex-end",
+    paddingHorizontal: 8, // 6에서 8로 증가
+    paddingVertical: 4, // 2에서 4로 증가
+    borderRadius: 10, // 8에서 10으로 증가
+    marginLeft: 8,
   },
   levelText: {
-    fontSize: 10,
+    fontSize: 11, // 9에서 11로 증가
     fontWeight: "bold",
     color: "white",
   },

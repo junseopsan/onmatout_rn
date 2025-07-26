@@ -1,19 +1,10 @@
-import { router } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
-
-  // 인증 상태 확인 및 보호
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.replace("/auth");
-    }
-  }, [isAuthenticated, loading]);
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
@@ -21,33 +12,33 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <View style={styles.header}>
         <Text style={styles.title}>대시보드</Text>
         <Text style={styles.subtitle}>오늘의 요가 수련</Text>
-
-        <View style={styles.content}>
-          <Text style={styles.placeholder}>
-            대시보드 콘텐츠가 여기에 표시됩니다
-          </Text>
-          <Text style={styles.description}>
-            최근 수련 기록과 추천 아사나를 확인할 수 있습니다.
-          </Text>
-        </View>
       </View>
-    </SafeAreaView>
+
+      <View style={styles.content}>
+        <Text style={styles.placeholder}>
+          대시보드 콘텐츠가 여기에 표시됩니다
+        </Text>
+        <Text style={styles.description}>
+          최근 수련 기록과 추천 아사나를 확인할 수 있습니다.
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 24,
+  },
+  header: {
+    paddingTop: 60, // 상태바 높이 + 여백
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   title: {
     fontSize: 32,
@@ -58,12 +49,13 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: COLORS.textSecondary,
-    marginBottom: 32,
   },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 100, // 탭바 높이 + 여백 증가
   },
   placeholder: {
     fontSize: 18,

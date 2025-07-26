@@ -1,7 +1,5 @@
-import { router } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useAuthStore } from "../../stores/authStore";
@@ -9,13 +7,6 @@ import { useAuthStore } from "../../stores/authStore";
 export default function ProfileScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { signOut, user } = useAuthStore();
-
-  // 인증 상태 확인 및 보호
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.replace("/auth");
-    }
-  }, [isAuthenticated, loading]);
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
@@ -28,11 +19,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>마이페이지</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>프로필</Text>
         <Text style={styles.subtitle}>사용자 정보 및 설정</Text>
+      </View>
 
+      <View style={styles.content}>
         <View style={styles.userInfo}>
           <Text style={styles.userLabel}>전화번호</Text>
           <Text style={styles.userValue}>{user?.phone || "정보 없음"}</Text>
@@ -54,19 +47,19 @@ export default function ProfileScreen() {
           <Text style={styles.signOutText}>로그아웃</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    padding: 24,
+  },
+  header: {
+    paddingTop: 60, // 상태바 높이 + 여백
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   title: {
     fontSize: 32,
@@ -77,7 +70,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: COLORS.textSecondary,
-    marginBottom: 32,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 100, // 탭바 높이 + 여백
   },
   userInfo: {
     backgroundColor: COLORS.surface,

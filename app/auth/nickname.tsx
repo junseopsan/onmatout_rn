@@ -131,7 +131,7 @@ export default function NicknameScreen() {
               textAlign: "center",
             }}
           >
-            닉네임은 나중에 마이페이지에서{"\n"}
+            닉네임은 나중에 프로필에서{"\n"}
             언제든지 변경할 수 있습니다
           </Text>
         </View>
