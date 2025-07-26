@@ -23,7 +23,7 @@ export default function ProfileScreen() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.replace("/auth");
+    // router.replace("/auth"); // 제거 - AppContainer에서 자동으로 처리됨
   };
 
   return (

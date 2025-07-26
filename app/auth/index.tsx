@@ -98,7 +98,7 @@ export default function AuthScreen() {
               marginBottom: 8,
             }}
           >
-            요가를 일상의 습관으로
+            매트 위에서 시작된 수련이
           </Text>
           <Text
             style={{
@@ -107,7 +107,7 @@ export default function AuthScreen() {
               textAlign: "center",
             }}
           >
-            전화번호로 간편하게 시작하세요
+            하루의 모든 순간으로 스며들도록
           </Text>
         </View>
 

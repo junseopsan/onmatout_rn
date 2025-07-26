@@ -93,9 +93,79 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   initialize: async () => {
     try {
-      console.log("Auth initialization - 아무것도 하지 않음");
-      // 아무것도 하지 않고 로딩만 해제
-      set({ loading: false, error: null });
+      console.log("Auth initialization 시작");
+      set({ loading: true, error: null });
+
+      // 타임아웃 설정 (10초)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(
+          () => reject(new Error("Auth initialization timeout")),
+          10000
+        );
+      });
+
+      const initPromise = (async () => {
+        // 현재 세션 확인
+        const session = await getCurrentSession();
+        console.log("현재 세션:", session);
+
+        if (session) {
+          // 사용자 정보 가져오기
+          const user = await getCurrentUser();
+          console.log("현재 사용자:", user);
+
+          if (user) {
+            // 사용자 프로필 확인
+            try {
+              const userProfile = await userAPI.getUserProfile(user.id);
+              console.log("사용자 프로필:", userProfile);
+
+              if (
+                userProfile.success &&
+                userProfile.data &&
+                userProfile.data.name &&
+                userProfile.data.name.trim() !== "" &&
+                userProfile.data.name !== "null"
+              ) {
+                set({
+                  user: { ...user, profile: userProfile.data } as any,
+                  session,
+                  loading: false,
+                });
+              } else {
+                set({
+                  user: { ...user, profile: null } as any,
+                  session,
+                  loading: false,
+                });
+              }
+            } catch (profileError) {
+              console.error("프로필 조회 에러:", profileError);
+              set({
+                user: { ...user, profile: null } as any,
+                session,
+                loading: false,
+              });
+            }
+          } else {
+            set({
+              user: null,
+              session,
+              loading: false,
+            });
+          }
+        } else {
+          console.log("세션 없음 - 인증되지 않은 상태");
+          set({
+            user: null,
+            session: null,
+            loading: false,
+          });
+        }
+      })();
+
+      // 타임아웃과 함께 실행
+      await Promise.race([initPromise, timeoutPromise]);
     } catch (error) {
       console.error("Auth initialize error:", error);
       set({
@@ -244,7 +314,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               const userProfile = await get().getUserProfile();
               console.log("사용자 프로필 확인:", userProfile);
 
-              if (userProfile && userProfile.name) {
+              if (
+                userProfile &&
+                userProfile.name &&
+                userProfile.name.trim() !== "" &&
+                userProfile.name !== "null"
+              ) {
                 console.log("닉네임 있음 - 대시보드로 이동");
                 // 닉네임이 있으면 사용자 정보에 프로필 추가
                 set({

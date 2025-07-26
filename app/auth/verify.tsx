@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Button } from "../../components/ui/Button";
@@ -18,6 +19,7 @@ export default function VerifyScreen() {
     clearError,
     phoneNumber,
   } = useAuthStore();
+  const router = useRouter();
 
   // 타이머 효과
   useEffect(() => {
@@ -69,13 +71,52 @@ export default function VerifyScreen() {
       console.log("인증 결과:", success);
 
       if (success) {
-        console.log("인증 성공! 루트 레이아웃에서 자동 리다이렉트 처리됨");
-        // 루트 레이아웃에서 닉네임 확인 후 자동으로 적절한 화면으로 이동
+        console.log("인증 성공! 즉시 리다이렉트 처리");
+
+        // 사용자 정보 확인 후 적절한 화면으로 리다이렉트
+        const currentUser = useAuthStore.getState().user;
+        const hasNickname =
+          currentUser &&
+          currentUser.profile &&
+          currentUser.profile.name &&
+          currentUser.profile.name.trim() !== "" &&
+          currentUser.profile.name !== "null";
+
+        console.log("닉네임 존재 여부:", hasNickname);
+
+        if (hasNickname) {
+          console.log("닉네임 있음 - tabs로 리다이렉트");
+          router.replace("/(tabs)");
+        } else {
+          console.log("닉네임 없음 - 닉네임 설정 화면으로 리다이렉트");
+          router.replace("/auth/nickname");
+        }
       } else {
         console.log("인증 실패");
+        // OTP 만료 에러 처리
+        const error = useAuthStore.getState().error;
+        if (error && error.includes("expired")) {
+          Alert.alert(
+            "인증 코드 만료",
+            "인증 코드가 만료되었습니다. 새로운 인증 코드를 요청해주세요.",
+            [
+              {
+                text: "재전송",
+                onPress: () => {
+                  setTimeLeft(180);
+                  setCanResend(false);
+                  setCode("");
+                  handleResend();
+                },
+              },
+              { text: "취소" },
+            ]
+          );
+        }
       }
     } catch (error) {
       console.error("인증 과정에서 에러:", error);
+      Alert.alert("오류", "인증 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -130,29 +171,22 @@ export default function VerifyScreen() {
             }}
           >
             {phoneNumber
-              ? `${phoneNumber.replace(/\+82/, "0")}로 전송된`
+              ? `${phoneNumber.replace(/\+82/, "0")} 로 전송된`
               : "SMS로 전송된"}{" "}
-            6자리 인증 코드를{"\n"}
-            입력해주세요
+            {"\n"}6자리 인증 코드를 입력해주세요
           </Text>
 
           {/* 타이머 */}
-          <View
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 8,
+              fontSize: 16,
+              color: COLORS.primary,
+              fontWeight: "600",
+              marginTop: 8,
             }}
           >
-            <Text
-              style={{
-                fontSize: 14,
-                color: COLORS.textSecondary,
-              }}
-            >
-              남은 시간: {formatTime(timeLeft)}
-            </Text>
-          </View>
+            남은 시간: {formatTime(timeLeft)}
+          </Text>
         </View>
 
         {/* Form */}
@@ -192,18 +226,15 @@ export default function VerifyScreen() {
           >
             인증 코드를 받지 못하셨나요?
           </Text>
-
           <Button
-            title={
-              canResend
-                ? "인증 코드 재전송"
-                : `재전송 대기 중 (${formatTime(timeLeft)})`
-            }
+            title={canResend ? "인증 코드 재전송" : "재전송 대기 중"}
             onPress={handleResend}
             variant="outline"
             size="small"
             disabled={!canResend}
+            style={{ marginBottom: 16 }}
           />
+          ㄱ{" "}
         </View>
       </View>
     </ScrollView>

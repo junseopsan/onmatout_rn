@@ -5,9 +5,9 @@
 
 export const COLORS = {
   // Primary Colors
-  primary: "#6366F1",
-  primaryLight: "#818CF8",
-  primaryDark: "#4F46E5",
+  primary: "#E53935", // 브랜드 포인트 컬러(빨강 등)
+  primaryLight: "#FF6F60",
+  primaryDark: "#B71C1C",
 
   // Secondary Colors
   secondary: "#10B981",
@@ -15,14 +15,14 @@ export const COLORS = {
   secondaryDark: "#059669",
 
   // Background Colors
-  background: "#FFFFFF",
-  backgroundDark: "#1F2937",
-  surface: "#F9FAFB",
-  surfaceDark: "#374151",
+  background: "#111111",
+  backgroundDark: "#111111",
+  surface: "#181818",
+  surfaceDark: "#222222",
 
   // Text Colors
-  text: "#111827",
-  textSecondary: "#6B7280",
+  text: "#F9FAFB",
+  textSecondary: "#B0B0B0",
   textDark: "#F9FAFB",
   textSecondaryDark: "#D1D5DB",
 
@@ -33,8 +33,8 @@ export const COLORS = {
   info: "#3B82F6",
 
   // Border Colors
-  border: "#E5E7EB",
-  borderDark: "#4B5563",
+  border: "#222222",
+  borderDark: "#333333",
 
   // Shadow Colors
   shadow: "rgba(0, 0, 0, 0.1)",

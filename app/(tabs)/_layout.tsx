@@ -11,25 +11,25 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   // 인증 상태 확인 및 보호
   useEffect(() => {
-    console.log("탭 레이아웃 인증 확인:", { isAuthenticated, loading });
+    console.log("탭 레이아웃 인증 확인:", { isAuthenticated });
 
-    // 로딩이 완료된 후에만 리다이렉트
-    if (!loading && !isAuthenticated) {
+    // 인증되지 않은 경우에만 리다이렉트
+    if (!isAuthenticated) {
       console.log("인증되지 않음 - 인증 화면으로 리다이렉트");
       // 약간의 지연을 두어 네비게이션 에러 방지
       setTimeout(() => {
         router.replace("/auth");
       }, 100);
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated]);
 
-  // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading || !isAuthenticated) {
-    console.log("탭 레이아웃 - 로딩 중이거나 인증되지 않음");
+  // 인증되지 않은 경우 빈 화면 표시
+  if (!isAuthenticated) {
+    console.log("탭 레이아웃 - 인증되지 않음");
     return null;
   }
 

@@ -118,6 +118,7 @@ export default function NicknameScreen() {
             onPress={handleSubmit}
             loading={loading}
             disabled={!nickname.trim()}
+            style={{ marginBottom: 16 }}
           />
         </View>
 

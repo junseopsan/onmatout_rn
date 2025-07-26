@@ -29,14 +29,26 @@ export const useAuth = () => {
 
       console.log("Auth initialization starting...");
 
+      // 타임아웃 설정 (10초)
+      const timeoutId = setTimeout(() => {
+        console.log("Auth initialization timeout - 강제로 로딩 해제");
+        if (isMounted) {
+          setLoading(false);
+        }
+      }, 10000);
+
       try {
         // 인증 초기화만 실행
         await initialize();
+        clearTimeout(timeoutId);
+
         if (isMounted) {
           console.log("Auth initialization completed");
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        clearTimeout(timeoutId);
+
         if (isMounted) {
           // 에러 발생 시 로딩 상태 해제
           setLoading(false);
