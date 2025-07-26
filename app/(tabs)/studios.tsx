@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -20,21 +21,29 @@ export default function StudiosScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>요가원</Text>
-      <Text style={styles.subtitle}>주변 요가원을 찾아보세요</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>요가원</Text>
+        <Text style={styles.subtitle}>주변 요가원 찾기</Text>
 
-      <View style={styles.content}>
-        <Text style={styles.placeholder}>요가원 목록</Text>
-        <Text style={styles.description}>
-          지역 기반 요가원 정보를 확인하고 연락처를 얻을 수 있습니다.
-        </Text>
+        <View style={styles.content}>
+          <Text style={styles.placeholder}>
+            요가원 목록이 여기에 표시됩니다
+          </Text>
+          <Text style={styles.description}>
+            주변 요가원을 찾고 상세 정보를 확인할 수 있습니다.
+          </Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,

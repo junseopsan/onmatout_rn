@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -20,25 +21,29 @@ export default function DashboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>대시보드</Text>
-      <Text style={styles.subtitle}>요가 수련 현황 및 통계</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>대시보드</Text>
+        <Text style={styles.subtitle}>오늘의 요가 수련</Text>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>총 수련 횟수</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>연속 수련 일수</Text>
+        <View style={styles.content}>
+          <Text style={styles.placeholder}>
+            대시보드 콘텐츠가 여기에 표시됩니다
+          </Text>
+          <Text style={styles.description}>
+            최근 수련 기록과 추천 아사나를 확인할 수 있습니다.
+          </Text>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -55,25 +60,20 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 32,
   },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  statCard: {
+  content: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    padding: 20,
-    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
   },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 8,
+  placeholder: {
+    fontSize: 18,
+    color: COLORS.text,
+    marginBottom: 16,
   },
-  statLabel: {
+  description: {
     fontSize: 14,
     color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

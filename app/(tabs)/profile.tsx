@@ -1,13 +1,14 @@
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function ProfileScreen() {
-  const { signOut, user } = useAuthStore();
   const { isAuthenticated, loading } = useAuth();
+  const { signOut, user } = useAuthStore();
 
   // 인증 상태 확인 및 보호
   useEffect(() => {
@@ -27,35 +28,41 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>마이페이지</Text>
-      <Text style={styles.subtitle}>사용자 정보 및 설정</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>마이페이지</Text>
+        <Text style={styles.subtitle}>사용자 정보 및 설정</Text>
 
-      <View style={styles.userInfo}>
-        <Text style={styles.userLabel}>전화번호</Text>
-        <Text style={styles.userValue}>{user?.phone || "정보 없음"}</Text>
+        <View style={styles.userInfo}>
+          <Text style={styles.userLabel}>전화번호</Text>
+          <Text style={styles.userValue}>{user?.phone || "정보 없음"}</Text>
+        </View>
+
+        <View style={styles.settingsContainer}>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingText}>알림 설정</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingText}>테마 설정</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingText}>개인정보 처리방침</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutText}>로그아웃</Text>
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.settingsContainer}>
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>알림 설정</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>테마 설정</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>개인정보 처리방침</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>로그아웃</Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,

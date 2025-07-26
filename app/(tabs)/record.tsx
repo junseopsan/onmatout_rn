@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -20,21 +21,27 @@ export default function RecordScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>수련 기록</Text>
-      <Text style={styles.subtitle}>오늘의 요가 수련을 기록하세요</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>기록</Text>
+        <Text style={styles.subtitle}>요가 수련 기록</Text>
 
-      <View style={styles.content}>
-        <Text style={styles.placeholder}>수련 기록 추가</Text>
-        <Text style={styles.description}>
-          오늘 수련한 아사나를 선택하고 감정/에너지 상태를 기록할 수 있습니다.
-        </Text>
+        <View style={styles.content}>
+          <Text style={styles.placeholder}>수련 기록이 여기에 표시됩니다</Text>
+          <Text style={styles.description}>
+            오늘의 수련을 기록하고 과거 기록을 확인할 수 있습니다.
+          </Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,

@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -20,21 +21,29 @@ export default function AsanasScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>아사나</Text>
-      <Text style={styles.subtitle}>요가 자세 탐색</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>아사나</Text>
+        <Text style={styles.subtitle}>요가 자세 탐색</Text>
 
-      <View style={styles.content}>
-        <Text style={styles.placeholder}>아사나 목록이 여기에 표시됩니다</Text>
-        <Text style={styles.description}>
-          총 300개의 요가 아사나를 탐색하고 즐겨찾기에 추가할 수 있습니다.
-        </Text>
+        <View style={styles.content}>
+          <Text style={styles.placeholder}>
+            아사나 목록이 여기에 표시됩니다
+          </Text>
+          <Text style={styles.description}>
+            총 300개의 요가 아사나를 탐색하고 즐겨찾기에 추가할 수 있습니다.
+          </Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
