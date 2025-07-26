@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS user_favorite_asanas (
 );
 
 -- RLS (Row Level Security) 설정
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY; -- 주석 처리
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE practice_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_favorite_asanas ENABLE ROW LEVEL SECURITY;
@@ -115,7 +115,11 @@ CREATE POLICY "Users can insert own profile" ON user_profiles
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update own profile" ON user_profiles
-  FOR UPDATE USING (auth.uid() = user_id);
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- UPSERT를 위한 추가 정책
+CREATE POLICY "Users can upsert own profile" ON user_profiles
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- 사용자 설정 RLS 정책
 CREATE POLICY "Users can view own settings" ON user_settings

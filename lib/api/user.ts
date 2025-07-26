@@ -77,22 +77,23 @@ export const userAPI = {
         // 기존 프로필이 있으면 업데이트
         console.log("2단계: 기존 프로필 업데이트 시작");
         console.log("업데이트할 데이터:", {
-          user_id: userId,
           name: profile.name,
+          user_id: userId,
         });
         console.log("기존 프로필:", existingProfile);
 
-        // UPDATE 실행
+        // UPDATE 실행 (name 필드만 업데이트)
         console.log("3단계: UPDATE 쿼리 실행");
         const updateResult = await supabase
           .from("user_profiles")
           .update({
             name: profile.name,
-            updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId);
 
         console.log("UPDATE 쿼리 결과:", updateResult);
+        console.log("UPDATE 에러:", updateResult.error);
+        console.log("UPDATE 상태:", updateResult.status);
 
         if (updateResult.error) {
           console.error("사용자 프로필 업데이트 에러:", updateResult.error);
@@ -102,7 +103,7 @@ export const userAPI = {
           };
         }
 
-        // 업데이트 후 다시 조회
+        // 업데이트 후 별도로 조회
         console.log("4단계: 업데이트 후 데이터 조회");
         const { data: updatedProfile, error: selectError } = await supabase
           .from("user_profiles")

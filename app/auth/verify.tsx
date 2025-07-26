@@ -234,7 +234,6 @@ export default function VerifyScreen() {
             disabled={!canResend}
             style={{ marginBottom: 16 }}
           />
-          ㄱ{" "}
         </View>
       </View>
     </ScrollView>
