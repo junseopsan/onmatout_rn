@@ -4,45 +4,55 @@ export const CATEGORIES: Record<
   AsanaCategory,
   { label: string; emoji: string; color: string }
 > = {
-  standing: {
-    label: "서기 자세",
-    emoji: "🧍",
-    color: "#3B82F6",
+  Rest: {
+    label: "휴식",
+    emoji: "😌",
+    color: "#6B7280",
   },
-  sitting: {
-    label: "앉기 자세",
-    emoji: "🧘",
-    color: "#8B5CF6",
+  ForwardBend: {
+    label: "전굴",
+    emoji: "🙇",
+    color: "#84CC16",
   },
-  lying: {
-    label: "누워서 하는 자세",
-    emoji: "🛌",
-    color: "#06B6D4",
-  },
-  inverted: {
-    label: "역전 자세",
-    emoji: "🤸",
-    color: "#EC4899",
-  },
-  twisting: {
-    label: "비틀기 자세",
-    emoji: "🔄",
-    color: "#F59E0B",
-  },
-  balancing: {
-    label: "균형 자세",
-    emoji: "⚖️",
-    color: "#10B981",
-  },
-  backbend: {
-    label: "뒤로 굽히기",
+  BackBend: {
+    label: "후굴",
     emoji: "🏹",
     color: "#EF4444",
   },
-  forward_bend: {
-    label: "앞으로 굽히기",
-    emoji: "🙇",
-    color: "#84CC16",
+  Twist: {
+    label: "비틀기",
+    emoji: "🔄",
+    color: "#F59E0B",
+  },
+  Standing: {
+    label: "스탠딩",
+    emoji: "🧍",
+    color: "#3B82F6",
+  },
+  Inversion: {
+    label: "도립",
+    emoji: "🤸",
+    color: "#EC4899",
+  },
+  Core: {
+    label: "코어",
+    emoji: "💪",
+    color: "#10B981",
+  },
+  SideBend: {
+    label: "측굴",
+    emoji: "↔️",
+    color: "#8B5CF6",
+  },
+  Basic: {
+    label: "기본",
+    emoji: "⭐",
+    color: "#06B6D4",
+  },
+  Armbalance: {
+    label: "암밸런스",
+    emoji: "🤸‍♂️",
+    color: "#F97316",
   },
 };
 

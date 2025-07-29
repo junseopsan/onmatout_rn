@@ -14,14 +14,16 @@ export interface Asana {
 }
 
 export type AsanaCategory =
-  | "standing"
-  | "sitting"
-  | "lying"
-  | "inverted"
-  | "twisting"
-  | "balancing"
-  | "backbend"
-  | "forward_bend";
+  | "Rest"
+  | "ForwardBend"
+  | "BackBend"
+  | "Twist"
+  | "Standing"
+  | "Inversion"
+  | "Core"
+  | "SideBend"
+  | "Basic"
+  | "Armbalance";
 
 export type AsanaDifficulty = "beginner" | "intermediate" | "advanced";
 

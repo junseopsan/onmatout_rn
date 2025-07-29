@@ -36,6 +36,15 @@ export const asanasAPI = {
         };
       }
 
+      // 카테고리 정보 디버깅
+      if (data && data.length > 0) {
+        console.log("첫 번째 아사나 카테고리 정보:", {
+          name: data[0].sanskrit_name_kr,
+          category: data[0].category_name_en,
+          allFields: Object.keys(data[0]),
+        });
+      }
+
       console.log("아사나 데이터 가져오기 성공:", data?.length || 0, "개");
       return {
         success: true,

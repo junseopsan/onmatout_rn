@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CATEGORIES } from "../../constants/categories";
 import { COLORS } from "../../constants/Colors";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
 import { RootStackParamList } from "../../navigation/types";
@@ -43,6 +44,12 @@ export default function AsanaDetailScreen() {
       if (result.success && result.data) {
         const foundAsana = result.data.find((a) => a.id === id);
         if (foundAsana) {
+          console.log("아사나 상세 데이터:", {
+            id: foundAsana.id,
+            name: foundAsana.sanskrit_name_kr,
+            category: foundAsana.category_name_en,
+            level: foundAsana.level,
+          });
           setAsana(foundAsana);
           console.log(
             "아사나 상세 데이터 로드 완료:",
@@ -86,6 +93,18 @@ export default function AsanaDetailScreen() {
       default:
         return "미정";
     }
+  };
+
+  const getCategoryLabel = (categoryNameEn: string) => {
+    // categories.ts의 CATEGORIES에서 매칭되는 카테고리 찾기
+    const category = CATEGORIES[categoryNameEn as keyof typeof CATEGORIES];
+
+    console.log("카테고리 디버깅:", {
+      original: categoryNameEn,
+      found: category?.label || categoryNameEn,
+    });
+
+    return category?.label || categoryNameEn;
   };
 
   if (loading) {
@@ -151,14 +170,17 @@ export default function AsanaDetailScreen() {
           </View>
 
           {/* 카테고리 */}
-          {asana.category_name_en && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>카테고리</Text>
-              <Text style={styles.sectionContent}>
-                {asana.category_name_en}
-              </Text>
-            </View>
-          )}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>카테고리</Text>
+            <Text style={styles.sectionContent}>
+              {asana.category_name_en &&
+              asana.category_name_en !== "nan" &&
+              asana.category_name_en !== "" &&
+              asana.category_name_en !== null
+                ? getCategoryLabel(asana.category_name_en)
+                : "카테고리 정보 없음"}
+            </Text>
+          </View>
 
           {/* 의미 */}
           {asana.asana_meaning && (
