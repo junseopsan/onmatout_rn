@@ -1,5 +1,6 @@
+import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Button, Card, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../constants/Colors";
 import { Asana } from "../lib/api/asanas";
 
@@ -12,11 +13,11 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
   const getLevelColor = (level: string) => {
     switch (level) {
       case "1":
-        return COLORS.success;
+        return "#4CAF50"; // 초급: 밝은 초록색
       case "2":
-        return COLORS.warning;
+        return "#FF9800"; // 중급: 주황색
       case "3":
-        return COLORS.error;
+        return "#F44336"; // 고급: 빨간색
       default:
         return COLORS.textSecondary;
     }
@@ -35,119 +36,111 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
     }
   };
 
+  const getImageUrl = (imageNumber: string) => {
+    // image_number를 3자리 숫자로 포맷팅 (예: 1 -> 001)
+    const formattedNumber = imageNumber.padStart(3, "0");
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
+  };
+
   return (
-    <TouchableOpacity
-      style={styles.card}
+    <Card
+      backgroundColor="$surface"
+      borderRadius="$4"
+      overflow="hidden"
+      shadowColor="$shadow"
+      shadowOffset={{ width: 0, height: 2 }}
+      shadowOpacity={0.1}
+      shadowRadius={4}
+      elevation={3}
+      width="100%"
+      pressStyle={{ opacity: 0.8 }}
       onPress={() => onPress(asana)}
-      activeOpacity={0.8}
     >
-      {/* 이미지 영역 (나중에 실제 이미지로 교체) */}
-      <View style={styles.imageContainer}>
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.imageNumber}>{asana.image_number}</Text>
-        </View>
-      </View>
+      {/* 이미지 영역 */}
+      <YStack height={160} backgroundColor="$surfaceDark">
+        {asana.image_number ? (
+          <YStack
+            flex={1}
+            justifyContent="center"
+            alignItems="center"
+            backgroundColor="#808080"
+          >
+            <Image
+              source={{ uri: getImageUrl(asana.image_number) }}
+              style={{
+                width: "80%",
+                height: "80%",
+                maxWidth: 120,
+                maxHeight: 100,
+              }}
+              contentFit="contain"
+              placeholder="이미지 로딩 중..."
+              placeholderContentFit="contain"
+              onError={() => {
+                console.log(`이미지 로딩 실패: ${asana.image_number}`);
+              }}
+            />
+          </YStack>
+        ) : (
+          <YStack
+            flex={1}
+            justifyContent="center"
+            alignItems="center"
+            backgroundColor="$surfaceDark"
+          >
+            <Text fontSize={28} fontWeight="bold" color="$textSecondary">
+              이미지 없음
+            </Text>
+          </YStack>
+        )}
+      </YStack>
 
       {/* 내용 영역 */}
-      <View style={styles.content}>
+      <YStack padding="$3" paddingTop="$3.5">
         {/* 한국어 이름과 레벨을 한 행에 배치 */}
-        <View style={styles.nameRow}>
-          <Text style={styles.koreanName} numberOfLines={1}>
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          marginBottom="$1"
+        >
+          <Text
+            fontSize={16}
+            fontWeight="bold"
+            color="$text"
+            flex={1}
+            marginRight="$2"
+            numberOfLines={1}
+          >
             {asana.sanskrit_name_kr}
           </Text>
 
           {/* 레벨 배지를 우측 끝에 배치 */}
-          <View
-            style={[
-              styles.levelBadge,
-              { backgroundColor: getLevelColor(asana.level) },
-            ]}
+          <Button
+            backgroundColor={getLevelColor(asana.level)}
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            borderRadius="$5"
+            marginLeft="$2"
+            disabled
+            height="auto"
+            minHeight={24}
           >
-            <Text style={styles.levelText}>{getLevelText(asana.level)}</Text>
-          </View>
-        </View>
+            <Text fontSize={11} fontWeight="bold" color="white">
+              {getLevelText(asana.level)}
+            </Text>
+          </Button>
+        </XStack>
 
         {/* 영어 이름은 별도 행에 배치 */}
-        <Text style={styles.englishName} numberOfLines={1}>
+        <Text
+          fontSize={12}
+          color="$textSecondary"
+          fontStyle="italic"
+          numberOfLines={1}
+        >
           {asana.sanskrit_name_en}
         </Text>
-      </View>
-    </TouchableOpacity>
+      </YStack>
+    </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    overflow: "hidden",
-    shadowColor: COLORS.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    width: "100%", // 부모 컨테이너의 너비에 맞춤
-  },
-  imageContainer: {
-    height: 140, // 120에서 140으로 증가
-    backgroundColor: COLORS.surfaceDark,
-  },
-  imagePlaceholder: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.surfaceDark,
-  },
-  imageNumber: {
-    fontSize: 28, // 24에서 28로 증가
-    fontWeight: "bold",
-    color: COLORS.textSecondary,
-  },
-  content: {
-    padding: 10, // 12에서 10으로 감소
-  },
-  nameRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4, // 0에서 4로 변경하여 영어 이름과 간격 확보
-  },
-  koreanName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.text,
-    flex: 1, // 남은 공간을 모두 차지하도록 설정
-    marginRight: 8, // 배지와의 간격
-  },
-  englishName: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 0,
-    fontStyle: "italic",
-  },
-  levelBadge: {
-    alignSelf: "flex-end",
-    paddingHorizontal: 8, // 6에서 8로 증가
-    paddingVertical: 4, // 2에서 4로 증가
-    borderRadius: 10, // 8에서 10으로 증가
-    marginLeft: 8,
-  },
-  levelText: {
-    fontSize: 11, // 9에서 11로 증가
-    fontWeight: "bold",
-    color: "white",
-  },
-  category: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  meaning: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-    lineHeight: 14,
-  },
-});

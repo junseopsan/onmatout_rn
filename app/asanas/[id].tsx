@@ -1,16 +1,11 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Dimensions, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { CATEGORIES } from "../../constants/categories";
+import { Button, ScrollView, Spinner, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
+import { CATEGORIES } from "../../constants/categories";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
 import { RootStackParamList } from "../../navigation/types";
 
@@ -26,6 +21,9 @@ export default function AsanaDetailScreen() {
   const [asana, setAsana] = useState<Asana | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -51,6 +49,10 @@ export default function AsanaDetailScreen() {
             level: foundAsana.level,
           });
           setAsana(foundAsana);
+
+          // 이미지 URL들 생성
+          loadValidImages(foundAsana.image_number);
+
           console.log(
             "아사나 상세 데이터 로드 완료:",
             foundAsana.sanskrit_name_kr
@@ -69,14 +71,70 @@ export default function AsanaDetailScreen() {
     }
   };
 
+  const generateImageUrls = (imageNumber: string) => {
+    const urls: string[] = [];
+    const baseNumber = imageNumber.padStart(3, "0");
+
+    // 최대 10개까지 이미지가 있을 수 있다고 가정
+    for (let i = 1; i <= 10; i++) {
+      const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
+        .toString()
+        .padStart(3, "0")}.png`;
+      urls.push(imageUrl);
+    }
+
+    setImageUrls(urls);
+  };
+
+  const checkImageExists = async (url: string) => {
+    try {
+      const response = await fetch(url, { method: "HEAD" });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  const loadValidImages = async (imageNumber: string) => {
+    setImageLoading(true);
+    const urls: string[] = [];
+    const baseNumber = imageNumber.padStart(3, "0");
+
+    // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가
+    const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
+    urls.push(firstImageUrl);
+    setImageUrls(urls); // 첫 번째 이미지를 즉시 표시
+
+    // 추가 이미지들 확인 (백그라운드에서)
+    const additionalUrls: string[] = [];
+    for (let i = 2; i <= 10; i++) {
+      const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
+        .toString()
+        .padStart(3, "0")}.png`;
+      const exists = await checkImageExists(imageUrl);
+      if (exists) {
+        additionalUrls.push(imageUrl);
+      } else {
+        break; // 연속되지 않는 이미지가 있으면 중단
+      }
+    }
+
+    // 추가 이미지들이 있으면 전체 URL 배열 업데이트
+    if (additionalUrls.length > 0) {
+      setImageUrls([...urls, ...additionalUrls]);
+    }
+
+    setImageLoading(false);
+  };
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case "1":
-        return COLORS.success;
+        return "#4CAF50"; // 초급: 밝은 초록색
       case "2":
-        return COLORS.warning;
+        return "#FF9800"; // 중급: 주황색
       case "3":
-        return COLORS.error;
+        return "#F44336"; // 고급: 빨간색
       default:
         return COLORS.textSecondary;
     }
@@ -107,72 +165,243 @@ export default function AsanaDetailScreen() {
     return category?.label || categoryNameEn;
   };
 
+  const getImageUrl = (imageNumber: string) => {
+    // image_number를 3자리 숫자로 포맷팅 (예: 1 -> 001)
+    const formattedNumber = imageNumber.padStart(3, "0");
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
+  };
+
+  const nextImage = () => {
+    if (currentImageIndex < imageUrls.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+    }
+  };
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>아사나 정보를 불러오는 중...</Text>
-          </View>
-        </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+        <YStack flex={1} justifyContent="center" alignItems="center">
+          <Spinner size="large" color="$textSecondary" />
+          <Text fontSize={16} color="$textSecondary" marginTop="$3">
+            아사나 정보를 불러오는 중...
+          </Text>
+        </YStack>
       </SafeAreaView>
     );
   }
 
   if (error || !asana) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>
-              {error || "아사나를 찾을 수 없습니다."}
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+        <YStack
+          flex={1}
+          justifyContent="center"
+          alignItems="center"
+          padding="$6"
+        >
+          <Text
+            fontSize={16}
+            color="$error"
+            textAlign="center"
+            marginBottom="$6"
+          >
+            {error || "아사나를 찾을 수 없습니다."}
+          </Text>
+          <Button
+            backgroundColor="$primary"
+            paddingVertical="$3"
+            paddingHorizontal="$6"
+            borderRadius="$2"
+            onPress={() => navigation.goBack()}
+          >
+            <Text color="white" fontSize={16} fontWeight="bold">
+              뒤로 가기
             </Text>
-            <TouchableOpacity
-              style={styles.errorBackButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.errorBackButtonText}>뒤로 가기</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </Button>
+        </YStack>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* 이미지 영역 */}
-        <View style={styles.imageContainer}>
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.imageNumber}>{asana.image_number}</Text>
-            <Text style={styles.imagePlaceholderText}>이미지 준비 중</Text>
-          </View>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+      <ScrollView flex={1} showsVerticalScrollIndicator={false}>
+        {/* 이미지 슬라이드 영역 */}
+        <YStack height={imageHeight} backgroundColor="$surfaceDark">
+          {imageUrls.length > 0 ? (
+            <YStack flex={1} position="relative">
+              <YStack
+                flex={1}
+                justifyContent="center"
+                alignItems="center"
+                backgroundColor="#808080"
+              >
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    width: "100%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPress={() => {
+                    if (imageUrls.length > 1) {
+                      if (currentImageIndex < imageUrls.length - 1) {
+                        nextImage();
+                      } else {
+                        setCurrentImageIndex(0);
+                      }
+                    }
+                  }}
+                >
+                  <Image
+                    source={{ uri: imageUrls[currentImageIndex] }}
+                    style={{
+                      width: "70%",
+                      height: "70%",
+                      maxWidth: 200,
+                      maxHeight: 150,
+                    }}
+                    contentFit="contain"
+                    placeholder="이미지 로딩 중..."
+                    placeholderContentFit="contain"
+                    onError={() => {
+                      console.log(
+                        `이미지 로딩 실패: ${imageUrls[currentImageIndex]}`
+                      );
+                    }}
+                    priority="high"
+                    cachePolicy="memory-disk"
+                    onLoad={() => setImageLoading(false)}
+                  />
+                </TouchableOpacity>
+
+                {/* 로딩 인디케이터 */}
+                {imageLoading && (
+                  <YStack
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    right={0}
+                    bottom={0}
+                    justifyContent="center"
+                    alignItems="center"
+                    backgroundColor="rgba(0,0,0,0.5)"
+                    zIndex={1}
+                  >
+                    <Spinner size="large" color="$text" />
+                    <Text
+                      fontSize={16}
+                      fontWeight="bold"
+                      color="$text"
+                      marginTop="$2"
+                    >
+                      이미지 로딩 중...
+                    </Text>
+                  </YStack>
+                )}
+
+                {/* 슬라이드 네비게이션 */}
+                {imageUrls.length > 1 && !imageLoading && (
+                  <XStack
+                    position="absolute"
+                    bottom={10}
+                    left={0}
+                    right={0}
+                    justifyContent="center"
+                    alignItems="center"
+                    paddingHorizontal="$5"
+                  >
+                    <XStack gap="$1">
+                      {imageUrls.map((_, index) => (
+                        <YStack
+                          key={index}
+                          width={8}
+                          height={8}
+                          borderRadius="$10"
+                          backgroundColor={
+                            currentImageIndex === index
+                              ? "$text"
+                              : "rgba(255,255,255,0.5)"
+                          }
+                        />
+                      ))}
+                    </XStack>
+                  </XStack>
+                )}
+              </YStack>
+            </YStack>
+          ) : (
+            <YStack
+              flex={1}
+              justifyContent="center"
+              alignItems="center"
+              backgroundColor="$surfaceDark"
+            >
+              <Text fontSize={16} color="$textSecondary">
+                이미지 준비 중
+              </Text>
+            </YStack>
+          )}
+        </YStack>
 
         {/* 내용 영역 */}
-        <View style={styles.content}>
+        <YStack padding="$6">
           {/* 제목 */}
-          <Text style={styles.title}>{asana.sanskrit_name_kr}</Text>
-          <Text style={styles.subtitle}>{asana.sanskrit_name_en}</Text>
+          <Text fontSize={32} fontWeight="bold" color="$text" marginBottom="$2">
+            {asana.sanskrit_name_kr}
+          </Text>
+          <Text
+            fontSize={18}
+            color="$textSecondary"
+            fontStyle="italic"
+            marginBottom="$6"
+          >
+            {asana.sanskrit_name_en}
+          </Text>
 
           {/* 레벨 */}
-          <View style={styles.levelContainer}>
-            <Text style={styles.sectionTitle}>난이도</Text>
-            <View
-              style={[
-                styles.levelBadge,
-                { backgroundColor: getLevelColor(asana.level) },
-              ]}
+          <YStack marginBottom="$6">
+            <Text
+              fontSize={18}
+              fontWeight="bold"
+              color="$text"
+              marginBottom="$2"
             >
-              <Text style={styles.levelText}>{getLevelText(asana.level)}</Text>
-            </View>
-          </View>
+              난이도
+            </Text>
+            <Button
+              backgroundColor={getLevelColor(asana.level)}
+              alignSelf="flex-start"
+              paddingHorizontal="$4"
+              paddingVertical="$2"
+              borderRadius="$5"
+              disabled
+              height="auto"
+              minHeight={32}
+            >
+              <Text fontSize={14} fontWeight="bold" color="white">
+                {getLevelText(asana.level)}
+              </Text>
+            </Button>
+          </YStack>
 
           {/* 카테고리 */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>카테고리</Text>
-            <Text style={styles.sectionContent}>
+          <YStack marginBottom="$6">
+            <Text
+              fontSize={18}
+              fontWeight="bold"
+              color="$text"
+              marginBottom="$2"
+            >
+              카테고리
+            </Text>
+            <Text fontSize={16} color="$textSecondary" lineHeight={24}>
               {asana.category_name_en &&
               asana.category_name_en !== "nan" &&
               asana.category_name_en !== "" &&
@@ -180,163 +409,46 @@ export default function AsanaDetailScreen() {
                 ? getCategoryLabel(asana.category_name_en)
                 : "카테고리 정보 없음"}
             </Text>
-          </View>
+          </YStack>
 
           {/* 의미 */}
           {asana.asana_meaning && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>의미</Text>
-              <Text style={styles.sectionContent}>{asana.asana_meaning}</Text>
-            </View>
+            <YStack marginBottom="$6">
+              <Text
+                fontSize={18}
+                fontWeight="bold"
+                color="$text"
+                marginBottom="$2"
+              >
+                의미
+              </Text>
+              <Text fontSize={16} color="$textSecondary" lineHeight={24}>
+                {asana.asana_meaning}
+              </Text>
+            </YStack>
           )}
 
           {/* 효과 */}
           {asana.effect && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>효과</Text>
-              <Text style={styles.sectionContent}>{asana.effect}</Text>
-            </View>
+            <YStack marginBottom="$6">
+              <Text
+                fontSize={18}
+                fontWeight="bold"
+                color="$text"
+                marginBottom="$2"
+              >
+                효과
+              </Text>
+              <Text fontSize={16} color="$textSecondary" lineHeight={24}>
+                {asana.effect}
+              </Text>
+            </YStack>
           )}
 
           {/* 하단 여백 */}
-          <View style={styles.footer} />
-        </View>
+          <YStack height={40} />
+        </YStack>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  customHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.surfaceDark,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: COLORS.textSecondary,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.text,
-  },
-  headerSpacer: {
-    width: 40, // Adjust as needed for spacing
-  },
-  imageContainer: {
-    width: screenWidth,
-    height: imageHeight,
-    backgroundColor: COLORS.surfaceDark,
-  },
-  imagePlaceholder: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.surfaceDark,
-  },
-  imageNumber: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: COLORS.textSecondary,
-    marginBottom: 16,
-  },
-  imagePlaceholderText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  content: {
-    padding: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: COLORS.textSecondary,
-    fontStyle: "italic",
-    marginBottom: 24,
-  },
-  levelContainer: {
-    marginBottom: 24,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  sectionContent: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    lineHeight: 24,
-  },
-  levelBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  levelText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "white",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  errorText: {
-    fontSize: 16,
-    color: COLORS.error,
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  footer: {
-    height: 40,
-  },
-  errorBackButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  errorBackButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
