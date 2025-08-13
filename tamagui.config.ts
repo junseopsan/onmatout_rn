@@ -94,6 +94,8 @@ const config = createTamagui({
     hoverNone: { hover: "none" },
     pointerCoarse: { pointer: "coarse" },
   }),
+  // 경고 레벨 조정
+  disableInjectCSS: true,
 });
 
 export type AppConfig = typeof config;
