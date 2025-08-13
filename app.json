@@ -9,7 +9,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hillyheally.onmatout-rn"
+      "bundleIdentifier": "com.onmatout.app",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,12 +18,22 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.hillyheally.onmatout_rn"
+      "package": "com.onmatout.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6b14beae-4cd3-4575-bfbd-403081113b72"
+      }
+    },
+    "owner": "jujoland",
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
