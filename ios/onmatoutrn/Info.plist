@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>onmatoutrn</string>
-          <string>com.hillyheally.onmatout-rn</string>
+          <string>com.onmatout.dev</string>
         </array>
       </dict>
     </array>
