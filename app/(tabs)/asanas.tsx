@@ -69,7 +69,6 @@ export default function AsanasScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>아사나</Text>
-        <Text style={styles.subtitle}>요가 자세 탐색</Text>
       </View>
 
       {loadingAsanas ? (

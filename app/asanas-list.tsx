@@ -72,7 +72,6 @@ export default function AsanasScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>아사나</Text>
-        <Text style={styles.subtitle}>요가 자세 탐색</Text>
 
         {loadingAsanas ? (
           <View style={styles.loadingContainer}>

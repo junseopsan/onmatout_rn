@@ -1,7 +1,7 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
-import { Dimensions, TouchableOpacity } from "react-native";
+import { Dimensions, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, ScrollView, Spinner, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
@@ -10,7 +10,7 @@ import { Asana, asanasAPI } from "../../lib/api/asanas";
 import { RootStackParamList } from "../../navigation/types";
 
 const { width: screenWidth } = Dimensions.get("window");
-const imageHeight = screenWidth * 0.75; // 화면 너비의 75% 높이
+const imageHeight = screenWidth * 0.85; // 화면 너비의 85% 높이로 증가
 
 type AsanaDetailRouteProp = RouteProp<RootStackParamList, "AsanaDetail">;
 
@@ -230,10 +230,18 @@ export default function AsanaDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
-      <ScrollView flex={1} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+      <ScrollView
+        flex={1}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 0 }}
+      >
         {/* 이미지 슬라이드 영역 */}
-        <YStack height={imageHeight} backgroundColor="$surfaceDark">
+        <YStack
+          height={imageHeight}
+          backgroundColor="$surfaceDark"
+          marginTop={0}
+        >
           {imageUrls.length > 0 ? (
             <YStack flex={1} position="relative">
               <YStack
@@ -262,10 +270,10 @@ export default function AsanaDetailScreen() {
                   <Image
                     source={{ uri: imageUrls[currentImageIndex] }}
                     style={{
-                      width: "70%",
-                      height: "70%",
-                      maxWidth: 200,
-                      maxHeight: 150,
+                      width: "85%",
+                      height: "85%",
+                      maxWidth: 280,
+                      maxHeight: 220,
                     }}
                     contentFit="contain"
                     placeholder="이미지 로딩 중..."
@@ -449,6 +457,6 @@ export default function AsanaDetailScreen() {
           <YStack height={40} />
         </YStack>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

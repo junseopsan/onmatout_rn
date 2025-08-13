@@ -44,7 +44,7 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
 
   return (
     <Card
-      backgroundColor="$surface"
+      backgroundColor="#4A4A4A"
       borderRadius="$4"
       overflow="hidden"
       shadowColor="$shadow"
@@ -57,13 +57,13 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
       onPress={() => onPress(asana)}
     >
       {/* 이미지 영역 */}
-      <YStack height={160} backgroundColor="$surfaceDark">
+      <YStack height={160} backgroundColor="#5A5A5A">
         {asana.image_number ? (
           <YStack
             flex={1}
             justifyContent="center"
             alignItems="center"
-            backgroundColor="#808080"
+            backgroundColor="#6A6A6A"
           >
             <Image
               source={{ uri: getImageUrl(asana.image_number) }}
@@ -86,7 +86,7 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
             flex={1}
             justifyContent="center"
             alignItems="center"
-            backgroundColor="$surfaceDark"
+            backgroundColor="#5A5A5A"
           >
             <Text fontSize={28} fontWeight="bold" color="$textSecondary">
               이미지 없음

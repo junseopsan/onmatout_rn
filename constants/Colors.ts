@@ -15,10 +15,10 @@ export const COLORS = {
   secondaryDark: "#059669",
 
   // Background Colors
-  background: "#111111",
-  backgroundDark: "#111111",
-  surface: "#181818",
-  surfaceDark: "#222222",
+  background: "#2A2A2A",
+  backgroundDark: "#1A1A1A",
+  surface: "#333333",
+  surfaceDark: "#3A3A3A",
 
   // Text Colors
   text: "#F9FAFB",
