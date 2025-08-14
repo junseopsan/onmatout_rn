@@ -237,18 +237,14 @@ export default function AsanaDetailScreen() {
         contentContainerStyle={{ paddingTop: 0 }}
       >
         {/* 이미지 슬라이드 영역 */}
-        <YStack
-          height={imageHeight}
-          backgroundColor="$surfaceDark"
-          marginTop={0}
-        >
+        <YStack height={imageHeight} backgroundColor="#9A9A9A" marginTop={0}>
           {imageUrls.length > 0 ? (
             <YStack flex={1} position="relative">
               <YStack
                 flex={1}
                 justifyContent="center"
                 alignItems="center"
-                backgroundColor="#808080"
+                backgroundColor="#AAAAAA"
               >
                 <TouchableOpacity
                   style={{
@@ -349,7 +345,7 @@ export default function AsanaDetailScreen() {
               flex={1}
               justifyContent="center"
               alignItems="center"
-              backgroundColor="$surfaceDark"
+              backgroundColor="#9A9A9A"
             >
               <Text fontSize={16} color="$textSecondary">
                 이미지 준비 중

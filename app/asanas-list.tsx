@@ -2,10 +2,10 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AsanaCard } from "../../components/AsanaCard";
-import { COLORS } from "../../constants/Colors";
-import { useAuth } from "../../hooks/useAuth";
-import { Asana, asanasAPI } from "../../lib/api/asanas";
+import { AsanaCard } from "../components/AsanaCard";
+import { COLORS } from "../constants/Colors";
+import { useAuth } from "../hooks/useAuth";
+import { Asana, asanasAPI } from "../lib/api/asanas";
 
 const { width: screenWidth } = Dimensions.get("window");
 const cardWidth = (screenWidth - 48 - 16) / 2; // 48 = 좌우 패딩, 16 = 카드 간 간격
