@@ -3,38 +3,36 @@ import { Asana } from "./asana";
 export interface Record {
   id: string;
   user_id: string;
-  asana_id: string;
-  asana?: Asana;
-  emotion: EmotionType;
-  energy_level: EnergyLevel;
-  focus_level: FocusLevel;
-  memo?: string;
-  practice_date: string;
+  date: string; // YYYY-MM-DD 형식
+  asanas: string[]; // 선택된 아사나 ID 배열
+  memo: string; // 경험 메모 (최대 500자)
+  emotions: string[]; // 선택된 감정 배열
+  energy_level: string; // 에너지 레벨
+  photos: string[]; // 사진 URL 배열 (최대 3장)
   created_at: string;
   updated_at: string;
 }
 
-export type EmotionType =
-  | "peaceful"
-  | "energized"
-  | "calm"
-  | "focused"
-  | "relaxed"
-  | "stressed"
-  | "tired"
-  | "excited";
+export interface RecordFormData {
+  asanas: string[];
+  memo: string;
+  emotions: string[];
+  energy_level: string;
+  photos: string[];
+}
 
-export type EnergyLevel = "very_low" | "low" | "medium" | "high" | "very_high";
+export interface Emotion {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
 
-export type FocusLevel = "very_low" | "low" | "medium" | "high" | "very_high";
-
-export interface CreateRecordData {
-  asana_id: string;
-  emotion: EmotionType;
-  energy_level: EnergyLevel;
-  focus_level: FocusLevel;
-  memo?: string;
-  practice_date: string;
+export interface EnergyLevel {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
 }
 
 export interface RecordFilter {
