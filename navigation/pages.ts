@@ -14,6 +14,7 @@ import NicknameScreen from "../app/auth/nickname";
 import VerifyScreen from "../app/auth/verify";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
+import NewRecordScreen from "../app/record/new";
 
 export interface PageConfig {
   name: keyof RootStackParamList;
@@ -86,6 +87,27 @@ export const pageList: PageConfig[] = [
     component: RecordScreen,
     options: {
       headerShown: false,
+    },
+  },
+  {
+    name: "NewRecord",
+    component: NewRecordScreen,
+    options: {
+      headerShown: true,
+      headerBackTitle: "",
+      headerTitleAlign: "center",
+      gestureEnabled: true,
+      headerBackButtonDisplayMode: "minimal",
+      title: "새 기록 작성",
+      headerStyle: {
+        backgroundColor: COLORS.background,
+      },
+      headerTintColor: COLORS.text,
+      headerTitleStyle: {
+        color: COLORS.text,
+        fontSize: 18,
+        fontWeight: "600",
+      },
     },
   },
   {

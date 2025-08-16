@@ -121,6 +121,11 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="NewRecord"
+        component={pageList.find((p) => p.name === "NewRecord")?.component!}
+        options={pageList.find((p) => p.name === "NewRecord")?.options}
+      />
+      <Stack.Screen
         name="AsanaDetail"
         component={pageList.find((p) => p.name === "AsanaDetail")?.component!}
         options={pageList.find((p) => p.name === "AsanaDetail")?.options}

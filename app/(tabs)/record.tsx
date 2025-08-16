@@ -1,22 +1,28 @@
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { recordsAPI } from "../../lib/api/records";
 import { Record } from "../../types/record";
+import { RootStackParamList } from "../../navigation/types";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function RecordScreen() {
   const { isAuthenticated, loading, user, session } = useAuth();
   const [todayRecord, setTodayRecord] = useState<Record | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
+  const navigation = useNavigation<NavigationProp>();
 
   // 디버깅을 위한 로그
   useEffect(() => {
@@ -66,8 +72,8 @@ export default function RecordScreen() {
 
   const handleNewRecord = () => {
     console.log("새 기록 작성 버튼 클릭");
-    // TODO: 새 기록 작성 화면으로 이동
-    Alert.alert("새 기록", "새 기록 작성 기능이 곧 추가됩니다!");
+    // 새 기록 작성 화면으로 이동
+    navigation.navigate("NewRecord");
   };
 
   const handleEditRecord = () => {

@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Dashboard: undefined;
   Asanas: undefined;
   Record: undefined;
+  NewRecord: undefined;
   Studios: undefined;
   Profile: undefined;
   AsanaDetail: { id: string };
