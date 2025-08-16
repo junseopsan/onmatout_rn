@@ -12,9 +12,9 @@ export const recordsAPI = {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
       
       const { data, error } = await supabase
-        .from("records")
+        .from("practice_records")
         .select("*")
-        .eq("date", today)
+        .eq("practice_date", today)
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116는 데이터가 없는 경우
@@ -25,9 +25,29 @@ export const recordsAPI = {
         };
       }
 
+      // practice_records 테이블 구조를 Record 타입에 맞게 변환
+      if (data) {
+        const convertedData: Record = {
+          id: data.id,
+          user_id: data.user_id,
+          date: data.practice_date,
+          asanas: data.asana_id ? [data.asana_id] : [], // 단일 아사나를 배열로 변환
+          memo: data.memo || "",
+          emotions: data.emotion ? [data.emotion] : [], // 단일 감정을 배열로 변환
+          energy_level: data.energy_level ? data.energy_level.toString() : "",
+          photos: [], // practice_records에는 photos 컬럼이 없으므로 빈 배열
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+        return {
+          success: true,
+          data: convertedData,
+        };
+      }
+
       return {
         success: true,
-        data: data || null,
+        data: null,
       };
     } catch (error) {
       console.error("오늘 기록 가져오기 예외:", error);
@@ -47,20 +67,21 @@ export const recordsAPI = {
     try {
       const today = new Date().toISOString().split('T')[0];
       
+      // RecordFormData를 practice_records 테이블 구조에 맞게 변환
       const recordPayload = {
-        date: today,
-        asanas: recordData.asanas,
+        practice_date: today,
+        asana_id: recordData.asanas.length > 0 ? recordData.asanas[0] : null, // 첫 번째 아사나만 저장
         memo: recordData.memo,
-        emotions: recordData.emotions,
-        energy_level: recordData.energy_level,
-        photos: recordData.photos,
+        emotion: recordData.emotions.length > 0 ? recordData.emotions[0] : null, // 첫 번째 감정만 저장
+        energy_level: recordData.energy_level ? parseInt(recordData.energy_level) : null,
+        focus_level: 3, // 기본값 설정 (RecordFormData에 focus_level이 없으므로)
         updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
-        .from("records")
+        .from("practice_records")
         .upsert(recordPayload, {
-          onConflict: "date",
+          onConflict: "practice_date",
         })
         .select()
         .single();
@@ -73,9 +94,29 @@ export const recordsAPI = {
         };
       }
 
+      // 변환된 데이터 반환
+      if (data) {
+        const convertedData: Record = {
+          id: data.id,
+          user_id: data.user_id,
+          date: data.practice_date,
+          asanas: data.asana_id ? [data.asana_id] : [],
+          memo: data.memo || "",
+          emotions: data.emotion ? [data.emotion] : [],
+          energy_level: data.energy_level ? data.energy_level.toString() : "",
+          photos: [],
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+        return {
+          success: true,
+          data: convertedData,
+        };
+      }
+
       return {
         success: true,
-        data,
+        data: undefined,
       };
     } catch (error) {
       console.error("기록 저장 예외:", error);
@@ -93,9 +134,9 @@ export const recordsAPI = {
   }> => {
     try {
       const { error } = await supabase
-        .from("records")
+        .from("practice_records")
         .delete()
-        .eq("date", date);
+        .eq("practice_date", date);
 
       if (error) {
         console.error("기록 삭제 에러:", error);
@@ -129,10 +170,10 @@ export const recordsAPI = {
       const fromDate = thirtyDaysAgo.toISOString().split('T')[0];
 
       const { data, error } = await supabase
-        .from("records")
+        .from("practice_records")
         .select("*")
-        .gte("date", fromDate)
-        .order("date", { ascending: false });
+        .gte("practice_date", fromDate)
+        .order("practice_date", { ascending: false });
 
       if (error) {
         console.error("최근 기록 가져오기 에러:", error);
@@ -142,9 +183,23 @@ export const recordsAPI = {
         };
       }
 
+      // 데이터 변환
+      const convertedData: Record[] = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        date: item.practice_date,
+        asanas: item.asana_id ? [item.asana_id] : [],
+        memo: item.memo || "",
+        emotions: item.emotion ? [item.emotion] : [],
+        energy_level: item.energy_level ? item.energy_level.toString() : "",
+        photos: [],
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
+
       return {
         success: true,
-        data: data || [],
+        data: convertedData,
       };
     } catch (error) {
       console.error("최근 기록 가져오기 예외:", error);

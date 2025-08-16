@@ -1,36 +1,57 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
   TouchableOpacity,
-  ScrollView,
-  Alert,
+  View,
 } from "react-native";
+import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { Record } from "../../types/record";
 import { recordsAPI } from "../../lib/api/records";
-import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
+import { Record } from "../../types/record";
 
 export default function RecordScreen() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, session } = useAuth();
   const [todayRecord, setTodayRecord] = useState<Record | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
 
+  // 디버깅을 위한 로그
+  useEffect(() => {
+    console.log("=== RecordScreen 렌더링 ===");
+    console.log("isAuthenticated:", isAuthenticated);
+    console.log("loading:", loading);
+    console.log("user:", user);
+    console.log("session:", session);
+  }, [isAuthenticated, loading, user, session]);
+
   // 오늘 기록 로드
   useEffect(() => {
+    console.log("=== 기록 로드 useEffect 실행 ===");
+    console.log("isAuthenticated:", isAuthenticated);
+
     if (isAuthenticated) {
+      console.log("인증됨 - 기록 로드 시작");
       loadTodayRecord();
+    } else {
+      console.log("인증되지 않음 - 기록 로드 스킵");
+      setLoadingRecord(false);
     }
   }, [isAuthenticated]);
 
   const loadTodayRecord = async () => {
+    console.log("=== loadTodayRecord 시작 ===");
     try {
       setLoadingRecord(true);
+      console.log("recordsAPI.getTodayRecord 호출");
+
       const result = await recordsAPI.getTodayRecord();
-      
+      console.log("API 결과:", result);
+
       if (result.success) {
+        console.log("기록 로드 성공:", result.data);
         setTodayRecord(result.data || null);
       } else {
         console.error("오늘 기록 로드 실패:", result.message);
@@ -38,16 +59,19 @@ export default function RecordScreen() {
     } catch (error) {
       console.error("오늘 기록 로드 예외:", error);
     } finally {
+      console.log("기록 로드 완료 - loadingRecord false로 설정");
       setLoadingRecord(false);
     }
   };
 
   const handleNewRecord = () => {
+    console.log("새 기록 작성 버튼 클릭");
     // TODO: 새 기록 작성 화면으로 이동
     Alert.alert("새 기록", "새 기록 작성 기능이 곧 추가됩니다!");
   };
 
   const handleEditRecord = () => {
+    console.log("기록 수정 버튼 클릭");
     // TODO: 기록 수정 화면으로 이동
     Alert.alert("기록 수정", "기록 수정 기능이 곧 추가됩니다!");
   };
@@ -72,9 +96,19 @@ export default function RecordScreen() {
   };
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading || !isAuthenticated) {
+  if (loading) {
+    console.log("=== 인증 로딩 중 - 빈 화면 반환 ===");
     return null;
   }
+
+  if (!isAuthenticated) {
+    console.log("=== 인증되지 않음 - 빈 화면 반환 ===");
+    return null;
+  }
+
+  console.log("=== RecordScreen 메인 렌더링 ===");
+  console.log("loadingRecord:", loadingRecord);
+  console.log("todayRecord:", todayRecord);
 
   return (
     <View style={styles.container}>
@@ -92,7 +126,9 @@ export default function RecordScreen() {
           // 오늘 기록이 있는 경우
           <View style={styles.recordContainer}>
             <View style={styles.recordHeader}>
-              <Text style={styles.recordDate}>{formatDate(todayRecord.date)}</Text>
+              <Text style={styles.recordDate}>
+                {formatDate(todayRecord.date)}
+              </Text>
               <TouchableOpacity
                 style={styles.editButton}
                 onPress={handleEditRecord}
@@ -154,10 +190,10 @@ export default function RecordScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>오늘의 수련을 기록해보세요</Text>
             <Text style={styles.emptyDescription}>
-              수련한 아사나, 느낀 점, 감정 상태 등을 기록하여{'\n'}
+              수련한 아사나, 느낀 점, 감정 상태 등을 기록하여{"\n"}
               나만의 요가 여정을 만들어가세요.
             </Text>
-            
+
             <View style={styles.buttonContainer}>
               <TamaguiButtonComponent
                 title="새 기록 작성"
