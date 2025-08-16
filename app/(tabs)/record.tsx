@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { recordsAPI } from "../../lib/api/records";
-import { Record } from "../../types/record";
 import { RootStackParamList } from "../../navigation/types";
+import { Record } from "../../types/record";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

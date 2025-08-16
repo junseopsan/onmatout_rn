@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { EMOTIONS, ENERGY_LEVELS } from "../../constants/emotions";
@@ -27,11 +28,13 @@ export default function NewRecordScreen() {
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [selectedEnergyLevel, setSelectedEnergyLevel] = useState<string>("");
   const [searching, setSearching] = useState(false);
+  const [tempSelectedAsanas, setTempSelectedAsanas] = useState<string[]>([]);
 
   // 아사나 검색
   const searchAsanas = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
+      setTempSelectedAsanas([]);
       return;
     }
 
@@ -45,12 +48,15 @@ export default function NewRecordScreen() {
           asana => !selectedAsanas.find(selected => selected.id === asana.id)
         );
         setSearchResults(filteredResults);
+        setTempSelectedAsanas([]); // 검색 시 임시 선택 초기화
       } else {
         setSearchResults([]);
+        setTempSelectedAsanas([]);
       }
     } catch (error) {
       console.error("아사나 검색 에러:", error);
       setSearchResults([]);
+      setTempSelectedAsanas([]);
     } finally {
       setSearching(false);
     }
@@ -65,14 +71,35 @@ export default function NewRecordScreen() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // 아사나 선택
-  const handleAsanaSelect = (asana: Asana) => {
-    if (selectedAsanas.length >= 10) {
-      Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+  // 임시 선택된 아사나 토글
+  const toggleTempAsanaSelection = (asanaId: string) => {
+    setTempSelectedAsanas(prev => {
+      if (prev.includes(asanaId)) {
+        return prev.filter(id => id !== asanaId);
+      } else {
+        // 최대 10개 제한 확인
+        if (selectedAsanas.length + prev.length >= 10) {
+          Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+          return prev;
+        }
+        return [...prev, asanaId];
+      }
+    });
+  };
+
+  // 선택된 아사나들을 실제로 추가
+  const addSelectedAsanas = () => {
+    const asanasToAdd = searchResults.filter(asana => 
+      tempSelectedAsanas.includes(asana.id)
+    );
+    
+    if (asanasToAdd.length === 0) {
+      Alert.alert("알림", "선택된 아사나가 없습니다.");
       return;
     }
-    
-    setSelectedAsanas(prev => [...prev, asana]);
+
+    setSelectedAsanas(prev => [...prev, ...asanasToAdd]);
+    setTempSelectedAsanas([]);
     setSearchQuery("");
     setSearchResults([]);
   };
@@ -153,6 +180,43 @@ export default function NewRecordScreen() {
     }
   };
 
+  // 작은 아사나 카드 렌더링
+  const renderSmallAsanaCard = ({ item }: { item: Asana }) => {
+    const isSelected = tempSelectedAsanas.includes(item.id);
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.smallAsanaCard,
+          {
+            borderColor: isSelected ? COLORS.primary : COLORS.surfaceDark,
+            backgroundColor: isSelected ? COLORS.primary + "20" : COLORS.surface,
+          },
+        ]}
+        onPress={() => toggleTempAsanaSelection(item.id)}
+      >
+        <View style={styles.smallAsanaImageContainer}>
+          <Text style={styles.smallAsanaImagePlaceholder}>
+            {item.image_number ? "🖼️" : "📝"}
+          </Text>
+        </View>
+        <View style={styles.smallAsanaInfo}>
+          <Text style={styles.smallAsanaName} numberOfLines={1}>
+            {item.sanskrit_name_kr}
+          </Text>
+          <Text style={styles.smallAsanaNameEn} numberOfLines={1}>
+            {item.sanskrit_name_en}
+          </Text>
+        </View>
+        {isSelected && (
+          <View style={styles.smallAsanaCheckmark}>
+            <Text style={styles.smallAsanaCheckmarkText}>✓</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* 헤더 */}
@@ -188,16 +252,31 @@ export default function NewRecordScreen() {
 
           {searchResults.length > 0 && (
             <View style={styles.searchResults}>
-              <Text style={styles.searchResultsTitle}>검색 결과</Text>
-              {searchResults.map(asana => (
-                <TouchableOpacity
-                  key={asana.id}
-                  style={styles.searchResultItem}
-                  onPress={() => handleAsanaSelect(asana)}
-                >
-                  <AsanaCard asana={asana} onPress={() => {}} />
-                </TouchableOpacity>
-              ))}
+              <View style={styles.searchResultsHeader}>
+                <Text style={styles.searchResultsTitle}>
+                  검색 결과 ({tempSelectedAsanas.length}개 선택됨)
+                </Text>
+                {tempSelectedAsanas.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.addSelectedButton}
+                    onPress={addSelectedAsanas}
+                  >
+                    <Text style={styles.addSelectedButtonText}>
+                      선택한 아사나 추가
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              <FlatList
+                data={searchResults}
+                renderItem={renderSmallAsanaCard}
+                keyExtractor={(item) => item.id}
+                numColumns={2}
+                scrollEnabled={false}
+                columnWrapperStyle={styles.smallAsanaRow}
+                contentContainerStyle={styles.smallAsanaList}
+              />
             </View>
           )}
 
@@ -393,14 +472,88 @@ const styles = StyleSheet.create({
   searchResults: {
     marginBottom: 16,
   },
+  searchResultsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   searchResultsTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: COLORS.text,
-    marginBottom: 12,
   },
-  searchResultItem: {
+  addSelectedButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  addSelectedButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  smallAsanaList: {
+    paddingBottom: 8,
+  },
+  smallAsanaRow: {
+    justifyContent: "space-between",
     marginBottom: 8,
+  },
+  smallAsanaCard: {
+    width: "48%",
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    padding: 8,
+    borderWidth: 2,
+    alignItems: "center",
+    position: "relative",
+  },
+  smallAsanaImageContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surfaceDark,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  smallAsanaImagePlaceholder: {
+    fontSize: 20,
+  },
+  smallAsanaInfo: {
+    alignItems: "center",
+    flex: 1,
+  },
+  smallAsanaName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  smallAsanaNameEn: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  smallAsanaCheckmark: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  smallAsanaCheckmarkText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   selectedAsanas: {
     marginTop: 16,
