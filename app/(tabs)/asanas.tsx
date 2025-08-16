@@ -2,6 +2,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   StyleSheet,
@@ -25,32 +26,66 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
   const [asanas, setAsanas] = useState<Asana[]>([]);
-  const [filteredAsanas, setFilteredAsanas] = useState<Asana[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<AsanaCategory[]>(
     []
   );
   const [loadingAsanas, setLoadingAsanas] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp>();
 
-  // 아사나 데이터 로드
+  // 아사나 데이터 로드 (초기 로드)
   useEffect(() => {
     if (isAuthenticated) {
-      loadAsanas();
+      loadAsanas(true); // 초기 로드
     }
   }, [isAuthenticated]);
 
-  const loadAsanas = async () => {
+  // 카테고리 변경 시 데이터 리셋
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadAsanas(true); // 카테고리 변경 시 초기화
+    }
+  }, [selectedCategories]);
+
+  const loadAsanas = async (reset: boolean = false) => {
     try {
-      setLoadingAsanas(true);
+      if (reset) {
+        setLoadingAsanas(true);
+        setCurrentPage(1);
+        setAsanas([]);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
       setError(null);
 
-      const result = await asanasAPI.getAllAsanas();
+      const page = reset ? 1 : currentPage + 1;
+      const categories =
+        selectedCategories.length > 0 ? selectedCategories : undefined;
+
+      const result = await asanasAPI.getAsanasWithPagination(
+        page,
+        20,
+        categories
+      );
 
       if (result.success && result.data) {
-        setAsanas(result.data);
-        setFilteredAsanas(result.data);
-        console.log("아사나 데이터 로드 완료:", result.data.length, "개");
+        if (reset) {
+          setAsanas(result.data);
+        } else {
+          setAsanas((prev) => [...prev, ...result.data!]);
+        }
+
+        setCurrentPage(page);
+        setHasMore(result.hasMore || false);
+
+        console.log(
+          `아사나 데이터 로드 완료: 페이지 ${page}, ${result.data.length}개, 더 있음: ${result.hasMore}`
+        );
       } else {
         setError(result.message || "아사나 데이터를 불러오는데 실패했습니다.");
         console.error("아사나 데이터 로드 실패:", result.message);
@@ -60,6 +95,7 @@ export default function AsanasScreen() {
       console.error("아사나 데이터 로드 예외:", error);
     } finally {
       setLoadingAsanas(false);
+      setLoadingMore(false);
     }
   };
 
@@ -81,18 +117,14 @@ export default function AsanasScreen() {
         newCategories = [...prev, category];
       }
 
-      // 필터링 적용
-      if (newCategories.length === 0) {
-        setFilteredAsanas(asanas);
-      } else {
-        const filtered = asanas.filter((asana) =>
-          newCategories.includes(asana.category_name_en as AsanaCategory)
-        );
-        setFilteredAsanas(filtered);
-      }
-
       return newCategories;
     });
+  };
+
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      loadAsanas(false); // 추가 로드
+    }
   };
 
   const renderCategoryButton = (category: AsanaCategory) => {
@@ -134,6 +166,19 @@ export default function AsanasScreen() {
     </View>
   );
 
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+
+    return (
+      <View style={styles.loadingMoreContainer}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+        <Text style={styles.loadingMoreText}>
+          더 많은 아사나를 불러오는 중...
+        </Text>
+      </View>
+    );
+  };
+
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
     return null;
@@ -147,6 +192,7 @@ export default function AsanasScreen() {
 
       {loadingAsanas ? (
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>아사나 데이터를 불러오는 중...</Text>
         </View>
       ) : error ? (
@@ -155,7 +201,11 @@ export default function AsanasScreen() {
         </View>
       ) : asanas.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>아사나 데이터가 없습니다.</Text>
+          <Text style={styles.emptyText}>
+            {selectedCategories.length > 0
+              ? "선택한 카테고리의 아사나가 없습니다."
+              : "아사나 데이터가 없습니다."}
+          </Text>
         </View>
       ) : (
         <>
@@ -186,7 +236,7 @@ export default function AsanasScreen() {
 
           {/* 아사나 카드 리스트 */}
           <FlatList
-            data={filteredAsanas}
+            data={asanas}
             renderItem={renderAsanaCard}
             keyExtractor={(item) => item.id}
             numColumns={2}
@@ -194,7 +244,10 @@ export default function AsanasScreen() {
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={true}
             showsHorizontalScrollIndicator={false}
-            ListFooterComponent={<View style={styles.footer} />}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.1}
+            ListFooterComponent={renderFooter}
+            ListFooterComponentStyle={styles.footer}
           />
         </>
       )}
@@ -238,7 +291,7 @@ const styles = StyleSheet.create({
     height: 16,
   },
   footer: {
-    height: 24,
+    paddingVertical: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -248,6 +301,18 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: COLORS.textSecondary,
+    marginTop: 12,
+  },
+  loadingMoreContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginLeft: 8,
   },
   errorContainer: {
     flex: 1,

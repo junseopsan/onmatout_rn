@@ -2,7 +2,9 @@ import { Image } from "expo-image";
 import React from "react";
 import { Button, Card, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../constants/Colors";
+import { CATEGORIES } from "../constants/categories";
 import { Asana } from "../lib/api/asanas";
+import { AsanaCategory } from "../types/asana";
 
 interface AsanaCardProps {
   asana: Asana;
@@ -10,30 +12,18 @@ interface AsanaCardProps {
 }
 
 export function AsanaCard({ asana, onPress }: AsanaCardProps) {
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "1":
-        return "#4CAF50"; // 초급: 밝은 초록색
-      case "2":
-        return "#FF9800"; // 중급: 주황색
-      case "3":
-        return "#F44336"; // 고급: 빨간색
-      default:
-        return COLORS.textSecondary;
+  const getCategoryInfo = (categoryName: string) => {
+    const category = CATEGORIES[categoryName as AsanaCategory];
+    if (category) {
+      return {
+        label: category.label,
+        color: category.color,
+      };
     }
-  };
-
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case "1":
-        return "초급";
-      case "2":
-        return "중급";
-      case "3":
-        return "고급";
-      default:
-        return "미정";
-    }
+    return {
+      label: "기타",
+      color: COLORS.textSecondary,
+    };
   };
 
   const getImageUrl = (imageNumber: string) => {
@@ -41,6 +31,8 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
     const formattedNumber = imageNumber.padStart(3, "0");
     return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
   };
+
+  const categoryInfo = getCategoryInfo(asana.category_name_en);
 
   return (
     <Card
@@ -97,7 +89,7 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
 
       {/* 내용 영역 */}
       <YStack padding="$3" paddingTop="$3.5">
-        {/* 한국어 이름과 레벨을 한 행에 배치 */}
+        {/* 한국어 이름과 카테고리를 한 행에 배치 */}
         <XStack
           justifyContent="space-between"
           alignItems="center"
@@ -114,9 +106,9 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
             {asana.sanskrit_name_kr}
           </Text>
 
-          {/* 레벨 배지를 우측 끝에 배치 */}
+          {/* 카테고리 배지를 우측 끝에 배치 */}
           <Button
-            backgroundColor={getLevelColor(asana.level)}
+            backgroundColor={categoryInfo.color}
             paddingHorizontal="$2"
             paddingVertical="$1"
             borderRadius="$5"
@@ -126,7 +118,7 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
             minHeight={24}
           >
             <Text fontSize={11} fontWeight="bold" color="white">
-              {getLevelText(asana.level)}
+              {categoryInfo.label}
             </Text>
           </Button>
         </XStack>
