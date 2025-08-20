@@ -1,4 +1,4 @@
-import { Emotion, EnergyLevel } from "../types/record";
+import { Emotion, EnergyLevelInfo } from "../types/record";
 
 export const EMOTIONS: Emotion[] = [
   {
@@ -51,35 +51,29 @@ export const EMOTIONS: Emotion[] = [
   },
 ];
 
-export const ENERGY_LEVELS: EnergyLevel[] = [
+export const ENERGY_LEVELS: EnergyLevelInfo[] = [
   {
-    id: "very_low",
-    label: "매우 낮음",
-    emoji: "😴",
-    color: "#9E9E9E",
+    id: "calm",
+    label: "차분",
+    emoji: "😌",
+    color: "#3B82F6",
   },
   {
-    id: "low",
-    label: "낮음",
-    emoji: "😐",
-    color: "#FF9800",
+    id: "balanced",
+    label: "균형",
+    emoji: "⚖️",
+    color: "#10B981",
   },
   {
-    id: "medium",
-    label: "보통",
-    emoji: "😊",
-    color: "#4CAF50",
+    id: "light",
+    label: "가벼움",
+    emoji: "🪶",
+    color: "#F59E0B",
   },
   {
-    id: "high",
-    label: "높음",
-    emoji: "😃",
-    color: "#2196F3",
-  },
-  {
-    id: "very_high",
-    label: "매우 높음",
-    emoji: "🤩",
-    color: "#E91E63",
+    id: "full",
+    label: "충만",
+    emoji: "✨",
+    color: "#EF4444",
   },
 ];

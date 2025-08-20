@@ -11,11 +11,13 @@ import {
   View,
 } from "react-native";
 import { AsanaCard } from "../../components/AsanaCard";
+import { AsanaSkeleton } from "../../components/AsanaSkeleton";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { useAuth } from "../../hooks/useAuth";
-import { Asana, asanasAPI } from "../../lib/api/asanas";
+import { asanasAPI } from "../../lib/api/asanas";
 import { RootStackParamList } from "../../navigation/types";
+import { useAsanaStore } from "../../stores/asanaStore";
 import { AsanaCategory } from "../../types/asana";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -25,105 +27,89 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
-  const [asanas, setAsanas] = useState<Asana[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<AsanaCategory[]>(
-    []
-  );
-  const [loadingAsanas, setLoadingAsanas] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp>();
+  const [favoriteAsanas, setFavoriteAsanas] = useState<string[]>([]);
+
+  // 스토어에서 상태 가져오기
+  const {
+    asanas,
+    filteredAsanas,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    selectedCategories,
+    error,
+    setSelectedCategories,
+    loadAsanas,
+    loadMoreAsanas,
+    clearError,
+  } = useAsanaStore();
 
   // 아사나 데이터 로드 (초기 로드)
   useEffect(() => {
     if (isAuthenticated) {
       loadAsanas(true); // 초기 로드
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadAsanas]);
 
-  // 카테고리 변경 시 데이터 리셋
-  useEffect(() => {
+  // 즐겨찾기 목록 로드
+  const loadFavoriteAsanas = async () => {
     if (isAuthenticated) {
-      loadAsanas(true); // 카테고리 변경 시 초기화
-    }
-  }, [selectedCategories]);
-
-  const loadAsanas = async (reset: boolean = false) => {
-    try {
-      if (reset) {
-        setLoadingAsanas(true);
-        setCurrentPage(1);
-        setAsanas([]);
-        setHasMore(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      setError(null);
-
-      const page = reset ? 1 : currentPage + 1;
-      const categories =
-        selectedCategories.length > 0 ? selectedCategories : undefined;
-
-      const result = await asanasAPI.getAsanasWithPagination(
-        page,
-        20,
-        categories
-      );
-
-      if (result.success && result.data) {
-        if (reset) {
-          setAsanas(result.data);
-        } else {
-          setAsanas((prev) => [...prev, ...result.data!]);
+      try {
+        const result = await asanasAPI.getFavoriteAsanas();
+        if (result.success) {
+          setFavoriteAsanas(result.data || []);
         }
-
-        setCurrentPage(page);
-        setHasMore(result.hasMore || false);
-
-        console.log(
-          `아사나 데이터 로드 완료: 페이지 ${page}, ${result.data.length}개, 더 있음: ${result.hasMore}`
-        );
-      } else {
-        setError(result.message || "아사나 데이터를 불러오는데 실패했습니다.");
-        console.error("아사나 데이터 로드 실패:", result.message);
+      } catch (error) {
+        console.error("즐겨찾기 목록 로드 에러:", error);
       }
-    } catch (error) {
-      setError("아사나 데이터를 불러오는 중 오류가 발생했습니다.");
-      console.error("아사나 데이터 로드 예외:", error);
-    } finally {
-      setLoadingAsanas(false);
-      setLoadingMore(false);
     }
   };
 
-  const handleAsanaPress = (asana: Asana) => {
+  // 초기 데이터 로드
+  useEffect(() => {
+    if (isAuthenticated) {
+      const { asanas } = useAsanaStore.getState();
+
+      // 기존 데이터가 없으면 로드
+      if (asanas.length === 0) {
+        console.log(`아사나 탭: 초기 데이터 로드 시작`);
+        loadAsanas(true);
+      }
+
+      // 즐겨찾기 목록 로드
+      loadFavoriteAsanas();
+    }
+  }, [isAuthenticated, loadAsanas]);
+
+  const handleAsanaPress = (asana: any) => {
     // React Navigation을 사용하여 상세 화면으로 이동
     navigation.navigate("AsanaDetail", { id: asana.id });
   };
 
-  const toggleCategory = (category: AsanaCategory) => {
-    setSelectedCategories((prev) => {
-      const isSelected = prev.includes(category);
-      let newCategories: AsanaCategory[];
-
-      if (isSelected) {
-        // 선택 해제
-        newCategories = prev.filter((c) => c !== category);
+  const handleFavoriteToggle = (asanaId: string, isFavorite: boolean) => {
+    setFavoriteAsanas((prev) => {
+      if (isFavorite) {
+        return [...prev, asanaId];
       } else {
-        // 선택 추가
-        newCategories = [...prev, category];
+        return prev.filter((id) => id !== asanaId);
       }
-
-      return newCategories;
     });
   };
 
+  const toggleCategory = (category: AsanaCategory) => {
+    const currentCategories = selectedCategories;
+    const isSelected = currentCategories.includes(category);
+    if (isSelected) {
+      setSelectedCategories(currentCategories.filter((c) => c !== category));
+    } else {
+      setSelectedCategories([...currentCategories, category]);
+    }
+  };
+
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
-      loadAsanas(false); // 추가 로드
+    if (!isLoadingMore && hasMore) {
+      loadMoreAsanas(); // 추가 로드
     }
   };
 
@@ -146,7 +132,8 @@ export default function AsanasScreen() {
           },
         ]}
         onPress={() => toggleCategory(category)}
-        activeOpacity={0.7} // 터치 시 투명도 효과로 깜빡임 감소
+        activeOpacity={0.8} // 터치 시 투명도 효과로 깜빡임 감소
+        delayPressIn={0} // 즉시 반응
       >
         <Text
           style={[
@@ -160,14 +147,19 @@ export default function AsanasScreen() {
     );
   };
 
-  const renderAsanaCard = ({ item }: { item: Asana }) => (
+  const renderAsanaCard = ({ item }: { item: any }) => (
     <View style={styles.cardContainer}>
-      <AsanaCard asana={item} onPress={handleAsanaPress} />
+      <AsanaCard
+        asana={item}
+        onPress={handleAsanaPress}
+        isFavorite={favoriteAsanas.includes(item.id)}
+        onFavoriteToggle={handleFavoriteToggle}
+      />
     </View>
   );
 
   const renderFooter = () => {
-    if (!loadingMore) return null;
+    if (!isLoadingMore) return null;
 
     return (
       <View style={styles.loadingMoreContainer}>
@@ -190,10 +182,9 @@ export default function AsanasScreen() {
         <Text style={styles.title}>아사나</Text>
       </View>
 
-      {loadingAsanas ? (
+      {isLoading && filteredAsanas.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>아사나 데이터를 불러오는 중...</Text>
+          <AsanaSkeleton count={8} />
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
@@ -236,9 +227,9 @@ export default function AsanasScreen() {
 
           {/* 아사나 카드 리스트 */}
           <FlatList
-            data={asanas}
+            data={filteredAsanas}
             renderItem={renderAsanaCard}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
             numColumns={2}
             columnWrapperStyle={styles.row}
             contentContainerStyle={styles.listContainer}
@@ -248,6 +239,15 @@ export default function AsanasScreen() {
             onEndReachedThreshold={0.1}
             ListFooterComponent={renderFooter}
             ListFooterComponentStyle={styles.footer}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            initialNumToRender={8}
+            getItemLayout={(data, index) => ({
+              length: 200, // 카드 높이 + 마진
+              offset: 200 * Math.floor(index / 2),
+              index,
+            })}
           />
         </>
       )}

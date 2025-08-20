@@ -1,39 +1,36 @@
 import { EnergyLevel } from "../types/record";
 
 export const ENERGY_LEVELS: Record<
-  EnergyLevel,
+  string,
   { label: string; emoji: string; color: string }
 > = {
-  very_low: {
-    label: "매우 낮음",
-    emoji: "🔋",
-    color: "#EF4444",
+  calm: {
+    label: "차분",
+    emoji: "😌",
+    color: "#3B82F6",
   },
-  low: {
-    label: "낮음",
-    emoji: "🔋",
-    color: "#F97316",
-  },
-  medium: {
-    label: "보통",
-    emoji: "🔋",
-    color: "#EAB308",
-  },
-  high: {
-    label: "높음",
-    emoji: "🔋",
-    color: "#22C55E",
-  },
-  very_high: {
-    label: "매우 높음",
-    emoji: "🔋",
+  balanced: {
+    label: "균형",
+    emoji: "⚖️",
     color: "#10B981",
+  },
+  light: {
+    label: "가벼움",
+    emoji: "🪶",
+    color: "#F59E0B",
+  },
+  full: {
+    label: "충만",
+    emoji: "✨",
+    color: "#EF4444",
   },
 };
 
 export const ENERGY_LEVEL_OPTIONS = Object.entries(ENERGY_LEVELS).map(
   ([key, value]) => ({
-    value: key as EnergyLevel,
-    ...value,
+    value: key as unknown as EnergyLevel,
+    label: value.label,
+    emoji: value.emoji,
+    color: value.color,
   })
 );

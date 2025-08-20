@@ -1,17 +1,54 @@
 import { Image } from "expo-image";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { TouchableOpacity } from "react-native";
 import { Button, Card, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../constants/Colors";
 import { CATEGORIES } from "../constants/categories";
-import { Asana } from "../lib/api/asanas";
+import { Asana, asanasAPI } from "../lib/api/asanas";
 import { AsanaCategory } from "../types/asana";
 
 interface AsanaCardProps {
   asana: Asana;
   onPress: (asana: Asana) => void;
+  isFavorite?: boolean;
+  onFavoriteToggle?: (asanaId: string, isFavorite: boolean) => void;
 }
 
-export function AsanaCard({ asana, onPress }: AsanaCardProps) {
+export function AsanaCard({
+  asana,
+  onPress,
+  isFavorite = false,
+  onFavoriteToggle,
+}: AsanaCardProps) {
+  const [favorite, setFavorite] = useState(isFavorite);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 즐겨찾기 상태가 변경될 때 업데이트
+  useEffect(() => {
+    setFavorite(isFavorite);
+  }, [isFavorite]);
+
+  const handleFavoriteToggle = async (e: any) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      const result = await asanasAPI.toggleFavorite(asana.id);
+
+      if (result.success) {
+        const newFavoriteState = !favorite;
+        setFavorite(newFavoriteState);
+        onFavoriteToggle?.(asana.id, newFavoriteState);
+      }
+    } catch (error) {
+      console.error("즐겨찾기 토글 에러:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const getCategoryInfo = (categoryName: string) => {
     const category = CATEGORIES[categoryName as AsanaCategory];
     if (category) {
@@ -49,7 +86,7 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
       onPress={() => onPress(asana)}
     >
       {/* 이미지 영역 */}
-      <YStack height={160} backgroundColor="#9A9A9A">
+      <YStack height={160} backgroundColor="#9A9A9A" position="relative">
         {asana.image_number ? (
           <YStack
             flex={1}
@@ -85,6 +122,40 @@ export function AsanaCard({ asana, onPress }: AsanaCardProps) {
             </Text>
           </YStack>
         )}
+
+        {/* 즐겨찾기 버튼 */}
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: "transparent",
+            justifyContent: "center",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 5,
+          }}
+          onPress={handleFavoriteToggle}
+          disabled={isLoading}
+        >
+          <Text
+            style={{
+              fontSize: 16,
+              color: favorite ? "#FF6B6B" : "#FFFFFF",
+              textShadowColor: "rgba(0, 0, 0, 0.8)",
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+            }}
+          >
+            {favorite ? "♥" : "♡"}
+          </Text>
+        </TouchableOpacity>
       </YStack>
 
       {/* 내용 영역 */}

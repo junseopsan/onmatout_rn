@@ -1,16 +1,14 @@
 export interface Asana {
   id: string;
-  name_kr: string;
-  name_sanskrit: string;
-  name_en: string;
-  description: string;
-  benefits: string[];
-  category: AsanaCategory;
-  difficulty: AsanaDifficulty;
-  meaning: string;
-  image_url: string;
+  sanskrit_name_kr: string;
+  sanskrit_name_en: string;
+  level: string;
+  effect: string;
   created_at: string;
   updated_at: string;
+  category_name_en: string;
+  image_number: string;
+  asana_meaning: string;
 }
 
 export type AsanaCategory =

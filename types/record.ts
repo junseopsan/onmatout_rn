@@ -1,34 +1,26 @@
-import { Asana } from "./asana";
-
 export interface Record {
   id: string;
   user_id: string;
   date: string; // YYYY-MM-DD 형식
+  title: string; // 기록 제목
   asanas: string[]; // 선택된 아사나 ID 배열
   memo: string; // 경험 메모 (최대 500자)
-  emotions: string[]; // 선택된 감정 배열
-  energy_level: string; // 에너지 레벨
+  states: string[]; // 선택된 상태 배열
   photos: string[]; // 사진 URL 배열 (최대 3장)
   created_at: string;
   updated_at: string;
 }
 
 export interface RecordFormData {
+  title: string; // 기록 제목
   asanas: string[];
   memo: string;
-  emotions: string[];
-  energy_level: string;
+  states: string[];
   photos: string[];
+  date?: string; // 선택적 날짜 필드 (기본값: 오늘)
 }
 
-export interface Emotion {
-  id: string;
-  label: string;
-  emoji: string;
-  color: string;
-}
-
-export interface EnergyLevel {
+export interface State {
   id: string;
   label: string;
   emoji: string;
@@ -39,7 +31,7 @@ export interface RecordFilter {
   start_date?: string;
   end_date?: string;
   asana_id?: string;
-  emotion?: EmotionType;
+  states?: string[];
 }
 
 export interface RecordState {

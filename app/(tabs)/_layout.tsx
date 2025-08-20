@@ -71,7 +71,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="record"
         options={{
-          title: "기록",
+          title: "수련",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="plus.circle.fill" color={color} />
           ),

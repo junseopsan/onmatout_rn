@@ -1,124 +1,111 @@
-import React, { useState, useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { Image } from "expo-image";
+import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
   TextInput,
-  Alert,
-  ActivityIndicator,
-  FlatList,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Image } from "expo-image";
+import AsanaSearchModal from "../../components/AsanaSearchModal";
 import { COLORS } from "../../constants/Colors";
-import { EMOTIONS, ENERGY_LEVELS } from "../../constants/emotions";
-import { Asana, asanasAPI } from "../../lib/api/asanas";
+import { STATES } from "../../constants/states";
+import { Asana } from "../../lib/api/asanas";
 import { recordsAPI } from "../../lib/api/records";
 import { RecordFormData } from "../../types/record";
-import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
-import { TamaguiInputComponent } from "../../components/ui/TamaguiInput";
 
 export default function NewRecordScreen() {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Asana[]>([]);
+  const [title, setTitle] = useState("");
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
-  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
-  const [selectedEnergyLevel, setSelectedEnergyLevel] = useState<string>("");
-  const [searching, setSearching] = useState(false);
-
-  // 아사나 검색
-  const searchAsanas = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    try {
-      setSearching(true);
-      const result = await asanasAPI.searchAsanas(query);
-      
-      if (result.success && result.data) {
-        // 이미 선택된 아사나는 제외
-        const filteredResults = result.data.filter(
-          asana => !selectedAsanas.find(selected => selected.id === asana.id)
-        );
-        setSearchResults(filteredResults);
-      } else {
-        setSearchResults([]);
-      }
-    } catch (error) {
-      console.error("아사나 검색 에러:", error);
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // 검색어 변경 시 검색 실행
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchAsanas(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-
-  // 아사나 선택 (바로 수련한 아사나에 추가)
-  const handleAsanaSelect = (asana: Asana) => {
-    if (selectedAsanas.length >= 10) {
-      Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
-      return;
-    }
-    
-    setSelectedAsanas(prev => [...prev, asana]);
-    setSearchQuery("");
-    setSearchResults([]);
-  };
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // 아사나 선택 해제
   const handleAsanaRemove = (asanaId: string) => {
-    setSelectedAsanas(prev => prev.filter(asana => asana.id !== asanaId));
+    setSelectedAsanas((prev) => prev.filter((asana) => asana.id !== asanaId));
   };
 
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
+  // 모달에서 선택된 아사나 처리
+  const handleAsanaSelect = (newAsanas: Asana[]) => {
+    const totalCount = selectedAsanas.length + newAsanas.length;
+    if (totalCount > 10) {
+      Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+      return;
+    }
+    setSelectedAsanas((prev) => [...prev, ...newAsanas]);
   };
 
-  // 감정 선택/해제
-  const toggleEmotion = (emotionId: string) => {
-    setSelectedEmotions(prev => {
-      if (prev.includes(emotionId)) {
-        return prev.filter(id => id !== emotionId);
+  // 상태 선택/해제
+  const toggleState = (stateId: string) => {
+    setSelectedStates((prev) => {
+      if (prev.includes(stateId)) {
+        return prev.filter((id) => id !== stateId);
       } else {
-        return [...prev, emotionId];
+        return [...prev, stateId];
       }
     });
   };
 
-  // 에너지 레벨 선택
-  const selectEnergyLevel = (energyLevelId: string) => {
-    setSelectedEnergyLevel(energyLevelId);
+  // 날짜 포맷팅
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekday = weekdays[date.getDay()];
+    return `${year}년 ${month}월 ${day}일 (${weekday})`;
+  };
+
+  // 날짜 선택 핸들러
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setShowDatePicker(false);
+  };
+
+  // 모달이 열릴 때 스크롤 위치 계산
+  const getInitialScrollIndex = () => {
+    const today = new Date().toISOString().split("T")[0];
+    const targetDate = selectedDate || today;
+
+    // 오늘 기준으로 몇 번째 인덱스인지 계산
+    const todayDate = new Date();
+    const targetDateObj = new Date(targetDate);
+    const diffDays = Math.floor(
+      (targetDateObj.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // 오늘이 7번째 인덱스이므로, 차이를 더해서 계산
+    return Math.max(0, Math.min(16, 7 + diffDays));
   };
 
   // 기록 저장
   const handleSave = async () => {
+    if (!title.trim()) {
+      Alert.alert("알림", "제목을 입력해주세요.");
+      return;
+    }
+
     if (selectedAsanas.length === 0) {
       Alert.alert("알림", "최소 1개의 아사나를 선택해주세요.");
       return;
     }
 
-    if (selectedEmotions.length === 0) {
-      Alert.alert("알림", "감정 상태를 선택해주세요.");
-      return;
-    }
-
-    if (!selectedEnergyLevel) {
-      Alert.alert("알림", "에너지 레벨을 선택해주세요.");
+    if (selectedStates.length === 0) {
+      Alert.alert("알림", "상태를 선택해주세요.");
       return;
     }
 
@@ -126,29 +113,19 @@ export default function NewRecordScreen() {
       setLoading(true);
 
       const recordData: RecordFormData = {
-        asanas: selectedAsanas.map(asana => asana.id),
+        title: title.trim(),
+        asanas: selectedAsanas.map((asana) => asana.id),
         memo: memo.trim(),
-        emotions: selectedEmotions,
-        energy_level: selectedEnergyLevel,
+        states: selectedStates,
         photos: [], // TODO: 사진 첨부 기능 추가
+        date: selectedDate, // 선택된 날짜 추가
       };
 
-      const result = await recordsAPI.upsertRecord(recordData);
+      const result = await recordsAPI.createRecord(recordData);
 
       if (result.success) {
-        Alert.alert(
-          "성공",
-          "오늘의 수련 기록이 저장되었습니다!",
-          [
-            {
-              text: "확인",
-              onPress: () => {
-                // TODO: 기록 탭으로 돌아가기
-                console.log("기록 저장 완료");
-              },
-            },
-          ]
-        );
+        // 성공 시 바로 모달 닫기
+        navigation.goBack();
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
@@ -160,40 +137,20 @@ export default function NewRecordScreen() {
     }
   };
 
-  // 작은 아사나 카드 렌더링
-  const renderSmallAsanaCard = ({ item }: { item: Asana }) => {
-    return (
-      <TouchableOpacity
-        style={styles.smallAsanaCard}
-        onPress={() => handleAsanaSelect(item)}
-      >
-        <View style={styles.smallAsanaImageContainer}>
-          {item.image_number ? (
-            <Image
-              source={{ uri: getImageUrl(item.image_number) }}
-              style={styles.smallAsanaImage}
-              contentFit="contain"
-              placeholder="🖼️"
-              placeholderContentFit="contain"
-            />
-          ) : (
-            <Text style={styles.smallAsanaImagePlaceholder}>📝</Text>
-          )}
-        </View>
-        <View style={styles.smallAsanaInfo}>
-          <Text style={styles.smallAsanaName} numberOfLines={1}>
-            {item.sanskrit_name_kr}
-          </Text>
-          <Text style={styles.smallAsanaNameEn} numberOfLines={1}>
-            {item.sanskrit_name_en}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
+  // 이미지 URL 생성
+  const getImageUrl = (imageNumber: string) => {
+    const formattedNumber = imageNumber.padStart(3, "0");
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
   };
 
   // 선택된 아사나 카드 렌더링
-  const renderSelectedAsanaCard = ({ item, index }: { item: Asana; index: number }) => {
+  const renderSelectedAsanaCard = ({
+    item,
+    index,
+  }: {
+    item: Asana;
+    index: number;
+  }) => {
     return (
       <View style={styles.selectedAsanaCard}>
         <View style={styles.selectedAsanaImageContainer}>
@@ -206,7 +163,9 @@ export default function NewRecordScreen() {
               placeholderContentFit="contain"
             />
           ) : (
-            <Text style={styles.selectedAsanaImagePlaceholder}>📝</Text>
+            <View style={styles.selectedAsanaImagePlaceholder}>
+              <Text style={styles.selectedAsanaImagePlaceholderText}>📝</Text>
+            </View>
           )}
         </View>
         <View style={styles.selectedAsanaInfo}>
@@ -230,13 +189,32 @@ export default function NewRecordScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>새 기록 작성</Text>
-        <Text style={styles.subtitle}>오늘의 수련을 기록해보세요</Text>
-      </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* 날짜 선택 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>수련 날짜</Text>
+          <TouchableOpacity
+            style={styles.dateSelector}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
+            <Text style={styles.dateChangeText}>변경</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 제목 입력 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>기록 제목</Text>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="수련 기록의 제목을 입력해주세요..."
+            value={title}
+            onChangeText={setTitle}
+            maxLength={50}
+          />
+          <Text style={styles.characterCount}>{title.length}/50</Text>
+        </View>
+
         {/* 아사나 선택 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>수련한 아사나</Text>
@@ -244,37 +222,13 @@ export default function NewRecordScreen() {
             최대 10개까지 선택 가능 ({selectedAsanas.length}/10)
           </Text>
 
-          {/* 아사나 검색 */}
-          <TamaguiInputComponent
-            label="아사나 검색"
-            placeholder="아사나 이름을 검색하세요"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={{ marginBottom: 16 }}
-          />
-
-          {/* 검색 결과 */}
-          {searching && (
-            <View style={styles.searchingContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.searchingText}>검색 중...</Text>
-            </View>
-          )}
-
-          {searchResults.length > 0 && (
-            <View style={styles.searchResults}>
-              <Text style={styles.searchResultsTitle}>검색 결과</Text>
-              <FlatList
-                data={searchResults}
-                renderItem={renderSmallAsanaCard}
-                keyExtractor={(item) => item.id}
-                numColumns={2}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.smallAsanaRow}
-                contentContainerStyle={styles.smallAsanaList}
-              />
-            </View>
-          )}
+          {/* 아사나 추가 버튼 */}
+          <TouchableOpacity
+            style={styles.addAsanaButton}
+            onPress={() => setSearchModalVisible(true)}
+          >
+            <Text style={styles.addAsanaButtonText}>+ 아사나 추가</Text>
+          </TouchableOpacity>
 
           {/* 선택된 아사나 */}
           {selectedAsanas.length > 0 && (
@@ -293,12 +247,48 @@ export default function NewRecordScreen() {
           )}
         </View>
 
+        {/* 상태 선택 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>수련 후 상태</Text>
+          <Text style={styles.sectionSubtitle}>
+            수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
+          </Text>
+          <View style={styles.statesContainer}>
+            {STATES.map((state) => (
+              <TouchableOpacity
+                key={state.id}
+                style={[
+                  styles.stateChip,
+                  {
+                    backgroundColor: COLORS.surface,
+                    borderColor: selectedStates.includes(state.id)
+                      ? state.color
+                      : "#666666",
+                    borderWidth: selectedStates.includes(state.id) ? 2 : 1,
+                  },
+                ]}
+                onPress={() => toggleState(state.id)}
+              >
+                <Text
+                  style={[
+                    styles.stateLabel,
+                    {
+                      color: selectedStates.includes(state.id)
+                        ? state.color
+                        : COLORS.text,
+                    },
+                  ]}
+                >
+                  {state.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* 메모 작성 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>수련 메모</Text>
-          <Text style={styles.sectionSubtitle}>
-            느낀 점이나 신체 변화를 기록해보세요 (최대 500자)
-          </Text>
           <TextInput
             style={styles.memoInput}
             placeholder="오늘 수련에서 느낀 점을 자유롭게 기록해보세요..."
@@ -311,100 +301,132 @@ export default function NewRecordScreen() {
           <Text style={styles.characterCount}>{memo.length}/500</Text>
         </View>
 
-        {/* 감정 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>감정 상태</Text>
-          <Text style={styles.sectionSubtitle}>
-            수련 후 느낀 감정을 선택해주세요 (다중 선택 가능)
-          </Text>
-          <View style={styles.emotionsContainer}>
-            {EMOTIONS.map(emotion => (
-              <TouchableOpacity
-                key={emotion.id}
-                style={[
-                  styles.emotionChip,
-                  {
-                    backgroundColor: selectedEmotions.includes(emotion.id)
-                      ? emotion.color
-                      : COLORS.surface,
-                    borderColor: emotion.color,
-                  },
-                ]}
-                onPress={() => toggleEmotion(emotion.id)}
-              >
-                <Text style={styles.emotionEmoji}>{emotion.emoji}</Text>
-                <Text
-                  style={[
-                    styles.emotionLabel,
-                    {
-                      color: selectedEmotions.includes(emotion.id)
-                        ? "white"
-                        : COLORS.text,
-                    },
-                  ]}
-                >
-                  {emotion.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* 에너지 레벨 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>에너지 레벨</Text>
-          <Text style={styles.sectionSubtitle}>
-            수련 후 에너지 상태를 선택해주세요
-          </Text>
-          <View style={styles.energyLevelsContainer}>
-            {ENERGY_LEVELS.map(energyLevel => (
-              <TouchableOpacity
-                key={energyLevel.id}
-                style={[
-                  styles.energyLevelChip,
-                  {
-                    backgroundColor:
-                      selectedEnergyLevel === energyLevel.id
-                        ? energyLevel.color
-                        : COLORS.surface,
-                    borderColor: energyLevel.color,
-                  },
-                ]}
-                onPress={() => selectEnergyLevel(energyLevel.id)}
-              >
-                <Text style={styles.energyLevelEmoji}>{energyLevel.emoji}</Text>
-                <Text
-                  style={[
-                    styles.energyLevelLabel,
-                    {
-                      color:
-                        selectedEnergyLevel === energyLevel.id
-                          ? "white"
-                          : COLORS.text,
-                    },
-                  ]}
-                >
-                  {energyLevel.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* 저장 버튼 */}
-        <View style={styles.saveButtonContainer}>
-          <TamaguiButtonComponent
-            title={loading ? "저장 중..." : "기록 저장"}
-            onPress={handleSave}
-            loading={loading}
-            disabled={loading}
-            size="large"
-          />
-        </View>
-
         {/* 하단 여백 */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* 저장 버튼 */}
+      <View style={styles.bottomActions}>
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            (loading ||
+              !title.trim() ||
+              selectedAsanas.length === 0 ||
+              selectedStates.length === 0 ||
+              memo.trim().length === 0) &&
+              styles.saveButtonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={
+            loading ||
+            !title.trim() ||
+            selectedAsanas.length === 0 ||
+            selectedStates.length === 0 ||
+            memo.trim().length === 0
+          }
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text
+              style={[
+                styles.saveButtonText,
+                (!title.trim() ||
+                  !selectedAsanas.length ||
+                  !selectedStates.length ||
+                  !memo.trim()) &&
+                  styles.saveButtonTextDisabled,
+              ]}
+            >
+              기록 저장
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* 날짜 선택 모달 */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.datePickerModal}>
+            <View style={styles.datePickerHeader}>
+              <Text style={styles.datePickerTitle}>날짜 선택</Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(false)}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>닫기</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              style={styles.datePickerContent}
+              showsVerticalScrollIndicator={true}
+              data={Array.from({ length: 17 }, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - 7 + i);
+                return {
+                  id: i,
+                  dateString: date.toISOString().split("T")[0],
+                  isToday: i === 7,
+                  isFuture: i > 7,
+                };
+              })}
+              keyExtractor={(item) => item.id.toString()}
+              initialScrollIndex={getInitialScrollIndex()}
+              getItemLayout={(data, index) => ({
+                length: 56, // dateOption 높이 (48 + 8)
+                offset: 56 * index,
+                index,
+              })}
+              renderItem={({ item }) => {
+                const isSelected = item.dateString === selectedDate;
+
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.dateOption,
+                      isSelected && styles.dateOptionSelected,
+                      item.isToday && !isSelected && styles.dateOptionToday,
+                      item.isFuture && styles.dateOptionDisabled,
+                    ]}
+                    onPress={() =>
+                      !item.isFuture && handleDateSelect(item.dateString)
+                    }
+                    disabled={item.isFuture}
+                  >
+                    <Text
+                      style={[
+                        styles.dateOptionText,
+                        isSelected && styles.dateOptionTextSelected,
+                        item.isToday &&
+                          !isSelected &&
+                          styles.dateOptionTextToday,
+                        item.isFuture && styles.dateOptionTextDisabled,
+                      ]}
+                    >
+                      {formatDate(item.dateString)}
+                      {item.isFuture && " (선택 불가)"}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* 아사나 검색 모달 */}
+      <AsanaSearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSelect={handleAsanaSelect}
+        selectedAsanas={selectedAsanas}
+      />
     </View>
   );
 }
@@ -434,7 +456,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 10,
+    marginTop: 10,
   },
   sectionTitle: {
     fontSize: 20,
@@ -447,75 +470,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 16,
   },
-  searchingContainer: {
-    flexDirection: "row",
+  addAsanaButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 20,
-  },
-  searchingText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginLeft: 8,
-  },
-  searchResults: {
     marginBottom: 16,
   },
-  searchResultsTitle: {
+  addAsanaButtonText: {
+    color: "white",
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  smallAsanaList: {
-    paddingBottom: 8,
-  },
-  smallAsanaRow: {
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  smallAsanaCard: {
-    width: "48%",
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: COLORS.surfaceDark,
-    alignItems: "center",
-  },
-  smallAsanaImageContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.surfaceDark,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  smallAsanaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  smallAsanaImagePlaceholder: {
-    fontSize: 20,
-  },
-  smallAsanaInfo: {
-    alignItems: "center",
-    flex: 1,
-  },
-  smallAsanaName: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 2,
-  },
-  smallAsanaNameEn: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    fontStyle: "italic",
   },
   selectedAsanas: {
     marginTop: 16,
@@ -542,12 +508,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     alignItems: "center",
     position: "relative",
+    overflow: "hidden",
   },
   selectedAsanaImageContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.surfaceDark,
+    width: "100%",
+    height: 60,
+    borderRadius: 6,
+    backgroundColor: "#8A8A8A",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
@@ -558,11 +525,19 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   selectedAsanaImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 6,
+    backgroundColor: "#8A8A8A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectedAsanaImagePlaceholderText: {
     fontSize: 20,
   },
   selectedAsanaInfo: {
     alignItems: "center",
-    flex: 1,
+    width: "100%",
   },
   selectedAsanaNumber: {
     fontSize: 10,
@@ -614,13 +589,12 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 8,
   },
-  emotionsContainer: {
+  statesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
-  emotionChip: {
-    flexDirection: "row",
+  stateChip: {
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -628,35 +602,37 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     minWidth: 80,
   },
-  emotionEmoji: {
-    fontSize: 16,
-    marginRight: 4,
-  },
-  emotionLabel: {
+  stateLabel: {
     fontSize: 14,
     fontWeight: "600",
   },
-  energyLevelsContainer: {
+  bottomActions: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.surfaceDark,
   },
-  energyLevelChip: {
-    flexDirection: "row",
+  saveButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-    minWidth: 80,
   },
-  energyLevelEmoji: {
+  saveButtonText: {
     fontSize: 16,
-    marginRight: 4,
-  },
-  energyLevelLabel: {
-    fontSize: 14,
     fontWeight: "600",
+    color: "white",
+  },
+  saveButtonDisabled: {
+    backgroundColor: COLORS.surfaceDark,
+    opacity: 0.5,
+  },
+  saveButtonTextDisabled: {
+    color: COLORS.textSecondary,
   },
   saveButtonContainer: {
     marginTop: 24,
@@ -664,5 +640,119 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
+  },
+  titleInput: {
+    backgroundColor: COLORS.surface,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    fontSize: 16,
+    color: COLORS.text,
+    minHeight: 56,
+  },
+  dateSelector: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  dateText: {
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: "500",
+  },
+  dateChangeText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  datePickerModal: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 20,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.text,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  datePickerContent: {
+    maxHeight: 300,
+    paddingVertical: 8,
+  },
+  dateOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  dateOptionSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  dateOptionToday: {
+    borderColor: COLORS.primary,
+    borderWidth: 2,
+  },
+  dateOptionText: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  dateOptionTextSelected: {
+    color: "white",
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  dateOptionTextToday: {
+    color: COLORS.primary,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  dateOptionDisabled: {
+    backgroundColor: COLORS.border,
+    opacity: 0.5,
+  },
+  dateOptionTextDisabled: {
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
