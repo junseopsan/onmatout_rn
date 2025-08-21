@@ -56,8 +56,9 @@ export const useAsanaStore = create<AsanaState>((set, get) => ({
 
     // 기존 데이터에서 즉시 필터링 (깜빡거림 방지)
     if (categories.length === 0) {
-      // 모든 필터 취소 시 전체 조회
-      set({ filteredAsanas: asanas });
+      // 모든 필터 취소 시 전체 조회 (랜덤 셔플)
+      const shuffledAsanas = get().shuffleArray(asanas);
+      set({ filteredAsanas: shuffledAsanas });
 
       // 전체 데이터가 부족하면 추가 로드
       if (asanas.length < 50) {
@@ -77,10 +78,11 @@ export const useAsanaStore = create<AsanaState>((set, get) => ({
         );
       });
 
-      // 중복 제거 후 필터링
+      // 중복 제거 후 필터링 및 랜덤 셔플
       const uniqueFiltered = get().removeDuplicates(filtered);
-      console.log("필터링 결과:", uniqueFiltered.length, "개");
-      set({ filteredAsanas: uniqueFiltered });
+      const shuffledFiltered = get().shuffleArray(uniqueFiltered);
+      console.log("필터링 결과:", shuffledFiltered.length, "개");
+      set({ filteredAsanas: shuffledFiltered });
 
       // 선택된 카테고리의 데이터가 부족하면 추가 데이터 로드
       if (uniqueFiltered.length < 10 && asanas.length > 0) {
@@ -100,6 +102,16 @@ export const useAsanaStore = create<AsanaState>((set, get) => ({
       seen.add(asana.id);
       return !duplicate;
     });
+  },
+
+  // 배열 셔플 헬퍼 함수
+  shuffleArray: (array: any[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   },
 
   // 아사나 로드
@@ -136,10 +148,11 @@ export const useAsanaStore = create<AsanaState>((set, get) => ({
         const uniqueData = get().removeDuplicates(result.data);
 
         if (reset) {
-          // 초기 로드: 데이터 교체
+          // 초기 로드: 데이터 교체 및 랜덤 셔플
+          const shuffledData = get().shuffleArray(uniqueData);
           set({
-            asanas: uniqueData,
-            filteredAsanas: uniqueData, // API에서 이미 필터링된 데이터
+            asanas: shuffledData,
+            filteredAsanas: shuffledData, // API에서 이미 필터링된 데이터
             currentPage: page,
             hasMore: result.hasMore || false,
             isLoading: false,

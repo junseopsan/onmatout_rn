@@ -62,10 +62,10 @@ export default function RecordCard({
   return (
     <TouchableOpacity style={styles.container} onPress={() => onPress(record)}>
       {/* 제목 섹션 */}
-      <View style={styles.titleSection}>
+      <View style={styles.memoSection}>
+        <Text style={styles.sectionTitle}>제목</Text>
         <Text style={styles.recordTitle}>{record.title}</Text>
       </View>
-
       {/* 아사나 썸네일 - 맨 위로 이동 */}
       {record.asanas.length > 0 && (
         <View style={styles.asanasSection}>

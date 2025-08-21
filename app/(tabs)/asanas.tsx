@@ -1,12 +1,13 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -29,6 +30,8 @@ export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const [favoriteAsanas, setFavoriteAsanas] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   // 스토어에서 상태 가져오기
   const {
@@ -82,6 +85,22 @@ export default function AsanasScreen() {
     }
   }, [isAuthenticated, loadAsanas]);
 
+  // 화면이 포커스될 때마다 랜덤 셔플 적용
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        const { asanas, selectedCategories } = useAsanaStore.getState();
+
+        if (asanas.length > 0) {
+          console.log(`아사나 탭: 화면 포커스 시 랜덤 셔플 적용`);
+
+          // 현재 선택된 카테고리를 다시 설정하여 랜덤 셔플 트리거
+          setSelectedCategories(selectedCategories);
+        }
+      }
+    }, [isAuthenticated])
+  );
+
   const handleAsanaPress = (asana: any) => {
     // React Navigation을 사용하여 상세 화면으로 이동
     navigation.navigate("AsanaDetail", { id: asana.id });
@@ -95,6 +114,75 @@ export default function AsanasScreen() {
         return prev.filter((id) => id !== asanaId);
       }
     });
+  };
+
+  // 검색 함수
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+
+    if (query.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+
+    console.log("검색어:", query);
+    console.log("검색어 분리:", query.toLowerCase().trim().split(/\s+/));
+
+    // 검색할 때 전체 데이터를 다시 로드
+    try {
+      await loadAsanas(true);
+      const { asanas } = useAsanaStore.getState();
+      console.log("검색 후 전체 아사나 수:", asanas.length);
+
+      const filtered = asanas.filter((asana) => {
+        const searchTerms = query.toLowerCase().trim().split(/\s+/);
+        const krName = asana.sanskrit_name_kr.toLowerCase().trim();
+        const enName = asana.sanskrit_name_en.toLowerCase().trim();
+
+        // 모든 검색어가 한국어 이름 또는 영어 이름에 포함되어야 함
+        const krMatch = searchTerms.every((term) => {
+          const match = krName.includes(term);
+          if (asana.sanskrit_name_kr.includes("나타라자")) {
+            console.log(`나타라자 검색어 "${term}" 매칭:`, match);
+          }
+          return match;
+        });
+        const enMatch = searchTerms.every((term) => {
+          const match = enName.includes(term);
+          if (asana.sanskrit_name_kr.includes("나타라자")) {
+            console.log(`나타라자 영어 검색어 "${term}" 매칭:`, match);
+          }
+          return match;
+        });
+
+        // 디버깅: 나타라자 아사나 데이터 확인
+        if (asana.sanskrit_name_kr.includes("나타라자")) {
+          console.log("나타라자 아사나 데이터:", {
+            sanskrit_name_kr: asana.sanskrit_name_kr,
+            sanskrit_name_en: asana.sanskrit_name_en,
+            searchTerms,
+            krMatch,
+            enMatch,
+          });
+        }
+
+        return krMatch || enMatch;
+      });
+
+      console.log("검색 결과 수:", filtered.length);
+      setSearchResults(filtered);
+    } catch (error) {
+      console.error("검색 중 오류:", error);
+      setSearchResults([]);
+    }
+  };
+
+  // 검색 결과 또는 필터링된 결과 반환
+  const getDisplayAsanas = () => {
+    if (searchQuery.trim() !== "") {
+      return searchResults;
+    }
+    return filteredAsanas;
   };
 
   const toggleCategory = (category: AsanaCategory) => {
@@ -179,7 +267,20 @@ export default function AsanasScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>아사나</Text>
+        {/* <Text style={styles.title}>아사나</Text>
+        <Text style={styles.subtitle}>요가 자세를 탐색해보세요</Text> */}
+
+        {/* 검색창 */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="아사나 이름으로 검색..."
+            placeholderTextColor={COLORS.textSecondary}
+            value={searchQuery}
+            onChangeText={handleSearch}
+            clearButtonMode="while-editing"
+          />
+        </View>
       </View>
 
       {isLoading && filteredAsanas.length === 0 ? (
@@ -197,6 +298,13 @@ export default function AsanasScreen() {
               ? "선택한 카테고리의 아사나가 없습니다."
               : "아사나 데이터가 없습니다."}
           </Text>
+        </View>
+      ) : searchQuery.trim() !== "" && searchResults.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            &quot;{searchQuery}&quot;에 대한 검색 결과가 없습니다.
+          </Text>
+          <Text style={styles.emptySubText}>다른 검색어를 시도해보세요.</Text>
         </View>
       ) : (
         <>
@@ -227,7 +335,7 @@ export default function AsanasScreen() {
 
           {/* 아사나 카드 리스트 */}
           <FlatList
-            data={filteredAsanas}
+            data={getDisplayAsanas()}
             renderItem={renderAsanaCard}
             keyExtractor={(item, index) => `${item.id}-${index}`}
             numColumns={2}
@@ -333,6 +441,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
   },
+  emptySubText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+  },
   categoryContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -353,5 +467,19 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  searchContainer: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  searchInput: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.surfaceDark,
   },
 });
