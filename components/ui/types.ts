@@ -4,7 +4,7 @@ export interface ButtonProps {
   title: string;
   onPress: () => void;
   variant?: "primary" | "secondary" | "outline" | "default";
-  size?: "small" | "medium" | "large";
+  size?: "small" | "medium";
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;

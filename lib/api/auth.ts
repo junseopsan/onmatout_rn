@@ -14,6 +14,7 @@ export const authAPI = {
       console.log("Sending OTP to:", credentials.phone);
 
       console.log("OTP 요청 시작:", credentials.phone);
+      console.log("전화번호 형식:", credentials.phone);
 
       // 더 간단한 OTP 요청
       const { error } = await supabase.auth.signInWithOtp({
@@ -68,6 +69,7 @@ export const authAPI = {
     console.log("=== API verifyOTP 시작 ===");
     console.log("전화번호:", credentials.phone);
     console.log("인증 코드:", credentials.code);
+    console.log("인증 코드 길이:", credentials.code.length);
 
     try {
       console.log("Supabase verifyOtp 호출...");
@@ -77,12 +79,39 @@ export const authAPI = {
         type: "sms",
       });
 
-      console.log("Supabase 응답:", { data, error });
+      console.log("Supabase 응답 데이터:", data);
+      console.log("Supabase 응답 에러:", error);
 
       if (error) {
         console.error("Supabase 에러:", error);
         console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
         console.error("Full error object:", JSON.stringify(error, null, 2));
+
+        // 데이터베이스 에러가 아닌 실제 인증 실패인 경우
+        if (
+          error.code === "invalid_otp" ||
+          error.message?.includes("Invalid OTP")
+        ) {
+          console.error("잘못된 인증 코드");
+          return {
+            success: false,
+            message: "잘못된 인증 코드입니다. 다시 확인해주세요.",
+          };
+        }
+
+        // 만료된 인증 코드
+        if (
+          error.code === "expired_otp" ||
+          error.message?.includes("expired")
+        ) {
+          console.error("만료된 인증 코드");
+          return {
+            success: false,
+            message:
+              "인증 코드가 만료되었습니다. 새로운 인증 코드를 요청해주세요.",
+          };
+        }
 
         // 특정 에러에 대한 처리 - 임시로 성공 처리
         if (
@@ -104,7 +133,8 @@ export const authAPI = {
         };
       }
 
-      console.log("인증 성공!");
+      console.log("인증 성공! 세션 정보:", data.session);
+      console.log("인증 성공! 사용자 정보:", data.user);
       return {
         success: true,
         message: "인증이 완료되었습니다.",

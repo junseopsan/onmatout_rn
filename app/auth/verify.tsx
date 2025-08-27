@@ -50,6 +50,7 @@ export default function VerifyScreen() {
   const handleVerify = async () => {
     console.log("=== 인증 코드 확인 시작 ===");
     console.log("입력된 코드:", code);
+    console.log("코드 길이:", code.length);
     console.log("전화번호:", phoneNumber);
 
     if (!code.trim()) {
@@ -65,32 +66,18 @@ export default function VerifyScreen() {
     // 저장된 전화번호 사용
     const phone = phoneNumber || "+821012345678"; // 기본값으로 임시 전화번호
     console.log("사용할 전화번호:", phone);
+    console.log("전화번호 형식 확인:", phone);
 
     try {
+      console.log("verifyOTP 함수 호출 시작");
+      console.log("호출할 함수:", verifyOTP);
       const success = await verifyOTP({ phone, code });
       console.log("인증 결과:", success);
 
       if (success) {
-        console.log("인증 성공! 즉시 리다이렉트 처리");
-
-        // 사용자 정보 확인 후 적절한 화면으로 리다이렉트
-        const currentUser = useAuthStore.getState().user;
-        const hasNickname =
-          currentUser &&
-          currentUser.profile &&
-          currentUser.profile.name &&
-          currentUser.profile.name.trim() !== "" &&
-          currentUser.profile.name !== "null";
-
-        console.log("닉네임 존재 여부:", hasNickname);
-
-        if (hasNickname) {
-          console.log("닉네임 있음 - tabs로 리다이렉트");
-          router.replace("/(tabs)");
-        } else {
-          console.log("닉네임 없음 - 닉네임 설정 화면으로 리다이렉트");
-          router.replace("/auth/nickname");
-        }
+        console.log("인증 성공! AppContainer에서 자동 리다이렉트 처리됨");
+        // 인증 스토어에서 이미 사용자 정보와 프로필을 확인하고 있으므로
+        // AppContainer에서 자동으로 적절한 화면으로 리다이렉트됨
       } else {
         console.log("인증 실패");
         // OTP 만료 에러 처리

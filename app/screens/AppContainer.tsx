@@ -1,6 +1,5 @@
 import { Loading } from "@/components/ui/Loading";
 import { COLORS } from "@/constants/Colors";
-import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -12,10 +11,25 @@ import SplashScreen from "./SplashScreen";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AppContainer() {
+  console.log("=== AppContainer 렌더링 시작 ===");
+  console.log("AppContainer 컴포넌트가 실행됨");
+  console.log("AppContainer 함수가 호출됨");
+
   const [isLoading, setIsLoading] = useState(true);
-  const { loading: authLoading, isAuthenticated, user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuthStore();
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigation = useNavigation<NavigationProp>();
+
+  // 세션이 있으면 인증된 것으로 판단
+  const isAuthenticated = !!session;
+
+  console.log("AppContainer 상태:", {
+    isLoading,
+    authLoading,
+    isAuthenticated,
+    hasSession: !!session,
+    hasUser: !!user,
+  });
 
   useEffect(() => {
     // 3초 후 스플래시 종료
@@ -39,6 +53,13 @@ export default function AppContainer() {
 
   // 인증 상태에 따른 리다이렉트 (디바운싱 적용)
   useEffect(() => {
+    console.log("=== AppContainer useEffect 트리거 ===");
+    console.log("isLoading:", isLoading);
+    console.log("authLoading:", authLoading);
+    console.log("isAuthenticated:", isAuthenticated);
+    console.log("session:", session);
+    console.log("user:", user);
+
     if (!isLoading && !authLoading) {
       // 이전 타임아웃이 있다면 취소
       if (redirectTimeoutRef.current) {
@@ -93,7 +114,48 @@ export default function AppContainer() {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [isLoading, authLoading, isAuthenticated, navigation]); // 의존성 배열 수정
+  }, [isLoading, authLoading, isAuthenticated, session, user, navigation]); // 의존성 배열에 session, user 추가
+
+  // 강제로 상태 변화 감지 (1초마다 체크)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentState = useAuthStore.getState();
+      console.log("=== 강제 상태 체크 ===");
+      console.log("현재 세션:", !!currentState.session);
+      console.log("현재 사용자:", !!currentState.user);
+      console.log("로딩 상태:", currentState.loading);
+
+      if (
+        currentState.session &&
+        currentState.user &&
+        !currentState.loading &&
+        !isLoading
+      ) {
+        console.log("강제 리다이렉트 실행");
+        const hasNickname =
+          currentState.user.profile &&
+          currentState.user.profile.name &&
+          currentState.user.profile.name.trim() !== "" &&
+          currentState.user.profile.name !== "null";
+
+        if (hasNickname) {
+          console.log("강제 Dashboard 리다이렉트");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Dashboard" }],
+          });
+        } else {
+          console.log("강제 Nickname 리다이렉트");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Nickname" }],
+          });
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isLoading, navigation]);
 
   // 스플래시 화면 표시 중
   if (isLoading) {
@@ -111,6 +173,17 @@ export default function AppContainer() {
     );
   }
 
-  console.log("리다이렉트 중 - null 반환");
-  return null; // 리다이렉트 중
+  console.log("리다이렉트 중 - 로딩 화면 표시");
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: COLORS.background,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Loading text="화면 전환 중..." color={COLORS.primary} />
+    </View>
+  );
 }

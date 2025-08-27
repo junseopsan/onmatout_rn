@@ -250,8 +250,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   verifyOTP: async (credentials) => {
-    console.log("=== verifyOTP 시작 ===");
+    console.log("=== authStore verifyOTP 시작 ===");
     console.log("인증 정보:", credentials);
+    console.log("전화번호:", credentials.phone);
+    console.log("인증 코드:", credentials.code);
 
     try {
       set({ loading: true, error: null });
@@ -261,14 +263,32 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       console.log("API 응답:", response);
 
       if (response.success) {
-        console.log("API 성공, 사용자 정보 가져오기 시작...");
-        try {
-          // Update user and session
-          const session = await getCurrentSession();
-          console.log("세션 정보:", session);
+        console.log("=== API 성공, 사용자 정보 가져오기 시작 ===");
+        console.log("API 응답 데이터:", response.data);
 
-          const user = await getCurrentUser();
-          console.log("사용자 정보:", user);
+        // API 응답에서 직접 세션과 사용자 정보 가져오기
+        const apiSession = response.data?.session;
+        const apiUser = response.data?.user;
+
+        console.log("API 응답 세션:", apiSession);
+        console.log("API 응답 사용자:", apiUser);
+
+        try {
+          // API 응답에 세션이 있으면 사용, 없으면 getCurrentSession 시도
+          let session = apiSession;
+          let user = apiUser;
+
+          if (!session) {
+            console.log("API 응답에 세션 없음, getCurrentSession 시도");
+            session = await getCurrentSession();
+            console.log("getCurrentSession 결과:", session);
+          }
+
+          if (!user && session) {
+            console.log("API 응답에 사용자 없음, getCurrentUser 시도");
+            user = await getCurrentUser();
+            console.log("getCurrentUser 결과:", user);
+          }
 
           if (session) {
             console.log("세션 있음, 사용자 정보 확인");
@@ -301,11 +321,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
             // 즉시 상태 확인
             const currentState = get();
-            console.log("즉시 상태 확인:", {
-              user: !!currentState.user,
-              session: !!currentState.session,
-              loading: currentState.loading,
-            });
+            console.log("=== verifyOTP 즉시 상태 확인 ===");
+            console.log("user 존재:", !!currentState.user);
+            console.log("session 존재:", !!currentState.session);
+            console.log("loading:", currentState.loading);
             console.log("세션 상세 정보:", currentState.session);
             console.log("사용자 상세 정보:", currentState.user);
 

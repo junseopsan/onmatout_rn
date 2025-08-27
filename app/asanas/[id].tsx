@@ -1,9 +1,14 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
-import { Dimensions, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Dimensions,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, ScrollView, Spinner, Text, XStack, YStack } from "tamagui";
+import { Button, ScrollView, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
@@ -187,7 +192,7 @@ export default function AsanaDetailScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
         <YStack flex={1} justifyContent="center" alignItems="center">
-          <Spinner size="large" color="$textSecondary" />
+          <ActivityIndicator size="large" color={COLORS.textSecondary} />
           <Text fontSize={16} color="$textSecondary" marginTop="$3">
             아사나 정보를 불러오는 중...
           </Text>
@@ -298,7 +303,7 @@ export default function AsanaDetailScreen() {
                     backgroundColor="rgba(0,0,0,0.5)"
                     zIndex={1}
                   >
-                    <Spinner size="large" color="$text" />
+                    <ActivityIndicator size="large" color={COLORS.text} />
                     <Text
                       fontSize={16}
                       fontWeight="bold"

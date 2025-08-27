@@ -8,7 +8,7 @@ const StyledInput = styled(TamaguiInput, {
   borderRadius: 8,
   paddingHorizontal: 16,
   paddingVertical: 12,
-  fontSize: 16,
+  fontSize: "$4",
   color: "$text",
   minHeight: 48,
 
@@ -29,14 +29,14 @@ const StyledInput = styled(TamaguiInput, {
 });
 
 const StyledLabel = styled(Label, {
-  fontSize: 14,
+  fontSize: "$3",
   fontWeight: "500",
   color: "$text",
   marginBottom: 8,
 });
 
 const ErrorText = styled(Label, {
-  fontSize: 12,
+  fontSize: "$2",
   color: "$error",
   marginTop: 4,
 });

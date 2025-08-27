@@ -10,6 +10,7 @@ import { RootStackParamList } from "./types";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  console.log("=== AppNavigator 렌더링 시작 ===");
   const backPressCountRef = useRef(0);
   const backPressTimeRef = useRef(0);
   const [currentRoute, setCurrentRoute] = useState("AppContainer");
@@ -85,6 +86,7 @@ export default function AppNavigator() {
           // 화면이 포커스될 때 현재 라우트 업데이트
           const routeName = e.target?.split("-")[0];
           if (routeName) {
+            console.log("=== 현재 라우트 변경 ===", routeName);
             setCurrentRoute(routeName);
           }
         },
@@ -92,7 +94,23 @@ export default function AppNavigator() {
     >
       <Stack.Screen
         name="AppContainer"
-        component={pageList.find((p) => p.name === "AppContainer")?.component!}
+        component={(() => {
+          const component = pageList.find(
+            (p) => p.name === "AppContainer"
+          )?.component;
+          console.log("=== AppContainer 컴포넌트 찾기 ===");
+          console.log("찾은 컴포넌트:", component);
+          console.log("컴포넌트 이름:", component?.name);
+
+          // AppContainer를 직접 렌더링해보기
+          if (component) {
+            console.log("AppContainer 컴포넌트를 직접 렌더링 시도");
+            return component;
+          } else {
+            console.log("AppContainer 컴포넌트를 찾을 수 없음");
+            return () => <div>AppContainer not found</div>;
+          }
+        })()}
         options={{ headerShown: false }}
       />
       <Stack.Screen

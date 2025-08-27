@@ -10,7 +10,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onmatout.app",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -31,9 +36,12 @@
         "projectId": "6b14beae-4cd3-4575-bfbd-403081113b72"
       }
     },
+    "expo": {
+      "developmentClient": {
+        "silenceWarnings": true
+      }
+    },
     "owner": "jujoland",
-    "plugins": [
-      "expo-router"
-    ]
+    "plugins": ["expo-router"]
   }
 }

@@ -243,7 +243,7 @@ export default function RecordScreen() {
               <TamaguiButtonComponent
                 title="새 기록 작성"
                 onPress={handleNewRecord}
-                size="large"
+                size="medium"
                 style={{ marginTop: 24 }}
               />
             </View>
@@ -294,17 +294,16 @@ export default function RecordScreen() {
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  <Text style={styles.recordCount}>
-                    {filteredRecords.length}번
-                  </Text>
+                  filteredRecords.length > 0 && (
+                    <Text style={styles.recordCount}>
+                      {filteredRecords.length}번
+                    </Text>
+                  )
                 )}
               </View>
 
               {filteredRecords.length === 0 ? (
                 <View style={styles.noRecordsContainer}>
-                  <Text style={styles.noRecordsText}>
-                    이 날의 기록이 없습니다.
-                  </Text>
                   {selectedDate === new Date().toISOString().split("T")[0] && (
                     <TamaguiButtonComponent
                       title="새 기록 작성"

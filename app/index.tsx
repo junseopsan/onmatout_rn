@@ -5,6 +5,7 @@ import AppNavigator from "../navigation";
 import { AppThemeProvider } from "./_layout";
 
 export default function App() {
+  console.log("=== App 컴포넌트 렌더링 ===");
   return (
     <AppThemeProvider>
       <NavigationContainer>

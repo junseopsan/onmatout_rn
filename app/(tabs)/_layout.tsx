@@ -1,6 +1,6 @@
 import { Tabs, router } from "expo-router";
 import React, { useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, View, Text } from "react-native";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -27,10 +27,14 @@ export default function TabLayout() {
     }
   }, [isAuthenticated]);
 
-  // 인증되지 않은 경우 빈 화면 표시
+  // 인증되지 않은 경우 로딩 화면 표시
   if (!isAuthenticated) {
     console.log("탭 레이아웃 - 인증되지 않음");
-    return null;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+        <Text style={{ color: COLORS.text, fontSize: 16 }}>인증 확인 중...</Text>
+      </View>
+    );
   }
 
   return (

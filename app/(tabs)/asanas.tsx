@@ -259,9 +259,24 @@ export default function AsanasScreen() {
     );
   };
 
-  // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading || !isAuthenticated) {
-    return null;
+  // 로딩 중이거나 인증되지 않은 경우 로딩 화면 표시
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>로딩 중...</Text>
+      </View>
+    );
+  }
+
+  // 인증되지 않은 경우 로그인 안내 화면 표시
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>로그인이 필요합니다.</Text>
+        <Text style={styles.emptySubText}>앱을 다시 시작해주세요.</Text>
+      </View>
+    );
   }
 
   return (

@@ -6,7 +6,7 @@ import {
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import "react-native-reanimated";
 import { TamaguiProvider } from "tamagui";
 import config from "../tamagui.config";
@@ -44,5 +44,17 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
 
 // 기존 RootLayout은 더 이상 사용하지 않음
 export default function RootLayout() {
+  const [loaded] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
+  if (!loaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+        <Text style={{ color: COLORS.text, fontSize: 16 }}>앱 로딩 중...</Text>
+      </View>
+    );
+  }
+
   return null;
 }

@@ -1,3 +1,5 @@
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,6 +13,7 @@ import {
 import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
 import { TamaguiInputComponent } from "../../components/ui/TamaguiInput";
 import { COLORS } from "../../constants/Colors";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function AuthScreen() {
@@ -26,8 +29,11 @@ export default function AuthScreen() {
   ]);
   const [attemptCount, setAttemptCount] = useState(0);
   const [resendTimer, setResendTimer] = useState(0);
-  const { signInWithPhone, loading, error, clearError } = useAuthStore();
+  const { signInWithPhone, verifyOTP, loading, error, clearError } =
+    useAuthStore();
   const router = useRouter();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [showVerifyScreen, setShowVerifyScreen] = useState(false);
 
   // 재전송 타이머
@@ -153,61 +159,78 @@ export default function AuthScreen() {
     console.log("=== 인증 코드 확인 시작 ===");
     console.log("입력된 인증 코드:", codeToVerify);
 
-    // TODO: 실제 인증 코드 확인 로직 구현
-    // 임시로 랜덤 성공/실패 (실제로는 서버 API 호출)
-    const isSuccess = Math.random() > 0.5; // 50% 확률로 성공
+    // 실제 인증 코드 확인 로직
+    const formattedPhone = formatToE164(phone);
+    console.log("전화번호:", formattedPhone);
 
-    if (isSuccess) {
-      // Alert.alert("인증 성공", "인증이 완료되었습니다!");
-      // 성공 시 메인 화면으로 이동
-      setShowVerifyScreen(false);
-      setVerificationCode(["", "", "", "", "", ""]);
-      setAttemptCount(0);
+    try {
+      const success = await verifyOTP({
+        phone: formattedPhone,
+        code: codeToVerify,
+      });
+      console.log("인증 결과:", success);
 
-      // 임시로 인증 상태 업데이트 (실제로는 서버에서 세션 생성)
-      // TODO: 실제 인증 로직에서 세션 생성
-      const tempSession = {
-        user: {
-          id: "temp-user",
-          phone: phone,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        access_token: "temp-token",
-        refresh_token: "temp-refresh-token",
-      };
-
-      useAuthStore.getState().setSession(tempSession);
-      useAuthStore.getState().setUser(tempSession.user);
-      useAuthStore.getState().setLoading(false);
-
-      console.log("인증 성공 - 메인 화면으로 이동");
-    } else {
-      const newAttemptCount = attemptCount + 1;
-      setAttemptCount(newAttemptCount);
-
-      if (newAttemptCount >= 3) {
-        Alert.alert(
-          "인증 실패",
-          "3번 연속으로 인증에 실패했습니다. 다시 시도해주세요.",
-          [
-            {
-              text: "확인",
-              onPress: () => {
-                setShowVerifyScreen(false);
-                setVerificationCode(["", "", "", "", "", ""]);
-                setAttemptCount(0);
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          "인증 실패",
-          `잘못된 인증 코드입니다. (${newAttemptCount}/3)`
-        );
+      if (success) {
+        console.log("인증 성공 - 직접 대시보드로 이동");
+        setShowVerifyScreen(false);
         setVerificationCode(["", "", "", "", "", ""]);
+        setAttemptCount(0);
+
+        // 인증 성공 후 직접 대시보드로 이동
+        setTimeout(() => {
+          const currentUser = useAuthStore.getState().user;
+          const hasNickname =
+            currentUser &&
+            currentUser.profile &&
+            currentUser.profile.name &&
+            currentUser.profile.name.trim() !== "" &&
+            currentUser.profile.name !== "null";
+
+          if (hasNickname) {
+            console.log("닉네임 있음 - Dashboard로 직접 이동");
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Dashboard" }],
+            });
+          } else {
+            console.log("닉네임 없음 - 닉네임 설정 화면으로 직접 이동");
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Nickname" }],
+            });
+          }
+        }, 100);
+      } else {
+        console.log("인증 실패");
+        const newAttemptCount = attemptCount + 1;
+        setAttemptCount(newAttemptCount);
+
+        if (newAttemptCount >= 3) {
+          Alert.alert(
+            "인증 실패",
+            "3번 연속으로 인증에 실패했습니다. 다시 시도해주세요.",
+            [
+              {
+                text: "확인",
+                onPress: () => {
+                  setShowVerifyScreen(false);
+                  setVerificationCode(["", "", "", "", "", ""]);
+                  setAttemptCount(0);
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            "인증 실패",
+            `잘못된 인증 코드입니다. (${newAttemptCount}/3)`
+          );
+          setVerificationCode(["", "", "", "", "", ""]);
+        }
       }
+    } catch (error) {
+      console.error("인증 과정에서 에러:", error);
+      Alert.alert("오류", "인증 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -429,7 +452,7 @@ export default function AuthScreen() {
             onPress={handleSubmit}
             loading={loading}
             disabled={!validatePhone(phone) || loading}
-            size="large"
+            size="medium"
           />
         </View>
 
