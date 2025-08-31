@@ -18,6 +18,9 @@ export default function AppContainer() {
 
   // 세션이 있으면 인증된 것으로 판단
   const isAuthenticated = !!session;
+  
+  // 디버깅을 위한 로그
+  console.log("AppContainer render - isLoading:", isLoading, "authLoading:", authLoading, "isAuthenticated:", isAuthenticated);
 
   useEffect(() => {
     // 1초 후 스플래시 종료 (3초 → 1초로 단축)
@@ -28,11 +31,12 @@ export default function AppContainer() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 무한 로딩 방지를 위한 타임아웃 (10초 → 5초로 단축)
+  // 무한 로딩 방지를 위한 타임아웃 (실제 기기에서는 더 긴 시간 필요)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
+      console.log("Auth loading timeout reached, forcing loading to false");
       useAuthStore.getState().setLoading(false);
-    }, 5000);
+    }, 8000); // 8초로 증가
 
     return () => clearTimeout(timeoutId);
   }, []);
@@ -45,8 +49,10 @@ export default function AppContainer() {
         clearTimeout(redirectTimeoutRef.current);
       }
 
-      // 50ms 지연으로 디바운싱 (100ms → 50ms로 단축)
+      // 실제 기기에서는 더 긴 지연이 필요할 수 있음
       redirectTimeoutRef.current = setTimeout(() => {
+        console.log("Redirecting - isAuthenticated:", isAuthenticated, "session:", !!session);
+        
         if (isAuthenticated) {
           const currentUser = useAuthStore.getState().user;
           const hasNickname =
@@ -55,6 +61,8 @@ export default function AppContainer() {
             currentUser.profile.name &&
             currentUser.profile.name.trim() !== "" &&
             currentUser.profile.name !== "null";
+
+          console.log("User has nickname:", hasNickname);
 
           if (hasNickname) {
             navigation.reset({
@@ -73,7 +81,7 @@ export default function AppContainer() {
             routes: [{ name: "Auth" }],
           });
         }
-      }, 50);
+      }, 100); // 100ms로 증가
     }
 
     // 클린업 함수
@@ -93,12 +101,28 @@ export default function AppContainer() {
   if (authLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-        <Loading fullScreen text="앱 시작 중..." color={COLORS.primary} />
+        <Loading fullScreen text="연결 확인 중..." color={COLORS.primary} />
       </View>
     );
   }
 
-  // 리다이렉트 중
+  // 리다이렉트 중 - 더 안전한 폴백 로직
+  // 실제 기기에서 문제가 발생할 경우를 대비해서 기본적으로 Auth 화면으로 이동
+  if (!isAuthenticated) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.background,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Loading text="로그인 화면으로 이동 중..." color={COLORS.primary} />
+      </View>
+    );
+  }
+  
   return (
     <View
       style={{
@@ -108,7 +132,7 @@ export default function AppContainer() {
         alignItems: "center",
       }}
     >
-      <Loading text="화면 전환 중..." color={COLORS.primary} />
+      <Loading text="메인 화면으로 이동 중..." color={COLORS.primary} />
     </View>
   );
 }
