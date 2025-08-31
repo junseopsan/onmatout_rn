@@ -3,7 +3,7 @@ import { COLORS } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { RootStackParamList } from "../../navigation/types";
 import SplashScreen from "./SplashScreen";
@@ -22,7 +22,7 @@ export default function AppContainer() {
     // 2초 후 스플래시 종료하고 바로 리다이렉트
     const timer = setTimeout(() => {
       setIsLoading(false);
-      
+
       // 스플래시 종료 후 바로 리다이렉트
       if (isAuthenticated) {
         const currentUser = useAuthStore.getState().user;

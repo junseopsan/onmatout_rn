@@ -28,6 +28,8 @@ export default function AuthScreen() {
   ]);
   const [attemptCount, setAttemptCount] = useState(0);
   const [resendTimer, setResendTimer] = useState(0);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [codeRefs] = useState(() => Array(6).fill(0).map(() => React.useRef<any>(null)));
 
   const { signInWithPhone, verifyOTP, loading, error, clearError } =
     useAuthStore();
@@ -303,41 +305,61 @@ export default function AuthScreen() {
     const formattedPhone = formatToE164(phone);
     console.log("포맷된 전화번호:", formattedPhone);
 
-    const success = await signInWithPhone({
-      phone: formattedPhone,
-    });
+    setLocalLoading(true);
+    try {
+      const success = await signInWithPhone({
+        phone: formattedPhone,
+      });
 
-    console.log("인증 코드 요청 결과:", success);
+      console.log("인증 코드 요청 결과:", success);
 
-    if (success) {
-      console.log("인증 코드 요청 성공!");
-      setShowVerifyScreen(true);
-      setResendTimer(60); // 60초 타이머 시작
-    } else {
-      console.log("인증 코드 요청 실패");
-      Alert.alert("오류", "인증번호 전송에 실패했습니다. 다시 시도해주세요.");
+      if (success) {
+        console.log("인증 코드 요청 성공!");
+        setShowVerifyScreen(true);
+        setResendTimer(60); // 60초 타이머 시작
+      } else {
+        console.log("인증 코드 요청 실패");
+        Alert.alert("오류", "인증번호 전송에 실패했습니다. 다시 시도해주세요.");
+      }
+    } catch (error) {
+      console.error("인증 코드 요청 중 에러:", error);
+      Alert.alert("오류", "인증번호 전송 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setLocalLoading(false);
     }
   };
 
-  const handleCodeChange = (text: string) => {
+  const handleCodeChange = (text: string, index: number) => {
     // 숫자만 허용
     const numericText = text.replace(/[^0-9]/g, "");
-
-    // 6자리로 제한
-    const limitedText = numericText.slice(0, 6);
-
-    // 배열로 변환
-    const newCode = limitedText
-      .split("")
-      .concat(Array(6 - limitedText.length).fill(""));
-
+    
+    // 한 자리만 허용
+    const digit = numericText.slice(0, 1);
+    
+    // 새로운 코드 배열 생성
+    const newCode = [...verificationCode];
+    newCode[index] = digit;
     setVerificationCode(newCode);
 
+    // 다음 입력 필드로 포커스 이동
+    if (digit && index < 5) {
+      codeRefs[index + 1].current?.focus();
+    }
+
     // 6자리가 모두 입력되면 자동으로 검증
-    if (limitedText.length === 6) {
+    const fullCode = newCode.join("");
+    if (fullCode.length === 6) {
       setTimeout(() => {
-        handleVerifyCode(limitedText);
+        handleVerifyCode(fullCode);
       }, 500);
+    }
+  };
+
+  const handleCodeKeyPress = (e: any, index: number) => {
+    // 백스페이스 키 처리
+    if (e.nativeEvent.key === 'Backspace' && !verificationCode[index] && index > 0) {
+      // 현재 필드가 비어있고 백스페이스를 누르면 이전 필드로 이동
+      codeRefs[index - 1].current?.focus();
     }
   };
 
@@ -506,13 +528,11 @@ export default function AuthScreen() {
                 {verificationCode.map((digit, index) => (
                   <TextInput
                     key={index}
+                    ref={codeRefs[index]}
                     style={styles.codeInput}
                     value={digit}
-                    onChangeText={(text) => {
-                      const newCode = [...verificationCode];
-                      newCode[index] = text;
-                      setVerificationCode(newCode);
-                    }}
+                    onChangeText={(text) => handleCodeChange(text, index)}
+                    onKeyPress={(e) => handleCodeKeyPress(e, index)}
                     keyboardType="numeric"
                     maxLength={1}
                     selectTextOnFocus
@@ -578,10 +598,10 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.button}
                 onPress={handleSubmit}
-                disabled={loading || !phone.trim()}
+                disabled={localLoading || !phone.trim()}
               >
                 <Text style={styles.buttonText}>
-                  {loading ? "처리 중..." : "나마스떼(नमस्ते, Namaste)"}
+                  {localLoading ? "처리 중..." : "나마스떼(नमस्ते, Namaste)"}
                 </Text>
               </TouchableOpacity>
 

@@ -230,22 +230,31 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   signInWithPhone: async (credentials) => {
     try {
+      console.log("=== signInWithPhone 시작 ===");
       set({ loading: true, error: null });
+      
       const response = await authAPI.signInWithPhone(credentials);
+      console.log("signInWithPhone API 응답:", response);
 
       if (response.success) {
+        console.log("signInWithPhone 성공");
         set({ loading: false, phoneNumber: credentials.phone });
         return true;
       } else {
+        console.log("signInWithPhone 실패:", response.message);
         set({ error: response.message, loading: false });
         return false;
       }
     } catch (error) {
+      console.error("signInWithPhone 에러:", error);
       set({
         error: error instanceof Error ? error.message : "로그인 요청 실패",
         loading: false,
       });
       return false;
+    } finally {
+      // 항상 loading을 false로 설정
+      set({ loading: false });
     }
   },
 
@@ -298,7 +307,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               set({
                 user: user as any,
                 session,
-                loading: false,
               });
             } else {
               console.log("사용자 정보 없음, 세션 기반으로 임시 사용자 생성");
@@ -313,7 +321,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               set({
                 user: tempUser as any,
                 session,
-                loading: false,
               });
 
               console.log("임시 사용자 정보 생성:", tempUser);
@@ -344,7 +351,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 set({
                   user: { ...currentState.user, profile: userProfile } as any,
                   session: currentState.session,
-                  loading: false,
                 });
               } else {
                 console.log("닉네임 없음 - 닉네임 설정 화면으로 이동");
@@ -352,7 +358,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 set({
                   user: { ...currentState.user, profile: null } as any,
                   session: currentState.session,
-                  loading: false,
                 });
               }
             } catch (profileError) {
@@ -361,7 +366,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               set({
                 user: { ...currentState.user, profile: null } as any,
                 session: currentState.session,
-                loading: false,
               });
             }
 
@@ -375,6 +379,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               });
             }, 100);
 
+            // 마지막에 loading 상태를 false로 설정
+            set({ loading: false });
             return true;
           } else {
             console.log("세션 없음, 인증 실패로 처리");
@@ -400,6 +406,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         loading: false,
       });
       return false;
+    } finally {
+      // 항상 loading을 false로 설정
+      set({ loading: false });
     }
   },
 
