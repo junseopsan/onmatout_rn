@@ -15,6 +15,9 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         }
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyCZ8DshnPxQ6bUQHDRmOkR339uZeIeyhDo"
       }
     },
     "android": {
@@ -24,7 +27,12 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.onmatout.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCZ8DshnPxQ6bUQHDRmOkR339uZeIeyhDo"
+        }
+      }
     },
     "web": {
       "bundler": "metro",

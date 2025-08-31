@@ -1,13 +1,14 @@
 import { User } from "./auth";
 
-export interface UserSettings {
-  id: string;
-  user_id: string;
-  theme: "light" | "dark" | "auto";
-  notifications: boolean;
-  language: "ko" | "en";
-  created_at: string;
-  updated_at: string;
+export interface UpdateUserProfileRequest {
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+  push_notifications?: boolean;
+  email_notifications?: boolean;
+  practice_reminders?: boolean;
+  theme?: "light" | "dark" | "auto";
+  language?: "ko" | "en";
 }
 
 export interface UserStatistics {
@@ -37,18 +38,22 @@ export interface UserProfile {
   id: string;
   user_id: string;
   name: string;
+  email?: string;
+  avatar_url?: string;
+  push_notifications: boolean;
+  email_notifications: boolean;
+  practice_reminders: boolean;
+  theme: "light" | "dark" | "auto";
+  language: "ko" | "en";
   created_at: string;
   updated_at: string;
 }
 
-export interface UpdateUserProfileRequest {
-  name: string;
-}
+// UpdateUserProfileRequest는 위에서 이미 정의됨
 
 export interface UserState {
   user: User | null;
   profile: UserProfile | null;
-  settings: UserSettings | null;
   statistics: UserStatistics | null;
   loading: boolean;
   error: string | null;

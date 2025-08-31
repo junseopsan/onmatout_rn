@@ -6,7 +6,8 @@ import {
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { TamaguiProvider } from "tamagui";
 import config from "../tamagui.config";
@@ -26,19 +27,23 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <TamaguiProvider config={config}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: COLORS.background,
-          }}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TamaguiProvider config={config}>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
-          {children}
-          <StatusBar style="light" />
-        </View>
-      </ThemeProvider>
-    </TamaguiProvider>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: COLORS.background,
+            }}
+          >
+            {children}
+            <StatusBar style="light" />
+          </View>
+        </ThemeProvider>
+      </TamaguiProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -50,7 +55,14 @@ export default function RootLayout() {
 
   if (!loaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: COLORS.background,
+        }}
+      >
         <Text style={{ color: COLORS.text, fontSize: 16 }}>앱 로딩 중...</Text>
       </View>
     );

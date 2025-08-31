@@ -15,8 +15,8 @@ export const COLORS = {
   secondaryDark: "#059669",
 
   // Background Colors
-  background: "#2A2A2A",
-  backgroundDark: "#1A1A1A",
+  background: "#1A1A1A", // 더 어두운 배경색으로 변경
+  backgroundDark: "#0A0A0A",
   surface: "#333333",
   surfaceDark: "#3A3A3A",
 
@@ -43,6 +43,10 @@ export const COLORS = {
   // Overlay Colors
   overlay: "rgba(0, 0, 0, 0.5)",
   overlayDark: "rgba(0, 0, 0, 0.7)",
+
+  // Additional Colors
+  white: "#FFFFFF",
+  lightGray: "#F5F5F5",
 
   // Transparent
   transparent: "transparent",

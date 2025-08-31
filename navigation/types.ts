@@ -11,4 +11,6 @@ export type RootStackParamList = {
   Studios: undefined;
   Profile: undefined;
   AsanaDetail: { id: string };
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
 };

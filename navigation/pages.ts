@@ -15,6 +15,8 @@ import VerifyScreen from "../app/auth/verify";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
 import NewRecordScreen from "../app/record/new";
+import PrivacyPolicyScreen from "../app/profile/privacy-policy";
+import TermsOfServiceScreen from "../app/profile/terms-of-service";
 
 export interface PageConfig {
   name: keyof RootStackParamList;
@@ -134,6 +136,48 @@ export const pageList: PageConfig[] = [
       gestureEnabled: true,
       headerBackButtonDisplayMode: "minimal",
       title: "아사나 상세",
+      headerStyle: {
+        backgroundColor: COLORS.background,
+      },
+      headerTintColor: COLORS.text,
+      headerTitleStyle: {
+        color: COLORS.text,
+        fontSize: 18,
+        fontWeight: "600",
+      },
+    },
+  },
+  {
+    name: "PrivacyPolicy",
+    component: PrivacyPolicyScreen,
+    options: {
+      headerShown: true,
+      headerBackTitle: "",
+      headerTitleAlign: "center",
+      gestureEnabled: true,
+      headerBackButtonDisplayMode: "minimal",
+      title: "개인정보 처리방침",
+      headerStyle: {
+        backgroundColor: COLORS.background,
+      },
+      headerTintColor: COLORS.text,
+      headerTitleStyle: {
+        color: COLORS.text,
+        fontSize: 18,
+        fontWeight: "600",
+      },
+    },
+  },
+  {
+    name: "TermsOfService",
+    component: TermsOfServiceScreen,
+    options: {
+      headerShown: true,
+      headerBackTitle: "",
+      headerTitleAlign: "center",
+      gestureEnabled: true,
+      headerBackButtonDisplayMode: "minimal",
+      title: "이용약관",
       headerStyle: {
         backgroundColor: COLORS.background,
       },

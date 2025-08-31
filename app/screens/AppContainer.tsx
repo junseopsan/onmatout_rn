@@ -11,10 +11,6 @@ import SplashScreen from "./SplashScreen";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AppContainer() {
-  console.log("=== AppContainer 렌더링 시작 ===");
-  console.log("AppContainer 컴포넌트가 실행됨");
-  console.log("AppContainer 함수가 호출됨");
-
   const [isLoading, setIsLoading] = useState(true);
   const { user, session, loading: authLoading } = useAuthStore();
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -23,89 +19,61 @@ export default function AppContainer() {
   // 세션이 있으면 인증된 것으로 판단
   const isAuthenticated = !!session;
 
-  console.log("AppContainer 상태:", {
-    isLoading,
-    authLoading,
-    isAuthenticated,
-    hasSession: !!session,
-    hasUser: !!user,
-  });
-
   useEffect(() => {
-    // 3초 후 스플래시 종료
+    // 1초 후 스플래시 종료 (3초 → 1초로 단축)
     const timer = setTimeout(() => {
-      console.log("스플래시 종료");
       setIsLoading(false);
-    }, 3000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // 무한 로딩 방지를 위한 타임아웃
+  // 무한 로딩 방지를 위한 타임아웃 (10초 → 5초로 단축)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log("인증 로딩 타임아웃 - 강제로 로딩 해제");
       useAuthStore.getState().setLoading(false);
-    }, 10000); // 10초 후 강제 해제
+    }, 5000);
 
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // 인증 상태에 따른 리다이렉트 (디바운싱 적용)
+  // 인증 상태에 따른 리다이렉트
   useEffect(() => {
-    console.log("=== AppContainer useEffect 트리거 ===");
-    console.log("isLoading:", isLoading);
-    console.log("authLoading:", authLoading);
-    console.log("isAuthenticated:", isAuthenticated);
-    console.log("session:", session);
-    console.log("user:", user);
-
     if (!isLoading && !authLoading) {
       // 이전 타임아웃이 있다면 취소
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
       }
 
-      // 100ms 지연으로 디바운싱
+      // 50ms 지연으로 디바운싱 (100ms → 50ms로 단축)
       redirectTimeoutRef.current = setTimeout(() => {
-        console.log("=== AppContainer 리다이렉트 체크 ===");
-        console.log("isAuthenticated:", isAuthenticated);
-        console.log("user:", user);
-        console.log("session:", session);
-
         if (isAuthenticated) {
           const currentUser = useAuthStore.getState().user;
-          console.log("현재 사용자 정보:", currentUser);
-
           const hasNickname =
             currentUser &&
             currentUser.profile &&
             currentUser.profile.name &&
             currentUser.profile.name.trim() !== "" &&
             currentUser.profile.name !== "null";
-          console.log("닉네임 존재 여부:", hasNickname);
 
           if (hasNickname) {
-            console.log("닉네임 있음 - Dashboard로 리다이렉트");
             navigation.reset({
               index: 0,
               routes: [{ name: "Dashboard" }],
             });
           } else {
-            console.log("닉네임 없음 - 닉네임 설정 화면으로 리다이렉트");
             navigation.reset({
               index: 0,
               routes: [{ name: "Nickname" }],
             });
           }
         } else {
-          console.log("인증되지 않음 - Auth로 리다이렉트");
           navigation.reset({
             index: 0,
             routes: [{ name: "Auth" }],
           });
         }
-      }, 100);
+      }, 50);
     }
 
     // 클린업 함수
@@ -114,58 +82,15 @@ export default function AppContainer() {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [isLoading, authLoading, isAuthenticated, session, user, navigation]); // 의존성 배열에 session, user 추가
-
-  // 강제로 상태 변화 감지 (1초마다 체크)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const currentState = useAuthStore.getState();
-      console.log("=== 강제 상태 체크 ===");
-      console.log("현재 세션:", !!currentState.session);
-      console.log("현재 사용자:", !!currentState.user);
-      console.log("로딩 상태:", currentState.loading);
-
-      if (
-        currentState.session &&
-        currentState.user &&
-        !currentState.loading &&
-        !isLoading
-      ) {
-        console.log("강제 리다이렉트 실행");
-        const hasNickname =
-          currentState.user.profile &&
-          currentState.user.profile.name &&
-          currentState.user.profile.name.trim() !== "" &&
-          currentState.user.profile.name !== "null";
-
-        if (hasNickname) {
-          console.log("강제 Dashboard 리다이렉트");
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Dashboard" }],
-          });
-        } else {
-          console.log("강제 Nickname 리다이렉트");
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Nickname" }],
-          });
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isLoading, navigation]);
+  }, [isLoading, authLoading, isAuthenticated, session, user, navigation]);
 
   // 스플래시 화면 표시 중
   if (isLoading) {
-    console.log("스플래시 화면 표시 중");
     return <SplashScreen />;
   }
 
   // 인증 로딩 중
   if (authLoading) {
-    console.log("인증 로딩 중");
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.background }}>
         <Loading fullScreen text="앱 시작 중..." color={COLORS.primary} />
@@ -173,7 +98,7 @@ export default function AppContainer() {
     );
   }
 
-  console.log("리다이렉트 중 - 로딩 화면 표시");
+  // 리다이렉트 중
   return (
     <View
       style={{

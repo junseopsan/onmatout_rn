@@ -1,6 +1,6 @@
 import { Tabs, router } from "expo-router";
 import React, { useEffect } from "react";
-import { Platform, View, Text } from "react-native";
+import { Platform, Text, View } from "react-native";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -31,8 +31,17 @@ export default function TabLayout() {
   if (!isAuthenticated) {
     console.log("탭 레이아웃 - 인증되지 않음");
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
-        <Text style={{ color: COLORS.text, fontSize: 16 }}>인증 확인 중...</Text>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: COLORS.background,
+        }}
+      >
+        <Text style={{ color: COLORS.text, fontSize: 16 }}>
+          인증 확인 중...
+        </Text>
       </View>
     );
   }
@@ -49,8 +58,11 @@ export default function TabLayout() {
           ios: {
             // Use a transparent background on iOS to show the blur effect
             position: "absolute",
+            backgroundColor: COLORS.background,
           },
-          default: {},
+          default: {
+            backgroundColor: COLORS.background,
+          },
         }),
       }}
     >

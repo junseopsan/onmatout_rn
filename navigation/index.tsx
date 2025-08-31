@@ -148,6 +148,18 @@ export default function AppNavigator() {
         component={pageList.find((p) => p.name === "AsanaDetail")?.component!}
         options={pageList.find((p) => p.name === "AsanaDetail")?.options}
       />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={pageList.find((p) => p.name === "PrivacyPolicy")?.component!}
+        options={pageList.find((p) => p.name === "PrivacyPolicy")?.options}
+      />
+      <Stack.Screen
+        name="TermsOfService"
+        component={
+          pageList.find((p) => p.name === "TermsOfService")?.component!
+        }
+        options={pageList.find((p) => p.name === "TermsOfService")?.options}
+      />
     </Stack.Navigator>
   );
 }

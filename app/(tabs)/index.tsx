@@ -12,7 +12,6 @@ import {
 import FavoriteAsanaCard from "../../components/dashboard/FavoriteAsanaCard";
 import FavoriteAsanasModal from "../../components/dashboard/FavoriteAsanasModal";
 import PracticeStatsChart from "../../components/dashboard/PracticeStatsChart";
-import TodayRecordCard from "../../components/dashboard/TodayRecordCard";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
@@ -124,43 +123,13 @@ export default function DashboardScreen() {
           <>
             {/* 수련 통계 그래프 */}
             {allRecords.length > 0 && (
-              <PracticeStatsChart records={allRecords} />
-            )}
-
-            {/* 오늘의 수련일지 */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>오늘의 수련일지</Text>
-                <TouchableOpacity onPress={handleNewRecord}>
-                  <Text style={styles.addButtonText}>+ 기록</Text>
-                </TouchableOpacity>
-              </View>
-
-              {todayRecords.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>
-                    오늘 아직 수련 기록이 없습니다.
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.newRecordButton}
-                    onPress={handleNewRecord}
-                  >
-                    <Text style={styles.newRecordButtonText}>
-                      첫 수련 기록하기
-                    </Text>
-                  </TouchableOpacity>
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>최근 수련 통계</Text>
                 </View>
-              ) : (
-                todayRecords.map((record) => (
-                  <TodayRecordCard
-                    key={record.id}
-                    record={record}
-                    asanas={allAsanas}
-                    onPress={handleRecordPress}
-                  />
-                ))
-              )}
-            </View>
+                <PracticeStatsChart records={allRecords} />
+              </View>
+            )}
 
             {/* 즐겨찾기 아사나 */}
             {favoriteAsanas.length > 0 && (

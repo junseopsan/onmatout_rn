@@ -27,6 +27,20 @@ export interface State {
   color: string;
 }
 
+export interface Emotion {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
+
+export interface EnergyLevelInfo {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
+
 export interface RecordFilter {
   start_date?: string;
   end_date?: string;

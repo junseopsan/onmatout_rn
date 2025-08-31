@@ -54,18 +54,30 @@ export const userAPI = {
       console.log("=== 사용자 프로필 저장 시작 ===");
       console.log("입력 파라미터:", { userId, profile });
 
+      // 업데이트할 데이터 준비
+      const updateData: any = {};
+      if (profile.name !== undefined) updateData.name = profile.name;
+      if (profile.email !== undefined) updateData.email = profile.email;
+      if (profile.avatar_url !== undefined)
+        updateData.avatar_url = profile.avatar_url;
+      if (profile.push_notifications !== undefined)
+        updateData.push_notifications = profile.push_notifications;
+      if (profile.email_notifications !== undefined)
+        updateData.email_notifications = profile.email_notifications;
+      if (profile.practice_reminders !== undefined)
+        updateData.practice_reminders = profile.practice_reminders;
+      if (profile.theme !== undefined) updateData.theme = profile.theme;
+      if (profile.language !== undefined)
+        updateData.language = profile.language;
+
       // 먼저 기존 프로필이 있는지 확인
-      console.log("1단계: 기존 프로필 확인 시작");
       const { data: existingProfile, error: checkError } = await supabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
 
-      console.log("기존 프로필 확인 결과:", { existingProfile, checkError });
-
       if (checkError && checkError.code !== "PGRST116") {
-        // PGRST116는 데이터가 없는 경우
         console.error("프로필 확인 에러:", checkError);
         return {
           success: false,
@@ -75,96 +87,48 @@ export const userAPI = {
 
       if (existingProfile) {
         // 기존 프로필이 있으면 업데이트
-        console.log("2단계: 기존 프로필 업데이트 시작");
-        console.log("업데이트할 데이터:", {
-          name: profile.name,
-          user_id: userId,
-        });
-        console.log("기존 프로필:", existingProfile);
-
-        // UPDATE 실행 (name 필드만 업데이트)
-        console.log("3단계: UPDATE 쿼리 실행");
-        const updateResult = await supabase
+        const { data: updatedProfile, error: updateError } = await supabase
           .from("user_profiles")
-          .update({
-            name: profile.name,
-          })
-          .eq("user_id", userId);
-
-        console.log("UPDATE 쿼리 결과:", updateResult);
-        console.log("UPDATE 에러:", updateResult.error);
-        console.log("UPDATE 상태:", updateResult.status);
-
-        if (updateResult.error) {
-          console.error("사용자 프로필 업데이트 에러:", updateResult.error);
-          return {
-            success: false,
-            message: updateResult.error.message || "알 수 없는 에러",
-          };
-        }
-
-        // 업데이트 후 별도로 조회
-        console.log("4단계: 업데이트 후 데이터 조회");
-        const { data: updatedProfile, error: selectError } = await supabase
-          .from("user_profiles")
-          .select("*")
+          .update(updateData)
           .eq("user_id", userId)
+          .select()
           .single();
 
-        console.log("업데이트 후 조회 결과:", { updatedProfile, selectError });
-
-        if (selectError) {
-          console.error("업데이트 후 조회 에러:", selectError);
+        if (updateError) {
+          console.error("사용자 프로필 업데이트 에러:", updateError);
           return {
             success: false,
-            message: selectError.message || "업데이트 후 조회 실패",
+            message: updateError.message,
           };
         }
 
-        console.log("=== 업데이트 성공 ===");
-        console.log("최종 업데이트된 프로필:", updatedProfile);
+        console.log("사용자 프로필 업데이트 성공:", updatedProfile);
         return {
           success: true,
           data: updatedProfile,
         };
       } else {
         // 기존 프로필이 없으면 새로 생성
-        console.log("새 프로필 생성");
-        console.log("삽입할 데이터:", { user_id: userId, name: profile.name });
-
-        const insertResult = await supabase.from("user_profiles").insert({
+        const insertData = {
           user_id: userId,
-          name: profile.name,
-        });
+          ...updateData,
+        };
 
-        console.log("INSERT 결과:", insertResult);
-
-        if (insertResult.error) {
-          console.error("사용자 프로필 생성 에러:", insertResult.error);
-          return {
-            success: false,
-            message: insertResult.error.message || "알 수 없는 에러",
-          };
-        }
-
-        // 생성 후 다시 조회
-        const { data: newProfile, error: selectError } = await supabase
+        const { data: newProfile, error: insertError } = await supabase
           .from("user_profiles")
-          .select("*")
-          .eq("user_id", userId)
+          .insert(insertData)
+          .select()
           .single();
 
-        console.log("생성 후 조회 결과:", { newProfile, selectError });
-
-        if (selectError) {
-          console.error("생성 후 조회 에러:", selectError);
+        if (insertError) {
+          console.error("사용자 프로필 생성 에러:", insertError);
           return {
             success: false,
-            message: selectError.message || "생성 후 조회 실패",
+            message: insertError.message,
           };
         }
 
-        console.log("사용자 프로필 저장 성공:", newProfile);
+        console.log("사용자 프로필 생성 성공:", newProfile);
         return {
           success: true,
           data: newProfile,
@@ -191,14 +155,28 @@ export const userAPI = {
     try {
       console.log("사용자 프로필 업데이트 시작:", { userId, profile });
 
+      // 업데이트할 데이터 준비
+      const updateData: any = {};
+      if (profile.name !== undefined) updateData.name = profile.name;
+      if (profile.email !== undefined) updateData.email = profile.email;
+      if (profile.avatar_url !== undefined)
+        updateData.avatar_url = profile.avatar_url;
+      if (profile.push_notifications !== undefined)
+        updateData.push_notifications = profile.push_notifications;
+      if (profile.email_notifications !== undefined)
+        updateData.email_notifications = profile.email_notifications;
+      if (profile.practice_reminders !== undefined)
+        updateData.practice_reminders = profile.practice_reminders;
+      if (profile.theme !== undefined) updateData.theme = profile.theme;
+      if (profile.language !== undefined)
+        updateData.language = profile.language;
+
       const { data, error } = await supabase
         .from("user_profiles")
-        .update({
-          name: profile.name,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("user_id", userId)
-        .select();
+        .select()
+        .single();
 
       if (error) {
         console.error("사용자 프로필 업데이트 에러:", error);
@@ -211,7 +189,7 @@ export const userAPI = {
       console.log("사용자 프로필 업데이트 성공:", data);
       return {
         success: true,
-        data: data?.[0] || null, // 첫 번째 결과 반환
+        data: data,
       };
     } catch (error) {
       console.error("사용자 프로필 업데이트 예외:", error);

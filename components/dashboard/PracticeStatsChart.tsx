@@ -1,7 +1,5 @@
 import React from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
-import { LineChart } from "react-native-chart-kit";
-import { Circle } from "react-native-svg";
+import { StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { Record } from "../../types/record";
 
@@ -12,51 +10,6 @@ interface PracticeStatsChartProps {
 export default function PracticeStatsChart({
   records,
 }: PracticeStatsChartProps) {
-  const screenWidth = Dimensions.get("window").width;
-
-  // 최근 7일간의 수련 데이터 생성
-  const getLast7DaysData = () => {
-    const data = [];
-    const labels = [];
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateString = date.toISOString().split("T")[0];
-
-      // 해당 날짜의 기록 수 계산
-      const dayRecords = records.filter((record) => record.date === dateString);
-      const recordCount = dayRecords.length;
-
-      data.push(recordCount);
-      // 날짜를 M/D 형식으로 표시 (예: 8/14)
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      labels.push(`${month}/${day}`);
-    }
-
-    // 원본 데이터 그대로 사용
-    return { data, labels };
-  };
-
-  // 카테고리별 수련 통계
-  const getCategoryStats = () => {
-    const categoryCount: { [key: string]: number } = {};
-
-    records.forEach((record) => {
-      record.asanas.forEach((asanaId) => {
-        // 아사나 ID로 카테고리를 찾는 것은 복잡하므로 간단히 처리
-        // 실제로는 아사나 정보가 필요함
-        categoryCount["기타"] = (categoryCount["기타"] || 0) + 1;
-      });
-    });
-
-    return {
-      data: Object.values(categoryCount),
-      labels: Object.keys(categoryCount),
-    };
-  };
-
   // 에너지 상태 종합 분석
   const getEnergyStats = () => {
     const energyScores = {
@@ -139,94 +92,15 @@ export default function PracticeStatsChart({
     };
   };
 
-  const { data: weeklyData, labels: weeklyLabels } = getLast7DaysData();
   const energyStats = getEnergyStats();
-
-  const chartConfig = {
-    backgroundColor: COLORS.surface,
-    backgroundGradientFrom: COLORS.surface,
-    backgroundGradientTo: COLORS.surface,
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    style: {
-      borderRadius: 16,
-    },
-    propsForDots: {
-      r: "4",
-      strokeWidth: "2",
-      stroke: COLORS.primary,
-    },
-  };
-
-  const maxY = 5;
-  const len = weeklyData.length;
   return (
     <View style={styles.container}>
-      {/* 주간 수련 횟수 */}
-      <View style={styles.chartSection}>
-        <Text style={styles.chartTitle}>주간 수련 횟수</Text>
-
-        <LineChart
-          data={{
-            labels: weeklyLabels,
-            datasets: [
-              // ① 실제 데이터
-              {
-                data: weeklyData,
-                color: (o = 1) => `#E53935`,
-                strokeWidth: 2,
-              },
-              // ② y축 최대치 5 강제용 투명 더미
-              {
-                data: Array(len).fill(maxY),
-                color: () => `rgba(0,0,0,0)`,
-                strokeWidth: 0,
-              },
-            ],
-          }}
-          width={screenWidth - 64}
-          height={180}
-          chartConfig={{ ...chartConfig, decimalPlaces: 0 }}
-          fromZero
-          segments={5}
-          yAxisInterval={1}
-          withShadow={false}
-          bezier={false}
-          withVerticalLabels
-          withHorizontalLabels
-          withVerticalLines={false}
-          withHorizontalLines
-          style={styles.chart}
-          withDots={false}
-          decorator={(props: any) => {
-            if (!props.x || !props.y) return null;
-            return (
-              <>
-                {weeklyData.map((v, i) => (
-                  <Circle
-                    key={`dot-${i}`}
-                    cx={props.x(i)}
-                    cy={props.y(v)}
-                    r={4}
-                    stroke="white"
-                    strokeWidth={2}
-                    fill="#FF6B6B"
-                  />
-                ))}
-              </>
-            );
-          }}
-        />
-      </View>
-
       {/* 에너지 상태 종합 분석 */}
       <View style={styles.chartSection}>
-        <Text style={styles.chartTitle}>수련 후 에너지 상태</Text>
         <View
           style={[
             styles.energyContainer,
-            { borderLeftColor: energyStats.color, borderLeftWidth: 4 },
+            { borderLeftColor: energyStats.color, borderLeftWidth: 0.5 },
           ]}
         >
           {/* 에너지 상태 표시 */}
@@ -242,20 +116,49 @@ export default function PracticeStatsChart({
             </View>
           </View>
 
-          {/* 상태별 세부 분석 */}
+          {/* 선택한 감정 상태들 */}
           <View style={styles.energyBreakdown}>
-            <View style={styles.energyRow}>
-              <Text style={styles.energyLabel}>긍정적 상태</Text>
-              <Text style={styles.energyValue}>
-                {energyStats.positiveCount}회
-              </Text>
-            </View>
-            <View style={styles.energyRow}>
-              <Text style={styles.energyLabel}>부정적 상태</Text>
-              <Text style={styles.energyValue}>
-                {energyStats.negativeCount}회
-              </Text>
-            </View>
+            {Object.entries(energyStats.breakdown)
+              .filter(([_, count]) => count > 0)
+              .map(([emotion, count]) => {
+                const getEmotionInfo = (emotionId: string) => {
+                  switch (emotionId) {
+                    case "calm":
+                      return { label: "차분", color: "#2563EB" };
+                    case "peaceful":
+                      return { label: "평온", color: "#059669" };
+                    case "energetic":
+                      return { label: "활기", color: "#D97706" };
+                    case "tired":
+                      return { label: "피곤", color: "#374151" };
+                    case "focused":
+                      return { label: "집중", color: "#7C3AED" };
+                    case "tense":
+                      return { label: "긴장", color: "#DC2626" };
+                    case "pressured":
+                      return { label: "압박", color: "#BE185D" };
+                    case "balanced":
+                      return { label: "균형", color: "#047857" };
+                    default:
+                      return { label: emotionId, color: "#374151" };
+                  }
+                };
+
+                const emotionInfo = getEmotionInfo(emotion);
+
+                return (
+                  <View key={emotion} style={styles.energyRow}>
+                    <Text
+                      style={[styles.energyLabel, { color: emotionInfo.color }]}
+                    >
+                      {emotionInfo.label}
+                    </Text>
+                    <Text style={[styles.energyValue, { color: "#333333" }]}>
+                      {count}회
+                    </Text>
+                  </View>
+                );
+              })}
           </View>
         </View>
       </View>
@@ -285,15 +188,8 @@ export default function PracticeStatsChart({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
   },
   chartSection: {
     marginBottom: 24,
@@ -318,27 +214,46 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     padding: 12,
-    backgroundColor: COLORS.surfaceDark,
+    backgroundColor: "#AAAAAA",
     borderRadius: 12,
     marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: "bold",
-    color: COLORS.primary,
+    color: "#FFFFFF",
     marginBottom: 4,
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   statLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    fontWeight: "900",
+    color: "#FFFFFF",
     textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.4)",
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
   },
   energyContainer: {
-    backgroundColor: COLORS.surfaceDark,
+    backgroundColor: "#AAAAAA",
     borderRadius: 12,
     padding: 16,
-    marginHorizontal: 8,
     overflow: "hidden",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   energyStatus: {
     flexDirection: "row",
@@ -354,14 +269,21 @@ const styles = StyleSheet.create({
   },
   energyStatusText: {
     fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
+    fontWeight: "900",
+    color: "#FFFFFF",
     marginBottom: 4,
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   energyDescription: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    fontWeight: "900",
+    color: "#FFFFFF",
     lineHeight: 18,
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   energyBreakdown: {
     gap: 8,
@@ -373,6 +295,7 @@ const styles = StyleSheet.create({
   },
   energyLabel: {
     fontSize: 14,
+    fontWeight: "900",
     color: COLORS.textSecondary,
   },
   energyValue: {
