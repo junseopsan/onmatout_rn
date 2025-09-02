@@ -5,10 +5,12 @@ import { Record } from "../../types/record";
 
 interface PracticeStatsChartProps {
   records: Record[];
+  isLoading?: boolean;
 }
 
 export default function PracticeStatsChart({
   records,
+  isLoading = false,
 }: PracticeStatsChartProps) {
   // 에너지 상태 종합 분석
   const getEnergyStats = () => {
@@ -93,6 +95,44 @@ export default function PracticeStatsChart({
   };
 
   const energyStats = getEnergyStats();
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        {/* 에너지 상태 스켈레톤 */}
+        <View style={styles.chartSection}>
+          <View style={styles.energyContainer}>
+            <View style={styles.energyStatus}>
+              <View style={styles.skeletonEmoji} />
+              <View style={styles.energyTextContainer}>
+                <View style={styles.skeletonText} />
+                <View style={styles.skeletonText} />
+              </View>
+            </View>
+            <View style={styles.energyBreakdown}>
+              {[1, 2, 3, 4].map((item) => (
+                <View key={item} style={styles.energyRow}>
+                  <View style={styles.skeletonEmotionLabel} />
+                  <View style={styles.skeletonEmotionValue} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* 통계 스켈레톤 */}
+        <View style={styles.statsGrid}>
+          {[1, 2, 3].map((item) => (
+            <View key={item} style={styles.statCard}>
+              <View style={styles.skeletonStatNumber} />
+              <View style={styles.skeletonStatLabel} />
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* 에너지 상태 종합 분석 */}
@@ -131,7 +171,7 @@ export default function PracticeStatsChart({
                       return { label: "활기", color: "#D97706" };
                     case "tired":
                       return { label: "피곤", color: "#374151" };
-                    case "focused":
+                    case "focus":
                       return { label: "집중", color: "#7C3AED" };
                     case "tense":
                       return { label: "긴장", color: "#DC2626" };
@@ -153,9 +193,7 @@ export default function PracticeStatsChart({
                     >
                       {emotionInfo.label}
                     </Text>
-                    <Text style={[styles.energyValue, { color: "#333333" }]}>
-                      {count}회
-                    </Text>
+                    <Text style={styles.energyValue}>{count}회</Text>
                   </View>
                 );
               })}
@@ -214,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#AAAAAA",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     marginHorizontal: 4,
     borderWidth: 1,
@@ -228,23 +266,17 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#000000",
     marginBottom: 4,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   statLabel: {
     fontSize: 12,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: "#000000",
     textAlign: "center",
-    textShadowColor: "rgba(0, 0, 0, 0.4)",
-    textShadowOffset: { width: 0.5, height: 0.5 },
-    textShadowRadius: 1,
   },
   energyContainer: {
-    backgroundColor: "#AAAAAA",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
     overflow: "hidden",
@@ -270,20 +302,14 @@ const styles = StyleSheet.create({
   energyStatusText: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: "#000000",
     marginBottom: 4,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   energyDescription: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: "#000000",
     lineHeight: 18,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   energyBreakdown: {
     gap: 8,
@@ -302,5 +328,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: COLORS.text,
+  },
+  // 스켈레톤 스타일
+  skeletonEmoji: {
+    width: 32,
+    height: 32,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    marginRight: 12,
+    opacity: 0.6,
+  },
+  skeletonText: {
+    height: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    marginBottom: 8,
+    opacity: 0.6,
+  },
+  skeletonEmotionLabel: {
+    width: 60,
+    height: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: 7,
+    opacity: 0.6,
+  },
+  skeletonEmotionValue: {
+    width: 40,
+    height: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: 7,
+    opacity: 0.6,
+  },
+  skeletonStatNumber: {
+    width: 40,
+    height: 24,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    marginBottom: 4,
+    opacity: 0.6,
+  },
+  skeletonStatLabel: {
+    width: 60,
+    height: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 6,
+    opacity: 0.6,
   },
 });

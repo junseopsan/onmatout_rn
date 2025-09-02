@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.text,
+    color: "#000000",
   },
   filterButton: {
     paddingHorizontal: 10,

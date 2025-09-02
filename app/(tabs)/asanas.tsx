@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 import { AsanaCard } from "../../components/AsanaCard";
-import { AsanaSkeleton } from "../../components/AsanaSkeleton";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { useAuth } from "../../hooks/useAuth";
@@ -298,13 +297,46 @@ export default function AsanasScreen() {
         </View>
       </View>
 
-      {isLoading && filteredAsanas.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <AsanaSkeleton count={8} />
-        </View>
-      ) : error ? (
+      {/* 카테고리 필터 */}
+      <View style={styles.categoryContainer}>
+        <FlatList
+          data={
+            [
+              "Basic",
+              "SideBend",
+              "BackBend",
+              "ForwardBend",
+              "Twist",
+              "Inversion",
+              "Standing",
+              "Armbalance",
+              "Core",
+              "Rest",
+            ] as AsanaCategory[]
+          }
+          renderItem={({ item }) => renderCategoryButton(item)}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScrollView}
+        />
+      </View>
+
+      {/* 에러 상태 */}
+      {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      {/* 아사나 카드 리스트 */}
+      {isLoading && filteredAsanas.length === 0 ? (
+        <View style={styles.skeletonContainer}>
+          <View style={styles.skeletonGrid}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+              <View key={item} style={styles.skeletonCard} />
+            ))}
+          </View>
         </View>
       ) : asanas.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -322,57 +354,29 @@ export default function AsanasScreen() {
           <Text style={styles.emptySubText}>다른 검색어를 시도해보세요.</Text>
         </View>
       ) : (
-        <>
-          {/* 카테고리 필터 */}
-          <View style={styles.categoryContainer}>
-            <FlatList
-              data={
-                [
-                  "Basic",
-                  "SideBend",
-                  "BackBend",
-                  "ForwardBend",
-                  "Twist",
-                  "Inversion",
-                  "Standing",
-                  "Armbalance",
-                  "Core",
-                  "Rest",
-                ] as AsanaCategory[]
-              }
-              renderItem={({ item }) => renderCategoryButton(item)}
-              keyExtractor={(item) => item}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryScrollView}
-            />
-          </View>
-
-          {/* 아사나 카드 리스트 */}
-          <FlatList
-            data={getDisplayAsanas()}
-            renderItem={renderAsanaCard}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={true}
-            showsHorizontalScrollIndicator={false}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.1}
-            ListFooterComponent={renderFooter}
-            ListFooterComponentStyle={styles.footer}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={10}
-            initialNumToRender={8}
-            getItemLayout={(data, index) => ({
-              length: 200, // 카드 높이 + 마진
-              offset: 200 * Math.floor(index / 2),
-              index,
-            })}
-          />
-        </>
+        <FlatList
+          data={getDisplayAsanas()}
+          renderItem={renderAsanaCard}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={true}
+          showsHorizontalScrollIndicator={false}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.1}
+          ListFooterComponent={renderFooter}
+          ListFooterComponentStyle={styles.footer}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={8}
+          getItemLayout={(data, index) => ({
+            length: 200, // 카드 높이 + 마진
+            offset: 200 * Math.floor(index / 2),
+            index,
+          })}
+        />
       )}
     </View>
   );
@@ -416,15 +420,22 @@ const styles = StyleSheet.create({
   footer: {
     paddingVertical: 20,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  // 스켈레톤 스타일
+  skeletonContainer: {
+    paddingHorizontal: 16,
   },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    marginTop: 12,
+  skeletonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  skeletonCard: {
+    width: cardWidth,
+    height: 200,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    marginBottom: 16,
+    opacity: 0.6,
   },
   loadingMoreContainer: {
     flexDirection: "row",

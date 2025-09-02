@@ -29,7 +29,7 @@ export default function AuthScreen() {
   const [attemptCount, setAttemptCount] = useState(0);
   const [resendTimer, setResendTimer] = useState(0);
   const [localLoading, setLocalLoading] = useState(false);
-  const [codeRefs] = useState(() => Array(6).fill(0).map(() => React.useRef<any>(null)));
+  const codeRefs = Array(6).fill(0).map(() => React.useRef<any>(null));
 
   const { signInWithPhone, verifyOTP, loading, error, clearError } =
     useAuthStore();
