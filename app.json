@@ -16,9 +16,7 @@
           "NSAllowsArbitraryLoads": true
         }
       },
-      "config": {
-        "googleMapsApiKey": "AIzaSyCZ8DshnPxQ6bUQHDRmOkR339uZeIeyhDo"
-      }
+      "config": {}
     },
     "android": {
       "adaptiveIcon": {
