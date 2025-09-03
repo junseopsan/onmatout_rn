@@ -15,7 +15,6 @@ export const useAuth = () => {
     clearError,
     resetAuth,
     clearSession,
-    signOut,
   } = useAuthStore();
 
   // Initialize auth on mount (한 번만 실행)
@@ -82,6 +81,5 @@ export const useAuth = () => {
     clearError,
     resetAuth,
     clearSession,
-    signOut,
   };
 };

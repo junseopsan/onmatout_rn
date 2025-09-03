@@ -31,6 +31,7 @@ export default function AsanasScreen() {
   const [favoriteAsanas, setFavoriteAsanas] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [localLoading, setLocalLoading] = useState(false);
 
   // 스토어에서 상태 가져오기
   const {
@@ -50,7 +51,11 @@ export default function AsanasScreen() {
   // 아사나 데이터 로드 (초기 로드)
   useEffect(() => {
     if (isAuthenticated) {
-      loadAsanas(true); // 초기 로드
+      console.log("아사나 탭: 초기 데이터 로드 시작");
+      setLocalLoading(true);
+      loadAsanas(true).finally(() => {
+        setLocalLoading(false);
+      });
     }
   }, [isAuthenticated, loadAsanas]);
 
@@ -76,7 +81,10 @@ export default function AsanasScreen() {
       // 기존 데이터가 없으면 로드
       if (asanas.length === 0) {
         console.log(`아사나 탭: 초기 데이터 로드 시작`);
-        loadAsanas(true);
+        setLocalLoading(true);
+        loadAsanas(true).finally(() => {
+          setLocalLoading(false);
+        });
       }
 
       // 즐겨찾기 목록 로드
@@ -129,6 +137,7 @@ export default function AsanasScreen() {
 
     // 검색할 때 전체 데이터를 다시 로드
     try {
+      setLocalLoading(true);
       await loadAsanas(true);
       const { asanas } = useAsanaStore.getState();
       console.log("검색 후 전체 아사나 수:", asanas.length);
@@ -173,6 +182,8 @@ export default function AsanasScreen() {
     } catch (error) {
       console.error("검색 중 오류:", error);
       setSearchResults([]);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -263,7 +274,7 @@ export default function AsanasScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>로딩 중...</Text>
+        <Text style={styles.loadingText}>인증 확인 중...</Text>
       </View>
     );
   }
@@ -326,11 +337,14 @@ export default function AsanasScreen() {
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={clearError} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       {/* 아사나 카드 리스트 */}
-      {isLoading && filteredAsanas.length === 0 ? (
+      {localLoading || (isLoading && filteredAsanas.length === 0) ? (
         <View style={styles.skeletonContainer}>
           <View style={styles.skeletonGrid}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
@@ -345,6 +359,15 @@ export default function AsanasScreen() {
               ? "선택한 카테고리의 아사나가 없습니다."
               : "아사나 데이터가 없습니다."}
           </Text>
+          <TouchableOpacity
+            onPress={() => {
+              setLocalLoading(true);
+              loadAsanas(true).finally(() => setLocalLoading(false));
+            }}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>새로고침</Text>
+          </TouchableOpacity>
         </View>
       ) : searchQuery.trim() !== "" && searchResults.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -452,26 +475,43 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
   },
   errorText: {
     fontSize: 16,
     color: COLORS.error,
     textAlign: "center",
+    marginBottom: 16,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
   },
   emptyText: {
     fontSize: 16,
     color: COLORS.textSecondary,
+    textAlign: "center",
+    marginBottom: 16,
   },
   emptySubText: {
     fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: "center",
     marginTop: 8,
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
   },
   categoryContainer: {
     paddingHorizontal: 16,

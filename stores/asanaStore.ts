@@ -178,19 +178,21 @@ export const useAsanaStore = create<AsanaState>((set, get) => ({
           `스토어 아사나 로드 완료: ${uniqueData.length}개 (중복 제거됨), 더 있음: ${result.hasMore}`
         );
       } else {
+        // 에러 발생 시 로딩 상태 해제
         set({
           error: result.message || "아사나 데이터를 불러오는데 실패했습니다.",
           isLoading: false,
           isLoadingMore: false,
         });
+        console.error("아사나 데이터 로드 실패:", result.message);
       }
     } catch (error) {
+      console.error("아사나 데이터 로드 예외:", error);
       set({
         error: "아사나 데이터를 불러오는 중 오류가 발생했습니다.",
         isLoading: false,
         isLoadingMore: false,
       });
-      console.error("아사나 데이터 로드 예외:", error);
     }
   },
 

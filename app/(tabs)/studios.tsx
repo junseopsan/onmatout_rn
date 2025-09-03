@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   ScrollView,
@@ -9,254 +10,142 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { PanGestureHandler } from "react-native-gesture-handler";
-import MapView, { Marker } from "react-native-maps";
-import Animated, {
-  useAnimatedGestureHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
+import { Studio, studioAPI } from "../../lib/api/studio";
 
 const { height: screenHeight } = Dimensions.get("window");
-const BOTTOM_SHEET_MIN_HEIGHT = 120;
-const BOTTOM_SHEET_MAX_HEIGHT = screenHeight * 0.7;
-
-// 임시 요가원 데이터 (위도/경도 포함)
-const MOCK_STUDIOS = [
-  {
-    id: "1",
-    name: "요가스튜디오 나마스떼",
-    location: "강남구 역삼동",
-    rating: 4.8,
-    price: "₩25,000",
-    image: "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Yoga+Studio",
-    types: ["하타", "빈야사"],
-    distance: "0.3km",
-    latitude: 37.5665,
-    longitude: 127.0018,
-  },
-  {
-    id: "2",
-    name: "마음의 요가",
-    location: "서초구 서초동",
-    rating: 4.6,
-    price: "₩30,000",
-    image: "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Mind+Yoga",
-    types: ["아쉬탕가", "요가테라피"],
-    distance: "0.8km",
-    latitude: 37.5013,
-    longitude: 127.0246,
-  },
-  {
-    id: "3",
-    name: "평화 요가센터",
-    location: "마포구 합정동",
-    rating: 4.9,
-    price: "₩22,000",
-    image: "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Peace+Yoga",
-    types: ["하타", "아이엔가"],
-    distance: "1.2km",
-    latitude: 37.5492,
-    longitude: 126.9134,
-  },
-  {
-    id: "4",
-    name: "에너지 요가",
-    location: "용산구 이태원동",
-    rating: 4.7,
-    price: "₩28,000",
-    image: "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Energy+Yoga",
-    types: ["빈야사", "파워요가"],
-    distance: "1.5km",
-    latitude: 37.5344,
-    longitude: 126.9942,
-  },
-];
 
 export default function StudiosScreen() {
   const { isAuthenticated, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredStudios, setFilteredStudios] = useState(MOCK_STUDIOS);
+  const [studios, setStudios] = useState<Studio[]>([]);
+  const [filteredStudios, setFilteredStudios] = useState<Studio[]>([]);
+  const [loadingStudios, setLoadingStudios] = useState(true);
 
-  // 바텀 시트 애니메이션 값
-  const translateY = useSharedValue(0);
-  const context = useRef({ startY: 0 });
-
-  // 초기 바텀 시트 위치 설정
-  React.useEffect(() => {
-    translateY.value = 0;
+  // 요가원 데이터 가져오기
+  useEffect(() => {
+    loadStudios();
   }, []);
+
+  const loadStudios = async () => {
+    try {
+      setLoadingStudios(true);
+      const response = await studioAPI.getAllStudios();
+
+      if (response.success && response.data) {
+        setStudios(response.data);
+        setFilteredStudios(response.data);
+      } else {
+        console.error("요가원 로드 실패:", response.message);
+      }
+    } catch (error) {
+      console.error("요가원 로드 에러:", error);
+    } finally {
+      setLoadingStudios(false);
+    }
+  };
 
   // 검색 기능
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.trim() === "") {
-      setFilteredStudios(MOCK_STUDIOS);
+      setFilteredStudios(studios);
     } else {
-      const filtered = MOCK_STUDIOS.filter(
+      const filtered = studios.filter(
         (studio) =>
           studio.name.toLowerCase().includes(query.toLowerCase()) ||
-          studio.location.toLowerCase().includes(query.toLowerCase())
+          studio.address.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredStudios(filtered);
     }
   };
-
-  // 제스처 핸들러
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (_, ctx: any) => {
-      ctx.startY = translateY.value;
-    },
-    onActive: (event, ctx) => {
-      const newTranslateY = ctx.startY + event.translationY;
-      // 위로 드래그할 때는 최대 높이까지, 아래로 드래그할 때는 최소 높이까지
-      translateY.value = Math.max(
-        -BOTTOM_SHEET_MAX_HEIGHT + BOTTOM_SHEET_MIN_HEIGHT,
-        Math.min(0, newTranslateY)
-      );
-    },
-    onEnd: (event) => {
-      const currentTranslateY = translateY.value;
-      const threshold = -BOTTOM_SHEET_MAX_HEIGHT / 2;
-
-      // 속도가 빠르거나 중간 지점을 넘었으면 완전히 펼치기
-      const shouldSnapToTop =
-        event.velocityY < -300 || currentTranslateY < threshold;
-
-      const targetY = shouldSnapToTop
-        ? -BOTTOM_SHEET_MAX_HEIGHT + BOTTOM_SHEET_MIN_HEIGHT
-        : 0;
-
-      translateY.value = withSpring(targetY, {
-        damping: 25,
-        stiffness: 100,
-      });
-    },
-  });
-
-  // 바텀 시트 애니메이션 스타일
-  const bottomSheetStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: translateY.value }],
-    };
-  });
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
     return null;
   }
 
+  // 요가원 로딩 중
+  if (loadingStudios) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>요가원 정보를 불러오는 중...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* 지도 영역 */}
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: 37.5665,
-            longitude: 127.0018,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-        >
-          {filteredStudios.map((studio) => (
-            <Marker
-              key={studio.id}
-              coordinate={{
-                latitude: studio.latitude,
-                longitude: studio.longitude,
-              }}
-              title={studio.name}
-              description={`${studio.price} • ${studio.rating}⭐`}
-            />
-          ))}
-        </MapView>
-
-        {/* 검색 바 */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="요가원 검색..."
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={handleSearch}
-            />
-            <TouchableOpacity style={styles.filterButton}>
-              <Text style={styles.filterButtonText}>필터</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* 검색 바 */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="요가원 검색..."
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
       </View>
 
-      {/* 바텀 시트 */}
-      <PanGestureHandler onGestureEvent={gestureHandler}>
-        <Animated.View style={[styles.bottomSheet, bottomSheetStyle]}>
-          {/* 드래그 핸들 */}
-          <View style={styles.dragHandle}>
-            <View style={styles.dragIndicator} />
+      {/* 요가원 리스트 */}
+      <ScrollView style={styles.studiosList}>
+        <Text style={styles.listTitle}>
+          주변 요가원 ({filteredStudios.length}개)
+        </Text>
+
+        {filteredStudios.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
           </View>
+        ) : (
+          filteredStudios.map((studio) => (
+            <TouchableOpacity key={studio.id} style={styles.studioCard}>
+              <Image
+                source={{
+                  uri:
+                    studio.image_url ||
+                    "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Yoga+Studio",
+                }}
+                style={styles.studioImage}
+                resizeMode="cover"
+              />
+              <View style={styles.studioInfo}>
+                <Text style={styles.studioName}>{studio.name}</Text>
+                <Text style={styles.studioLocation}>📍 {studio.address}</Text>
 
-          {/* 헤더 */}
-          <View style={styles.bottomSheetHeader}>
-            <Text style={styles.bottomSheetTitle}>
-              주변 요가원 ({filteredStudios.length}개)
-            </Text>
-          </View>
+                {studio.phone && (
+                  <Text style={styles.studioPhone}>📞 {studio.phone}</Text>
+                )}
 
-          {/* 요가원 리스트 */}
-          <ScrollView
-            style={styles.studiosList}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          >
-            {filteredStudios.map((studio) => (
-              <TouchableOpacity key={studio.id} style={styles.studioCard}>
-                <Image
-                  source={{ uri: studio.image }}
-                  style={styles.studioImage}
-                />
-                <View style={styles.studioInfo}>
-                  <View style={styles.studioHeader}>
-                    <Text style={styles.studioName}>{studio.name}</Text>
-                    <TouchableOpacity style={styles.favoriteButton}>
-                      <Text style={styles.favoriteIcon}>♡</Text>
-                    </TouchableOpacity>
+                {studio.description && (
+                  <Text style={styles.studioDescription} numberOfLines={2}>
+                    {studio.description}
+                  </Text>
+                )}
+
+                {/* <View style={styles.studioMeta}>
+                  <View style={styles.ratingContainer}>
+                    <Text style={styles.ratingStar}>⭐</Text>
+                    <Text style={styles.ratingText}>4.5</Text>
                   </View>
+                  <Text style={styles.studioPrice}>₩25,000</Text>
+                </View> */}
 
-                  <View style={styles.studioDetails}>
-                    <Text style={styles.studioLocation}>
-                      📍 {studio.location}
-                    </Text>
-                    <Text style={styles.studioDistance}>{studio.distance}</Text>
+                {/* <View style={styles.studioTypes}>
+                  <View style={styles.typeTag}>
+                    <Text style={styles.typeText}>하타</Text>
                   </View>
-
-                  <View style={styles.studioMeta}>
-                    <View style={styles.ratingContainer}>
-                      <Text style={styles.ratingStar}>⭐</Text>
-                      <Text style={styles.ratingText}>{studio.rating}</Text>
-                    </View>
-                    <Text style={styles.studioPrice}>{studio.price}</Text>
+                  <View style={styles.typeTag}>
+                    <Text style={styles.typeText}>빈야사</Text>
                   </View>
-
-                  <View style={styles.studioTypes}>
-                    {studio.types.map((type, index) => (
-                      <View key={index} style={styles.typeTag}>
-                        <Text style={styles.typeText}>{type}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </Animated.View>
-      </PanGestureHandler>
+                </View> */}
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -265,148 +154,101 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  mapContainer: {
-    flex: 1,
     paddingTop: 60, // 상태바 높이 + 여백
   },
-  map: {
+  loadingContainer: {
     flex: 1,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: COLORS.textSecondary,
   },
   searchContainer: {
-    position: "absolute",
-    top: 100, // 상태바 높이 + 여백
-    left: 0,
-    right: 0,
     paddingHorizontal: 24,
-    zIndex: 1,
+    marginBottom: 20,
   },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
+  searchInput: {
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.text,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#000000",
-  },
-  filterButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-  },
-  filterButtonText: {
-    color: COLORS.white,
-    fontSize: 14,
+  listTitle: {
+    fontSize: 20,
     fontWeight: "bold",
-  },
-  bottomSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: BOTTOM_SHEET_MAX_HEIGHT,
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    zIndex: 1,
-  },
-  dragHandle: {
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  dragIndicator: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#666666",
-    borderRadius: 2,
-  },
-  bottomSheetHeader: {
+    color: COLORS.text,
+    marginBottom: 16,
     paddingHorizontal: 24,
-    paddingBottom: 16,
-  },
-  bottomSheetTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000000",
   },
   studiosList: {
     flex: 1,
-    paddingHorizontal: 24,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
   },
   studioCard: {
-    flexDirection: "row",
-    backgroundColor: COLORS.white,
-    borderRadius: 15,
-    overflow: "hidden",
-    marginBottom: 15,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    marginHorizontal: 24,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: "hidden",
   },
   studioImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
+    width: "100%",
+    height: 150,
   },
   studioInfo: {
-    flex: 1,
-    padding: 10,
-  },
-  studioHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
+    padding: 16,
   },
   studioName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#000000",
-    flex: 1,
-  },
-  favoriteButton: {
-    padding: 5,
-  },
-  favoriteIcon: {
-    fontSize: 24,
-    color: COLORS.primary,
-  },
-  studioDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 4,
+    color: COLORS.text,
+    marginBottom: 8,
   },
   studioLocation: {
     fontSize: 14,
-    color: "#333333",
+    color: COLORS.textSecondary,
+    marginBottom: 8,
   },
-  studioDistance: {
+  studioPhone: {
     fontSize: 14,
-    color: "#333333",
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  studioDescription: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 12,
+    lineHeight: 20,
   },
   studioMeta: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    marginBottom: 12,
   },
   ratingContainer: {
     flexDirection: "row",
@@ -419,7 +261,7 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#000000",
+    color: COLORS.text,
     marginLeft: 4,
   },
   studioPrice: {
@@ -430,7 +272,6 @@ const styles = StyleSheet.create({
   studioTypes: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 4,
   },
   typeTag: {
     backgroundColor: COLORS.lightGray,
@@ -438,10 +279,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     marginRight: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   typeText: {
     fontSize: 12,
-    color: "#333333",
+    color: COLORS.textSecondary,
   },
 });

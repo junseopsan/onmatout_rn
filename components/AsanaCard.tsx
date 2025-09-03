@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { Button, Card, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../constants/Colors";
 import { CATEGORIES } from "../constants/categories";
@@ -12,6 +12,8 @@ interface AsanaCardProps {
   onPress: (asana: Asana) => void;
   isFavorite?: boolean;
   onFavoriteToggle?: (asanaId: string, isFavorite: boolean) => void;
+  showFavoriteIndicator?: boolean; // 즐겨찾기 표시 여부
+  compact?: boolean; // 컴팩트 모드 (대시보드용)
 }
 
 export function AsanaCard({
@@ -19,6 +21,8 @@ export function AsanaCard({
   onPress,
   isFavorite = false,
   onFavoriteToggle,
+  showFavoriteIndicator = true,
+  compact = false,
 }: AsanaCardProps) {
   const [favorite, setFavorite] = useState(isFavorite);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +96,7 @@ export function AsanaCard({
             flex={1}
             justifyContent="center"
             alignItems="center"
-            backgroundColor="#AAAAAA"
+            backgroundColor="#FFFFFF"
           >
             <Image
               source={{ uri: getImageUrl(asana.image_number) }}
@@ -124,38 +128,74 @@ export function AsanaCard({
         )}
 
         {/* 즐겨찾기 버튼 */}
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: "transparent",
-            justifyContent: "center",
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4,
-            elevation: 5,
-          }}
-          onPress={handleFavoriteToggle}
-          disabled={isLoading}
-        >
-          <Text
+        {showFavoriteIndicator && onFavoriteToggle && (
+          <TouchableOpacity
             style={{
-              fontSize: 16,
-              color: favorite ? "#FF6B6B" : "#FFFFFF",
-              textShadowColor: "rgba(0, 0, 0, 0.8)",
-              textShadowOffset: { width: 1, height: 1 },
-              textShadowRadius: 2,
+              position: "absolute",
+              top: 8,
+              right: 8,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: "transparent",
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+            onPress={handleFavoriteToggle}
+            disabled={isLoading}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                color: favorite ? "#FF6B6B" : "#FFFFFF",
+                textShadowColor: "rgba(0, 0, 0, 0.8)",
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              {favorite ? "♥" : "♡"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* 즐겨찾기 표시 (읽기 전용) */}
+        {showFavoriteIndicator && !onFavoriteToggle && (
+          <View
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: "transparent",
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
             }}
           >
-            {favorite ? "♥" : "♡"}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={{
+                fontSize: 16,
+                color: "#FF6B6B",
+                textShadowColor: "rgba(0, 0, 0, 0.8)",
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              ♥
+            </Text>
+          </View>
+        )}
       </YStack>
 
       {/* 내용 영역 */}

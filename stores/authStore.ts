@@ -105,9 +105,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
 
       const initPromise = (async () => {
-        // 현재 세션 확인
+        // 현재 세션 확인 (persistSession=true로 저장된 세션 복원)
         const session = await getCurrentSession();
-        console.log("현재 세션:", session);
+        console.log("=== 세션 복원 결과 ===");
+        console.log("세션 존재:", !!session);
+        console.log("세션 상세:", session ? "있음" : "없음");
+        if (session) {
+          console.log("세션 만료 시간:", session.expires_at);
+          console.log("현재 시간:", new Date().toISOString());
+        }
 
         if (session) {
           // 사용자 정보 가져오기
@@ -155,7 +161,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             });
           }
         } else {
-          console.log("세션 없음 - 인증되지 않은 상태");
+          // 세션이 없으면 그대로 비로그인 상태 유지 (강제 로그아웃/초기화 없음)
+          console.log("세션 없음 - 이전 로그인 세션이 존재하지 않음");
           set({
             user: null,
             session: null,
@@ -232,7 +239,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       console.log("=== signInWithPhone 시작 ===");
       set({ loading: true, error: null });
-      
+
       const response = await authAPI.signInWithPhone(credentials);
       console.log("signInWithPhone API 응답:", response);
 
@@ -412,20 +419,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
+  // 로그아웃 기능 비활성화 (세션 유지)
   signOut: async () => {
-    try {
-      set({ loading: true });
-      await supabase.auth.signOut();
-      set({
-        user: null,
-        session: null,
-        loading: false,
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "로그아웃 실패",
-        loading: false,
-      });
-    }
+    console.log("signOut 호출됨 - 현재 빌드에서는 비활성화됨");
+    set({ loading: false });
   },
 }));

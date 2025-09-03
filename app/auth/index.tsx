@@ -29,7 +29,13 @@ export default function AuthScreen() {
   const [attemptCount, setAttemptCount] = useState(0);
   const [resendTimer, setResendTimer] = useState(0);
   const [localLoading, setLocalLoading] = useState(false);
-  const codeRefs = Array(6).fill(0).map(() => React.useRef<any>(null));
+  const codeRef1 = React.useRef<any>(null);
+  const codeRef2 = React.useRef<any>(null);
+  const codeRef3 = React.useRef<any>(null);
+  const codeRef4 = React.useRef<any>(null);
+  const codeRef5 = React.useRef<any>(null);
+  const codeRef6 = React.useRef<any>(null);
+  const codeRefs = [codeRef1, codeRef2, codeRef3, codeRef4, codeRef5, codeRef6];
 
   const { signInWithPhone, verifyOTP, loading, error, clearError } =
     useAuthStore();
@@ -323,7 +329,10 @@ export default function AuthScreen() {
       }
     } catch (error) {
       console.error("인증 코드 요청 중 에러:", error);
-      Alert.alert("오류", "인증번호 전송 중 오류가 발생했습니다. 다시 시도해주세요.");
+      Alert.alert(
+        "오류",
+        "인증번호 전송 중 오류가 발생했습니다. 다시 시도해주세요."
+      );
     } finally {
       setLocalLoading(false);
     }
@@ -332,10 +341,10 @@ export default function AuthScreen() {
   const handleCodeChange = (text: string, index: number) => {
     // 숫자만 허용
     const numericText = text.replace(/[^0-9]/g, "");
-    
+
     // 한 자리만 허용
     const digit = numericText.slice(0, 1);
-    
+
     // 새로운 코드 배열 생성
     const newCode = [...verificationCode];
     newCode[index] = digit;
@@ -357,7 +366,11 @@ export default function AuthScreen() {
 
   const handleCodeKeyPress = (e: any, index: number) => {
     // 백스페이스 키 처리
-    if (e.nativeEvent.key === 'Backspace' && !verificationCode[index] && index > 0) {
+    if (
+      e.nativeEvent.key === "Backspace" &&
+      !verificationCode[index] &&
+      index > 0
+    ) {
       // 현재 필드가 비어있고 백스페이스를 누르면 이전 필드로 이동
       codeRefs[index - 1].current?.focus();
     }
@@ -605,6 +618,14 @@ export default function AuthScreen() {
                 </Text>
               </TouchableOpacity>
 
+              {/* 임시 로그인 버튼 */}
+              {/* <TouchableOpacity
+                style={[styles.button, styles.tempLoginButton]}
+                onPress={() => navigation.navigate("Dashboard")}
+              >
+                <Text style={styles.buttonText}>임시 로그인 (대시보드)</Text>
+              </TouchableOpacity> */}
+
               {/* 약관 동의 텍스트 */}
               <View style={styles.termsContainer}>
                 <Text style={styles.termsText}>
@@ -716,6 +737,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: "80%", // 너비를 80%로 제한
     alignSelf: "center", // 중앙 정렬
+  },
+  tempLoginButton: {
+    backgroundColor: "#10B981", // 초록색으로 구분
+    marginTop: 8,
   },
   buttonText: {
     fontSize: 16,

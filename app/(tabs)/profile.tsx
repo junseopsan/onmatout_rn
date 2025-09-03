@@ -1,9 +1,13 @@
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
   Modal,
+  Platform,
   StyleSheet,
   Switch,
   Text,
@@ -15,12 +19,14 @@ import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { storageAPI } from "../../lib/api/storage";
 import { userAPI } from "../../lib/api/user";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function ProfileScreen() {
   const { isAuthenticated, loading } = useAuth();
-  const { signOut, user, getUserProfile } = useAuthStore();
-  const router = useRouter();
+  const { user, getUserProfile } = useAuthStore();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // 알림 설정 상태
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -67,28 +73,14 @@ export default function ProfileScreen() {
     return null;
   }
 
-  const handleSignOut = async () => {
-    Alert.alert("로그아웃", "정말 로그아웃하시겠습니까?", [
-      {
-        text: "취소",
-        style: "cancel",
-      },
-      {
-        text: "로그아웃",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-        },
-      },
-    ]);
-  };
+  // 로그아웃 기능 제거 (요청에 따라 세션 유지)
 
   const handlePrivacyPolicy = () => {
-    router.push("/PrivacyPolicy");
+    navigation.navigate("PrivacyPolicy");
   };
 
   const handleTermsOfService = () => {
-    router.push("/TermsOfService");
+    navigation.navigate("TermsOfService");
   };
 
   // 전화번호 포맷팅 함수
@@ -199,32 +191,140 @@ export default function ProfileScreen() {
     }
   };
 
+  // 알림 권한 요청
+  const requestNotificationPermissions = async () => {
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
+      });
+    }
+
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") {
+      Alert.alert(
+        "알림 권한 필요",
+        "알림을 받으려면 알림 권한을 허용해주세요.",
+        [{ text: "설정으로 이동", onPress: () => {} }]
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  // 푸시 알림 토큰 가져오기
+  const getPushToken = async () => {
+    if (!Device.isDevice) return null;
+
+    try {
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: "your-project-id", // Expo 프로젝트 ID로 변경 필요
+      });
+      return token.data;
+    } catch (error) {
+      console.error("푸시 토큰 가져오기 실패:", error);
+      return null;
+    }
+  };
+
+  // 수련 알림 스케줄링
+  const schedulePracticeReminder = async (enabled: boolean) => {
+    if (!enabled) {
+      // 기존 알림 모두 취소
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      return;
+    }
+
+    try {
+      // 즉시 알림 테스트 (1초 후)
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "🧘‍♀️ 요가 수련 시간입니다!",
+          body: "오늘도 건강한 하루를 위해 요가를 시작해보세요.",
+          data: { type: "practice_reminder" },
+        },
+        trigger: null, // 즉시 실행
+      });
+
+      console.log("수련 알림이 성공적으로 스케줄되었습니다.");
+    } catch (error) {
+      console.error("알림 스케줄링 실패:", error);
+    }
+  };
+
   // 알림 설정 업데이트
   const updateNotificationSettings = async (type: string, value: boolean) => {
     if (!user) return;
 
     try {
+      // 알림 권한 확인
+      const hasPermission = await requestNotificationPermissions();
+      if (!hasPermission) {
+        // 권한이 없으면 설정을 false로 변경
+        switch (type) {
+          case "push":
+            setPushNotifications(false);
+            break;
+          case "practice":
+            setPracticeReminders(false);
+            break;
+        }
+        return;
+      }
+
       const updateData: any = {};
       switch (type) {
         case "push":
           updateData.push_notifications = value;
+          if (value) {
+            const token = await getPushToken();
+            if (token) {
+              updateData.push_token = token;
+            }
+          }
           break;
         case "email":
           updateData.email_notifications = value;
           break;
         case "practice":
           updateData.practice_reminders = value;
+          await schedulePracticeReminder(value);
           break;
       }
 
       const response = await userAPI.updateUserProfile(user.id, updateData);
       if (response.success) {
         setUserProfile(response.data);
+
+        // 성공 메시지 표시
+        if (type === "practice") {
+          if (value) {
+            Alert.alert(
+              "알림 설정",
+              "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다."
+            );
+          } else {
+            Alert.alert("알림 설정", "수련 알림이 해제되었습니다.");
+          }
+        }
       } else {
         console.error("알림 설정 업데이트 실패:", response.message);
+        Alert.alert("오류", "알림 설정 업데이트에 실패했습니다.");
       }
     } catch (error) {
       console.error("알림 설정 업데이트 에러:", error);
+      Alert.alert("오류", "알림 설정 중 오류가 발생했습니다.");
     }
   };
 
@@ -291,7 +391,7 @@ export default function ProfileScreen() {
             <View style={styles.settingContent}>
               <Text style={styles.settingText}>푸시 알림</Text>
               <Text style={styles.settingDescription}>
-                새로운 기능 및 업데이트 알림
+                새로운 기능, 업데이트 및 중요 알림
               </Text>
             </View>
             <Switch
@@ -309,7 +409,7 @@ export default function ProfileScreen() {
             <View style={styles.settingContent}>
               <Text style={styles.settingText}>수련 알림</Text>
               <Text style={styles.settingDescription}>
-                정기적인 수련 리마인더
+                매일 정기적인 요가 수련 리마인더
               </Text>
             </View>
             <Switch
@@ -322,6 +422,31 @@ export default function ProfileScreen() {
               thumbColor={practiceReminders ? "white" : COLORS.textSecondary}
             />
           </View>
+
+          {/* 알림 테스트 버튼 */}
+          {practiceReminders && (
+            <TouchableOpacity
+              style={styles.testNotificationButton}
+              onPress={async () => {
+                try {
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: "🧘‍♀️ 요가 수련 알림 테스트",
+                      body: "알림이 정상적으로 작동합니다!",
+                      data: { type: "test" },
+                    },
+                    trigger: null, // 즉시 실행
+                  });
+                  Alert.alert("알림 테스트", "테스트 알림이 전송되었습니다!");
+                } catch (error) {
+                  console.error("테스트 알림 실패:", error);
+                  Alert.alert("오류", "테스트 알림 전송에 실패했습니다.");
+                }
+              }}
+            >
+              <Text style={styles.testNotificationButtonText}>알림 테스트</Text>
+            </TouchableOpacity>
+          )}
 
           {/* 약관 및 정책 섹션 */}
           <View style={styles.sectionHeader}>
@@ -349,9 +474,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>로그아웃</Text>
-        </TouchableOpacity>
+        {/* 로그아웃 버튼 제거 */}
       </View>
 
       {/* 닉네임 수정 모달 */}
@@ -621,5 +744,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "white",
     fontWeight: "500",
+  },
+  testNotificationButton: {
+    backgroundColor: COLORS.secondary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  testNotificationButtonText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
   },
 });

@@ -227,8 +227,47 @@ export default function RecordScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {loadingRecord || loadingAsanas ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>기록을 불러오는 중...</Text>
+          <View style={styles.skeletonContainer}>
+            {/* 캘린더 스켈레톤 */}
+            <View style={styles.calendarSkeleton}>
+              <View style={styles.calendarHeaderSkeleton}>
+                <View style={styles.calendarTitleSkeleton} />
+                <View style={styles.calendarNavSkeleton} />
+              </View>
+              <View style={styles.calendarGridSkeleton}>
+                {[1, 2, 3, 4, 5, 6, 7].map((week) => (
+                  <View key={week} style={styles.calendarWeekSkeleton}>
+                    {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                      <View key={day} style={styles.calendarDaySkeleton} />
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* 기록 섹션 스켈레톤 */}
+            <View style={styles.recordsSectionSkeleton}>
+              <View style={styles.sectionHeaderSkeleton}>
+                <View style={styles.sectionTitleSkeleton} />
+                <View style={styles.recordCountSkeleton} />
+              </View>
+
+              {/* 기록 카드 스켈레톤 */}
+              <View style={styles.recordCardSkeleton}>
+                <View style={styles.recordCardHeaderSkeleton}>
+                  <View style={styles.recordDateSkeleton} />
+                  <View style={styles.recordTimeSkeleton} />
+                </View>
+                <View style={styles.recordContentSkeleton}>
+                  <View style={styles.recordAsanaListSkeleton}>
+                    {[1, 2, 3].map((item) => (
+                      <View key={item} style={styles.recordAsanaItemSkeleton} />
+                    ))}
+                  </View>
+                  <View style={styles.recordNoteSkeleton} />
+                </View>
+              </View>
+            </View>
           </View>
         ) : allRecords.length === 0 ? (
           // 기록이 없는 경우
@@ -304,14 +343,9 @@ export default function RecordScreen() {
 
               {filteredRecords.length === 0 ? (
                 <View style={styles.noRecordsContainer}>
-                  {selectedDate === new Date().toISOString().split("T")[0] && (
-                    <TamaguiButtonComponent
-                      title="새 기록 작성"
-                      onPress={handleNewRecord}
-                      size="medium"
-                      style={{ marginTop: 16 }}
-                    />
-                  )}
+                  <Text style={styles.noRecordsText}>
+                    기록된 수련이 없습니다.
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.recordContainer}>
@@ -479,5 +513,119 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: "600",
     marginHorizontal: 8,
+  },
+  skeletonContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 100, // 하단 여백 추가
+  },
+  calendarSkeleton: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+  },
+  calendarHeaderSkeleton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  calendarTitleSkeleton: {
+    width: 100,
+    height: 24,
+    backgroundColor: COLORS.border,
+    borderRadius: 8,
+  },
+  calendarNavSkeleton: {
+    width: 50,
+    height: 24,
+    backgroundColor: COLORS.border,
+    borderRadius: 8,
+  },
+  calendarGridSkeleton: {
+    flexDirection: "column",
+  },
+  calendarWeekSkeleton: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 8,
+  },
+  calendarDaySkeleton: {
+    width: 30,
+    height: 30,
+    backgroundColor: COLORS.border,
+    borderRadius: 15,
+  },
+  recordsSectionSkeleton: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+  },
+  sectionHeaderSkeleton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  sectionTitleSkeleton: {
+    width: 150,
+    height: 24,
+    backgroundColor: COLORS.border,
+    borderRadius: 8,
+  },
+  recordCountSkeleton: {
+    width: 50,
+    height: 24,
+    backgroundColor: COLORS.border,
+    borderRadius: 8,
+  },
+  recordCardSkeleton: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  recordCardHeaderSkeleton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  recordDateSkeleton: {
+    width: 80,
+    height: 24,
+    backgroundColor: COLORS.border,
+    borderRadius: 8,
+  },
+  recordTimeSkeleton: {
+    width: 60,
+    height: 24,
+    backgroundColor: COLORS.border,
+    borderRadius: 8,
+  },
+  recordContentSkeleton: {
+    marginTop: 12,
+  },
+  recordAsanaListSkeleton: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
+  },
+  recordAsanaItemSkeleton: {
+    width: 40,
+    height: 40,
+    backgroundColor: COLORS.border,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  recordNoteSkeleton: {
+    width: "100%",
+    height: 80,
+    backgroundColor: COLORS.border,
+    borderRadius: 12,
+    marginTop: 12,
   },
 });

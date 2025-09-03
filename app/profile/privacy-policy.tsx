@@ -5,10 +5,6 @@ import { COLORS } from "../../constants/Colors";
 export default function PrivacyPolicyScreen() {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>개인정보 처리방침</Text>
-      </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.contentText}>
           온매아웃 (이하 "회사")는 사용자의 개인정보를 소중히 여기며, 「개인정보
