@@ -94,23 +94,7 @@ export default function AppNavigator() {
     >
       <Stack.Screen
         name="AppContainer"
-        component={(() => {
-          const component = pageList.find(
-            (p) => p.name === "AppContainer"
-          )?.component;
-          console.log("=== AppContainer 컴포넌트 찾기 ===");
-          console.log("찾은 컴포넌트:", component);
-          console.log("컴포넌트 이름:", component?.name);
-
-          // AppContainer를 직접 렌더링해보기
-          if (component) {
-            console.log("AppContainer 컴포넌트를 직접 렌더링 시도");
-            return component;
-          } else {
-            console.log("AppContainer 컴포넌트를 찾을 수 없음");
-            return () => <div>AppContainer not found</div>;
-          }
-        })()}
+        component={pageList.find((p) => p.name === "AppContainer")?.component!}
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -134,7 +118,7 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Dashboard"
+        name="TabNavigator"
         component={TabNavigator}
         options={{ headerShown: false }}
       />

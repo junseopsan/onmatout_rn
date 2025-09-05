@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,12 +7,15 @@ import { AsanaCard } from "../components/AsanaCard";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
 import { Asana, asanasAPI } from "../lib/api/asanas";
+import { RootStackParamList } from "../navigation/types";
 
 const { width: screenWidth } = Dimensions.get("window");
 const cardWidth = (screenWidth - 48 - 16) / 2; // 48 = 좌우 패딩, 16 = 카드 간 간격
 
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [asanas, setAsanas] = useState<Asana[]>([]);
   const [loadingAsanas, setLoadingAsanas] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,9 +23,9 @@ export default function AsanasScreen() {
   // 인증 상태 확인 및 보호
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.replace("/auth");
+      navigation.navigate("Auth");
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, navigation]);
 
   // 아사나 데이터 로드
   useEffect(() => {
@@ -54,7 +58,7 @@ export default function AsanasScreen() {
 
   const handleAsanaPress = (asana: Asana) => {
     // 상세 화면으로 이동
-    router.push(`/asanas/${asana.id}`);
+    navigation.navigate("AsanaDetail", { id: asana.id });
   };
 
   const renderAsanaCard = ({ item }: { item: Asana }) => (

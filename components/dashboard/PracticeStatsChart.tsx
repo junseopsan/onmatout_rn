@@ -322,12 +322,12 @@ const styles = StyleSheet.create({
   energyLabel: {
     fontSize: 14,
     fontWeight: "900",
-    color: COLORS.textSecondary,
+    color: "#374151",
   },
   energyValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.text,
+    color: "#000000",
   },
   // 스켈레톤 스타일
   skeletonEmoji: {

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Device from "expo-device";
@@ -140,11 +141,42 @@ export default function ProfileScreen() {
   const handleImageUpload = async () => {
     if (!user) return;
 
+    // 이미지 변경 옵션 제공
+    Alert.alert("프로필 사진 변경", "프로필 사진을 어떻게 변경하시겠습니까?", [
+      {
+        text: "갤러리에서 선택",
+        onPress: () => uploadFromGallery(),
+      },
+      ...(userProfile?.avatar_url
+        ? [
+            {
+              text: "기본 이미지로 변경",
+              onPress: () => removeProfileImage(),
+            },
+          ]
+        : []),
+      {
+        text: "취소",
+        style: "cancel",
+      },
+    ]);
+  };
+
+  // 갤러리에서 이미지 업로드
+  const uploadFromGallery = async () => {
+    if (!user) return;
+
     setIsUploadingImage(true);
     try {
+      console.log("갤러리에서 이미지 업로드 시작");
       const result = await storageAPI.uploadProfileImage(user.id);
 
       if (result.success && result.url) {
+        // 기존 이미지가 있다면 삭제
+        if (userProfile?.avatar_url) {
+          await storageAPI.deleteProfileImage(userProfile.avatar_url);
+        }
+
         // 프로필에 이미지 URL 업데이트
         const response = await userAPI.updateUserProfile(user.id, {
           avatar_url: result.url,
@@ -165,6 +197,46 @@ export default function ProfileScreen() {
     } finally {
       setIsUploadingImage(false);
     }
+  };
+
+  // 프로필 이미지 제거
+  const removeProfileImage = async () => {
+    if (!user || !userProfile?.avatar_url) return;
+
+    Alert.alert("프로필 사진 제거", "프로필 사진을 제거하시겠습니까?", [
+      {
+        text: "제거",
+        style: "destructive",
+        onPress: async () => {
+          setIsUploadingImage(true);
+          try {
+            // 기존 이미지 삭제
+            await storageAPI.deleteProfileImage(userProfile.avatar_url);
+
+            // 프로필에서 이미지 URL 제거
+            const response = await userAPI.updateUserProfile(user.id, {
+              avatar_url: undefined,
+            });
+
+            if (response.success) {
+              setUserProfile(response.data);
+              Alert.alert("성공", "프로필 사진이 제거되었습니다.");
+            } else {
+              Alert.alert("오류", "프로필 업데이트에 실패했습니다.");
+            }
+          } catch (error) {
+            console.error("이미지 제거 에러:", error);
+            Alert.alert("오류", "이미지 제거 중 오류가 발생했습니다.");
+          } finally {
+            setIsUploadingImage(false);
+          }
+        },
+      },
+      {
+        text: "취소",
+        style: "cancel",
+      },
+    ]);
   };
 
   // 닉네임 수정 저장
@@ -357,6 +429,12 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             )}
+
+            {/* 카메라 아이콘 */}
+            <View style={styles.cameraIconContainer}>
+              <Ionicons name="camera" size={16} color="white" />
+            </View>
+
             {isUploadingImage && (
               <View style={styles.uploadingOverlay}>
                 <Text style={styles.uploadingText}>업로드 중...</Text>
@@ -598,6 +676,19 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     fontWeight: "500",
+  },
+  cameraIconContainer: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.background,
   },
   nickname: {
     fontSize: 24,

@@ -1,10 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -40,202 +42,6 @@ export default function AuthScreen() {
   const { signInWithPhone, verifyOTP, loading, error, clearError } =
     useAuthStore();
 
-  // 기존 아사나 이미지 배열 (주석처리)
-  /*
-  const backgroundImages = [
-    require("../../images/asanas/001.png"),
-    require("../../images/asanas/002.png"),
-    require("../../images/asanas/003.png"),
-    require("../../images/asanas/004.png"),
-    require("../../images/asanas/005.png"),
-    require("../../images/asanas/006.png"),
-    require("../../images/asanas/007.png"),
-    require("../../images/asanas/008.png"),
-    require("../../images/asanas/009.png"),
-    require("../../images/asanas/010.png"),
-    require("../../images/asanas/011.png"),
-    require("../../images/asanas/012.png"),
-    require("../../images/asanas/013.png"),
-    require("../../images/asanas/014.png"),
-    require("../../images/asanas/015.png"),
-    require("../../images/asanas/016.png"),
-    require("../../images/asanas/017.png"),
-    require("../../images/asanas/018.png"),
-    require("../../images/asanas/019.png"),
-    require("../../images/asanas/020.png"),
-    require("../../images/asanas/021.png"),
-    require("../../images/asanas/022.png"),
-    require("../../images/asanas/023.png"),
-    require("../../images/asanas/024.png"),
-    require("../../images/asanas/025.png"),
-    require("../../images/asanas/026.png"),
-    require("../../images/asanas/027.png"),
-    require("../../images/asanas/028.png"),
-    require("../../images/asanas/029.png"),
-    require("../../images/asanas/030.png"),
-    require("../../images/asanas/031.png"),
-    require("../../images/asanas/032.png"),
-    require("../../images/asanas/033.png"),
-    require("../../images/asanas/034.png"),
-    require("../../images/asanas/035.png"),
-    require("../../images/asanas/036.png"),
-    require("../../images/asanas/037.png"),
-    require("../../images/asanas/038.png"),
-    require("../../images/asanas/039.png"),
-    require("../../images/asanas/040.png"),
-    require("../../images/asanas/041.png"),
-    require("../../images/asanas/042.png"),
-    require("../../images/asanas/043.png"),
-    require("../../images/asanas/044.png"),
-    require("../../images/asanas/045.png"),
-    require("../../images/asanas/046.png"),
-    require("../../images/asanas/047.png"),
-    require("../../images/asanas/048.png"),
-    require("../../images/asanas/049.png"),
-    require("../../images/asanas/050.png"),
-    require("../../images/asanas/051.png"),
-    require("../../images/asanas/052.png"),
-    require("../../images/asanas/053.png"),
-    require("../../images/asanas/054.png"),
-    require("../../images/asanas/055.png"),
-    require("../../images/asanas/056.png"),
-    require("../../images/asanas/057.png"),
-    require("../../images/asanas/058.png"),
-    require("../../images/asanas/059.png"),
-    require("../../images/asanas/060.png"),
-    require("../../images/asanas/061.png"),
-    require("../../images/asanas/062.png"),
-    require("../../images/asanas/063.png"),
-    require("../../images/asanas/064.png"),
-    require("../../images/asanas/065.png"),
-    require("../../images/asanas/066.png"),
-    require("../../images/asanas/067.png"),
-    require("../../images/asanas/068.png"),
-    require("../../images/asanas/069.png"),
-    require("../../images/asanas/070.png"),
-    require("../../images/asanas/071.png"),
-    require("../../images/asanas/072.png"),
-    require("../../images/asanas/073.png"),
-    require("../../images/asanas/074.png"),
-    require("../../images/asanas/075.png"),
-    require("../../images/asanas/076.png"),
-    require("../../images/asanas/077.png"),
-    require("../../images/asanas/078.png"),
-    require("../../images/asanas/079.png"),
-    require("../../images/asanas/080.png"),
-    require("../../images/asanas/081.png"),
-    require("../../images/asanas/082.png"),
-    require("../../images/asanas/083.png"),
-    require("../../images/asanas/084.png"),
-    require("../../images/asanas/085.png"),
-    require("../../images/asanas/086.png"),
-    require("../../images/asanas/087.png"),
-    require("../../images/asanas/088.png"),
-    require("../../images/asanas/089.png"),
-    require("../../images/asanas/090.png"),
-    require("../../images/asanas/091.png"),
-    require("../../images/asanas/092.png"),
-    require("../../images/asanas/093.png"),
-    require("../../images/asanas/094.png"),
-    require("../../images/asanas/095.png"),
-    require("../../images/asanas/096.png"),
-    require("../../images/asanas/097.png"),
-    require("../../images/asanas/098.png"),
-    require("../../images/asanas/099.png"),
-    require("../../images/asanas/100.png"),
-    require("../../images/asanas/101.png"),
-    require("../../images/asanas/102.png"),
-    require("../../images/asanas/103.png"),
-    require("../../images/asanas/104.png"),
-    require("../../images/asanas/105.png"),
-    require("../../images/asanas/106.png"),
-    require("../../images/asanas/107.png"),
-    require("../../images/asanas/108.png"),
-    require("../../images/asanas/109.png"),
-    require("../../images/asanas/110.png"),
-    require("../../images/asanas/111.png"),
-    require("../../images/asanas/112.png"),
-    require("../../images/asanas/113.png"),
-    require("../../images/asanas/114.png"),
-    require("../../images/asanas/115.png"),
-    require("../../images/asanas/116.png"),
-    require("../../images/asanas/117.png"),
-    require("../../images/asanas/118.png"),
-    require("../../images/asanas/119.png"),
-    require("../../images/asanas/120.png"),
-    require("../../images/asanas/121.png"),
-    require("../../images/asanas/122.png"),
-    require("../../images/asanas/123.png"),
-    require("../../images/asanas/124.png"),
-    require("../../images/asanas/125.png"),
-    require("../../images/asanas/126.png"),
-    require("../../images/asanas/127.png"),
-    require("../../images/asanas/128.png"),
-    require("../../images/asanas/129.png"),
-    require("../../images/asanas/130.png"),
-    require("../../images/asanas/131.png"),
-    require("../../images/asanas/132.png"),
-    require("../../images/asanas/133.png"),
-    require("../../images/asanas/134.png"),
-    require("../../images/asanas/135.png"),
-    require("../../images/asanas/136.png"),
-    require("../../images/asanas/137.png"),
-    require("../../images/asanas/138.png"),
-    require("../../images/asanas/139.png"),
-    require("../../images/asanas/140.png"),
-    require("../../images/asanas/141.png"),
-    require("../../images/asanas/142.png"),
-    require("../../images/asanas/143.png"),
-    require("../../images/asanas/144.png"),
-    require("../../images/asanas/145.png"),
-    require("../../images/asanas/146.png"),
-    require("../../images/asanas/147.png"),
-    require("../../images/asanas/148.png"),
-    require("../../images/asanas/149.png"),
-    require("../../images/asanas/150.png"),
-    require("../../images/asanas/151.png"),
-    require("../../images/asanas/152.png"),
-    require("../../images/asanas/153.png"),
-    require("../../images/asanas/154.png"),
-    require("../../images/asanas/155.png"),
-    require("../../images/asanas/156.png"),
-    require("../../images/asanas/157.png"),
-    require("../../images/asanas/158.png"),
-    require("../../images/asanas/159.png"),
-    require("../../images/asanas/160.png"),
-    require("../../images/asanas/161.png"),
-    require("../../images/asanas/162.png"),
-    require("../../images/asanas/163.png"),
-    require("../../images/asanas/164.png"),
-    require("../../images/asanas/165.png"),
-    require("../../images/asanas/166.png"),
-    require("../../images/asanas/167.png"),
-    require("../../images/asanas/168.png"),
-    require("../../images/asanas/169.png"),
-    require("../../images/asanas/170.png"),
-    require("../../images/asanas/171.png"),
-    require("../../images/asanas/172.png"),
-    require("../../images/asanas/173.png"),
-    require("../../images/asanas/174.png"),
-    require("../../images/asanas/175.png"),
-    require("../../images/asanas/176.png"),
-    require("../../images/asanas/177.png"),
-    require("../../images/asanas/178.png"),
-    require("../../images/asanas/179.png"),
-    require("../../images/asanas/180.png"),
-    require("../../images/asanas/181.png"),
-  ];
-
-  // 기존 랜덤 이미지 선택 로직 (주석처리)
-  // const getRandomImages = () => {
-  //   const shuffled = [...backgroundImages].sort(() => 0.5 - Math.random());
-  //   return shuffled.slice(0, 120);
-  // };
-
-  // const [selectedBackgroundImages] = useState(() => getRandomImages());
-  */
-
-  const router = useRouter();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [showVerifyScreen, setShowVerifyScreen] = useState(false);
@@ -342,25 +148,49 @@ export default function AuthScreen() {
     // 숫자만 허용
     const numericText = text.replace(/[^0-9]/g, "");
 
-    // 한 자리만 허용
-    const digit = numericText.slice(0, 1);
+    // 여러 자리 숫자가 입력된 경우 (자동완성 등)
+    if (numericText.length > 1) {
+      const newCode = [...verificationCode];
 
-    // 새로운 코드 배열 생성
-    const newCode = [...verificationCode];
-    newCode[index] = digit;
-    setVerificationCode(newCode);
+      // 입력된 숫자들을 순차적으로 배치
+      for (let i = 0; i < numericText.length && index + i < 6; i++) {
+        newCode[index + i] = numericText[i];
+      }
 
-    // 다음 입력 필드로 포커스 이동
-    if (digit && index < 5) {
-      codeRefs[index + 1].current?.focus();
-    }
+      setVerificationCode(newCode);
 
-    // 6자리가 모두 입력되면 자동으로 검증
-    const fullCode = newCode.join("");
-    if (fullCode.length === 6) {
-      setTimeout(() => {
-        handleVerifyCode(fullCode);
-      }, 500);
+      // 마지막 입력된 필드로 포커스 이동
+      const lastIndex = Math.min(index + numericText.length - 1, 5);
+      if (lastIndex < 5) {
+        codeRefs[lastIndex + 1].current?.focus();
+      }
+
+      // 6자리가 모두 입력되면 자동으로 검증
+      const fullCode = newCode.join("");
+      if (fullCode.length === 6) {
+        setTimeout(() => {
+          handleVerifyCode(fullCode);
+        }, 500);
+      }
+    } else {
+      // 한 자리만 입력된 경우
+      const digit = numericText.slice(0, 1);
+      const newCode = [...verificationCode];
+      newCode[index] = digit;
+      setVerificationCode(newCode);
+
+      // 다음 입력 필드로 포커스 이동
+      if (digit && index < 5) {
+        codeRefs[index + 1].current?.focus();
+      }
+
+      // 6자리가 모두 입력되면 자동으로 검증
+      const fullCode = newCode.join("");
+      if (fullCode.length === 6) {
+        setTimeout(() => {
+          handleVerifyCode(fullCode);
+        }, 500);
+      }
     }
   };
 
@@ -417,7 +247,7 @@ export default function AuthScreen() {
             console.log("닉네임 있음 - Dashboard로 직접 이동");
             navigation.reset({
               index: 0,
-              routes: [{ name: "Dashboard" }],
+              routes: [{ name: "TabNavigator" }],
             });
           } else {
             console.log("닉네임 없음 - 닉네임 설정 화면으로 직접 이동");
@@ -478,7 +308,11 @@ export default function AuthScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
       {/* 배경 레이어 - 요가 이미지 전체화면 */}
       <View style={styles.backgroundLayer}>
         {/* 기존 아사나 이미지 배열과 랜덤 선택 로직을 주석처리하고, 새로운 asana_bg.png 이미지를 배경으로 사용하도록 수정합니다. */}
@@ -521,7 +355,12 @@ export default function AuthScreen() {
       </View>
 
       {/* UI 레이어 - 슬로건, 입력, 버튼 */}
-      <View style={styles.uiLayer}>
+      <ScrollView
+        style={styles.uiLayer}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {showVerifyScreen ? (
           <View style={styles.verifyContainer}>
             <TouchableOpacity
@@ -547,8 +386,12 @@ export default function AuthScreen() {
                     onChangeText={(text) => handleCodeChange(text, index)}
                     onKeyPress={(e) => handleCodeKeyPress(e, index)}
                     keyboardType="numeric"
-                    maxLength={1}
+                    maxLength={6}
                     selectTextOnFocus
+                    textContentType="oneTimeCode"
+                    autoComplete="sms-otp"
+                    autoCorrect={false}
+                    autoCapitalize="none"
                   />
                 ))}
               </View>
@@ -619,12 +462,12 @@ export default function AuthScreen() {
               </TouchableOpacity>
 
               {/* 임시 로그인 버튼 */}
-              {/* <TouchableOpacity
+              <TouchableOpacity
                 style={[styles.button, styles.tempLoginButton]}
-                onPress={() => navigation.navigate("Dashboard")}
+                onPress={() => navigation.navigate("TabNavigator")}
               >
                 <Text style={styles.buttonText}>임시 로그인 (대시보드)</Text>
-              </TouchableOpacity> */}
+              </TouchableOpacity>
 
               {/* 약관 동의 텍스트 */}
               <View style={styles.termsContainer}>
@@ -647,8 +490,8 @@ export default function AuthScreen() {
             </View>
           </View>
         )}
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -669,6 +512,9 @@ const styles = StyleSheet.create({
   uiLayer: {
     flex: 1,
     zIndex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   backgroundImage: {
     opacity: 0.4,
@@ -708,7 +554,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   bottomSection: {
-    paddingBottom: 10,
+    paddingBottom: 40,
   },
   inputContainer: {
     marginBottom: 32,

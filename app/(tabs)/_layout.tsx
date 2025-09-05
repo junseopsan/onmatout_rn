@@ -1,4 +1,5 @@
-import { Tabs, router } from "expo-router";
+import { Tabs } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect } from "react";
 import { Platform, Text, View } from "react-native";
 
@@ -12,6 +13,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { isAuthenticated } = useAuth();
+  const navigation = useNavigation();
 
   // 인증 상태 확인 및 보호
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function TabLayout() {
       console.log("인증되지 않음 - 인증 화면으로 리다이렉트");
       // 약간의 지연을 두어 네비게이션 에러 방지
       setTimeout(() => {
-        router.replace("/auth");
+        navigation.navigate("Auth" as any);
       }, 100);
     }
   }, [isAuthenticated]);

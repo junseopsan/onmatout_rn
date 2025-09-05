@@ -30,6 +30,18 @@
         "resourceClass": "medium"
       }
     },
+    "testflight": {
+      "extends": "production",
+      "distribution": "store",
+      "ios": {
+        "resourceClass": "m-medium",
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "NODE_ENV": "production",
+        "EXPO_USE_HERMES": "true"
+      }
+    },
     "development-dev": {
       "developmentClient": true,
       "distribution": "internal",

@@ -4,7 +4,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Verify: undefined;
   Nickname: undefined;
-  Dashboard: undefined;
+  TabNavigator: undefined;
   Asanas: undefined;
   Record: undefined;
   NewRecord: undefined;

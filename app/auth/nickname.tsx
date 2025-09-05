@@ -1,15 +1,19 @@
-import { router } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { COLORS } from "../../constants/Colors";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function NicknameScreen() {
   const [nickname, setNickname] = useState("");
   const [nicknameError, setNicknameError] = useState("");
   const { user, loading, clearError, saveUserProfile } = useAuthStore();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleNicknameChange = (text: string) => {
     setNickname(text);
@@ -54,7 +58,7 @@ export default function NicknameScreen() {
             {
               text: "시작하기",
               onPress: () => {
-                router.replace("/(tabs)");
+                navigation.navigate("TabNavigator");
               },
             },
           ]

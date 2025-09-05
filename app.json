@@ -1,20 +1,22 @@
 {
   "expo": {
-    "name": "onmatout_rn",
+    "name": "OnMatOut",
     "slug": "onmatout_rn",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onmatout.app",
-      "buildNumber": "1",
+      "buildNumber": "5",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "NSUserNotificationUsageDescription": "요가 수련 리마인더와 중요 알림을 받기 위해 알림 권한이 필요합니다.",
+        "UIBackgroundModes": ["remote-notification"]
       },
       "config": {}
     },
@@ -34,7 +36,6 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
@@ -48,6 +49,6 @@
       }
     },
     "owner": "jujoland",
-    "plugins": ["expo-router"]
+    "plugins": []
   }
 }
