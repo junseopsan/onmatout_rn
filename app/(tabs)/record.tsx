@@ -193,14 +193,11 @@ export default function RecordScreen() {
   );
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading) {
-    console.log("=== 인증 로딩 중 - 빈 화면 반환 ===");
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    console.log("=== 인증되지 않음 - 빈 화면 반환 ===");
-    return null;
+  if (loading || !isAuthenticated) {
+    console.log("=== 인증 로딩 중 또는 인증되지 않음 - 빈 화면 반환 ===");
+    return (
+      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
+    );
   }
 
   console.log("=== RecordScreen 메인 렌더링 ===");

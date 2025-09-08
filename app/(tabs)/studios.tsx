@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -61,9 +63,34 @@ export default function StudiosScreen() {
     }
   };
 
+  // 인스타그램 링크 열기
+  const openInstagram = async (instagramUrl: string) => {
+    try {
+      // URL이 @로 시작하는 경우 인스타그램 프로필 URL로 변환
+      let url = instagramUrl;
+      if (instagramUrl.startsWith("@")) {
+        url = `https://www.instagram.com/${instagramUrl.substring(1)}/`;
+      } else if (!instagramUrl.startsWith("http")) {
+        url = `https://www.instagram.com/${instagramUrl}/`;
+      }
+
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("오류", "인스타그램을 열 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("인스타그램 링크 열기 실패:", error);
+      Alert.alert("오류", "인스타그램을 열 수 없습니다.");
+    }
+  };
+
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
-    return null;
+    return (
+      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
+    );
   }
 
   // 요가원 로딩 중
@@ -123,6 +150,17 @@ export default function StudiosScreen() {
                   <Text style={styles.studioDescription} numberOfLines={2}>
                     {studio.description}
                   </Text>
+                )}
+
+                {studio.instagram && (
+                  <TouchableOpacity
+                    style={styles.instagramButton}
+                    onPress={() => openInstagram(studio.instagram!)}
+                  >
+                    <Text style={styles.instagramText}>
+                      @{studio.instagram}
+                    </Text>
+                  </TouchableOpacity>
                 )}
 
                 {/* <View style={styles.studioMeta}>
@@ -284,5 +322,18 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     color: COLORS.textSecondary,
+  },
+  instagramButton: {
+    backgroundColor: "#E4405F",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignSelf: "flex-start",
+    marginTop: 4,
+  },
+  instagramText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
   },
 });

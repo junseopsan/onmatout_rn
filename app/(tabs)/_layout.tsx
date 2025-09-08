@@ -1,7 +1,7 @@
 import { Tabs } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform } from "react-native";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -29,21 +29,17 @@ export default function TabLayout() {
     }
   }, [isAuthenticated]);
 
-  // 인증되지 않은 경우 로딩 화면 표시
+  // 인증되지 않은 경우 빈 화면 표시
   if (!isAuthenticated) {
     console.log("탭 레이아웃 - 인증되지 않음");
     return (
       <View
         style={{
           flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
           backgroundColor: COLORS.background,
         }}
       >
-        <Text style={{ color: COLORS.text, fontSize: 16 }}>
-          인증 확인 중...
-        </Text>
+        {/* 빈 화면 - 배경색만 표시 */}
       </View>
     );
   }
@@ -56,6 +52,9 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        sceneContainerStyle: {
+          backgroundColor: COLORS.background,
+        },
         tabBarStyle: Platform.select({
           ios: {
             // Use a transparent background on iOS to show the blur effect

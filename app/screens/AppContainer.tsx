@@ -1,7 +1,8 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { RootStackParamList } from "../../navigation/types";
@@ -14,7 +15,52 @@ export default function AppContainer() {
   const [authLoading, setAuthLoading] = useState(true);
   const [hasRedirected, setHasRedirected] = useState(false);
   const navigation = useNavigation<NavigationProp>();
-  const { isAuthenticated, authLoading: authLoadingState } = useAuth();
+  const { isAuthenticated, loading: authLoadingState } = useAuth();
+
+  // 알림 권한 요청 함수
+  const requestNotificationPermissions = async () => {
+    try {
+      console.log("AppContainer: 알림 권한 요청 시작");
+
+      // Android 채널 설정
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "기본 알림",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+        console.log("AppContainer: Android 알림 채널 설정 완료");
+      }
+
+      // 현재 권한 상태 확인
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      console.log("AppContainer: 현재 알림 권한 상태:", existingStatus);
+
+      // 권한이 없으면 요청
+      if (existingStatus !== "granted") {
+        console.log("AppContainer: 알림 권한 요청 중...");
+        const { status } = await Notifications.requestPermissionsAsync();
+        console.log("AppContainer: 알림 권한 요청 결과:", status);
+
+        if (status === "granted") {
+          console.log("AppContainer: 알림 권한 허용됨");
+        } else {
+          console.log("AppContainer: 알림 권한 거부됨");
+        }
+      } else {
+        console.log("AppContainer: 이미 알림 권한이 허용됨");
+      }
+    } catch (error) {
+      console.error("AppContainer: 알림 권한 요청 실패:", error);
+    }
+  };
+
+  // 앱 시작 시 알림 권한 요청
+  useEffect(() => {
+    requestNotificationPermissions();
+  }, []);
 
   useEffect(() => {
     console.log("AppContainer: 인증 상태 확인 중...", {
@@ -97,7 +143,12 @@ export default function AppContainer() {
     return <SplashScreen />;
   }
 
-  // 리다이렉트 대기 중
+  // 리다이렉트가 완료된 경우 아무것도 렌더링하지 않음
+  if (hasRedirected) {
+    return null;
+  }
+
+  // 리다이렉트 대기 중 (매우 짧은 시간)
   return (
     <View
       style={{

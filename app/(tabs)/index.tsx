@@ -1,8 +1,15 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import FavoriteAsanaCard from "../../components/dashboard/FavoriteAsanaCard";
+import FavoriteAsanasModal from "../../components/dashboard/FavoriteAsanasModal";
 import PracticeStatsChart from "../../components/dashboard/PracticeStatsChart";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
@@ -21,6 +28,7 @@ export default function DashboardScreen() {
   const [favoriteAsanas, setFavoriteAsanas] = useState<Asana[]>([]);
   const [allAsanas, setAllAsanas] = useState<Asana[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [showFavoriteModal, setShowFavoriteModal] = useState(false);
 
   // 데이터 로드
   useEffect(() => {
@@ -94,20 +102,18 @@ export default function DashboardScreen() {
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
-    return null;
+    return (
+      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}></View>
 
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <View style={styles.content}>
         {/* 수련 통계 그래프 */}
-        <View style={styles.section}>
+        <View style={styles.statsSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>수련 통계</Text>
           </View>
@@ -115,9 +121,17 @@ export default function DashboardScreen() {
         </View>
 
         {/* 즐겨찾기 아사나 */}
-        <View style={styles.section}>
+        <View style={styles.favoriteSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>좋아하는</Text>
+            <Text style={styles.sectionTitle}>좋아하는 아사나</Text>
+            {favoriteAsanas.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setShowFavoriteModal(true)}
+                style={styles.moreButton}
+              >
+                <Text style={styles.moreButtonText}>더 보기</Text>
+              </TouchableOpacity>
+            )}
           </View>
           {loadingData ? (
             <View style={styles.skeletonContainer}>
@@ -147,7 +161,15 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
+      </View>
+
+      {/* 즐겨찾기 아사나 모달 */}
+      <FavoriteAsanasModal
+        visible={showFavoriteModal}
+        onClose={() => setShowFavoriteModal(false)}
+        favoriteAsanas={favoriteAsanas}
+        onAsanaPress={handleAsanaPress}
+      />
     </View>
   );
 }
@@ -172,12 +194,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
   },
-  scrollContainer: {
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  statsSection: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 100,
+  favoriteSection: {
+    height: 300, // 고정 높이
   },
   // 스켈레톤 스타일
   skeletonContainer: {
@@ -239,14 +264,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   moreButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
   },
   moreButtonText: {
     fontSize: 14,
     color: COLORS.primary,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 
   favoriteAsanaScroll: {

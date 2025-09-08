@@ -31,10 +31,11 @@ export default function ProfileScreen() {
 
   // 알림 설정 상태
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(false);
   const [practiceReminders, setPracticeReminders] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [notificationPermissionStatus, setNotificationPermissionStatus] =
+    useState<string>("unknown");
 
   // 닉네임 수정 모달 상태
   const [showNicknameModal, setShowNicknameModal] = useState(false);
@@ -43,6 +44,22 @@ export default function ProfileScreen() {
 
   // 이미지 업로드 상태
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // 알림 권한 상태 확인
+  useEffect(() => {
+    const checkNotificationPermission = async () => {
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        setNotificationPermissionStatus(status);
+        console.log("프로필: 알림 권한 상태:", status);
+      } catch (error) {
+        console.error("알림 권한 확인 실패:", error);
+        setNotificationPermissionStatus("unknown");
+      }
+    };
+
+    checkNotificationPermission();
+  }, []);
 
   // 사용자 프로필 가져오기
   useEffect(() => {
@@ -55,7 +72,6 @@ export default function ProfileScreen() {
           // 프로필에서 알림 설정 로드
           if (profile) {
             setPushNotifications(profile.push_notifications ?? true);
-            setEmailNotifications(profile.email_notifications ?? false);
             setPracticeReminders(profile.practice_reminders ?? true);
           }
         } catch (error) {
@@ -71,7 +87,38 @@ export default function ProfileScreen() {
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
-    return null;
+    return (
+      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
+    );
+  }
+
+  // 프로필 로딩 중일 때 스켈레톤 로딩 표시
+  if (loadingProfile) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.skeletonAvatar} />
+          <View style={styles.skeletonInfo}>
+            <View style={styles.skeletonText} />
+            <View style={[styles.skeletonText, { width: "60%" }]} />
+          </View>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <View style={[styles.skeletonText, { width: "40%" }]} />
+        </View>
+
+        <View style={styles.settingItem}>
+          <View style={styles.skeletonText} />
+        </View>
+        <View style={styles.settingItem}>
+          <View style={styles.skeletonText} />
+        </View>
+        <View style={styles.settingItem}>
+          <View style={styles.skeletonText} />
+        </View>
+      </View>
+    );
   }
 
   // 로그아웃 기능 제거 (요청에 따라 세션 유지)
@@ -366,9 +413,6 @@ export default function ProfileScreen() {
             }
           }
           break;
-        case "email":
-          updateData.email_notifications = value;
-          break;
         case "practice":
           updateData.practice_reminders = value;
           await schedulePracticeReminder(value);
@@ -471,6 +515,11 @@ export default function ProfileScreen() {
               <Text style={styles.settingDescription}>
                 새로운 기능, 업데이트 및 중요 알림
               </Text>
+              {notificationPermissionStatus === "denied" && (
+                <Text style={styles.permissionWarning}>
+                  ⚠️ 알림 권한이 거부되었습니다. 설정에서 허용해주세요.
+                </Text>
+              )}
             </View>
             <Switch
               value={pushNotifications}
@@ -507,18 +556,63 @@ export default function ProfileScreen() {
               style={styles.testNotificationButton}
               onPress={async () => {
                 try {
-                  await Notifications.scheduleNotificationAsync({
-                    content: {
-                      title: "🧘‍♀️ 요가 수련 알림 테스트",
-                      body: "알림이 정상적으로 작동합니다!",
-                      data: { type: "test" },
-                    },
-                    trigger: null, // 즉시 실행
-                  });
-                  Alert.alert("알림 테스트", "테스트 알림이 전송되었습니다!");
+                  console.log("알림 테스트 시작");
+
+                  // 1. 알림 권한 확인
+                  const { status: existingStatus } =
+                    await Notifications.getPermissionsAsync();
+                  console.log("현재 알림 권한 상태:", existingStatus);
+
+                  if (existingStatus !== "granted") {
+                    console.log("알림 권한 요청 중...");
+                    const { status } =
+                      await Notifications.requestPermissionsAsync();
+                    console.log("알림 권한 요청 결과:", status);
+
+                    if (status !== "granted") {
+                      Alert.alert(
+                        "알림 권한 필요",
+                        "알림을 받으려면 알림 권한을 허용해주세요.\n설정 > 알림에서 권한을 허용해주세요.",
+                        [{ text: "확인" }]
+                      );
+                      return;
+                    }
+                  }
+
+                  // 2. Android 채널 설정 (Android인 경우)
+                  if (Platform.OS === "android") {
+                    await Notifications.setNotificationChannelAsync("test", {
+                      name: "테스트 알림",
+                      importance: Notifications.AndroidImportance.MAX,
+                      vibrationPattern: [0, 250, 250, 250],
+                      lightColor: "#FF231F7C",
+                    });
+                    console.log("Android 알림 채널 설정 완료");
+                  }
+
+                  // 3. 알림 전송
+                  console.log("알림 전송 중...");
+                  const notificationId =
+                    await Notifications.scheduleNotificationAsync({
+                      content: {
+                        title: "🧘‍♀️ 요가 수련 알림 테스트",
+                        body: "알림이 정상적으로 작동합니다!",
+                        data: { type: "test" },
+                      },
+                      trigger: null, // 즉시 실행
+                    });
+
+                  console.log("알림 전송 성공, ID:", notificationId);
+                  Alert.alert(
+                    "알림 테스트",
+                    "테스트 알림이 전송되었습니다!\n잠시 후 알림을 확인해주세요."
+                  );
                 } catch (error) {
                   console.error("테스트 알림 실패:", error);
-                  Alert.alert("오류", "테스트 알림 전송에 실패했습니다.");
+                  Alert.alert(
+                    "오류",
+                    `테스트 알림 전송에 실패했습니다.\n\n에러: ${error instanceof Error ? error.message : String(error)}`
+                  );
                 }
               }}
             >
@@ -847,5 +941,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "white",
     fontWeight: "600",
+  },
+  // 스켈레톤 스타일
+  skeletonAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.surface,
+    opacity: 0.6,
+  },
+  skeletonInfo: {
+    flex: 1,
+    marginLeft: 16,
+    gap: 8,
+  },
+  skeletonText: {
+    height: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    opacity: 0.6,
+  },
+  permissionWarning: {
+    fontSize: 12,
+    color: "#FF6B6B",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  permissionSuccess: {
+    fontSize: 12,
+    color: "#51CF66",
+    marginTop: 4,
+    fontWeight: "500",
   },
 });
