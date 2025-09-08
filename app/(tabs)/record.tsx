@@ -1,6 +1,6 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -15,105 +15,50 @@ import RecordDetailModal from "../../components/RecordDetailModal";
 import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { Asana, asanasAPI } from "../../lib/api/asanas";
-import { recordsAPI } from "../../lib/api/records";
+import { useDeleteRecord, useRecordData } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
 import { Record } from "../../types/record";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function RecordScreen() {
-  const { isAuthenticated, loading, user, session } = useAuth();
-  const [todayRecords, setTodayRecords] = useState<Record[]>([]);
-  const [allRecords, setAllRecords] = useState<Record[]>([]);
-  const [allAsanas, setAllAsanas] = useState<Asana[]>([]);
+  const { isAuthenticated, loading } = useAuth();
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [loadingRecord, setLoadingRecord] = useState(true);
-  const [loadingAsanas, setLoadingAsanas] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [currentRecordIndex, setCurrentRecordIndex] = useState(0);
   const navigation = useNavigation<NavigationProp>();
 
-  // 디버깅을 위한 로그
-  useEffect(() => {
-    console.log("=== RecordScreen 렌더링 ===");
-    console.log("isAuthenticated:", isAuthenticated);
-    console.log("loading:", loading);
-    console.log("user:", user);
-    console.log("session:", session);
-  }, [isAuthenticated, loading, user, session]);
+  // React Query로 기록 데이터 가져오기
+  const {
+    todayRecords,
+    recentRecords: allRecords,
+    allAsanas,
+    isLoading: loadingData,
+    isError,
+    error,
+    refetch,
+  } = useRecordData();
 
-  // 데이터 로드
-  useEffect(() => {
-    console.log("=== 데이터 로드 useEffect 실행 ===");
-    console.log("isAuthenticated:", isAuthenticated);
-
-    if (isAuthenticated) {
-      console.log("인증됨 - 데이터 로드 시작");
-      loadAllData();
-    } else {
-      console.log("인증되지 않음 - 데이터 로드 스킵");
-      setLoadingRecord(false);
-      setLoadingAsanas(false);
-    }
-  }, [isAuthenticated]);
+  // 기록 삭제 mutation
+  const deleteRecordMutation = useDeleteRecord();
 
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
     useCallback(() => {
-      console.log("=== 화면 포커스 - 데이터 새로고침 ===");
       if (isAuthenticated) {
-        loadAllData();
+        console.log("기록 탭: 화면 포커스 시 데이터 새로고침");
+        refetch();
       }
-    }, [isAuthenticated])
+    }, [isAuthenticated, refetch])
   );
 
-  const loadAllData = async () => {
-    try {
-      setLoadingRecord(true);
-      setLoadingAsanas(true);
-
-      // 병렬로 데이터 로드
-      const [recordsResult, todayRecordsResult, asanasResult] =
-        await Promise.all([
-          recordsAPI.getRecentRecords(),
-          recordsAPI.getTodayRecords(),
-          asanasAPI.getAllAsanas(),
-        ]);
-
-      if (recordsResult.success) {
-        setAllRecords(recordsResult.data || []);
-      }
-
-      if (todayRecordsResult.success) {
-        setTodayRecords(todayRecordsResult.data || []);
-      }
-
-      if (asanasResult.success) {
-        setAllAsanas(asanasResult.data || []);
-      }
-    } catch (error) {
-      console.error("데이터 로드 에러:", error);
-    } finally {
-      setLoadingRecord(false);
-      setLoadingAsanas(false);
-    }
-  };
-
   const handleNewRecord = () => {
-    console.log("새 기록 작성 버튼 클릭");
     navigation.navigate("NewRecord");
-  };
-
-  // 새 기록 작성 후 돌아왔을 때 데이터 새로고침
-  const handleRecordCreated = () => {
-    console.log("기록 생성 완료 - 데이터 새로고침");
-    loadAllData();
   };
 
   const handleDateSelect = (date: string) => {
@@ -132,37 +77,21 @@ export default function RecordScreen() {
   };
 
   const handleEditRecord = (updatedRecord: Record) => {
-    // 수정된 기록으로 목록 업데이트
-    setAllRecords((prev) =>
-      prev.map((r) => (r.id === updatedRecord.id ? updatedRecord : r))
-    );
-
-    // 오늘 기록이 수정된 경우 todayRecords도 업데이트
-    setTodayRecords((prev) =>
-      prev.map((r) => (r.id === updatedRecord.id ? updatedRecord : r))
-    );
-
     // 모달 닫기
     setDetailModalVisible(false);
     setSelectedRecord(null);
 
-    console.log("기록 수정 완료:", updatedRecord.id);
+    // 데이터 새로고침
+    refetch();
   };
 
   const handleDeleteRecord = async (record: Record) => {
     try {
-      const result = await recordsAPI.deleteRecord(record.date);
-      if (result.success) {
-        // 기록 목록에서 제거
-        setAllRecords((prev) => prev.filter((r) => r.id !== record.id));
-        // 오늘 기록이 삭제된 경우 todayRecords도 업데이트
-        setTodayRecords((prev) => prev.filter((r) => r.id !== record.id));
-        // 모달 닫기
-        setDetailModalVisible(false);
-        setSelectedRecord(null);
-      } else {
-        Alert.alert("오류", result.message || "기록 삭제에 실패했습니다.");
-      }
+      await deleteRecordMutation.mutateAsync(record.date);
+
+      // 모달 닫기
+      setDetailModalVisible(false);
+      setSelectedRecord(null);
     } catch (error) {
       console.error("기록 삭제 에러:", error);
       Alert.alert("오류", "기록 삭제 중 오류가 발생했습니다.");
@@ -194,18 +123,10 @@ export default function RecordScreen() {
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
-    console.log("=== 인증 로딩 중 또는 인증되지 않음 - 빈 화면 반환 ===");
     return (
       <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
     );
   }
-
-  console.log("=== RecordScreen 메인 렌더링 ===");
-  console.log("loadingRecord:", loadingRecord);
-  console.log("todayRecords:", todayRecords);
-  console.log("filteredRecords:", filteredRecords);
-  console.log("filteredRecords.length:", filteredRecords.length);
-  console.log("currentRecordIndex:", currentRecordIndex);
 
   return (
     <View style={styles.container}>
@@ -218,12 +139,27 @@ export default function RecordScreen() {
         )}
       </View>
 
+      {/* 에러 상태 */}
+      {isError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {error?.message || "데이터를 불러오는데 실패했습니다."}
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {loadingRecord || loadingAsanas ? (
+        {loadingData ? (
           <View style={styles.skeletonContainer}>
             {/* 캘린더 스켈레톤 */}
             <View style={styles.calendarSkeleton}>
@@ -624,5 +560,28 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     borderRadius: 12,
     marginTop: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.error,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
   },
 });

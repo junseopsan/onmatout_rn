@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   Image,
@@ -14,53 +13,32 @@ import {
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { Studio, studioAPI } from "../../lib/api/studio";
+import { useStudioSearch } from "../../hooks/useStudios";
+import { Studio } from "../../lib/api/studio";
 
 const { height: screenHeight } = Dimensions.get("window");
 
 export default function StudiosScreen() {
   const { isAuthenticated, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [studios, setStudios] = useState<Studio[]>([]);
-  const [filteredStudios, setFilteredStudios] = useState<Studio[]>([]);
-  const [loadingStudios, setLoadingStudios] = useState(true);
 
-  // 요가원 데이터 가져오기
-  useEffect(() => {
-    loadStudios();
-  }, []);
+  // React Query로 요가원 데이터 가져오기
+  const {
+    data: filteredStudios = [],
+    isLoading: loadingStudios,
+    isError,
+    error,
+    refetch,
+  } = useStudioSearch(searchQuery);
 
-  const loadStudios = async () => {
-    try {
-      setLoadingStudios(true);
-      const response = await studioAPI.getAllStudios();
-
-      if (response.success && response.data) {
-        setStudios(response.data);
-        setFilteredStudios(response.data);
-      } else {
-        console.error("요가원 로드 실패:", response.message);
-      }
-    } catch (error) {
-      console.error("요가원 로드 에러:", error);
-    } finally {
-      setLoadingStudios(false);
-    }
-  };
+  // 타입 안전성을 위한 변수
+  const studios: Studio[] = Array.isArray(filteredStudios)
+    ? filteredStudios
+    : [];
 
   // 검색 기능
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (query.trim() === "") {
-      setFilteredStudios(studios);
-    } else {
-      const filtered = studios.filter(
-        (studio) =>
-          studio.name.toLowerCase().includes(query.toLowerCase()) ||
-          studio.address.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredStudios(filtered);
-    }
   };
 
   // 인스타그램 링크 열기
@@ -93,16 +71,6 @@ export default function StudiosScreen() {
     );
   }
 
-  // 요가원 로딩 중
-  if (loadingStudios) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>요가원 정보를 불러오는 중...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       {/* 검색 바 */}
@@ -116,18 +84,39 @@ export default function StudiosScreen() {
         />
       </View>
 
+      {/* 에러 상태 */}
+      {isError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {error?.message || "요가원 정보를 불러오는데 실패했습니다."}
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* 요가원 리스트 */}
       <ScrollView style={styles.studiosList}>
-        <Text style={styles.listTitle}>
-          주변 요가원 ({filteredStudios.length}개)
-        </Text>
+        <Text style={styles.listTitle}>주변 요가원 ({studios.length}개)</Text>
 
-        {filteredStudios.length === 0 ? (
+        {loadingStudios ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>요가원 정보를 불러오는 중...</Text>
+          </View>
+        ) : studios.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim()
+                ? "검색 결과가 없습니다."
+                : "요가원 정보가 없습니다."}
+            </Text>
           </View>
         ) : (
-          filteredStudios.map((studio) => (
+          studios.map((studio: Studio) => (
             <TouchableOpacity key={studio.id} style={styles.studioCard}>
               <Image
                 source={{
@@ -332,6 +321,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   instagramText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.error,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
     fontSize: 14,
     color: "white",
     fontWeight: "600",

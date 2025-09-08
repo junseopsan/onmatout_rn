@@ -1,6 +1,6 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -14,10 +14,13 @@ import {
 import { AsanaCard } from "../../components/AsanaCard";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
+import {
+  useAsanas,
+  useAsanaSearch,
+  useFavoriteAsanas,
+} from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
-import { asanasAPI } from "../../lib/api/asanas";
 import { RootStackParamList } from "../../navigation/types";
-import { useAsanaStore } from "../../stores/asanaStore";
 import { AsanaCategory } from "../../types/asana";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -28,166 +31,74 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-  const [favoriteAsanas, setFavoriteAsanas] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [localLoading, setLocalLoading] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<AsanaCategory[]>(
+    []
+  );
 
-  // 스토어에서 상태 가져오기
+  // React Query hooks
   const {
-    asanas,
-    filteredAsanas,
+    data: asanasData,
     isLoading,
-    isLoadingMore,
-    hasMore,
-    selectedCategories,
+    isError,
     error,
-    setSelectedCategories,
-    loadAsanas,
-    loadMoreAsanas,
-    clearError,
-  } = useAsanaStore();
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useAsanas(20);
 
-  // 아사나 데이터 로드 (초기 로드)
-  useEffect(() => {
-    if (isAuthenticated) {
-      console.log("아사나 탭: 초기 데이터 로드 시작");
-      setLocalLoading(true);
-      loadAsanas(true).finally(() => {
-        setLocalLoading(false);
-      });
+  const { data: favoriteAsanas = [], isLoading: isLoadingFavorites } =
+    useFavoriteAsanas();
+
+  const { data: searchResults = [], isLoading: isSearching } =
+    useAsanaSearch(searchQuery);
+
+  // 모든 아사나 데이터를 하나의 배열로 변환
+  const allAsanas = useMemo(() => {
+    if (!asanasData?.pages) return [];
+    return asanasData.pages.flatMap((page) => page.data);
+  }, [asanasData]);
+
+  // 카테고리별 필터링된 아사나
+  const filteredAsanas = useMemo(() => {
+    if (selectedCategories.length === 0) {
+      return allAsanas;
     }
-  }, [isAuthenticated, loadAsanas]);
 
-  // 즐겨찾기 목록 로드
-  const loadFavoriteAsanas = async () => {
-    if (isAuthenticated) {
-      try {
-        const result = await asanasAPI.getFavoriteAsanas();
-        if (result.success) {
-          setFavoriteAsanas(result.data || []);
-        }
-      } catch (error) {
-        console.error("즐겨찾기 목록 로드 에러:", error);
-      }
-    }
-  };
+    return allAsanas.filter((asana) => {
+      return selectedCategories.some(
+        (category) => asana.category_name_en === category
+      );
+    });
+  }, [allAsanas, selectedCategories]);
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    if (isAuthenticated) {
-      const { asanas } = useAsanaStore.getState();
-
-      // 기존 데이터가 없으면 로드
-      if (asanas.length === 0) {
-        console.log(`아사나 탭: 초기 데이터 로드 시작`);
-        setLocalLoading(true);
-        loadAsanas(true).finally(() => {
-          setLocalLoading(false);
-        });
-      }
-
-      // 즐겨찾기 목록 로드
-      loadFavoriteAsanas();
-    }
-  }, [isAuthenticated, loadAsanas]);
-
-  // 화면이 포커스될 때마다 랜덤 셔플 적용
+  // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
-        const { asanas, selectedCategories } = useAsanaStore.getState();
-
-        if (asanas.length > 0) {
-          console.log(`아사나 탭: 화면 포커스 시 랜덤 셔플 적용`);
-
-          // 현재 선택된 카테고리를 다시 설정하여 랜덤 셔플 트리거
-          setSelectedCategories(selectedCategories);
-        }
+        console.log("아사나 탭: 화면 포커스 시 데이터 새로고침");
+        refetch();
       }
-    }, [isAuthenticated])
+    }, [isAuthenticated, refetch])
   );
 
   const handleAsanaPress = (asana: any) => {
-    // React Navigation을 사용하여 상세 화면으로 이동
     navigation.navigate("AsanaDetail", { id: asana.id });
   };
 
   const handleFavoriteToggle = (asanaId: string, isFavorite: boolean) => {
-    setFavoriteAsanas((prev) => {
-      if (isFavorite) {
-        return [...prev, asanaId];
-      } else {
-        return prev.filter((id) => id !== asanaId);
-      }
-    });
+    // 즐겨찾기 토글 로직은 API 호출로 처리
+    // TODO: 즐겨찾기 API 호출 및 캐시 무효화
+    console.log("즐겨찾기 토글:", asanaId, isFavorite);
   };
 
   // 검색 함수
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
-
-    if (query.trim() === "") {
-      setSearchResults([]);
-      return;
-    }
-
-    console.log("검색어:", query);
-    console.log("검색어 분리:", query.toLowerCase().trim().split(/\s+/));
-
-    // 검색할 때 전체 데이터를 다시 로드
-    try {
-      setLocalLoading(true);
-      await loadAsanas(true);
-      const { asanas } = useAsanaStore.getState();
-      console.log("검색 후 전체 아사나 수:", asanas.length);
-
-      const filtered = asanas.filter((asana) => {
-        const searchTerms = query.toLowerCase().trim().split(/\s+/);
-        const krName = asana.sanskrit_name_kr.toLowerCase().trim();
-        const enName = asana.sanskrit_name_en.toLowerCase().trim();
-
-        // 모든 검색어가 한국어 이름 또는 영어 이름에 포함되어야 함
-        const krMatch = searchTerms.every((term) => {
-          const match = krName.includes(term);
-          if (asana.sanskrit_name_kr.includes("나타라자")) {
-            console.log(`나타라자 검색어 "${term}" 매칭:`, match);
-          }
-          return match;
-        });
-        const enMatch = searchTerms.every((term) => {
-          const match = enName.includes(term);
-          if (asana.sanskrit_name_kr.includes("나타라자")) {
-            console.log(`나타라자 영어 검색어 "${term}" 매칭:`, match);
-          }
-          return match;
-        });
-
-        // 디버깅: 나타라자 아사나 데이터 확인
-        if (asana.sanskrit_name_kr.includes("나타라자")) {
-          console.log("나타라자 아사나 데이터:", {
-            sanskrit_name_kr: asana.sanskrit_name_kr,
-            sanskrit_name_en: asana.sanskrit_name_en,
-            searchTerms,
-            krMatch,
-            enMatch,
-          });
-        }
-
-        return krMatch || enMatch;
-      });
-
-      console.log("검색 결과 수:", filtered.length);
-      setSearchResults(filtered);
-    } catch (error) {
-      console.error("검색 중 오류:", error);
-      setSearchResults([]);
-    } finally {
-      setLocalLoading(false);
-    }
   };
 
-  // 검색 결과 또는 필터링된 결과 반환
+  // 표시할 아사나 데이터 결정
   const getDisplayAsanas = () => {
     if (searchQuery.trim() !== "") {
       return searchResults;
@@ -206,8 +117,8 @@ export default function AsanasScreen() {
   };
 
   const handleLoadMore = () => {
-    if (!isLoadingMore && hasMore) {
-      loadMoreAsanas(); // 추가 로드
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
   };
 
@@ -257,7 +168,7 @@ export default function AsanasScreen() {
   );
 
   const renderFooter = () => {
-    if (!isLoadingMore) return null;
+    if (!isFetchingNextPage) return null;
 
     return (
       <View style={styles.loadingMoreContainer}>
@@ -321,17 +232,22 @@ export default function AsanasScreen() {
       </View>
 
       {/* 에러 상태 */}
-      {error && (
+      {isError && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={clearError} style={styles.retryButton}>
+          <Text style={styles.errorText}>
+            {error?.message || "아사나 데이터를 불러오는데 실패했습니다."}
+          </Text>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            style={styles.retryButton}
+          >
             <Text style={styles.retryButtonText}>다시 시도</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* 아사나 카드 리스트 */}
-      {localLoading || (isLoading && filteredAsanas.length === 0) ? (
+      {isLoading && allAsanas.length === 0 ? (
         <View style={styles.skeletonContainer}>
           <View style={styles.skeletonGrid}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
@@ -339,7 +255,7 @@ export default function AsanasScreen() {
             ))}
           </View>
         </View>
-      ) : asanas.length === 0 ? (
+      ) : allAsanas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             {selectedCategories.length > 0
@@ -347,16 +263,15 @@ export default function AsanasScreen() {
               : "아사나 데이터가 없습니다."}
           </Text>
           <TouchableOpacity
-            onPress={() => {
-              setLocalLoading(true);
-              loadAsanas(true).finally(() => setLocalLoading(false));
-            }}
+            onPress={() => refetch()}
             style={styles.retryButton}
           >
             <Text style={styles.retryButtonText}>새로고침</Text>
           </TouchableOpacity>
         </View>
-      ) : searchQuery.trim() !== "" && searchResults.length === 0 ? (
+      ) : searchQuery.trim() !== "" &&
+        searchResults.length === 0 &&
+        !isSearching ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             &quot;{searchQuery}&quot;에 대한 검색 결과가 없습니다.

@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, ScrollView, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
-import { Asana, asanasAPI } from "../../lib/api/asanas";
+import { useAsanaDetail } from "../../hooks/useAsanas";
 import { RootStackParamList } from "../../navigation/types";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -23,58 +23,23 @@ export default function AsanaDetailScreen() {
   const route = useRoute<AsanaDetailRouteProp>();
   const navigation = useNavigation();
   const { id } = route.params;
-  const [asana, setAsana] = useState<Asana | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
 
+  // React Query로 아사나 상세 데이터 가져오기
+  const {
+    data: asana,
+    isLoading: loading,
+    isError,
+    error,
+  } = useAsanaDetail(id);
+
   useEffect(() => {
-    if (id) {
-      loadAsanaDetail();
+    if (asana?.image_number) {
+      loadValidImages(asana.image_number);
     }
-  }, [id]);
-
-  const loadAsanaDetail = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // 모든 아사나를 가져와서 해당 ID의 아사나 찾기
-      const result = await asanasAPI.getAllAsanas();
-
-      if (result.success && result.data) {
-        const foundAsana = result.data.find((a) => a.id === id);
-        if (foundAsana) {
-          console.log("아사나 상세 데이터:", {
-            id: foundAsana.id,
-            name: foundAsana.sanskrit_name_kr,
-            category: foundAsana.category_name_en,
-            level: foundAsana.level,
-          });
-          setAsana(foundAsana);
-
-          // 이미지 URL들 생성
-          loadValidImages(foundAsana.image_number);
-
-          console.log(
-            "아사나 상세 데이터 로드 완료:",
-            foundAsana.sanskrit_name_kr
-          );
-        } else {
-          setError("아사나를 찾을 수 없습니다.");
-        }
-      } else {
-        setError(result.message || "아사나 데이터를 불러오는데 실패했습니다.");
-      }
-    } catch (error) {
-      setError("아사나 데이터를 불러오는 중 오류가 발생했습니다.");
-      console.error("아사나 상세 로드 예외:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [asana]);
 
   const generateImageUrls = (imageNumber: string) => {
     const urls: string[] = [];
@@ -201,7 +166,7 @@ export default function AsanaDetailScreen() {
     );
   }
 
-  if (error || !asana) {
+  if (isError || (!loading && !asana)) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
         <YStack
@@ -216,7 +181,7 @@ export default function AsanaDetailScreen() {
             textAlign="center"
             marginBottom="$6"
           >
-            {error || "아사나를 찾을 수 없습니다."}
+            {error?.message || "아사나를 찾을 수 없습니다."}
           </Text>
           <Button
             backgroundColor="$primary"
@@ -277,7 +242,7 @@ export default function AsanaDetailScreen() {
                       maxHeight: 220,
                     }}
                     contentFit="contain"
-                    placeholder="이미지 로딩 중..."
+                    placeholder="🖼️"
                     placeholderContentFit="contain"
                     onError={() => {
                       console.log(
@@ -290,7 +255,7 @@ export default function AsanaDetailScreen() {
                   />
                 </TouchableOpacity>
 
-                {/* 로딩 인디케이터 */}
+                {/* 스켈레톤 로딩 */}
                 {imageLoading && (
                   <YStack
                     position="absolute"
@@ -300,18 +265,30 @@ export default function AsanaDetailScreen() {
                     bottom={0}
                     justifyContent="center"
                     alignItems="center"
-                    backgroundColor="rgba(0,0,0,0.5)"
+                    backgroundColor="white"
                     zIndex={1}
                   >
-                    <ActivityIndicator size="large" color={COLORS.text} />
-                    <Text
-                      fontSize={16}
-                      fontWeight="bold"
-                      color="$text"
-                      marginTop="$2"
+                    <View
+                      style={{
+                        width: "85%",
+                        height: "85%",
+                        maxWidth: 280,
+                        maxHeight: 220,
+                        backgroundColor: "#f0f0f0",
+                        borderRadius: 8,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
                     >
-                      이미지 로딩 중...
-                    </Text>
+                      <View
+                        style={{
+                          width: "60%",
+                          height: "60%",
+                          backgroundColor: "#e0e0e0",
+                          borderRadius: 4,
+                        }}
+                      />
+                    </View>
                   </YStack>
                 )}
 
@@ -352,9 +329,27 @@ export default function AsanaDetailScreen() {
               alignItems="center"
               backgroundColor="white"
             >
-              <Text fontSize={16} color="$textSecondary">
-                이미지 준비 중
-              </Text>
+              <View
+                style={{
+                  width: "85%",
+                  height: "85%",
+                  maxWidth: 280,
+                  maxHeight: 220,
+                  backgroundColor: "#f0f0f0",
+                  borderRadius: 8,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: "60%",
+                    height: "60%",
+                    backgroundColor: "#e0e0e0",
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
             </YStack>
           )}
         </YStack>
