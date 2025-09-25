@@ -1,19 +1,47 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import FavoriteAsanaCard from "../../components/dashboard/FavoriteAsanaCard";
+import FavoriteAsanasModal from "../../components/dashboard/FavoriteAsanasModal";
+import PracticeStatsChart from "../../components/dashboard/PracticeStatsChart";
 import SettingsModal from "../../components/profile/SettingsModal";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
+import { useDashboardData } from "../../hooks/useDashboard";
+import { Asana } from "../../lib/api/asanas";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function ProfileScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { user, getUserProfile } = useAuthStore();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // 설정 모달 상태
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // 즐겨찾기 아사나 모달 상태
+  const [showFavoriteModal, setShowFavoriteModal] = useState(false);
+
+  // 대시보드 데이터 가져오기 (통계용)
+  const {
+    recentRecords,
+    favoriteAsanas,
+    isLoading: loadingData,
+    refetch,
+  } = useDashboardData();
 
   // 사용자 프로필 가져오기
   useEffect(() => {
@@ -46,46 +74,19 @@ export default function ProfileScreen() {
     loadUserProfile();
   }, [user, getUserProfile, loading, isAuthenticated, loadingProfile]);
 
-  // 전화번호 포맷팅 함수
-  const formatPhoneNumber = (phone: string): string => {
-    if (!phone) return "전화번호 없음";
+  // 화면이 포커스될 때마다 데이터 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        console.log("프로필: 화면 포커스 시 데이터 새로고침");
+        refetch();
+      }
+    }, [isAuthenticated, refetch])
+  );
 
-    // +82로 시작하는 경우 제거하고 0으로 시작하도록 변경
-    let formatted = phone.replace(/^\+82/, "0");
-
-    // 숫자만 추출
-    const numbers = formatted.replace(/\D/g, "");
-
-    // 12자리인 경우 (821083138230 -> 010-8313-8230)
-    if (numbers.length === 12 && numbers.startsWith("82")) {
-      const koreanNumber = "0" + numbers.slice(2);
-      const result = `${koreanNumber.slice(0, 3)}-${koreanNumber.slice(
-        3,
-        7
-      )}-${koreanNumber.slice(7)}`;
-      return result;
-    }
-
-    // 11자리인 경우 (01012345678 -> 010-1234-5678)
-    if (numbers.length === 11) {
-      const result = `${numbers.slice(0, 3)}-${numbers.slice(
-        3,
-        7
-      )}-${numbers.slice(7)}`;
-      return result;
-    }
-
-    // 10자리인 경우 (0101234567 -> 010-123-4567)
-    if (numbers.length === 10) {
-      const result = `${numbers.slice(0, 3)}-${numbers.slice(
-        3,
-        6
-      )}-${numbers.slice(6)}`;
-      return result;
-    }
-
-    // 그 외의 경우 원본 반환
-    return formatted;
+  // 아사나 상세 화면으로 이동
+  const handleAsanaPress = (asana: Asana) => {
+    navigation.navigate("AsanaDetail", { id: asana.id });
   };
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
@@ -122,7 +123,7 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       {/* 헤더 - 설정 아이콘 */}
       <View style={styles.header}>
-        <Text style={styles.title}>프로필</Text>
+        <Text style={styles.title}></Text>
         <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => setShowSettingsModal(true)}
@@ -131,18 +132,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 간단한 프로필 정보 */}
-      <View style={styles.content}>
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
+      {/* 프로필 헤더 */}
+      <View style={styles.profileHeader}>
+        <View style={styles.profileInfo}>
+          <View style={styles.profileImageContainer}>
             {userProfile?.avatar_url ? (
               <Image
                 source={{ uri: userProfile.avatar_url }}
-                style={styles.avatarImage}
+                style={styles.profileImage}
               />
             ) : (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
+              <View style={styles.profileImagePlaceholder}>
+                <Text style={styles.profileImageText}>
                   {userProfile?.name
                     ? userProfile.name.charAt(0).toUpperCase()
                     : "U"}
@@ -150,11 +151,62 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
+          <View style={styles.profileTextContainer}>
+            <Text style={styles.profileGreeting}>
+              {userProfile?.name || "사용자"}님! 나마스떼 🙏
+            </Text>
+          </View>
+        </View>
+      </View>
 
-          <Text style={styles.nickname}>{userProfile?.name || "사용자"}</Text>
-          <Text style={styles.phoneNumber}>
-            {formatPhoneNumber(user?.phone || "")}
-          </Text>
+      {/* 간단한 프로필 정보 */}
+      <View style={styles.content}>
+        {/* 수련 통계 섹션 */}
+        <View style={styles.statsSection}>
+          <View style={styles.sectionHeader}></View>
+          <PracticeStatsChart records={recentRecords} isLoading={loadingData} />
+        </View>
+
+        {/* 즐겨찾기 아사나 섹션 */}
+        <View style={styles.favoriteSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>좋아하는 아사나</Text>
+            {favoriteAsanas.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setShowFavoriteModal(true)}
+                style={styles.moreButton}
+              >
+                <Text style={styles.moreButtonText}>더 보기</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {loadingData ? (
+            <View style={styles.skeletonContainer}>
+              <View style={styles.skeletonAsanas}>
+                {[1, 2, 3].map((item) => (
+                  <View key={item} style={styles.skeletonAsanaCard} />
+                ))}
+              </View>
+            </View>
+          ) : favoriteAsanas.length > 0 ? (
+            <FlatList
+              data={favoriteAsanas}
+              renderItem={({ item }) => (
+                <FavoriteAsanaCard asana={item} onPress={handleAsanaPress} />
+              )}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.favoriteAsanaScroll}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                즐겨찾기한 아사나가 없습니다.
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -162,6 +214,14 @@ export default function ProfileScreen() {
       <SettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
+      />
+
+      {/* 즐겨찾기 아사나 모달 */}
+      <FavoriteAsanasModal
+        visible={showFavoriteModal}
+        onClose={() => setShowFavoriteModal(false)}
+        favoriteAsanas={favoriteAsanas}
+        onAsanaPress={handleAsanaPress}
       />
     </View>
   );
@@ -187,6 +247,44 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     padding: 8,
+  },
+  profileHeader: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+  profileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileImageContainer: {
+    marginRight: 16,
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  profileImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileImageText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+  },
+  profileTextContainer: {
+    flex: 1,
+  },
+  profileGreeting: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: COLORS.text,
+    lineHeight: 28,
   },
   content: {
     flex: 1,
@@ -238,21 +336,59 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   statsSection: {
-    alignItems: "center",
-    paddingVertical: 20,
+    marginTop: 0,
   },
-  welcomeText: {
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: COLORS.text,
-    marginBottom: 8,
-    textAlign: "center",
   },
-  subText: {
+  favoriteSection: {
+    marginTop: 0,
+  },
+  moreButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  moreButtonText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  favoriteAsanaScroll: {
+    paddingHorizontal: 4,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
     fontSize: 16,
     color: COLORS.textSecondary,
+    marginBottom: 16,
     textAlign: "center",
-    lineHeight: 24,
+  },
+  // 스켈레톤 스타일
+  skeletonContainer: {
+    marginVertical: 8,
+  },
+  skeletonAsanas: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  skeletonAsanaCard: {
+    width: 140,
+    height: 180,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    opacity: 0.6,
   },
   // 스켈레톤 스타일
   skeletonAvatar: {

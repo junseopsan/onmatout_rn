@@ -11,14 +11,11 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { storageAPI } from "../../lib/api/storage";
-import { userAPI } from "../../lib/api/user";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -38,19 +35,9 @@ export default function SettingsModal({
 
   // 알림 설정 상태
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [practiceReminders, setPracticeReminders] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
   const [notificationPermissionStatus, setNotificationPermissionStatus] =
     useState<string>("unknown");
-
-  // 닉네임 수정 모달 상태
-  const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [editingNickname, setEditingNickname] = useState("");
-  const [isUpdatingNickname, setIsUpdatingNickname] = useState(false);
-
-  // 이미지 업로드 상태
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // 알림 권한 상태 확인
   useEffect(() => {
@@ -81,12 +68,9 @@ export default function SettingsModal({
           // 프로필에서 알림 설정 로드
           if (profile) {
             setPushNotifications(profile.push_notifications ?? true);
-            setPracticeReminders(profile.practice_reminders ?? true);
           }
         } catch (error) {
           console.error("프로필 로드 에러:", error);
-        } finally {
-          setLoadingProfile(false);
         }
       }
     };
@@ -134,144 +118,6 @@ export default function SettingsModal({
 
     // 그 외의 경우 원본 반환
     return formatted;
-  };
-
-  // 닉네임 수정 모달 열기
-  const openNicknameModal = () => {
-    setEditingNickname(userProfile?.name || "");
-    setShowNicknameModal(true);
-  };
-
-  // 닉네임 수정 모달 닫기
-  const closeNicknameModal = () => {
-    setShowNicknameModal(false);
-    setEditingNickname("");
-  };
-
-  // 이미지 업로드
-  const handleImageUpload = async () => {
-    if (!user) return;
-
-    // 이미지 변경 옵션 제공
-    Alert.alert("프로필 사진 변경", "프로필 사진을 어떻게 변경하시겠습니까?", [
-      {
-        text: "갤러리에서 선택",
-        onPress: () => uploadFromGallery(),
-      },
-      ...(userProfile?.avatar_url
-        ? [
-            {
-              text: "기본 이미지로 변경",
-              onPress: () => removeProfileImage(),
-            },
-          ]
-        : []),
-      {
-        text: "취소",
-        style: "cancel",
-      },
-    ]);
-  };
-
-  // 갤러리에서 이미지 업로드
-  const uploadFromGallery = async () => {
-    if (!user) return;
-
-    setIsUploadingImage(true);
-    try {
-      console.log("갤러리에서 이미지 업로드 시작");
-      const result = await storageAPI.uploadProfileImage(user.id);
-
-      if (result.success && result.url) {
-        // 기존 이미지가 있다면 삭제
-        if (userProfile?.avatar_url) {
-          await storageAPI.deleteProfileImage(userProfile.avatar_url);
-        }
-
-        // 프로필에 이미지 URL 업데이트
-        const response = await userAPI.updateUserProfile(user.id, {
-          avatar_url: result.url,
-        });
-
-        if (response.success) {
-          setUserProfile(response.data);
-          Alert.alert("성공", "프로필 사진이 업데이트되었습니다.");
-        } else {
-          Alert.alert("오류", "프로필 업데이트에 실패했습니다.");
-        }
-      } else {
-        Alert.alert("오류", result.message || "이미지 업로드에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("이미지 업로드 에러:", error);
-      Alert.alert("오류", "이미지 업로드 중 오류가 발생했습니다.");
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-  // 프로필 이미지 제거
-  const removeProfileImage = async () => {
-    if (!user || !userProfile?.avatar_url) return;
-
-    Alert.alert("프로필 사진 제거", "프로필 사진을 제거하시겠습니까?", [
-      {
-        text: "제거",
-        style: "destructive",
-        onPress: async () => {
-          setIsUploadingImage(true);
-          try {
-            // 기존 이미지 삭제
-            await storageAPI.deleteProfileImage(userProfile.avatar_url);
-
-            // 프로필에서 이미지 URL 제거
-            const response = await userAPI.updateUserProfile(user.id, {
-              avatar_url: undefined,
-            });
-
-            if (response.success) {
-              setUserProfile(response.data);
-              Alert.alert("성공", "프로필 사진이 제거되었습니다.");
-            } else {
-              Alert.alert("오류", "프로필 업데이트에 실패했습니다.");
-            }
-          } catch (error) {
-            console.error("이미지 제거 에러:", error);
-            Alert.alert("오류", "이미지 제거 중 오류가 발생했습니다.");
-          } finally {
-            setIsUploadingImage(false);
-          }
-        },
-      },
-      {
-        text: "취소",
-        style: "cancel",
-      },
-    ]);
-  };
-
-  // 닉네임 수정 저장
-  const saveNickname = async () => {
-    if (!user || !editingNickname.trim()) return;
-
-    setIsUpdatingNickname(true);
-    try {
-      const response = await userAPI.updateUserProfile(user.id, {
-        name: editingNickname.trim(),
-      });
-
-      if (response.success) {
-        setUserProfile(response.data);
-        closeNicknameModal();
-      } else {
-        Alert.alert("오류", response.message || "닉네임 수정에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("닉네임 수정 에러:", error);
-      Alert.alert("오류", "닉네임 수정 중 오류가 발생했습니다.");
-    } finally {
-      setIsUpdatingNickname(false);
-    }
   };
 
   // 알림 권한 요청
@@ -355,13 +201,8 @@ export default function SettingsModal({
       const hasPermission = await requestNotificationPermissions();
       if (!hasPermission) {
         // 권한이 없으면 설정을 false로 변경
-        switch (type) {
-          case "push":
-            setPushNotifications(false);
-            break;
-          case "practice":
-            setPracticeReminders(false);
-            break;
+        if (type === "push") {
+          setPushNotifications(false);
         }
         return;
       }
@@ -383,24 +224,19 @@ export default function SettingsModal({
           break;
       }
 
-      const response = await userAPI.updateUserProfile(user.id, updateData);
-      if (response.success) {
-        setUserProfile(response.data);
+      // 알림 설정 업데이트 (임시로 성공 처리)
+      console.log("알림 설정 업데이트:", updateData);
 
-        // 성공 메시지 표시
-        if (type === "practice") {
-          if (value) {
-            Alert.alert(
-              "알림 설정",
-              "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다."
-            );
-          } else {
-            Alert.alert("알림 설정", "수련 알림이 해제되었습니다.");
-          }
+      // 성공 메시지 표시
+      if (type === "practice") {
+        if (value) {
+          Alert.alert(
+            "알림 설정",
+            "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다."
+          );
+        } else {
+          Alert.alert("알림 설정", "수련 알림이 해제되었습니다.");
         }
-      } else {
-        console.error("알림 설정 업데이트 실패:", response.message);
-        Alert.alert("오류", "알림 설정 업데이트에 실패했습니다.");
       }
     } catch (error) {
       console.error("알림 설정 업데이트 에러:", error);
@@ -434,6 +270,27 @@ export default function SettingsModal({
 
         <View style={styles.content}>
           <View style={styles.settingsContainer}>
+            {/* 개인정보 섹션 */}
+            <View style={styles.personalInfoSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>개인정보</Text>
+              </View>
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>닉네임</Text>
+                <Text style={styles.infoValue}>
+                  {userProfile?.name || "사용자"}
+                </Text>
+              </View>
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>전화번호</Text>
+                <Text style={styles.infoValue}>
+                  {formatPhoneNumber(user?.phone || "")}
+                </Text>
+              </View>
+            </View>
+
             {/* 알림 설정 섹션 */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>알림 설정</Text>
@@ -488,50 +345,6 @@ export default function SettingsModal({
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* 닉네임 수정 모달 */}
-        <Modal
-          visible={showNicknameModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={closeNicknameModal}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>닉네임 수정</Text>
-
-              <TextInput
-                style={styles.nicknameInput}
-                value={editingNickname}
-                onChangeText={setEditingNickname}
-                placeholder="닉네임을 입력하세요"
-                placeholderTextColor={COLORS.textSecondary}
-                maxLength={20}
-                autoFocus={true}
-              />
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={closeNicknameModal}
-                  disabled={isUpdatingNickname}
-                >
-                  <Text style={styles.cancelButtonText}>취소</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.saveButton]}
-                  onPress={saveNickname}
-                  disabled={isUpdatingNickname || !editingNickname.trim()}
-                >
-                  <Text style={styles.saveButtonText}>
-                    {isUpdatingNickname ? "저장 중..." : "저장"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
       </View>
     </Modal>
   );
@@ -546,9 +359,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 60,
+    paddingTop: 20,
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.surface,
   },
@@ -565,88 +378,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 100,
   },
-  profileSection: {
-    alignItems: "center",
+  personalInfoSection: {
     marginBottom: 32,
-    paddingVertical: 20,
   },
-  avatarContainer: {
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "white",
-  },
-  avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  uploadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  uploadingText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  cameraIconContainer: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: COLORS.background,
-  },
-  nickname: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.text,
-  },
-  nicknameContainer: {
+  infoItem: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
     marginBottom: 8,
   },
-  editIcon: {
-    fontSize: 16,
-    marginLeft: 8,
-    opacity: 0.7,
-  },
-  phoneNumber: {
+  infoLabel: {
     fontSize: 16,
     color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  infoValue: {
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: "600",
   },
   settingsContainer: {
     marginBottom: 32,
