@@ -16,9 +16,12 @@
           "NSAllowsArbitraryLoads": true
         },
         "NSUserNotificationUsageDescription": "요가 수련 리마인더와 중요 알림을 받기 위해 알림 권한이 필요합니다.",
+        "NSLocationWhenInUseUsageDescription": "주변 요가원을 찾기 위해 위치 정보가 필요합니다.",
         "UIBackgroundModes": ["remote-notification"]
       },
-      "config": {}
+      "config": {
+        "googleMapsApiKey": "AIzaSyBTbQIrm9nF_P29v7wOiDwu3_wBu_7GpjQ"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -28,9 +31,10 @@
       "edgeToEdgeEnabled": true,
       "package": "com.onmatout.app",
       "versionCode": 1,
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyCZ8DshnPxQ6bUQHDRmOkR339uZeIeyhDo"
+          "apiKey": "AIzaSyCVOvcKsS7PMWgC-AeG30b1ndUib50ViZU"
         }
       }
     },

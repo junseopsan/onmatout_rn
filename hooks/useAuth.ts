@@ -55,6 +55,12 @@ export const useAuth = () => {
       }
     };
 
+    // 이미 로딩이 완료된 상태라면 초기화하지 않음
+    if (!loading) {
+      console.log("Auth already initialized, skipping...");
+      return;
+    }
+
     initAuth();
 
     return () => {

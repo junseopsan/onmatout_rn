@@ -17,7 +17,7 @@ export const useTodayRecords = () => {
       return result.data || [];
     },
     staleTime: 2 * 60 * 1000, // 2분
-    cacheTime: 5 * 60 * 1000, // 5분
+    gcTime: 5 * 60 * 1000, // 5분
     retry: 2,
   });
 };
@@ -36,7 +36,7 @@ export const useRecentRecords = () => {
       return result.data || [];
     },
     staleTime: 5 * 60 * 1000, // 5분
-    cacheTime: 10 * 60 * 1000, // 10분
+    gcTime: 10 * 60 * 1000, // 10분
     retry: 2,
   });
 };
@@ -55,7 +55,7 @@ export const useAllAsanas = () => {
       return result.data || [];
     },
     staleTime: 10 * 60 * 1000, // 10분
-    cacheTime: 30 * 60 * 1000, // 30분
+    gcTime: 30 * 60 * 1000, // 30분
     retry: 2,
   });
 };

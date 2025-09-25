@@ -12,8 +12,8 @@ import "react-native-reanimated";
 import { TamaguiProvider } from "tamagui";
 import config from "../tamagui.config";
 
-import { COLORS } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { COLORS } from "../constants/Colors";
+import { useColorScheme } from "../hooks/useColorScheme";
 
 // ThemeProvider를 별도로 export
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {

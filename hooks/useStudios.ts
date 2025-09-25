@@ -15,7 +15,7 @@ export const useAllStudios = () => {
       return result.data || [];
     },
     staleTime: 10 * 60 * 1000, // 10분
-    cacheTime: 30 * 60 * 1000, // 30분
+    gcTime: 30 * 60 * 1000, // 30분
     retry: 2,
   });
 };
@@ -51,7 +51,7 @@ export const useStudioSearch = (query: string) => {
       });
     },
     staleTime: 2 * 60 * 1000, // 2분
-    cacheTime: 5 * 60 * 1000, // 5분
+    gcTime: 5 * 60 * 1000, // 5분
     enabled: true, // 항상 활성화 (검색어가 없어도 전체 목록 표시)
   });
 };

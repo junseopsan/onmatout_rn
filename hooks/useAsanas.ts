@@ -27,7 +27,7 @@ export const useAsanas = (pageSize: number = 20) => {
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000, // 5분
-    cacheTime: 10 * 60 * 1000, // 10분
+    gcTime: 10 * 60 * 1000, // 10분
     retry: 2,
   });
 };
@@ -46,7 +46,7 @@ export const useFavoriteAsanas = () => {
       return result.data || [];
     },
     staleTime: 2 * 60 * 1000, // 2분
-    cacheTime: 5 * 60 * 1000, // 5분
+    gcTime: 5 * 60 * 1000, // 5분
     retry: 2,
   });
 };
@@ -72,7 +72,7 @@ export const useAsanaDetail = (id: string) => {
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10분
-    cacheTime: 30 * 60 * 1000, // 30분
+    gcTime: 30 * 60 * 1000, // 30분
     retry: 2,
   });
 };
@@ -106,7 +106,7 @@ export const useAsanaSearch = (query: string) => {
     },
     enabled: query.trim().length > 0,
     staleTime: 2 * 60 * 1000, // 2분
-    cacheTime: 5 * 60 * 1000, // 5분
+    gcTime: 5 * 60 * 1000, // 5분
     retry: 2,
   });
 };

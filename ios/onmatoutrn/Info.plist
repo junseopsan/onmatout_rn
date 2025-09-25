@@ -72,5 +72,7 @@
     <string>Dark</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>NMFClientId</key>
+    <string>t64x6v66aj</string>
   </dict>
 </plist>
