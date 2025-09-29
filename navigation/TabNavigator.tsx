@@ -59,7 +59,7 @@ export default function TabNavigator() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ tabBarLabel: "대시보드" }}
+        options={{ tabBarLabel: "홈" }}
       />
       <Tab.Screen
         name="Asanas"

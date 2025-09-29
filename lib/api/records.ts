@@ -38,20 +38,6 @@ export const recordsAPI = {
         };
       }
 
-      // 감정 값을 상태로 역변환
-      const convertEmotionToState = (emotion: string): string => {
-        const emotionMapping: { [key: string]: string } = {
-          calm: "calm",
-          energized: "energized",
-          tired: "tired",
-          focused: "focused",
-          stressed: "tense", // stressed -> tense로 매핑
-          happy: "calm", // happy -> calm으로 매핑
-          relaxed: "calm", // relaxed -> calm으로 매핑
-        };
-        return emotionMapping[emotion] || "calm"; // 기본값은 calm
-      };
-
       // 새로운 practice_records 테이블 구조를 Record 타입에 맞게 변환
       if (data && data.length > 0) {
         const convertedData: Record[] = data.map((item) => {
@@ -540,6 +526,384 @@ export const recordsAPI = {
       return {
         success: false,
         message: "기록을 가져오는 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
+  // 모든 사용자의 수련 기록 피드 가져오기
+  getFeedRecords: async (): Promise<{
+    success: boolean;
+    data?: (Record & { user_name: string; user_avatar_url?: string })[];
+    message?: string;
+  }> => {
+    try {
+      // 먼저 practice_records를 가져오고, 각 기록에 대해 user_profiles를 별도로 조회
+      const { data: records, error: recordsError } = await supabase
+        .from("practice_records")
+        .select("*")
+        .order("practice_time", { ascending: false })
+        .limit(50); // 최근 50개 기록만 가져오기
+
+      if (recordsError) {
+        console.error("피드 기록 가져오기 에러:", recordsError);
+        return {
+          success: false,
+          message:
+            recordsError.message || "피드 기록을 가져오는데 실패했습니다.",
+        };
+      }
+
+      if (!records || records.length === 0) {
+        return {
+          success: true,
+          data: [],
+        };
+      }
+
+      // 각 기록에 대해 사용자 프로필 정보 조회
+      const userIds = [...new Set(records.map((record) => record.user_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from("user_profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+
+      if (profilesError) {
+        console.error("사용자 프로필 가져오기 에러:", profilesError);
+        return {
+          success: false,
+          message: "사용자 프로필을 가져오는데 실패했습니다.",
+        };
+      }
+
+      // 프로필 정보를 맵으로 변환
+      const profilesMap = new Map();
+      profiles?.forEach((profile) => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
+      // 데이터 변환
+      const feedRecords = records.map((record) => {
+        const profile = profilesMap.get(record.user_id);
+        return {
+          ...record,
+          user_name: profile?.name || "익명",
+          user_avatar_url: profile?.avatar_url || null,
+        };
+      });
+
+      return {
+        success: true,
+        data: feedRecords,
+      };
+    } catch (error) {
+      console.error("피드 기록 가져오기 예외:", error);
+      return {
+        success: false,
+        message: "피드 기록을 가져오는데 실패했습니다.",
+      };
+    }
+  },
+
+  // 좋아요 추가/제거
+  toggleLike: async (
+    recordId: string
+  ): Promise<{
+    success: boolean;
+    data?: { isLiked: boolean; likeCount: number };
+    message?: string;
+  }> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다.",
+        };
+      }
+
+      // 현재 좋아요 상태 확인
+      const { data: existingLike } = await supabase
+        .from("feed_likes")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("record_id", recordId)
+        .single();
+
+      if (existingLike) {
+        // 좋아요 제거
+        const { error: deleteError } = await supabase
+          .from("feed_likes")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("record_id", recordId);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+      } else {
+        // 좋아요 추가
+        const { error: insertError } = await supabase
+          .from("feed_likes")
+          .insert({
+            user_id: user.id,
+            record_id: recordId,
+          });
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+
+      // 좋아요 개수 조회
+      const { count: likeCount } = await supabase
+        .from("feed_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("record_id", recordId);
+
+      return {
+        success: true,
+        data: {
+          isLiked: !existingLike,
+          likeCount: likeCount || 0,
+        },
+      };
+    } catch (error) {
+      console.error("좋아요 토글 에러:", error);
+      return {
+        success: false,
+        message: "좋아요 처리에 실패했습니다.",
+      };
+    }
+  },
+
+  // 댓글 추가
+  addComment: async (
+    recordId: string,
+    content: string
+  ): Promise<{
+    success: boolean;
+    data?: any;
+    message?: string;
+  }> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다.",
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("feed_comments")
+        .insert({
+          user_id: user.id,
+          record_id: recordId,
+          content,
+        })
+        .select("*")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // 사용자 프로필 정보 별도 조회
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("name, avatar_url")
+        .eq("user_id", user.id)
+        .single();
+
+      return {
+        success: true,
+        data: {
+          ...data,
+          user_profiles: profile,
+        },
+      };
+    } catch (error) {
+      console.error("댓글 추가 에러:", error);
+      return {
+        success: false,
+        message: "댓글 추가에 실패했습니다.",
+      };
+    }
+  },
+
+  // 댓글 조회
+  getComments: async (
+    recordId: string
+  ): Promise<{
+    success: boolean;
+    data?: any[];
+    message?: string;
+  }> => {
+    try {
+      const { data, error } = await supabase
+        .from("feed_comments")
+        .select("*")
+        .eq("record_id", recordId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return {
+          success: true,
+          data: [],
+        };
+      }
+
+      // 각 댓글에 대해 사용자 프로필 정보 조회
+      const userIds = [...new Set(data.map((comment) => comment.user_id))];
+      const { data: profiles } = await supabase
+        .from("user_profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+
+      // 프로필 정보를 맵으로 변환
+      const profilesMap = new Map();
+      profiles?.forEach((profile) => {
+        profilesMap.set(profile.user_id, profile);
+      });
+
+      // 데이터 변환
+      const commentsWithProfiles = data.map((comment) => {
+        const profile = profilesMap.get(comment.user_id);
+        return {
+          ...comment,
+          user_profiles: profile,
+        };
+      });
+
+      return {
+        success: true,
+        data: commentsWithProfiles,
+      };
+    } catch (error) {
+      console.error("댓글 조회 에러:", error);
+      return {
+        success: false,
+        message: "댓글을 불러오는데 실패했습니다.",
+      };
+    }
+  },
+
+  // 공유 추가
+  addShare: async (
+    recordId: string
+  ): Promise<{
+    success: boolean;
+    data?: any;
+    message?: string;
+  }> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다.",
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("feed_shares")
+        .insert({
+          user_id: user.id,
+          record_id: recordId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      console.error("공유 추가 에러:", error);
+      return {
+        success: false,
+        message: "공유 처리에 실패했습니다.",
+      };
+    }
+  },
+
+  // 기록의 소셜 통계 조회
+  getRecordStats: async (
+    recordId: string
+  ): Promise<{
+    success: boolean;
+    data?: {
+      likeCount: number;
+      commentCount: number;
+      shareCount: number;
+      isLiked: boolean;
+    };
+    message?: string;
+  }> => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다.",
+        };
+      }
+
+      // 좋아요 개수 및 현재 사용자 좋아요 상태
+      const { count: likeCount } = await supabase
+        .from("feed_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("record_id", recordId);
+
+      const { data: userLike } = await supabase
+        .from("feed_likes")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("record_id", recordId)
+        .single();
+
+      // 댓글 개수
+      const { count: commentCount } = await supabase
+        .from("feed_comments")
+        .select("*", { count: "exact", head: true })
+        .eq("record_id", recordId);
+
+      // 공유 개수
+      const { count: shareCount } = await supabase
+        .from("feed_shares")
+        .select("*", { count: "exact", head: true })
+        .eq("record_id", recordId);
+
+      return {
+        success: true,
+        data: {
+          likeCount: likeCount || 0,
+          commentCount: commentCount || 0,
+          shareCount: shareCount || 0,
+          isLiked: !!userLike,
+        },
+      };
+    } catch (error) {
+      console.error("기록 통계 조회 에러:", error);
+      return {
+        success: false,
+        message: "통계를 불러오는데 실패했습니다.",
       };
     }
   },

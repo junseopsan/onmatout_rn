@@ -1,26 +1,35 @@
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import FeedItem from "../../components/feed/FeedItem";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { useDashboardData } from "../../hooks/useDashboard";
+import { useFeedRecords } from "../../hooks/useRecords";
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
 
-  // React Query로 대시보드 데이터 가져오기
+  // React Query로 피드 데이터 가져오기
   const {
+    data: feedRecords = [],
     isLoading: loadingData,
     isError,
     error,
     refetch,
-  } = useDashboardData();
+  } = useFeedRecords();
 
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
-        console.log("대시보드: 화면 포커스 시 데이터 새로고침");
+        console.log("피드: 화면 포커스 시 데이터 새로고침");
         refetch();
       }
     }, [isAuthenticated, refetch])
@@ -33,15 +42,41 @@ export default function DashboardScreen() {
     );
   }
 
+  const handleRecordPress = (record: any) => {
+    // 기록 상세 보기 로직 (필요시 구현)
+    console.log("기록 선택:", record);
+  };
+
+  const renderFeedItem = ({ item }: { item: any }) => (
+    <FeedItem record={item} onPress={handleRecordPress} />
+  );
+
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        아직 수련 기록이 없어요.{"\n"}첫 번째 수련을 시작해보세요!
+      </Text>
+    </View>
+  );
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.title}>수련 피드</Text>
+      <Text style={styles.subtitle}>
+        다른 요가인들의 수련 기록을 확인해보세요
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}></View>
+      {renderHeader()}
 
       {/* 에러 상태 */}
       {isError && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            {error?.message || "데이터를 불러오는데 실패했습니다."}
+            {error?.message || "피드를 불러오는데 실패했습니다."}
           </Text>
           <TouchableOpacity
             onPress={() => refetch()}
@@ -52,14 +87,23 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      <View style={styles.content}>
-        {/* 빈 화면 - 모든 기능이 프로필 탭으로 이동됨 */}
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            모든 기능이 프로필 탭으로 이동되었습니다.
-          </Text>
-        </View>
-      </View>
+      {/* 피드 리스트 */}
+      <FlatList
+        data={feedRecords}
+        renderItem={renderFeedItem}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={renderEmptyComponent}
+        refreshControl={
+          <RefreshControl
+            refreshing={loadingData}
+            onRefresh={refetch}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+      />
     </View>
   );
 }
@@ -72,32 +116,33 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 60, // 상태바 높이 + 여백
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.textSecondary,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: "center",
-    alignItems: "center",
+  listContainer: {
+    paddingBottom: 20,
   },
   emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
+    paddingHorizontal: 24,
+    paddingVertical: 60,
   },
   emptyText: {
     fontSize: 16,
     color: COLORS.textSecondary,
     textAlign: "center",
+    lineHeight: 24,
   },
   errorContainer: {
     flex: 1,

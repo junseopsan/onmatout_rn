@@ -80,6 +80,249 @@ export const useDeleteRecord = () => {
   });
 };
 
+// 피드 기록 조회
+export const useFeedRecords = () => {
+  return useQuery({
+    queryKey: ["feedRecords"],
+    queryFn: async () => {
+      const result = await recordsAPI.getFeedRecords();
+      if (!result.success) {
+        throw new Error(
+          result.message || "피드 기록을 불러오는데 실패했습니다."
+        );
+      }
+      return result.data || [];
+    },
+    staleTime: 2 * 60 * 1000, // 2분
+    gcTime: 5 * 60 * 1000, // 5분
+    retry: 2,
+  });
+};
+
+// 기록의 소셜 통계 조회
+export const useRecordStats = (recordId: string) => {
+  return useQuery({
+    queryKey: ["recordStats", recordId],
+    queryFn: async () => {
+      const result = await recordsAPI.getRecordStats(recordId);
+      if (!result.success) {
+        throw new Error(result.message || "통계를 불러오는데 실패했습니다.");
+      }
+      return result.data;
+    },
+    staleTime: 30 * 1000, // 30초
+    gcTime: 2 * 60 * 1000, // 2분
+    retry: 1,
+  });
+};
+
+// 댓글 조회
+export const useComments = (recordId: string) => {
+  return useQuery({
+    queryKey: ["comments", recordId],
+    queryFn: async () => {
+      const result = await recordsAPI.getComments(recordId);
+      if (!result.success) {
+        throw new Error(result.message || "댓글을 불러오는데 실패했습니다.");
+      }
+      return result.data || [];
+    },
+    staleTime: 1 * 60 * 1000, // 1분
+    gcTime: 5 * 60 * 1000, // 5분
+    retry: 1,
+  });
+};
+
+// 좋아요 토글 mutation
+export const useToggleLike = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (recordId: string) => {
+      const result = await recordsAPI.toggleLike(recordId);
+      if (!result.success) {
+        throw new Error(result.message || "좋아요 처리에 실패했습니다.");
+      }
+      return { recordId, ...result.data };
+    },
+    onMutate: async (recordId: string) => {
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey: ["recordStats", recordId] });
+
+      // 이전 데이터 백업
+      const previousStats = queryClient.getQueryData(["recordStats", recordId]);
+
+      // 낙관적 업데이트
+      queryClient.setQueryData(["recordStats", recordId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isLiked: !old.isLiked,
+          likeCount: old.isLiked ? old.likeCount - 1 : old.likeCount + 1,
+        };
+      });
+
+      // 롤백을 위한 이전 데이터 반환
+      return { previousStats };
+    },
+    onError: (err, recordId, context) => {
+      // 에러 시 이전 데이터로 롤백
+      if (context?.previousStats) {
+        queryClient.setQueryData(
+          ["recordStats", recordId],
+          context.previousStats
+        );
+      }
+    },
+    onSettled: (data) => {
+      // 성공/실패 관계없이 최종 데이터 동기화
+      queryClient.invalidateQueries({
+        queryKey: ["recordStats", data?.recordId],
+      });
+    },
+  });
+};
+
+// 댓글 추가 mutation
+export const useAddComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      recordId,
+      content,
+    }: {
+      recordId: string;
+      content: string;
+    }) => {
+      const result = await recordsAPI.addComment(recordId, content);
+      if (!result.success) {
+        throw new Error(result.message || "댓글 추가에 실패했습니다.");
+      }
+      return { recordId, comment: result.data };
+    },
+    onMutate: async ({ recordId, content }) => {
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey: ["comments", recordId] });
+      await queryClient.cancelQueries({ queryKey: ["recordStats", recordId] });
+
+      // 이전 데이터 백업
+      const previousComments = queryClient.getQueryData(["comments", recordId]);
+      const previousStats = queryClient.getQueryData(["recordStats", recordId]);
+
+      // 임시 댓글 ID 생성
+      const tempId = `temp-${Date.now()}`;
+
+      // 낙관적 업데이트 - 댓글 목록에 임시 댓글 추가
+      queryClient.setQueryData(["comments", recordId], (old: any[]) => {
+        const newComment = {
+          id: tempId,
+          user_id: "current-user", // 현재 사용자 ID는 실제로는 auth에서 가져와야 함
+          record_id: recordId,
+          content,
+          created_at: new Date().toISOString(),
+          user_profiles: {
+            name: "나", // 현재 사용자 이름
+            avatar_url: null,
+          },
+        };
+        return [...(old || []), newComment];
+      });
+
+      // 댓글 개수 증가
+      queryClient.setQueryData(["recordStats", recordId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          commentCount: old.commentCount + 1,
+        };
+      });
+
+      return { previousComments, previousStats, tempId };
+    },
+    onError: (err, variables, context) => {
+      // 에러 시 이전 데이터로 롤백
+      if (context?.previousComments) {
+        queryClient.setQueryData(
+          ["comments", variables.recordId],
+          context.previousComments
+        );
+      }
+      if (context?.previousStats) {
+        queryClient.setQueryData(
+          ["recordStats", variables.recordId],
+          context.previousStats
+        );
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      // 성공 시 임시 댓글을 실제 댓글로 교체
+      queryClient.setQueryData(["comments", data.recordId], (old: any[]) => {
+        return (
+          old?.map((comment) =>
+            comment.id === context?.tempId ? data.comment : comment
+          ) || []
+        );
+      });
+    },
+    onSettled: (data) => {
+      // 최종 데이터 동기화
+      queryClient.invalidateQueries({ queryKey: ["comments", data?.recordId] });
+      queryClient.invalidateQueries({
+        queryKey: ["recordStats", data?.recordId],
+      });
+    },
+  });
+};
+
+// 공유 추가 mutation
+export const useAddShare = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (recordId: string) => {
+      const result = await recordsAPI.addShare(recordId);
+      if (!result.success) {
+        throw new Error(result.message || "공유 처리에 실패했습니다.");
+      }
+      return { recordId, share: result.data };
+    },
+    onMutate: async (recordId: string) => {
+      // 진행 중인 쿼리 취소
+      await queryClient.cancelQueries({ queryKey: ["recordStats", recordId] });
+
+      // 이전 데이터 백업
+      const previousStats = queryClient.getQueryData(["recordStats", recordId]);
+
+      // 낙관적 업데이트 - 공유 개수 증가
+      queryClient.setQueryData(["recordStats", recordId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          shareCount: old.shareCount + 1,
+        };
+      });
+
+      return { previousStats };
+    },
+    onError: (err, recordId, context) => {
+      // 에러 시 이전 데이터로 롤백
+      if (context?.previousStats) {
+        queryClient.setQueryData(
+          ["recordStats", recordId],
+          context.previousStats
+        );
+      }
+    },
+    onSettled: (data) => {
+      // 최종 데이터 동기화
+      queryClient.invalidateQueries({
+        queryKey: ["recordStats", data?.recordId],
+      });
+    },
+  });
+};
+
 // 기록 탭 전체 데이터 조회 (병렬 처리)
 export const useRecordData = () => {
   const todayRecordsQuery = useTodayRecords();

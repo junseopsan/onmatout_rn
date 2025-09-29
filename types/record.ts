@@ -2,6 +2,8 @@ export interface Record {
   id: string;
   user_id: string;
   date: string; // YYYY-MM-DD 형식
+  practice_date?: string; // YYYY-MM-DD 형식 (새 스키마)
+  practice_time?: string; // 수련 시간 (새 스키마)
   title: string; // 기록 제목
   asanas: string[]; // 선택된 아사나 ID 배열
   memo: string; // 경험 메모 (최대 500자)
