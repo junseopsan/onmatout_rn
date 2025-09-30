@@ -10,20 +10,31 @@ import {
 } from "react-native";
 import FeedItem from "../../components/feed/FeedItem";
 import { COLORS } from "../../constants/Colors";
+import { useAsanas } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeedRecords } from "../../hooks/useRecords";
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
 
-  // React Query로 피드 데이터 가져오기
+  // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
-    data: feedRecords = [],
+    data: feedData,
     isLoading: loadingData,
     isError,
     error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     refetch,
-  } = useFeedRecords();
+  } = useFeedRecords(10); // 페이지당 10개
+
+  // 모든 페이지의 데이터를 평면화
+  const feedRecords = feedData?.pages?.flatMap((page) => page.data) || [];
+
+  // 아사나 데이터 가져오기
+  const { data: asanasData } = useAsanas();
+  const asanas = asanasData?.pages?.flatMap((page) => page.data) || [];
 
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
@@ -48,7 +59,7 @@ export default function DashboardScreen() {
   };
 
   const renderFeedItem = ({ item }: { item: any }) => (
-    <FeedItem record={item} onPress={handleRecordPress} />
+    <FeedItem record={item} asanas={asanas} onPress={handleRecordPress} />
   );
 
   const renderEmptyComponent = () => (
@@ -62,16 +73,12 @@ export default function DashboardScreen() {
   const renderHeader = () => (
     <View style={styles.header}>
       <Text style={styles.title}>수련 피드</Text>
-      <Text style={styles.subtitle}>
-        다른 요가인들의 수련 기록을 확인해보세요
-      </Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
       {renderHeader()}
-
       {/* 에러 상태 */}
       {isError && (
         <View style={styles.errorContainer}>
@@ -101,6 +108,24 @@ export default function DashboardScreen() {
             tintColor={COLORS.primary}
           />
         }
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() => {
+          if (isFetchingNextPage) {
+            return (
+              <View style={styles.loadingFooter}>
+                <Text style={styles.loadingText}>
+                  더 많은 기록을 불러오는 중...
+                </Text>
+              </View>
+            );
+          }
+          return null;
+        }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
       />
@@ -166,5 +191,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "white",
     fontWeight: "600",
+  },
+  loadingFooter: {
+    padding: 20,
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
   },
 });

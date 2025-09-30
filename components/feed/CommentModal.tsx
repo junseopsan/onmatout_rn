@@ -30,7 +30,7 @@ export default function CommentModal({
   recordTitle,
 }: CommentModalProps) {
   const [commentText, setCommentText] = useState("");
-  const [inputHeight, setInputHeight] = useState(40);
+  const [inputHeight, setInputHeight] = useState(32);
   const { data: comments, isLoading } = useComments(recordId);
   const addCommentMutation = useAddComment();
 
@@ -41,19 +41,25 @@ export default function CommentModal({
         {
           onSuccess: () => {
             setCommentText("");
-            setInputHeight(40); // 입력 후 높이 초기화
+            setInputHeight(32); // 입력 후 높이 초기화
           },
         }
       );
     }
   };
 
+  const handleTextChange = (text: string) => {
+    setCommentText(text);
+  };
+
   const handleContentSizeChange = (event: any) => {
     const contentHeight = event.nativeEvent.contentSize.height;
-    const newHeight = Math.min(
-      Math.max(40, contentHeight), // 패딩은 별도로 처리
-      120
-    );
+    console.log("Content height:", contentHeight); // 디버깅용
+
+    // 최소 높이 32px, 최대 높이 64px로 제한 (약 3줄)
+    const newHeight = Math.min(Math.max(32, contentHeight), 64);
+    console.log("Setting height to:", newHeight); // 디버깅용
+
     setInputHeight(newHeight);
   };
 
@@ -148,41 +154,42 @@ export default function CommentModal({
         </ScrollView>
 
         {/* 댓글 입력 */}
-        <View
-          style={[
-            styles.commentInput,
-            { minHeight: inputHeight + 24, height: inputHeight + 24 },
-          ]}
-        >
-          <TextInput
-            style={[styles.commentTextInput, { height: inputHeight }]}
-            placeholder="댓글을 입력하세요..."
-            value={commentText}
-            onChangeText={setCommentText}
-            onContentSizeChange={handleContentSizeChange}
-            multiline
-            maxLength={200}
-            placeholderTextColor={COLORS.textSecondary}
-          />
-          <TouchableOpacity
-            style={[
-              styles.commentSubmitButton,
-              (!commentText.trim() || addCommentMutation.isPending) &&
-                styles.commentSubmitButtonDisabled,
-            ]}
-            onPress={handleAddComment}
-            disabled={!commentText.trim() || addCommentMutation.isPending}
+        <View style={styles.commentInput}>
+          <View
+            style={[styles.inputContainer, { minHeight: inputHeight + 20 }]}
           >
-            <Text
+            <TextInput
+              style={styles.commentTextInput}
+              placeholder="댓글을 입력하세요..."
+              value={commentText}
+              onChangeText={handleTextChange}
+              onContentSizeChange={handleContentSizeChange}
+              multiline
+              scrollEnabled={inputHeight >= 64}
+              maxLength={200}
+              placeholderTextColor={COLORS.textSecondary}
+              returnKeyType="default"
+            />
+            <TouchableOpacity
               style={[
-                styles.commentSubmitText,
+                styles.commentSubmitButton,
                 (!commentText.trim() || addCommentMutation.isPending) &&
-                  styles.commentSubmitTextDisabled,
+                  styles.commentSubmitButtonDisabled,
               ]}
+              onPress={handleAddComment}
+              disabled={!commentText.trim() || addCommentMutation.isPending}
             >
-              {addCommentMutation.isPending ? "등록중..." : "등록"}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.commentSubmitText,
+                  (!commentText.trim() || addCommentMutation.isPending) &&
+                    styles.commentSubmitTextDisabled,
+                ]}
+              >
+                {addCommentMutation.isPending ? "등록중..." : "등록"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -283,33 +290,38 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   commentInput: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.surface,
   },
-  commentTextInput: {
-    flex: 1,
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: "space-between",
+  },
+  commentTextInput: {
+    flex: 1,
     fontSize: 14,
     color: COLORS.text,
-    backgroundColor: COLORS.background,
+    backgroundColor: "transparent",
     marginRight: 8,
-    textAlignVertical: "top",
-    minHeight: 40,
+    minHeight: 32,
+    maxHeight: 64,
+    paddingVertical: 8,
   },
   commentSubmitButton: {
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   commentSubmitButtonDisabled: {
     backgroundColor: COLORS.textSecondary,

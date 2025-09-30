@@ -111,19 +111,23 @@ export default function RecordCard({
 
                 return (
                   <View key={asanaId} style={styles.asanaThumbnail}>
-                    {asana.image_number ? (
-                      <Image
-                        source={{ uri: getImageUrl(asana.image_number) }}
-                        style={styles.asanaImage}
-                        contentFit="contain"
-                        placeholder="🖼️"
-                        placeholderContentFit="contain"
-                      />
-                    ) : (
-                      <View style={styles.asanaImagePlaceholder}>
-                        <Text style={styles.asanaImagePlaceholderText}>📝</Text>
-                      </View>
-                    )}
+                    <View style={styles.asanaImageContainer}>
+                      {asana.image_number ? (
+                        <Image
+                          source={{ uri: getImageUrl(asana.image_number) }}
+                          style={styles.asanaImage}
+                          contentFit="contain"
+                          placeholder="🖼️"
+                          placeholderContentFit="contain"
+                        />
+                      ) : (
+                        <View style={styles.asanaImagePlaceholder}>
+                          <Text style={styles.asanaImagePlaceholderText}>
+                            📝
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.asanaName} numberOfLines={1}>
                       {asana.sanskrit_name_kr}
                     </Text>
@@ -224,21 +228,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 70,
   },
-  asanaImage: {
+  asanaImageContainer: {
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: "#AAAAAA",
+    backgroundColor: "#FFFFFF",
+    padding: 4,
     marginBottom: 6,
-  },
-  asanaImagePlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: "#AAAAAA",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+  },
+  asanaImage: {
+    width: "100%",
+    height: "100%",
+  },
+  asanaImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
   asanaImagePlaceholderText: {
     fontSize: 20,

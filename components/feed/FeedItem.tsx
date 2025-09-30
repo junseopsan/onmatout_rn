@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   Alert,
   Dimensions,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,23 +15,36 @@ import {
   useRecordStats,
   useToggleLike,
 } from "../../hooks/useRecords";
+import { Asana } from "../../lib/api/asanas";
 import { Record } from "../../types/record";
 import CommentModal from "./CommentModal";
 
 interface FeedItemProps {
   record: Record & { user_name: string; user_avatar_url?: string };
+  asanas: Asana[];
   onPress?: (record: Record) => void;
 }
 
 const { width } = Dimensions.get("window");
 
-export default function FeedItem({ record, onPress }: FeedItemProps) {
+export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   const [showCommentModal, setShowCommentModal] = useState(false);
 
   // 소셜 기능 훅들
   const { data: stats } = useRecordStats(record.id);
   const toggleLikeMutation = useToggleLike();
   const addShareMutation = useAddShare();
+
+  // 아사나 정보 가져오기
+  const getAsanaInfo = (asanaId: string) => {
+    return asanas.find((asana) => asana.id === asanaId);
+  };
+
+  // 이미지 URL 생성
+  const getImageUrl = (imageNumber: string) => {
+    const formattedNumber = imageNumber.padStart(3, "0");
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
+  };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -124,19 +137,49 @@ export default function FeedItem({ record, onPress }: FeedItemProps) {
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{record.user_name}</Text>
             <Text style={styles.timeText}>
-              {formatDate(record.practice_date || record.date)}{" "}
-              {record.practice_time && formatTime(record.practice_time)}
+              {formatDate(record.practice_date || record.date)}
+              {record.practice_time && ` ${formatTime(record.practice_time)}`}
             </Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.moreButton}>
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={20}
-            color={COLORS.textSecondary}
-          />
-        </TouchableOpacity>
       </View>
+
+      {/* 아사나 정보 */}
+      {record.asanas && record.asanas.length > 0 && (
+        <View style={styles.asanasContainer}>
+          <View style={styles.asanasList}>
+            {record.asanas.slice(0, 6).map((asanaId, index) => {
+              const asana = getAsanaInfo(asanaId);
+              if (!asana) return null;
+
+              return (
+                <View key={asanaId} style={styles.asanaThumbnail}>
+                  {asana.image_number ? (
+                    <Image
+                      source={{ uri: getImageUrl(asana.image_number) }}
+                      style={styles.asanaImage}
+                      contentFit="contain"
+                      placeholder="🖼️"
+                      placeholderContentFit="contain"
+                    />
+                  ) : (
+                    <View style={styles.asanaImagePlaceholder}>
+                      <Text style={styles.asanaImagePlaceholderText}>📝</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+            {record.asanas.length > 6 && (
+              <View style={styles.moreAsanasOverlay}>
+                <Text style={styles.moreAsanasText}>
+                  +{String(record.asanas.length - 6)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* 메모 */}
       {record.memo && <Text style={styles.memo}>{record.memo}</Text>}
@@ -146,43 +189,9 @@ export default function FeedItem({ record, onPress }: FeedItemProps) {
         <View style={styles.statesContainer}>
           {record.states.map((state, index) => (
             <View key={index} style={styles.stateItem}>
-              <Text style={styles.stateEmoji}>{getStateEmoji(state)}</Text>
               <Text style={styles.stateText}>{getStateText(state)}</Text>
             </View>
           ))}
-        </View>
-      )}
-
-      {/* 아사나 정보 */}
-      {record.asanas && record.asanas.length > 0 && (
-        <View style={styles.asanasContainer}>
-          <Text style={styles.asanasTitle}>
-            {record.asanas.length}개의 아사나를 기록했어요
-          </Text>
-        </View>
-      )}
-
-      {/* 사진 */}
-      {record.photos && record.photos.length > 0 && (
-        <View style={styles.photosContainer}>
-          {record.photos.slice(0, 3).map((photo, index) => (
-            <Image
-              key={index}
-              source={{ uri: photo }}
-              style={[
-                styles.photo,
-                record.photos.length === 1 && styles.singlePhoto,
-                record.photos.length === 2 && styles.doublePhoto,
-              ]}
-            />
-          ))}
-          {record.photos.length > 3 && (
-            <View style={styles.morePhotosOverlay}>
-              <Text style={styles.morePhotosText}>
-                +{record.photos.length - 3}
-              </Text>
-            </View>
-          )}
         </View>
       )}
 
@@ -201,6 +210,9 @@ export default function FeedItem({ record, onPress }: FeedItemProps) {
             size={20}
             color={stats?.isLiked ? COLORS.primary : COLORS.textSecondary}
           />
+          {stats?.likeCount && stats.likeCount > 0 ? (
+            <Text style={styles.actionCount}>{String(stats.likeCount)}</Text>
+          ) : null}
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
           <Ionicons
@@ -208,6 +220,9 @@ export default function FeedItem({ record, onPress }: FeedItemProps) {
             size={20}
             color={COLORS.textSecondary}
           />
+          {stats?.commentCount && stats.commentCount > 0 ? (
+            <Text style={styles.actionCount}>{String(stats.commentCount)}</Text>
+          ) : null}
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
@@ -219,6 +234,9 @@ export default function FeedItem({ record, onPress }: FeedItemProps) {
             size={20}
             color={COLORS.textSecondary}
           />
+          {stats?.shareCount && stats.shareCount > 0 ? (
+            <Text style={styles.actionCount}>{String(stats.shareCount)}</Text>
+          ) : null}
         </TouchableOpacity>
       </View>
 
@@ -332,6 +350,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: "500",
+    marginBottom: 8,
+  },
+  asanasList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  asanaThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    padding: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  asanaImage: {
+    width: "100%",
+    height: "100%",
+  },
+  asanaImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  asanaImagePlaceholderText: {
+    fontSize: 16,
+  },
+  moreAsanasOverlay: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  moreAsanasText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
   },
   photosContainer: {
     flexDirection: "row",
@@ -381,5 +442,11 @@ const styles = StyleSheet.create({
   },
   actionButtonDisabled: {
     opacity: 0.6,
+  },
+  actionCount: {
+    marginLeft: 4,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
   },
 });

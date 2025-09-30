@@ -530,19 +530,26 @@ export const recordsAPI = {
     }
   },
 
-  // 모든 사용자의 수련 기록 피드 가져오기
-  getFeedRecords: async (): Promise<{
+  // 모든 사용자의 수련 기록 피드 가져오기 (페이지네이션)
+  getFeedRecords: async (
+    page: number = 0,
+    pageSize: number = 10
+  ): Promise<{
     success: boolean;
     data?: (Record & { user_name: string; user_avatar_url?: string })[];
+    hasMore?: boolean;
+    total?: number;
     message?: string;
   }> => {
     try {
+      const offset = page * pageSize;
+
       // 먼저 practice_records를 가져오고, 각 기록에 대해 user_profiles를 별도로 조회
       const { data: records, error: recordsError } = await supabase
         .from("practice_records")
         .select("*")
         .order("practice_time", { ascending: false })
-        .limit(50); // 최근 50개 기록만 가져오기
+        .range(offset, offset + pageSize - 1);
 
       if (recordsError) {
         console.error("피드 기록 가져오기 에러:", recordsError);
@@ -591,9 +598,16 @@ export const recordsAPI = {
         };
       });
 
+      // 총 개수 조회
+      const { count: totalCount } = await supabase
+        .from("practice_records")
+        .select("*", { count: "exact", head: true });
+
       return {
         success: true,
         data: feedRecords,
+        hasMore: offset + pageSize < (totalCount || 0),
+        total: totalCount || 0,
       };
     } catch (error) {
       console.error("피드 기록 가져오기 예외:", error);

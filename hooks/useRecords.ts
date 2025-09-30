@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { recordsAPI } from "../lib/api/records";
 import { Record } from "../types/record";
@@ -80,21 +85,28 @@ export const useDeleteRecord = () => {
   });
 };
 
-// 피드 기록 조회
-export const useFeedRecords = () => {
-  return useQuery({
+// 피드 기록 조회 (무한 스크롤)
+export const useFeedRecords = (pageSize: number = 10) => {
+  return useInfiniteQuery({
     queryKey: ["feedRecords"],
-    queryFn: async () => {
-      const result = await recordsAPI.getFeedRecords();
+    queryFn: async ({ pageParam = 0 }) => {
+      const result = await recordsAPI.getFeedRecords(pageParam, pageSize);
       if (!result.success) {
         throw new Error(
           result.message || "피드 기록을 불러오는데 실패했습니다."
         );
       }
-      return result.data || [];
+      return {
+        data: result.data || [],
+        hasMore: result.hasMore || false,
+        total: result.total || 0,
+      };
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.hasMore ? allPages.length : undefined;
     },
     staleTime: 2 * 60 * 1000, // 2분
-    gcTime: 5 * 60 * 1000, // 5분
+    gcTime: 10 * 60 * 1000, // 10분
     retry: 2,
   });
 };
