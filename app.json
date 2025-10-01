@@ -20,7 +20,8 @@
         "UIBackgroundModes": ["remote-notification"]
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyBTbQIrm9nF_P29v7wOiDwu3_wBu_7GpjQ"
+        "naverMapClientId": "t64x6v66aj",
+        "naverMapClientSecret": "ZBPrfzVTz8tLF0wUdzOcoec5hwROLm4SyROhJQ2a"
       }
     },
     "android": {
@@ -33,9 +34,8 @@
       "versionCode": 1,
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyCVOvcKsS7PMWgC-AeG30b1ndUib50ViZU"
-        }
+        "naverMapClientId": "t64x6v66aj",
+        "naverMapClientSecret": "ZBPrfzVTz8tLF0wUdzOcoec5hwROLm4SyROhJQ2a"
       }
     },
     "web": {
