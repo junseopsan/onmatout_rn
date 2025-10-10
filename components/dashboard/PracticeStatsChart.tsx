@@ -96,6 +96,42 @@ export default function PracticeStatsChart({
 
   const energyStats = getEnergyStats();
 
+  // 이번 주 수련 횟수 계산 함수
+  const getThisWeekCount = () => {
+    if (records.length === 0) return 0;
+
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // 일요일부터 시작
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // 토요일까지
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return records.filter((r) => {
+      const recordDate = new Date(r.date || r.practice_date);
+      return recordDate >= startOfWeek && recordDate <= endOfWeek;
+    }).length;
+  };
+
+  // 이번 달 수련 횟수 계산 함수
+  const getThisMonthCount = () => {
+    if (records.length === 0) return 0;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    return records.filter((r) => {
+      const recordDate = new Date(r.date || r.practice_date);
+      return (
+        recordDate.getFullYear() === currentYear &&
+        recordDate.getMonth() === currentMonth
+      );
+    }).length;
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -208,16 +244,12 @@ export default function PracticeStatsChart({
           <Text style={styles.statLabel}>총 수련 횟수</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>
-            {records.length > 0 ? Math.round(records.length / 7) : 0}
-          </Text>
-          <Text style={styles.statLabel}>주평균</Text>
+          <Text style={styles.statNumber}>{getThisWeekCount()}</Text>
+          <Text style={styles.statLabel}>이번 주</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>
-            {new Set(records.map((r) => r.date)).size}
-          </Text>
-          <Text style={styles.statLabel}>수련일수</Text>
+          <Text style={styles.statNumber}>{getThisMonthCount()}</Text>
+          <Text style={styles.statLabel}>이번 달</Text>
         </View>
       </View>
     </View>

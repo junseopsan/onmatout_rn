@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   // 대시보드 데이터 가져오기 (통계용)
-  const { recentRecords, isLoading: loadingData, refetch } = useDashboardData();
+  const { allRecords, isLoading: loadingData, refetch } = useDashboardData();
 
   // 사용자 프로필 가져오기
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function ProfileScreen() {
         {/* 수련 통계 섹션 */}
         <View style={styles.statsSection}>
           <View style={styles.sectionHeader}></View>
-          <PracticeStatsChart records={recentRecords} isLoading={loadingData} />
+          <PracticeStatsChart records={allRecords} isLoading={loadingData} />
         </View>
       </View>
 

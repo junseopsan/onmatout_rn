@@ -418,6 +418,102 @@ export const recordsAPI = {
     }
   },
 
+  // 모든 수련 기록 가져오기 (프로필 통계용)
+  getAllRecords: async (): Promise<{
+    success: boolean;
+    data?: Record[];
+    message?: string;
+  }> => {
+    try {
+      // 현재 사용자 ID 가져오기
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다.",
+        };
+      }
+
+      const { data, error } = await supabase
+        .from("practice_records")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("practice_date", { ascending: false });
+
+      if (error) {
+        return {
+          success: false,
+          message: error.message || "기록을 가져오는데 실패했습니다.",
+        };
+      }
+
+      // 데이터 변환
+      if (data && data.length > 0) {
+        const convertedData: Record[] = data.map((item) => {
+          // JSON 문자열을 파싱하여 배열로 변환
+          let asanas: string[] = [];
+          let states: string[] = [];
+          let photos: string[] = [];
+
+          try {
+            if (typeof item.asanas === "string") {
+              asanas = JSON.parse(item.asanas);
+            } else if (Array.isArray(item.asanas)) {
+              asanas = item.asanas;
+            }
+
+            if (typeof item.states === "string") {
+              states = JSON.parse(item.states);
+            } else if (Array.isArray(item.states)) {
+              states = item.states;
+            }
+
+            if (typeof item.photos === "string") {
+              photos = JSON.parse(item.photos);
+            } else if (Array.isArray(item.photos)) {
+              photos = item.photos;
+            }
+          } catch (error) {
+            // 파싱 실패 시 빈 배열로 설정
+            asanas = [];
+            states = [];
+            photos = [];
+          }
+
+          return {
+            id: item.id,
+            user_id: item.user_id,
+            date: item.practice_date,
+            title: item.title || `수련 기록 - ${item.practice_date}`,
+            asanas: asanas,
+            memo: item.memo || "",
+            states: states,
+            photos: photos,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+          };
+        });
+
+        return {
+          success: true,
+          data: convertedData,
+        };
+      }
+
+      return {
+        success: true,
+        data: [],
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "기록을 가져오는 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
   // 최근 기록 목록 가져오기 (최근 30일)
   getRecentRecords: async (): Promise<{
     success: boolean;
