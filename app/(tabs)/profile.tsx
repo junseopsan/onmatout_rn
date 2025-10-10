@@ -48,7 +48,6 @@ export default function ProfileScreen() {
     console.log("user:", user);
     console.log("loading:", loading);
     console.log("isAuthenticated:", isAuthenticated);
-    console.log("loadingProfile:", loadingProfile);
 
     const loadUserProfile = async () => {
       if (user) {
@@ -58,40 +57,28 @@ export default function ProfileScreen() {
           console.log("프로필 로드 결과:", profile);
           setUserProfile(profile);
         } catch (error) {
+          console.error("프로필 로드 실패:", error);
         } finally {
           console.log("프로필 로딩 완료");
           setLoadingProfile(false);
         }
       } else {
         console.log("사용자 없음 - 로딩 완료");
-        // 사용자가 없으면 로딩 완료
         setLoadingProfile(false);
       }
     };
 
     loadUserProfile();
-  }, [user, getUserProfile, loading, isAuthenticated, loadingProfile]);
+  }, [user, getUserProfile, isAuthenticated]);
 
-  // 화면이 포커스될 때마다 데이터 새로고침
+  // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
         console.log("프로필: 화면 포커스 시 데이터 새로고침");
         refetch();
-
-        // 사용자 프로필 정보도 새로고침
-        const refreshUserProfile = async () => {
-          try {
-            const profile = await getUserProfile();
-            setUserProfile(profile);
-          } catch (error) {
-            console.error("프로필 새로고침 실패:", error);
-          }
-        };
-
-        refreshUserProfile();
       }
-    }, [isAuthenticated, refetch, getUserProfile])
+    }, [isAuthenticated, refetch])
   );
 
   // 아사나 상세 화면으로 이동

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useMemo, useState } from "react";
@@ -14,12 +15,9 @@ import {
 import { AsanaCard } from "../../components/AsanaCard";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
-import {
-  useAsanas,
-  useAsanaSearch,
-  useFavoriteAsanas,
-} from "../../hooks/useAsanas";
+import { useAsanas, useAsanaSearch } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
+import { useFavoriteAsanasDetail } from "../../hooks/useDashboard";
 import { RootStackParamList } from "../../navigation/types";
 import { AsanaCategory } from "../../types/asana";
 
@@ -35,6 +33,7 @@ export default function AsanasScreen() {
   const [selectedCategories, setSelectedCategories] = useState<AsanaCategory[]>(
     []
   );
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // React Query hooks
   const {
@@ -48,8 +47,7 @@ export default function AsanasScreen() {
     refetch,
   } = useAsanas(20);
 
-  const { data: favoriteAsanas = [], isLoading: isLoadingFavorites } =
-    useFavoriteAsanas();
+  const { data: favoriteAsanas = [] } = useFavoriteAsanasDetail();
 
   const { data: searchResults = [], isLoading: isSearching } =
     useAsanaSearch(searchQuery);
@@ -57,21 +55,31 @@ export default function AsanasScreen() {
   // 모든 아사나 데이터를 하나의 배열로 변환
   const allAsanas = useMemo(() => {
     if (!asanasData?.pages) return [];
-    return asanasData.pages.flatMap((page) => page.data);
+    return asanasData.pages.flatMap((page: any) => page.data);
   }, [asanasData]);
 
-  // 카테고리별 필터링된 아사나
+  // 카테고리별 및 즐겨찾기 필터링된 아사나
   const filteredAsanas = useMemo(() => {
-    if (selectedCategories.length === 0) {
-      return allAsanas;
+    let filtered;
+
+    // 즐겨찾기 모드인 경우 즐겨찾기 아사나에서 시작
+    if (showFavoritesOnly) {
+      filtered = favoriteAsanas;
+    } else {
+      filtered = allAsanas;
     }
 
-    return allAsanas.filter((asana) => {
-      return selectedCategories.some(
-        (category) => asana.category_name_en === category
-      );
-    });
-  }, [allAsanas, selectedCategories]);
+    // 카테고리 필터링
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((asana) => {
+        return selectedCategories.some(
+          (category) => asana.category_name_en === category
+        );
+      });
+    }
+
+    return filtered;
+  }, [allAsanas, favoriteAsanas, selectedCategories, showFavoritesOnly]);
 
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
@@ -91,6 +99,15 @@ export default function AsanasScreen() {
     // 즐겨찾기 토글 로직은 API 호출로 처리
     // TODO: 즐겨찾기 API 호출 및 캐시 무효화
     console.log("즐겨찾기 토글:", asanaId, isFavorite);
+  };
+
+  // 즐겨찾기 필터 토글
+  const handleFavoriteFilterToggle = () => {
+    setShowFavoritesOnly(!showFavoritesOnly);
+    // 즐겨찾기 모드로 전환 시 검색어 초기화
+    if (!showFavoritesOnly) {
+      setSearchQuery("");
+    }
   };
 
   // 검색 함수
@@ -156,16 +173,21 @@ export default function AsanasScreen() {
     );
   };
 
-  const renderAsanaCard = ({ item }: { item: any }) => (
-    <View style={styles.cardContainer}>
-      <AsanaCard
-        asana={item}
-        onPress={handleAsanaPress}
-        isFavorite={favoriteAsanas.includes(item.id)}
-        onFavoriteToggle={handleFavoriteToggle}
-      />
-    </View>
-  );
+  const renderAsanaCard = ({ item }: { item: any }) => {
+    // 즐겨찾기 상태 확인
+    const isFavorite = favoriteAsanas.some((fav) => fav.id === item.id);
+
+    return (
+      <View style={styles.cardContainer}>
+        <AsanaCard
+          asana={item}
+          onPress={handleAsanaPress}
+          isFavorite={isFavorite}
+          onFavoriteToggle={handleFavoriteToggle}
+        />
+      </View>
+    );
+  };
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -190,14 +212,31 @@ export default function AsanasScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* <Text style={styles.title}>아사나</Text>
-        <Text style={styles.subtitle}>요가 자세를 탐색해보세요</Text> */}
+        {/* 헤더 상단 */}
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>아사나</Text>
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={handleFavoriteFilterToggle}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={showFavoritesOnly ? "heart" : "heart-outline"}
+              size={24}
+              color={showFavoritesOnly ? COLORS.primary : COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
 
         {/* 검색창 */}
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="아사나 이름으로 검색..."
+            placeholder={
+              showFavoritesOnly
+                ? "즐겨찾기 아사나 검색..."
+                : "아사나 이름으로 검색..."
+            }
             placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
             onChangeText={handleSearch}
@@ -258,16 +297,20 @@ export default function AsanasScreen() {
       ) : allAsanas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
-            {selectedCategories.length > 0
+            {showFavoritesOnly
+              ? "즐겨찾기한 아사나가 없습니다."
+              : selectedCategories.length > 0
               ? "선택한 카테고리의 아사나가 없습니다."
               : "아사나 데이터가 없습니다."}
           </Text>
-          <TouchableOpacity
-            onPress={() => refetch()}
-            style={styles.retryButton}
-          >
-            <Text style={styles.retryButtonText}>새로고침</Text>
-          </TouchableOpacity>
+          {!showFavoritesOnly && (
+            <TouchableOpacity
+              onPress={() => refetch()}
+              style={styles.retryButton}
+            >
+              <Text style={styles.retryButtonText}>새로고침</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : searchQuery.trim() !== "" &&
         searchResults.length === 0 &&
@@ -317,11 +360,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   title: {
     fontSize: 32,
     fontWeight: "bold",
     color: COLORS.text,
-    marginBottom: 8,
+  },
+  favoriteButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
   },
   subtitle: {
     fontSize: 16,
