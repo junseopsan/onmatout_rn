@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../supabase";
@@ -169,7 +170,9 @@ export const storageAPI = {
       console.error("프로필 이미지 업로드 예외:", error);
       return {
         success: false,
-        message: `이미지 업로드 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+        message: `이미지 업로드 중 오류가 발생했습니다: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   },
@@ -219,7 +222,9 @@ export const storageAPI = {
     if (!url) return false;
 
     // Supabase Storage URL인지 확인
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    const supabaseUrl =
+      process.env.EXPO_PUBLIC_SUPABASE_URL ||
+      Constants.expoConfig?.extra?.supabaseUrl;
     return url.includes(supabaseUrl || "supabase.co");
   },
 };

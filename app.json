@@ -45,7 +45,9 @@
     "extra": {
       "eas": {
         "projectId": "6b14beae-4cd3-4575-bfbd-403081113b72"
-      }
+      },
+      "supabaseUrl": "your_supabase_url_here",
+      "supabaseAnonKey": "your_supabase_anon_key_here"
     },
     "expo": {
       "developmentClient": {

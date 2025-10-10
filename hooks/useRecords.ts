@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { recordsAPI } from "../lib/api/records";
+import { supabase } from "../lib/supabase";
 import { Record } from "../types/record";
 
 // 오늘의 수련 기록 조회
@@ -90,7 +91,10 @@ export const useFeedRecords = (pageSize: number = 10) => {
   return useInfiniteQuery({
     queryKey: ["feedRecords"],
     queryFn: async ({ pageParam = 0 }) => {
-      const result = await recordsAPI.getFeedRecords(pageParam, pageSize);
+      const result = await recordsAPI.getFeedRecords(
+        pageParam as number,
+        pageSize
+      );
       if (!result.success) {
         throw new Error(
           result.message || "피드 기록을 불러오는데 실패했습니다."
@@ -102,7 +106,8 @@ export const useFeedRecords = (pageSize: number = 10) => {
         total: result.total || 0,
       };
     },
-    getNextPageParam: (lastPage, allPages) => {
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: any, allPages: any[]) => {
       return lastPage.hasMore ? allPages.length : undefined;
     },
     staleTime: 2 * 60 * 1000, // 2분
@@ -222,6 +227,25 @@ export const useAddComment = () => {
       const previousComments = queryClient.getQueryData(["comments", recordId]);
       const previousStats = queryClient.getQueryData(["recordStats", recordId]);
 
+      // 현재 사용자 정보 가져오기
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      let currentUserProfile = null;
+
+      if (user) {
+        try {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("name, avatar_url")
+            .eq("user_id", user.id)
+            .single();
+          currentUserProfile = profile;
+        } catch (error) {
+          console.log("현재 사용자 프로필 조회 실패:", error);
+        }
+      }
+
       // 임시 댓글 ID 생성
       const tempId = `temp-${Date.now()}`;
 
@@ -229,13 +253,13 @@ export const useAddComment = () => {
       queryClient.setQueryData(["comments", recordId], (old: any[]) => {
         const newComment = {
           id: tempId,
-          user_id: "current-user", // 현재 사용자 ID는 실제로는 auth에서 가져와야 함
+          user_id: user?.id || "current-user",
           record_id: recordId,
           content,
           created_at: new Date().toISOString(),
           user_profiles: {
-            name: "나", // 현재 사용자 이름
-            avatar_url: null,
+            name: currentUserProfile?.name || "나",
+            avatar_url: currentUserProfile?.avatar_url || null,
           },
         };
         return [...(old || []), newComment];
