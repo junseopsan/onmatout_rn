@@ -98,7 +98,6 @@ export default function AsanaSearchModal({
         setHasMore(false);
       }
     } catch (error) {
-      console.error("아사나 검색 에러:", error);
       if (!append) {
         setSearchResults([]);
       }
@@ -167,7 +166,6 @@ export default function AsanaSearchModal({
         setHasMore(false);
       }
     } catch (error) {
-      console.error("아사나 로드 에러:", error);
       if (!append) {
         setSearchResults([]);
       }

@@ -2,7 +2,6 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import RecordCard from "../../components/RecordCard";
 import RecordDetailModal from "../../components/RecordDetailModal";
 import { TamaguiButtonComponent } from "../../components/ui/TamaguiButton";
 import { COLORS } from "../../constants/Colors";
+import { useNotification } from "../../contexts/NotificationContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useDeleteRecord, useRecordData } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
@@ -23,6 +23,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function RecordScreen() {
   const { isAuthenticated, loading } = useAuth();
+  const { showSnackbar } = useNotification();
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
@@ -93,8 +94,7 @@ export default function RecordScreen() {
       setDetailModalVisible(false);
       setSelectedRecord(null);
     } catch (error) {
-      console.error("기록 삭제 에러:", error);
-      Alert.alert("오류", "기록 삭제 중 오류가 발생했습니다.");
+      showSnackbar("기록 삭제 중 오류가 발생했습니다.", "error");
     }
   };
 

@@ -45,7 +45,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       const currentUser = get().user;
       if (!currentUser) {
-        console.error("사용자 정보가 없습니다.");
         return false;
       }
 
@@ -57,11 +56,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log("사용자 프로필 저장 성공:", response.data);
         return true;
       } else {
-        console.error("사용자 프로필 저장 실패:", response.message);
         return false;
       }
     } catch (error) {
-      console.error("사용자 프로필 저장 에러:", error);
       return false;
     }
   },
@@ -72,7 +69,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       const currentUser = get().user;
       if (!currentUser) {
-        console.error("사용자 정보가 없습니다.");
         return null;
       }
 
@@ -82,11 +78,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log("사용자 프로필 조회 성공:", response.data);
         return response.data;
       } else {
-        console.error("사용자 프로필 조회 실패:", response.message);
         return null;
       }
     } catch (error) {
-      console.error("사용자 프로필 조회 에러:", error);
       return null;
     }
   },
@@ -146,7 +140,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 });
               }
             } catch (profileError) {
-              console.error("프로필 조회 에러:", profileError);
               set({
                 user: { ...user, profile: null } as any,
                 session,
@@ -174,7 +167,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // 타임아웃과 함께 실행
       await Promise.race([initPromise, timeoutPromise]);
     } catch (error) {
-      console.error("Auth initialize error:", error);
       set({
         error: error instanceof Error ? error.message : "인증 초기화 실패",
         loading: false,
@@ -224,7 +216,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
       console.log("세션 초기화 완료");
     } catch (error) {
-      console.error("세션 초기화 에러:", error);
       set({
         user: null,
         session: null,
@@ -253,7 +244,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return false;
       }
     } catch (error) {
-      console.error("signInWithPhone 에러:", error);
       set({
         error: error instanceof Error ? error.message : "로그인 요청 실패",
         loading: false,
@@ -368,7 +358,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 });
               }
             } catch (profileError) {
-              console.error("프로필 확인 에러:", profileError);
               // 프로필 확인 실패 시 닉네임 없음으로 처리
               set({
                 user: { ...currentState.user, profile: null } as any,
@@ -395,7 +384,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             return false;
           }
         } catch (userError) {
-          console.error("User data fetch error:", userError);
           // 사용자 정보 가져오기 실패해도 인증은 성공으로 처리
           console.log("사용자 정보 가져오기 실패했지만 인증은 성공으로 처리");
           set({ loading: false });
@@ -407,7 +395,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return false;
       }
     } catch (error) {
-      console.error("OTP verification error:", error);
       set({
         error: error instanceof Error ? error.message : "인증 코드 확인 실패",
         loading: false,

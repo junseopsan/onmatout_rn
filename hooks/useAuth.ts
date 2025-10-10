@@ -45,7 +45,6 @@ export const useAuth = () => {
           console.log("Auth initialization completed");
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
         clearTimeout(timeoutId);
 
         if (isMounted) {

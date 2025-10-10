@@ -135,7 +135,6 @@ export const storageAPI = {
               });
 
             if (uploadResult.error) {
-              console.error("모든 업로드 방식 실패:", uploadResult.error);
               return {
                 success: false,
                 message: `업로드 실패: ${uploadResult.error.message}. Storage 버킷 설정을 확인해주세요.`,
@@ -167,7 +166,6 @@ export const storageAPI = {
         message: "이미지 선택이 취소되었습니다.",
       };
     } catch (error) {
-      console.error("프로필 이미지 업로드 예외:", error);
       return {
         success: false,
         message: `이미지 업로드 중 오류가 발생했습니다: ${
@@ -197,7 +195,6 @@ export const storageAPI = {
         .remove([filePath]);
 
       if (error) {
-        console.error("Storage 삭제 에러:", error);
         return {
           success: false,
           message: error.message,
@@ -209,7 +206,6 @@ export const storageAPI = {
         success: true,
       };
     } catch (error) {
-      console.error("프로필 이미지 삭제 예외:", error);
       return {
         success: false,
         message: "이미지 삭제 중 오류가 발생했습니다.",

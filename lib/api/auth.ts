@@ -29,14 +29,9 @@ export const authAPI = {
       console.log("전화번호 형식:", credentials.phone);
 
       if (error) {
-        console.error("OTP Error:", error);
-        console.error("Error code:", error.code);
-        console.error("Error status:", error.status);
-        console.error("Full error object:", JSON.stringify(error, null, 2));
 
         // 특정 에러에 대한 처리
         if (error.message?.includes("Database error saving new user")) {
-          console.error("새 사용자 생성 데이터베이스 에러 발생");
           console.log("실제로는 SMS가 전송되지 않았을 수 있습니다");
           return {
             success: false,
@@ -56,7 +51,6 @@ export const authAPI = {
         message: "인증 코드가 전송되었습니다.",
       };
     } catch (error) {
-      console.error("OTP Exception:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "로그인 요청 실패",
@@ -83,17 +77,12 @@ export const authAPI = {
       console.log("Supabase 응답 에러:", error);
 
       if (error) {
-        console.error("Supabase 에러:", error);
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
-        console.error("Full error object:", JSON.stringify(error, null, 2));
 
         // 데이터베이스 에러가 아닌 실제 인증 실패인 경우
         if (
           error.code === "invalid_otp" ||
           error.message?.includes("Invalid OTP")
         ) {
-          console.error("잘못된 인증 코드");
           return {
             success: false,
             message: "잘못된 인증 코드입니다. 다시 확인해주세요.",
@@ -105,7 +94,6 @@ export const authAPI = {
           error.code === "expired_otp" ||
           error.message?.includes("expired")
         ) {
-          console.error("만료된 인증 코드");
           return {
             success: false,
             message:
@@ -118,7 +106,6 @@ export const authAPI = {
           error.message?.includes("Database error") ||
           error.code === "unexpected_failure"
         ) {
-          console.error("데이터베이스 에러 발생 - 임시로 성공 처리");
           console.log("인증은 성공했지만 데이터베이스 에러가 발생");
           return {
             success: true,
@@ -141,7 +128,6 @@ export const authAPI = {
         data,
       };
     } catch (error) {
-      console.error("API 에러:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "인증 코드 확인 실패",

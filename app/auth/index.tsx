@@ -3,7 +3,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
+import { useNotification } from "../../contexts/NotificationContext";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -41,6 +41,7 @@ export default function AuthScreen() {
 
   const { signInWithPhone, verifyOTP, loading, error, clearError } =
     useAuthStore();
+  const { showSnackbar, showDialog } = useNotification();
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -130,14 +131,15 @@ export default function AuthScreen() {
         setShowVerifyScreen(true);
         setResendTimer(60); // 60초 타이머 시작
       } else {
-        console.log("인증 코드 요청 실패");
-        Alert.alert("오류", "인증번호 전송에 실패했습니다. 다시 시도해주세요.");
+        showSnackbar(
+          "인증번호 전송에 실패했습니다. 다시 시도해주세요.",
+          "error"
+        );
       }
     } catch (error) {
-      console.error("인증 코드 요청 중 에러:", error);
-      Alert.alert(
-        "오류",
-        "인증번호 전송 중 오류가 발생했습니다. 다시 시도해주세요."
+      showSnackbar(
+        "인증번호 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
+        "error"
       );
     } finally {
       setLocalLoading(false);
@@ -263,9 +265,10 @@ export default function AuthScreen() {
         setAttemptCount(newAttemptCount);
 
         if (newAttemptCount >= 3) {
-          Alert.alert(
+          showDialog(
             "인증 실패",
             "3번 연속으로 인증에 실패했습니다. 다시 시도해주세요.",
+            "error",
             [
               {
                 text: "확인",
@@ -278,16 +281,15 @@ export default function AuthScreen() {
             ]
           );
         } else {
-          Alert.alert(
-            "인증 실패",
-            `잘못된 인증 코드입니다. (${newAttemptCount}/3)`
+          showSnackbar(
+            `잘못된 인증 코드입니다. (${newAttemptCount}/3)`,
+            "error"
           );
           setVerificationCode(["", "", "", "", "", ""]);
         }
       }
     } catch (error) {
-      console.error("인증 과정에서 에러:", error);
-      Alert.alert("오류", "인증 중 오류가 발생했습니다. 다시 시도해주세요.");
+      showSnackbar("인증 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     }
   };
 
@@ -300,10 +302,10 @@ export default function AuthScreen() {
     });
 
     if (success) {
-      Alert.alert("재전송 완료", "인증 코드가 재전송되었습니다.");
+      showSnackbar("인증 코드가 재전송되었습니다.", "success");
       setResendTimer(60); // 60초 타이머 시작
     } else {
-      Alert.alert("재전송 실패", "인증 코드 재전송에 실패했습니다.");
+      showSnackbar("인증 코드 재전송에 실패했습니다.", "error");
     }
   };
 
@@ -462,12 +464,12 @@ export default function AuthScreen() {
               </TouchableOpacity>
 
               {/* 임시 로그인 버튼 */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[styles.button, styles.tempLoginButton]}
                 onPress={() => navigation.navigate("TabNavigator")}
               >
                 <Text style={styles.buttonText}>임시 로그인 (대시보드)</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {/* 약관 동의 텍스트 */}
               <View style={styles.termsContainer}>
@@ -482,9 +484,9 @@ export default function AuthScreen() {
                   <TouchableOpacity
                     onPress={() => navigation.navigate("PrivacyPolicy")}
                   >
-                    <Text style={styles.termsLink}>개인정보처리방침</Text>
+                    <Text style={styles.termsLink}>개인정보처리방침에</Text>
                   </TouchableOpacity>
-                  에 동의하게 됩니다.
+                  {"\n"}동의하게 됩니다.
                 </Text>
               </View>
             </View>

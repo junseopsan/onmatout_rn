@@ -61,7 +61,6 @@ export default function StudiosScreen() {
         Alert.alert("오류", "인스타그램을 열 수 없습니다.");
       }
     } catch (error) {
-      console.error("인스타그램 링크 열기 실패:", error);
       Alert.alert("오류", "인스타그램을 열 수 없습니다.");
     }
   };

@@ -20,7 +20,6 @@ export const userAPI = {
         .single();
 
       if (error) {
-        console.error("사용자 프로필 조회 에러:", error);
         return {
           success: false,
           message: error.message,
@@ -33,7 +32,6 @@ export const userAPI = {
         data,
       };
     } catch (error) {
-      console.error("사용자 프로필 조회 예외:", error);
       return {
         success: false,
         message: "사용자 프로필 조회 중 오류가 발생했습니다.",
@@ -78,7 +76,6 @@ export const userAPI = {
         .single();
 
       if (checkError && checkError.code !== "PGRST116") {
-        console.error("프로필 확인 에러:", checkError);
         return {
           success: false,
           message: checkError.message,
@@ -95,7 +92,6 @@ export const userAPI = {
           .single();
 
         if (updateError) {
-          console.error("사용자 프로필 업데이트 에러:", updateError);
           return {
             success: false,
             message: updateError.message,
@@ -121,7 +117,6 @@ export const userAPI = {
           .single();
 
         if (insertError) {
-          console.error("사용자 프로필 생성 에러:", insertError);
           return {
             success: false,
             message: insertError.message,
@@ -135,7 +130,6 @@ export const userAPI = {
         };
       }
     } catch (error) {
-      console.error("사용자 프로필 저장 예외:", error);
       return {
         success: false,
         message: "사용자 프로필 저장 중 오류가 발생했습니다.",
@@ -179,7 +173,6 @@ export const userAPI = {
         .single();
 
       if (error) {
-        console.error("사용자 프로필 업데이트 에러:", error);
         return {
           success: false,
           message: error.message,
@@ -192,7 +185,6 @@ export const userAPI = {
         data: data,
       };
     } catch (error) {
-      console.error("사용자 프로필 업데이트 예외:", error);
       return {
         success: false,
         message: "사용자 프로필 업데이트 중 오류가 발생했습니다.",

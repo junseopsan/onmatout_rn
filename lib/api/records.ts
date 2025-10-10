@@ -31,7 +31,6 @@ export const recordsAPI = {
 
       if (error && error.code !== "PGRST116") {
         // PGRST116는 데이터가 없는 경우
-        console.error("오늘 기록 가져오기 에러:", error);
         return {
           success: false,
           message: error.message || "기록을 가져오는데 실패했습니다.",
@@ -65,7 +64,6 @@ export const recordsAPI = {
               photos = item.photos;
             }
           } catch (error) {
-            console.error("JSON 파싱 에러:", error);
             // 파싱 실패 시 빈 배열로 설정
             asanas = [];
             states = [];
@@ -97,7 +95,6 @@ export const recordsAPI = {
         data: [],
       };
     } catch (error) {
-      console.error("오늘 기록 가져오기 예외:", error);
       return {
         success: false,
         message: "기록을 가져오는 중 오류가 발생했습니다.",
@@ -149,7 +146,6 @@ export const recordsAPI = {
         .single();
 
       if (error) {
-        console.error("기록 저장 에러:", error);
         return {
           success: false,
           message: error.message || "기록을 저장하는데 실패했습니다.",
@@ -182,7 +178,6 @@ export const recordsAPI = {
             photos = data.photos;
           }
         } catch (error) {
-          console.error("JSON 파싱 에러:", error);
           // 파싱 실패 시 빈 배열로 설정
           asanas = [];
           states = [];
@@ -212,7 +207,6 @@ export const recordsAPI = {
         data: undefined,
       };
     } catch (error) {
-      console.error("기록 저장 예외:", error);
       return {
         success: false,
         message: "기록을 저장하는 중 오류가 발생했습니다.",
@@ -234,7 +228,6 @@ export const recordsAPI = {
         .eq("practice_date", date);
 
       if (error) {
-        console.error("기록 삭제 에러:", error);
         return {
           success: false,
           message: error.message || "기록을 삭제하는데 실패했습니다.",
@@ -245,7 +238,6 @@ export const recordsAPI = {
         success: true,
       };
     } catch (error) {
-      console.error("기록 삭제 예외:", error);
       return {
         success: false,
         message: "기록을 삭제하는 중 오류가 발생했습니다.",
@@ -269,7 +261,6 @@ export const recordsAPI = {
         .single();
 
       if (error) {
-        console.error("기록 조회 에러:", error);
         return {
           success: false,
           message: "기록을 찾을 수 없습니다.",
@@ -318,7 +309,6 @@ export const recordsAPI = {
         data: record,
       };
     } catch (error) {
-      console.error("기록 조회 에러:", error);
       return {
         success: false,
         message: "기록 조회 중 오류가 발생했습니다.",
@@ -360,7 +350,6 @@ export const recordsAPI = {
         .single();
 
       if (error) {
-        console.error("기록 수정 에러:", error);
         return {
           success: false,
           message: "기록 수정에 실패했습니다.",
@@ -398,7 +387,6 @@ export const recordsAPI = {
           photos = data.photos;
         }
       } catch (error) {
-        console.error("JSON 파싱 에러:", error);
         asanas = [];
         states = [];
         photos = [];
@@ -423,7 +411,6 @@ export const recordsAPI = {
         data: updatedRecord,
       };
     } catch (error) {
-      console.error("기록 수정 에러:", error);
       return {
         success: false,
         message: "기록 수정 중 오류가 발생했습니다.",
@@ -449,7 +436,6 @@ export const recordsAPI = {
         .order("practice_date", { ascending: false });
 
       if (error) {
-        console.error("최근 기록 가져오기 에러:", error);
         return {
           success: false,
           message: error.message || "기록을 가져오는데 실패했습니다.",
@@ -496,7 +482,6 @@ export const recordsAPI = {
             photos = item.photos;
           }
         } catch (error) {
-          console.error("JSON 파싱 에러:", error);
           // 파싱 실패 시 빈 배열로 설정
           asanas = [];
           states = [];
@@ -522,7 +507,6 @@ export const recordsAPI = {
         data: convertedData,
       };
     } catch (error) {
-      console.error("최근 기록 가져오기 예외:", error);
       return {
         success: false,
         message: "기록을 가져오는 중 오류가 발생했습니다.",
@@ -552,7 +536,6 @@ export const recordsAPI = {
         .range(offset, offset + pageSize - 1);
 
       if (recordsError) {
-        console.error("피드 기록 가져오기 에러:", recordsError);
         return {
           success: false,
           message:
@@ -575,7 +558,6 @@ export const recordsAPI = {
         .in("user_id", userIds);
 
       if (profilesError) {
-        console.error("사용자 프로필 가져오기 에러:", profilesError);
         return {
           success: false,
           message: "사용자 프로필을 가져오는데 실패했습니다.",
@@ -610,7 +592,6 @@ export const recordsAPI = {
         total: totalCount || 0,
       };
     } catch (error) {
-      console.error("피드 기록 가져오기 예외:", error);
       return {
         success: false,
         message: "피드 기록을 가져오는데 실패했습니다.",
@@ -684,7 +665,6 @@ export const recordsAPI = {
         },
       };
     } catch (error) {
-      console.error("좋아요 토글 에러:", error);
       return {
         success: false,
         message: "좋아요 처리에 실패했습니다.",
@@ -741,7 +721,6 @@ export const recordsAPI = {
         },
       };
     } catch (error) {
-      console.error("댓글 추가 에러:", error);
       return {
         success: false,
         message: "댓글 추가에 실패했습니다.",
@@ -802,7 +781,6 @@ export const recordsAPI = {
         data: commentsWithProfiles,
       };
     } catch (error) {
-      console.error("댓글 조회 에러:", error);
       return {
         success: false,
         message: "댓글을 불러오는데 실패했습니다.",
@@ -847,7 +825,6 @@ export const recordsAPI = {
         data,
       };
     } catch (error) {
-      console.error("공유 추가 에러:", error);
       return {
         success: false,
         message: "공유 처리에 실패했습니다.",
@@ -914,7 +891,6 @@ export const recordsAPI = {
         },
       };
     } catch (error) {
-      console.error("기록 통계 조회 에러:", error);
       return {
         success: false,
         message: "통계를 불러오는데 실패했습니다.",

@@ -13,6 +13,7 @@ import { TamaguiProvider } from "tamagui";
 import config from "../tamagui.config";
 
 import { COLORS } from "../constants/Colors";
+import { NotificationProvider } from "../contexts/NotificationContext";
 import { useColorScheme } from "../hooks/useColorScheme";
 
 // ThemeProvider를 별도로 export
@@ -32,15 +33,17 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
         <ThemeProvider
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: COLORS.background,
-            }}
-          >
-            {children}
-            <StatusBar style="light" />
-          </View>
+          <NotificationProvider>
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: COLORS.background,
+              }}
+            >
+              {children}
+              <StatusBar style="light" />
+            </View>
+          </NotificationProvider>
         </ThemeProvider>
       </TamaguiProvider>
     </GestureHandlerRootView>

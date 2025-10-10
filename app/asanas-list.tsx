@@ -46,11 +46,9 @@ export default function AsanasScreen() {
         console.log("아사나 데이터 로드 완료:", result.data.length, "개");
       } else {
         setError(result.message || "아사나 데이터를 불러오는데 실패했습니다.");
-        console.error("아사나 데이터 로드 실패:", result.message);
       }
     } catch (error) {
       setError("아사나 데이터를 불러오는 중 오류가 발생했습니다.");
-      console.error("아사나 데이터 로드 예외:", error);
     } finally {
       setLoadingAsanas(false);
     }

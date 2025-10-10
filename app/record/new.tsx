@@ -130,7 +130,6 @@ export default function NewRecordScreen() {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
     } catch (error) {
-      console.error("기록 저장 에러:", error);
       Alert.alert("오류", "기록 저장 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);

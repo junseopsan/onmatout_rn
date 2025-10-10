@@ -70,7 +70,6 @@ export default function NicknameScreen() {
         );
       }
     } catch (error) {
-      console.error("닉네임 저장 에러:", error);
       Alert.alert("오류", "닉네임 저장 중 오류가 발생했습니다.");
     }
   };
@@ -124,20 +123,6 @@ export default function NicknameScreen() {
             disabled={!nickname.trim()}
             style={{ marginBottom: 16 }}
           />
-        </View>
-
-        {/* Info */}
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 14,
-              color: COLORS.textSecondary,
-              textAlign: "center",
-            }}
-          >
-            닉네임은 나중에 프로필에서{"\n"}
-            언제든지 변경할 수 있습니다
-          </Text>
         </View>
       </View>
     </ScrollView>

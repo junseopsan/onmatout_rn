@@ -144,6 +144,16 @@ export default function AppNavigator() {
         }
         options={pageList.find((p) => p.name === "TermsOfService")?.options}
       />
+      <Stack.Screen
+        name="Settings"
+        component={pageList.find((p) => p.name === "Settings")?.component!}
+        options={pageList.find((p) => p.name === "Settings")?.options}
+      />
+      <Stack.Screen
+        name="EditNickname"
+        component={pageList.find((p) => p.name === "EditNickname")?.component!}
+        options={pageList.find((p) => p.name === "EditNickname")?.options}
+      />
     </Stack.Navigator>
   );
 }

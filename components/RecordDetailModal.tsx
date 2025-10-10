@@ -197,7 +197,6 @@ export default function RecordDetailModal({
         Alert.alert("오류", result.message || "수정 저장에 실패했습니다.");
       }
     } catch (error) {
-      console.error("수정 저장 에러:", error);
       Alert.alert("오류", "수정 저장 중 오류가 발생했습니다.");
     }
   };

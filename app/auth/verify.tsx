@@ -101,7 +101,6 @@ export default function VerifyScreen() {
         }
       }
     } catch (error) {
-      console.error("인증 과정에서 에러:", error);
       Alert.alert("오류", "인증 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };

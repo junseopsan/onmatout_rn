@@ -29,7 +29,6 @@ export const studioAPI = {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("요가원 조회 에러:", error);
         return {
           success: false,
           message: "요가원 정보를 가져오는데 실패했습니다.",
@@ -38,7 +37,6 @@ export const studioAPI = {
 
       return { success: true, data: data || [] };
     } catch (error) {
-      console.error("요가원 조회 에러:", error);
       return {
         success: false,
         message: "요가원 정보를 가져오는데 실패했습니다.",
@@ -58,13 +56,11 @@ export const studioAPI = {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("지역별 요가원 검색 에러:", error);
         return { success: false, message: "지역별 검색에 실패했습니다." };
       }
 
       return { success: true, data: data || [] };
     } catch (error) {
-      console.error("지역별 요가원 검색 에러:", error);
       return { success: false, message: "지역별 검색에 실패했습니다." };
     }
   },
@@ -81,13 +77,11 @@ export const studioAPI = {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("이름별 요가원 검색 에러:", error);
         return { success: false, message: "이름별 검색에 실패했습니다." };
       }
 
       return { success: true, data: data || [] };
     } catch (error) {
-      console.error("이름별 요가원 검색 에러:", error);
       return { success: false, message: "이름별 검색에 실패했습니다." };
     }
   },

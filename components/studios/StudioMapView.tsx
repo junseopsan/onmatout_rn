@@ -1,7 +1,4 @@
-import {
-  NaverMapMarkerOverlay,
-  NaverMapView,
-} from "@mj-studio/react-native-naver-map";
+// 네이버 맵 제거됨
 import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
 import {
@@ -115,7 +112,6 @@ export default function StudioMapView({
         zoom: 15,
       });
     } catch (error) {
-      console.error("위치 가져오기 실패:", error);
       console.log("기본 위치(서울)로 설정합니다.");
 
       // 위치 가져오기 실패 시 서울로 기본 설정
@@ -147,46 +143,27 @@ export default function StudioMapView({
 
   return (
     <View style={styles.container}>
-      <NaverMapView
-        style={styles.map}
-        camera={camera}
-        onCameraChange={(camera) => setCamera(camera)}
-        onMapReady={() => setMapLoading(false)}
-        mapType="Basic"
-        zoomEnabled={true}
-        scrollEnabled={true}
-        pitchEnabled={false}
-        rotateEnabled={false}
-        moveOnMarkerPress={false}
-        followsUserLocation={false}
-      >
-        {/* 사용자 현재 위치 마커 */}
-        {userLocation && (
-          <NaverMapMarkerOverlay coordinate={userLocation} onPress={() => {}}>
-            <View style={styles.userLocationMarker}>
-              <Text style={styles.userLocationText}>📍</Text>
-            </View>
-          </NaverMapMarkerOverlay>
-        )}
-
-        {/* 요가원 마커들 */}
+      {/* 요가원 리스트 */}
+      <View style={styles.studioList}>
         {filteredStudios.map((studio) => (
-          <NaverMapMarkerOverlay
+          <TouchableOpacity
             key={studio.id}
-            coordinate={{
-              latitude: studio.latitude || 37.5665,
-              longitude: studio.longitude || 126.978,
-            }}
+            style={styles.studioItem}
             onPress={() => handleMarkerPress(studio)}
           >
-            <View style={styles.customMarker}>
-              <View style={styles.markerInner}>
-                <Text style={styles.markerEmoji}>🧘‍♀️</Text>
-              </View>
+            <View style={styles.studioIcon}>
+              <Text style={styles.studioEmoji}>🧘‍♀️</Text>
             </View>
-          </NaverMapMarkerOverlay>
+            <View style={styles.studioInfo}>
+              <Text style={styles.studioName}>{studio.name}</Text>
+              <Text style={styles.studioAddress}>{studio.address}</Text>
+              {studio.phone && (
+                <Text style={styles.studioPhone}>📞 {studio.phone}</Text>
+              )}
+            </View>
+          </TouchableOpacity>
         ))}
-      </NaverMapView>
+      </View>
 
       {/* 지도 오버레이 그라데이션 */}
       <View style={styles.mapOverlay} pointerEvents="none" />
@@ -524,5 +501,75 @@ const styles = StyleSheet.create({
   },
   userLocationText: {
     fontSize: 14,
+  },
+  mapPlaceholder: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    margin: 20,
+  },
+  mapPlaceholderText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 8,
+  },
+  mapPlaceholderSubtext: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+  },
+  studioList: {
+    flex: 1,
+    padding: 16,
+  },
+  studioItem: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+  },
+  studioIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#ff6b6b",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  studioEmoji: {
+    fontSize: 20,
+  },
+  studioInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  studioName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 4,
+  },
+  studioAddress: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  studioPhone: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: "500",
   },
 });

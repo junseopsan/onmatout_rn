@@ -184,10 +184,8 @@ export const useAsanaStore = create<AsanaState>((set, get) => ({
           isLoading: false,
           isLoadingMore: false,
         });
-        console.error("아사나 데이터 로드 실패:", result.message);
       }
     } catch (error) {
-      console.error("아사나 데이터 로드 예외:", error);
       set({
         error: "아사나 데이터를 불러오는 중 오류가 발생했습니다.",
         isLoading: false,

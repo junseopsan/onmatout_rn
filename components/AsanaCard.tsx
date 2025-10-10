@@ -48,7 +48,6 @@ export function AsanaCard({
         onFavoriteToggle?.(asana.id, newFavoriteState);
       }
     } catch (error) {
-      console.error("즐겨찾기 토글 에러:", error);
     } finally {
       setIsLoading(false);
     }

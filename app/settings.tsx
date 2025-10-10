@@ -5,31 +5,24 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Modal,
   Platform,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { COLORS } from "../../constants/Colors";
-import { useAuth } from "../../hooks/useAuth";
-import { RootStackParamList } from "../../navigation/types";
-import { useAuthStore } from "../../stores/authStore";
+import { COLORS } from "../constants/Colors";
+import { useNotification } from "../contexts/NotificationContext";
+import { useAuth } from "../hooks/useAuth";
+import { RootStackParamList } from "../navigation/types";
+import { useAuthStore } from "../stores/authStore";
 
-interface SettingsModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
-export default function SettingsModal({
-  visible,
-  onClose,
-}: SettingsModalProps) {
+export default function SettingsScreen() {
   const { user } = useAuth();
   const { getUserProfile } = useAuthStore();
+  const { showSnackbar } = useNotification();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -51,15 +44,13 @@ export default function SettingsModal({
       }
     };
 
-    if (visible) {
-      checkNotificationPermission();
-    }
-  }, [visible]);
+    checkNotificationPermission();
+  }, []);
 
   // 사용자 프로필 가져오기
   useEffect(() => {
     const loadUserProfile = async () => {
-      if (user && visible) {
+      if (user) {
         try {
           const profile = await getUserProfile();
           setUserProfile(profile);
@@ -68,13 +59,12 @@ export default function SettingsModal({
           if (profile) {
             setPushNotifications(profile.push_notifications ?? true);
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     };
 
     loadUserProfile();
-  }, [user, getUserProfile, visible]);
+  }, [user, getUserProfile]);
 
   // 전화번호 포맷팅 함수
   const formatPhoneNumber = (phone: string): string => {
@@ -139,11 +129,7 @@ export default function SettingsModal({
     }
 
     if (finalStatus !== "granted") {
-      Alert.alert(
-        "알림 권한 필요",
-        "알림을 받으려면 알림 권한을 허용해주세요.",
-        [{ text: "설정으로 이동", onPress: () => {} }]
-      );
+      showSnackbar("알림을 받으려면 알림 권한을 허용해주세요.", "warning");
       return false;
     }
 
@@ -184,8 +170,7 @@ export default function SettingsModal({
       });
 
       console.log("수련 알림이 성공적으로 스케줄되었습니다.");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   // 알림 설정 업데이트
@@ -226,16 +211,16 @@ export default function SettingsModal({
       // 성공 메시지 표시
       if (type === "practice") {
         if (value) {
-          Alert.alert(
-            "알림 설정",
-            "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다."
+          showSnackbar(
+            "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다.",
+            "success"
           );
         } else {
-          Alert.alert("알림 설정", "수련 알림이 해제되었습니다.");
+          showSnackbar("수련 알림이 해제되었습니다.", "info");
         }
       }
     } catch (error) {
-      Alert.alert("오류", "알림 설정 중 오류가 발생했습니다.");
+      showSnackbar("알림 설정 중 오류가 발생했습니다.", "error");
     }
   };
 
@@ -248,106 +233,103 @@ export default function SettingsModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={styles.container}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>설정</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color={COLORS.text} />
+    <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>설정</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView style={styles.content}>
+        <View style={styles.settingsContainer}>
+          {/* 개인정보 섹션 */}
+          <View style={styles.personalInfoSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>개인정보</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.infoItem}
+              onPress={() => navigation.navigate("EditNickname")}
+            >
+              <Text style={styles.infoLabel}>닉네임</Text>
+              <View style={styles.infoValueContainer}>
+                <Text style={styles.infoValue}>
+                  {userProfile?.name || "사용자"}
+                </Text>
+                <Text style={styles.arrowText}>›</Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>전화번호</Text>
+              <Text style={styles.infoValue}>
+                {formatPhoneNumber(user?.phone || "")}
+              </Text>
+            </View>
+          </View>
+
+          {/* 알림 설정 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>알림 설정</Text>
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>푸시 알림</Text>
+              <Text style={styles.settingDescription}>
+                새로운 기능, 업데이트 및 중요 알림
+              </Text>
+              {notificationPermissionStatus === "denied" && (
+                <Text style={styles.permissionWarning}>
+                  ⚠️ 알림 권한이 거부되었습니다. 설정에서 허용해주세요.
+                </Text>
+              )}
+            </View>
+            <Switch
+              value={pushNotifications}
+              onValueChange={(value) => {
+                setPushNotifications(value);
+                updateNotificationSettings("push", value);
+              }}
+              trackColor={{ false: COLORS.surface, true: COLORS.primary }}
+              thumbColor={pushNotifications ? "white" : COLORS.textSecondary}
+            />
+          </View>
+
+          {/* 약관 및 정책 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>약관 및 정책</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={handlePrivacyPolicy}
+          >
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>개인정보 처리방침</Text>
+            </View>
+            <Text style={styles.arrowText}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={handleTermsOfService}
+          >
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>이용약관</Text>
+            </View>
+            <Text style={styles.arrowText}>›</Text>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.content}>
-          <View style={styles.settingsContainer}>
-            {/* 개인정보 섹션 */}
-            <View style={styles.personalInfoSection}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>개인정보</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.infoItem}
-                onPress={() => navigation.navigate("Nickname")}
-              >
-                <Text style={styles.infoLabel}>닉네임</Text>
-                <View style={styles.infoValueContainer}>
-                  <Text style={styles.infoValue}>
-                    {userProfile?.name || "사용자"}
-                  </Text>
-                  <Text style={styles.arrowText}>›</Text>
-                </View>
-              </TouchableOpacity>
-
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>전화번호</Text>
-                <Text style={styles.infoValue}>
-                  {formatPhoneNumber(user?.phone || "")}
-                </Text>
-              </View>
-            </View>
-
-            {/* 알림 설정 섹션 */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>알림 설정</Text>
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingContent}>
-                <Text style={styles.settingText}>푸시 알림</Text>
-                <Text style={styles.settingDescription}>
-                  새로운 기능, 업데이트 및 중요 알림
-                </Text>
-                {notificationPermissionStatus === "denied" && (
-                  <Text style={styles.permissionWarning}>
-                    ⚠️ 알림 권한이 거부되었습니다. 설정에서 허용해주세요.
-                  </Text>
-                )}
-              </View>
-              <Switch
-                value={pushNotifications}
-                onValueChange={(value) => {
-                  setPushNotifications(value);
-                  updateNotificationSettings("push", value);
-                }}
-                trackColor={{ false: COLORS.surface, true: COLORS.primary }}
-                thumbColor={pushNotifications ? "white" : COLORS.textSecondary}
-              />
-            </View>
-
-            {/* 약관 및 정책 섹션 */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>약관 및 정책</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={handlePrivacyPolicy}
-            >
-              <View style={styles.settingContent}>
-                <Text style={styles.settingText}>개인정보 처리방침</Text>
-              </View>
-              <Text style={styles.arrowText}>›</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={handleTermsOfService}
-            >
-              <View style={styles.settingContent}>
-                <Text style={styles.settingText}>이용약관</Text>
-              </View>
-              <Text style={styles.arrowText}>›</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -360,19 +342,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 60, // 상태바 높이 + 여백
     paddingHorizontal: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.surface,
+  },
+  backButton: {
+    padding: 8,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: COLORS.text,
   },
-  closeButton: {
-    padding: 8,
+  placeholder: {
+    width: 40, // 뒤로가기 버튼과 같은 크기로 균형 맞춤
   },
   content: {
     flex: 1,
@@ -381,6 +366,7 @@ const styles = StyleSheet.create({
   },
   personalInfoSection: {
     marginBottom: 32,
+    marginTop: 24,
   },
   infoItem: {
     flexDirection: "row",
@@ -445,66 +431,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: COLORS.textSecondary,
     fontWeight: "300",
-  },
-  // 모달 스타일
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 24,
-    width: "80%",
-    maxWidth: 320,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.text,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  nicknameInput: {
-    borderWidth: 1,
-    borderColor: COLORS.textSecondary,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: COLORS.text,
-    backgroundColor: COLORS.background,
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.textSecondary,
-  },
-  saveButton: {
-    backgroundColor: COLORS.primary,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: COLORS.text,
-    fontWeight: "500",
-  },
-  saveButtonText: {
-    fontSize: 16,
-    color: "white",
-    fontWeight: "500",
   },
   permissionWarning: {
     fontSize: 12,

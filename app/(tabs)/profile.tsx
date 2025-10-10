@@ -13,7 +13,7 @@ import {
 import FavoriteAsanaCard from "../../components/dashboard/FavoriteAsanaCard";
 import FavoriteAsanasModal from "../../components/dashboard/FavoriteAsanasModal";
 import PracticeStatsChart from "../../components/dashboard/PracticeStatsChart";
-import SettingsModal from "../../components/profile/SettingsModal";
+// SettingsModal 제거됨 - 페이지로 변경
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useDashboardData } from "../../hooks/useDashboard";
@@ -27,8 +27,7 @@ export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  // 설정 모달 상태
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  // 설정 모달 상태 제거
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -59,7 +58,6 @@ export default function ProfileScreen() {
           console.log("프로필 로드 결과:", profile);
           setUserProfile(profile);
         } catch (error) {
-          console.error("프로필 로드 에러:", error);
         } finally {
           console.log("프로필 로딩 완료");
           setLoadingProfile(false);
@@ -126,7 +124,7 @@ export default function ProfileScreen() {
         <Text style={styles.title}></Text>
         <TouchableOpacity
           style={styles.settingsButton}
-          onPress={() => setShowSettingsModal(true)}
+          onPress={() => navigation.navigate("Settings")}
         >
           <Ionicons name="settings-outline" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -210,11 +208,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* 설정 모달 */}
-      <SettingsModal
-        visible={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-      />
+      {/* 설정 모달 제거됨 - 페이지로 변경 */}
 
       {/* 즐겨찾기 아사나 모달 */}
       <FavoriteAsanasModal

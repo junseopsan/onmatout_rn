@@ -12,11 +12,13 @@ import AsanaDetailScreen from "../app/asanas/[id]";
 import AuthScreen from "../app/auth/index";
 import NicknameScreen from "../app/auth/nickname";
 import VerifyScreen from "../app/auth/verify";
-import AppContainer from "../app/screens/AppContainer";
-import SplashScreen from "../app/screens/SplashScreen";
-import NewRecordScreen from "../app/record/new";
+import EditNicknameScreen from "../app/profile/edit-nickname";
 import PrivacyPolicyScreen from "../app/profile/privacy-policy";
 import TermsOfServiceScreen from "../app/profile/terms-of-service";
+import NewRecordScreen from "../app/record/new";
+import AppContainer from "../app/screens/AppContainer";
+import SplashScreen from "../app/screens/SplashScreen";
+import SettingsScreen from "../app/settings";
 
 export interface PageConfig {
   name: keyof RootStackParamList;
@@ -187,6 +189,20 @@ export const pageList: PageConfig[] = [
         fontSize: 18,
         fontWeight: "600",
       },
+    },
+  },
+  {
+    name: "Settings",
+    component: SettingsScreen,
+    options: {
+      headerShown: false, // 커스텀 헤더 사용
+    },
+  },
+  {
+    name: "EditNickname",
+    component: EditNicknameScreen,
+    options: {
+      headerShown: false, // 커스텀 헤더 사용
     },
   },
 ];

@@ -57,7 +57,6 @@ export const asanasAPI = {
           .eq("asana_id", asanaId);
 
         if (error) {
-          console.error("즐겨찾기 제거 에러:", error);
           return {
             success: false,
             message: "즐겨찾기 제거에 실패했습니다.",
@@ -76,7 +75,6 @@ export const asanasAPI = {
         });
 
         if (error) {
-          console.error("즐겨찾기 추가 에러:", error);
           return {
             success: false,
             message: "즐겨찾기 추가에 실패했습니다.",
@@ -89,7 +87,6 @@ export const asanasAPI = {
         };
       }
     } catch (error) {
-      console.error("즐겨찾기 토글 에러:", error);
       return {
         success: false,
         message: "즐겨찾기 처리 중 오류가 발생했습니다.",
@@ -120,7 +117,6 @@ export const asanasAPI = {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("즐겨찾기 목록 가져오기 에러:", error);
         return {
           success: false,
           message: "즐겨찾기 목록을 가져오는데 실패했습니다.",
@@ -133,7 +129,6 @@ export const asanasAPI = {
         data: favoriteIds,
       };
     } catch (error) {
-      console.error("즐겨찾기 목록 가져오기 에러:", error);
       return {
         success: false,
         message: "즐겨찾기 목록을 가져오는 중 오류가 발생했습니다.",
@@ -188,7 +183,6 @@ export const asanasAPI = {
       const { data, error, count } = await query.range(from, to);
 
       if (error) {
-        console.error("아사나 페이지네이션 에러:", error);
 
         // 페이지네이션 범위 오류인 경우 전체 데이터를 가져옴
         if (error.code === "PGRST103") {
@@ -244,7 +238,6 @@ export const asanasAPI = {
         totalCount: count || 0,
       };
     } catch (error) {
-      console.error("아사나 페이지네이션 예외:", error);
       return {
         success: false,
         message: "아사나 데이터를 가져오는 중 오류가 발생했습니다.",
@@ -267,7 +260,6 @@ export const asanasAPI = {
         .order("sanskrit_name_kr", { ascending: true });
 
       if (error) {
-        console.error("아사나 데이터 가져오기 에러:", error);
         return {
           success: false,
           message: error.message || "아사나 데이터를 가져오는데 실패했습니다.",
@@ -289,7 +281,6 @@ export const asanasAPI = {
         data: data || [],
       };
     } catch (error) {
-      console.error("아사나 데이터 가져오기 예외:", error);
       return {
         success: false,
         message: "아사나 데이터를 가져오는 중 오류가 발생했습니다.",
@@ -311,7 +302,6 @@ export const asanasAPI = {
         .order("sanskrit_name_kr", { ascending: true });
 
       if (error) {
-        console.error("카테고리별 아사나 데이터 가져오기 에러:", error);
         return {
           success: false,
           message:
@@ -330,7 +320,6 @@ export const asanasAPI = {
         data: data || [],
       };
     } catch (error) {
-      console.error("카테고리별 아사나 데이터 가져오기 예외:", error);
       return {
         success: false,
         message: "카테고리별 아사나 데이터를 가져오는 중 오류가 발생했습니다.",
@@ -352,7 +341,6 @@ export const asanasAPI = {
         .order("sanskrit_name_kr", { ascending: true });
 
       if (error) {
-        console.error("레벨별 아사나 데이터 가져오기 에러:", error);
         return {
           success: false,
           message:
@@ -370,7 +358,6 @@ export const asanasAPI = {
         data: data || [],
       };
     } catch (error) {
-      console.error("레벨별 아사나 데이터 가져오기 예외:", error);
       return {
         success: false,
         message: "레벨별 아사나 데이터를 가져오는 중 오류가 발생했습니다.",
@@ -395,7 +382,6 @@ export const asanasAPI = {
         .limit(50); // 검색 결과 제한
 
       if (error) {
-        console.error("아사나 검색 에러:", error);
         return {
           success: false,
           message: error.message || "아사나 검색에 실패했습니다.",
@@ -408,7 +394,6 @@ export const asanasAPI = {
         data: data || [],
       };
     } catch (error) {
-      console.error("아사나 검색 예외:", error);
       return {
         success: false,
         message: "아사나 검색 중 오류가 발생했습니다.",
