@@ -78,8 +78,20 @@ export default function ProfileScreen() {
       if (isAuthenticated) {
         console.log("프로필: 화면 포커스 시 데이터 새로고침");
         refetch();
+
+        // 사용자 프로필 정보도 새로고침
+        const refreshUserProfile = async () => {
+          try {
+            const profile = await getUserProfile();
+            setUserProfile(profile);
+          } catch (error) {
+            console.error("프로필 새로고침 실패:", error);
+          }
+        };
+
+        refreshUserProfile();
       }
-    }, [isAuthenticated, refetch])
+    }, [isAuthenticated, refetch, getUserProfile])
   );
 
   // 아사나 상세 화면으로 이동

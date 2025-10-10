@@ -68,13 +68,28 @@ export default function SettingsModal({
           if (profile) {
             setPushNotifications(profile.push_notifications ?? true);
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     };
 
     loadUserProfile();
   }, [user, getUserProfile, visible]);
+
+  // 화면이 포커스될 때마다 프로필 정보 새로고침
+  useEffect(() => {
+    if (visible && user) {
+      const refreshProfile = async () => {
+        try {
+          const profile = await getUserProfile();
+          setUserProfile(profile);
+        } catch (error) {
+          console.error("프로필 새로고침 실패:", error);
+        }
+      };
+
+      refreshProfile();
+    }
+  }, [visible, user, getUserProfile]);
 
   // 전화번호 포맷팅 함수
   const formatPhoneNumber = (phone: string): string => {
@@ -184,8 +199,7 @@ export default function SettingsModal({
       });
 
       console.log("수련 알림이 성공적으로 스케줄되었습니다.");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   // 알림 설정 업데이트

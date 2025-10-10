@@ -54,6 +54,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       if (response.success) {
         console.log("사용자 프로필 저장 성공:", response.data);
+
+        // 사용자 정보 즉시 업데이트
+        const updatedUser = {
+          ...currentUser,
+          profile: {
+            ...currentUser.profile,
+            name: nickname,
+            ...response.data, // 서버에서 반환된 전체 프로필 정보
+          } as any, // 타입 호환성을 위해 any로 캐스팅
+        };
+
+        set({ user: updatedUser });
+        console.log("사용자 정보 업데이트 완료:", updatedUser);
+
         return true;
       } else {
         return false;

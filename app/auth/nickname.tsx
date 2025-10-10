@@ -11,7 +11,7 @@ import { useAuthStore } from "../../stores/authStore";
 export default function NicknameScreen() {
   const [nickname, setNickname] = useState("");
   const [nicknameError, setNicknameError] = useState("");
-  const { user, loading, clearError, saveUserProfile } = useAuthStore();
+  const { loading, clearError, saveUserProfile } = useAuthStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -42,15 +42,6 @@ export default function NicknameScreen() {
       const success = await saveUserProfile(nickname);
 
       if (success) {
-        // 사용자 정보 업데이트 (프로필 정보 추가)
-        const currentUser = useAuthStore.getState().user;
-        if (currentUser) {
-          useAuthStore.getState().setUser({
-            ...currentUser,
-            profile: { name: nickname } as any,
-          });
-        }
-
         Alert.alert(
           "환영합니다! 🧘‍♀️",
           `${nickname}님, ONMATOUT에 가입해주셔서 감사합니다.\n요가를 일상의 습관으로 만들어보세요!`,
@@ -70,6 +61,7 @@ export default function NicknameScreen() {
         );
       }
     } catch (error) {
+      console.error("닉네임 저장 오류:", error);
       Alert.alert("오류", "닉네임 저장 중 오류가 발생했습니다.");
     }
   };
