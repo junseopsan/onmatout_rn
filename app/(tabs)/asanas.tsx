@@ -85,8 +85,12 @@ export default function AsanasScreen() {
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
-        console.log("아사나 탭: 화면 포커스 시 데이터 새로고침");
+        console.log("아사나 탭: 화면 포커스 시 데이터 새로고침 및 필터 초기화");
         refetch();
+        // 필터/검색/즐겨찾기 상태 초기화
+        setSearchQuery("");
+        setSelectedCategories([]);
+        setShowFavoritesOnly(false);
       }
     }, [isAuthenticated, refetch])
   );
@@ -320,6 +324,24 @@ export default function AsanasScreen() {
             &quot;{searchQuery}&quot;에 대한 검색 결과가 없습니다.
           </Text>
           <Text style={styles.emptySubText}>다른 검색어를 시도해보세요.</Text>
+        </View>
+      ) : getDisplayAsanas().length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            {showFavoritesOnly
+              ? "즐겨찾기한 아사나가 없습니다."
+              : selectedCategories.length > 0
+              ? "선택한 카테고리의 아사나가 없습니다."
+              : "아사나 데이터가 없습니다."}
+          </Text>
+          {!showFavoritesOnly && selectedCategories.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSelectedCategories([])}
+              style={styles.retryButton}
+            >
+              <Text style={styles.retryButtonText}>필터 초기화</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
