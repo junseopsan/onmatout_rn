@@ -1,8 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   TouchableOpacity,
   View,
@@ -26,6 +28,8 @@ export default function AsanaDetailScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
+  const [showIndicators, setShowIndicators] = useState(false);
+  const slideAnimation = useRef(new Animated.Value(0)).current;
 
   // React Query로 아사나 상세 데이터 가져오기
   const {
@@ -67,6 +71,7 @@ export default function AsanaDetailScreen() {
 
   const loadValidImages = async (imageNumber: string) => {
     setImageLoading(true);
+    setShowIndicators(false);
     const urls: string[] = [];
     const baseNumber = imageNumber.padStart(3, "0");
 
@@ -95,6 +100,8 @@ export default function AsanaDetailScreen() {
     }
 
     setImageLoading(false);
+    // 인디케이터를 즉시 표시
+    setShowIndicators(true);
   };
 
   const getLevelColor = (level: string) => {
@@ -142,14 +149,24 @@ export default function AsanaDetailScreen() {
   };
 
   const nextImage = () => {
-    if (currentImageIndex < imageUrls.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
+    if (imageUrls.length > 1) {
+      const newIndex =
+        currentImageIndex < imageUrls.length - 1 ? currentImageIndex + 1 : 0;
+      setCurrentImageIndex(newIndex);
     }
   };
 
   const prevImage = () => {
-    if (currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
+    if (imageUrls.length > 1) {
+      const newIndex =
+        currentImageIndex > 0 ? currentImageIndex - 1 : imageUrls.length - 1;
+      setCurrentImageIndex(newIndex);
+    }
+  };
+
+  const goToImage = (index: number) => {
+    if (index >= 0 && index < imageUrls.length) {
+      setCurrentImageIndex(index);
     }
   };
 
@@ -210,6 +227,49 @@ export default function AsanaDetailScreen() {
         <YStack height={imageHeight} backgroundColor="white" marginTop={0}>
           {imageUrls.length > 0 ? (
             <YStack flex={1} position="relative">
+              {/* 좌우 슬라이드 버튼 */}
+              {imageUrls.length > 1 && (
+                <>
+                  {/* 왼쪽 버튼 */}
+                  <TouchableOpacity
+                    style={{
+                      position: "absolute",
+                      left: 15,
+                      top: "50%",
+                      transform: [{ translateY: -15 }],
+                      zIndex: 10,
+                      width: 30,
+                      height: 30,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPress={prevImage}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chevron-back" size={20} color="black" />
+                  </TouchableOpacity>
+
+                  {/* 오른쪽 버튼 */}
+                  <TouchableOpacity
+                    style={{
+                      position: "absolute",
+                      right: 15,
+                      top: "50%",
+                      transform: [{ translateY: -15 }],
+                      zIndex: 10,
+                      width: 30,
+                      height: 30,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPress={nextImage}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chevron-forward" size={20} color="black" />
+                  </TouchableOpacity>
+                </>
+              )}
+
               <YStack
                 flex={1}
                 justifyContent="center"
@@ -223,15 +283,8 @@ export default function AsanaDetailScreen() {
                     justifyContent: "center",
                     alignItems: "center",
                   }}
-                  onPress={() => {
-                    if (imageUrls.length > 1) {
-                      if (currentImageIndex < imageUrls.length - 1) {
-                        nextImage();
-                      } else {
-                        setCurrentImageIndex(0);
-                      }
-                    }
-                  }}
+                  onPress={nextImage}
+                  activeOpacity={0.9}
                 >
                   <Image
                     source={{ uri: imageUrls[currentImageIndex] }}
@@ -252,6 +305,7 @@ export default function AsanaDetailScreen() {
                     priority="high"
                     cachePolicy="memory-disk"
                     onLoad={() => setImageLoading(false)}
+                    transition={200}
                   />
                 </TouchableOpacity>
 
@@ -292,30 +346,35 @@ export default function AsanaDetailScreen() {
                   </YStack>
                 )}
 
-                {/* 슬라이드 네비게이션 */}
-                {imageUrls.length > 1 && !imageLoading && (
+                {/* 슬라이드 인디케이터 */}
+                {imageUrls.length > 1 && showIndicators && (
                   <XStack
                     position="absolute"
-                    bottom={10}
+                    bottom={20}
                     left={0}
                     right={0}
                     justifyContent="center"
                     alignItems="center"
                     paddingHorizontal="$5"
                   >
-                    <XStack gap="$1">
+                    <XStack gap="$2">
                       {imageUrls.map((_, index) => (
-                        <YStack
+                        <TouchableOpacity
                           key={index}
-                          width={8}
-                          height={8}
-                          borderRadius="$10"
-                          backgroundColor={
-                            currentImageIndex === index
-                              ? "#333333"
-                              : "rgba(0,0,0,0.3)"
-                          }
-                        />
+                          onPress={() => goToImage(index)}
+                          activeOpacity={0.7}
+                        >
+                          <YStack
+                            width={10}
+                            height={10}
+                            borderRadius="$10"
+                            backgroundColor={
+                              currentImageIndex === index
+                                ? COLORS.primary
+                                : "rgba(0,0,0,0.3)"
+                            }
+                          />
+                        </TouchableOpacity>
                       ))}
                     </XStack>
                   </XStack>
