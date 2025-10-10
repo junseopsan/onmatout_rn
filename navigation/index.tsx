@@ -128,6 +128,11 @@ export default function AppNavigator() {
         options={pageList.find((p) => p.name === "NewRecord")?.options}
       />
       <Stack.Screen
+        name="RecordDetail"
+        component={pageList.find((p) => p.name === "RecordDetail")?.component!}
+        options={pageList.find((p) => p.name === "RecordDetail")?.options}
+      />
+      <Stack.Screen
         name="AsanaDetail"
         component={pageList.find((p) => p.name === "AsanaDetail")?.component!}
         options={pageList.find((p) => p.name === "AsanaDetail")?.options}
@@ -153,6 +158,11 @@ export default function AppNavigator() {
         name="EditNickname"
         component={pageList.find((p) => p.name === "EditNickname")?.component!}
         options={pageList.find((p) => p.name === "EditNickname")?.options}
+      />
+      <Stack.Screen
+        name="ProfileInfo"
+        component={pageList.find((p) => p.name === "ProfileInfo")?.component!}
+        options={pageList.find((p) => p.name === "ProfileInfo")?.options}
       />
     </Stack.Navigator>
   );

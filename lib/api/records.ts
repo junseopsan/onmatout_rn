@@ -552,6 +552,20 @@ export const recordsAPI = {
         return emotionMapping[emotion] || "calm";
       };
 
+      // 아사나 상세 정보 가져오기
+      const allAsanas = await supabase.from("asanas").select("*");
+
+      if (allAsanas.error) {
+        console.error("아사나 데이터 조회 실패:", allAsanas.error);
+      }
+
+      const asanasMap = new Map();
+      if (allAsanas.data) {
+        allAsanas.data.forEach((asana) => {
+          asanasMap.set(asana.id, asana);
+        });
+      }
+
       // 데이터 변환 - 새로운 스키마 사용
       const convertedData: Record[] = (data || []).map((item) => {
         // JSON 문자열을 파싱하여 배열로 변환
@@ -584,12 +598,17 @@ export const recordsAPI = {
           photos = [];
         }
 
+        // 아사나 ID를 상세 정보로 변환
+        const asanaDetails = asanas
+          .map((asanaId) => asanasMap.get(asanaId))
+          .filter(Boolean);
+
         return {
           id: item.id,
           user_id: item.user_id,
           date: item.practice_date,
           title: item.title || `수련 기록 - ${item.practice_date}`,
-          asanas: asanas,
+          asanas: asanaDetails, // 아사나 상세 정보 포함
           memo: item.memo || "",
           states: states,
           photos: photos,

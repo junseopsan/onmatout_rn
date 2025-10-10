@@ -28,7 +28,6 @@ export default function SettingsScreen() {
 
   // 알림 설정 상태
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [notificationPermissionStatus, setNotificationPermissionStatus] =
     useState<string>("unknown");
 
@@ -39,7 +38,7 @@ export default function SettingsScreen() {
         const { status } = await Notifications.getPermissionsAsync();
         setNotificationPermissionStatus(status);
         console.log("설정: 알림 권한 상태:", status);
-      } catch (error) {
+      } catch {
         setNotificationPermissionStatus("unknown");
       }
     };
@@ -53,60 +52,17 @@ export default function SettingsScreen() {
       if (user) {
         try {
           const profile = await getUserProfile();
-          setUserProfile(profile);
 
           // 프로필에서 알림 설정 로드
           if (profile) {
             setPushNotifications(profile.push_notifications ?? true);
           }
-        } catch (error) {}
+        } catch {}
       }
     };
 
     loadUserProfile();
   }, [user, getUserProfile]);
-
-  // 전화번호 포맷팅 함수
-  const formatPhoneNumber = (phone: string): string => {
-    if (!phone) return "전화번호 없음";
-
-    // +82로 시작하는 경우 제거하고 0으로 시작하도록 변경
-    let formatted = phone.replace(/^\+82/, "0");
-
-    // 숫자만 추출
-    const numbers = formatted.replace(/\D/g, "");
-
-    // 12자리인 경우 (821083138230 -> 010-8313-8230)
-    if (numbers.length === 12 && numbers.startsWith("82")) {
-      const koreanNumber = "0" + numbers.slice(2);
-      const result = `${koreanNumber.slice(0, 3)}-${koreanNumber.slice(
-        3,
-        7
-      )}-${koreanNumber.slice(7)}`;
-      return result;
-    }
-
-    // 11자리인 경우 (01012345678 -> 010-1234-5678)
-    if (numbers.length === 11) {
-      const result = `${numbers.slice(0, 3)}-${numbers.slice(
-        3,
-        7
-      )}-${numbers.slice(7)}`;
-      return result;
-    }
-
-    // 10자리인 경우 (0101234567 -> 010-123-4567)
-    if (numbers.length === 10) {
-      const result = `${numbers.slice(0, 3)}-${numbers.slice(
-        3,
-        6
-      )}-${numbers.slice(6)}`;
-      return result;
-    }
-
-    // 그 외의 경우 원본 반환
-    return formatted;
-  };
 
   // 알림 권한 요청
   const requestNotificationPermissions = async () => {
@@ -145,7 +101,7 @@ export default function SettingsScreen() {
         projectId: "your-project-id", // Expo 프로젝트 ID로 변경 필요
       });
       return token.data;
-    } catch (error) {
+    } catch {
       return null;
     }
   };
@@ -170,7 +126,7 @@ export default function SettingsScreen() {
       });
 
       console.log("수련 알림이 성공적으로 스케줄되었습니다.");
-    } catch (error) {}
+    } catch {}
   };
 
   // 알림 설정 업데이트
@@ -219,7 +175,7 @@ export default function SettingsScreen() {
           showSnackbar("수련 알림이 해제되었습니다.", "info");
         }
       }
-    } catch (error) {
+    } catch {
       showSnackbar("알림 설정 중 오류가 발생했습니다.", "error");
     }
   };
@@ -248,33 +204,6 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.settingsContainer}>
-          {/* 개인정보 섹션 */}
-          <View style={styles.personalInfoSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>개인정보</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.infoItem}
-              onPress={() => navigation.navigate("EditNickname")}
-            >
-              <Text style={styles.infoLabel}>닉네임</Text>
-              <View style={styles.infoValueContainer}>
-                <Text style={styles.infoValue}>
-                  {userProfile?.name || "사용자"}
-                </Text>
-                <Text style={styles.arrowText}>›</Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>전화번호</Text>
-              <Text style={styles.infoValue}>
-                {formatPhoneNumber(user?.phone || "")}
-              </Text>
-            </View>
-          </View>
-
           {/* 알림 설정 섹션 */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>알림 설정</Text>
@@ -363,35 +292,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 100,
-  },
-  personalInfoSection: {
-    marginBottom: 32,
-    marginTop: 24,
-  },
-  infoItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-  },
-  infoValue: {
-    fontSize: 16,
-    color: COLORS.text,
-    fontWeight: "600",
-  },
-  infoValueContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
   },
   settingsContainer: {
     marginBottom: 32,

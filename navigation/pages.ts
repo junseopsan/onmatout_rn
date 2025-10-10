@@ -14,7 +14,9 @@ import NicknameScreen from "../app/auth/nickname";
 import VerifyScreen from "../app/auth/verify";
 import EditNicknameScreen from "../app/profile/edit-nickname";
 import PrivacyPolicyScreen from "../app/profile/privacy-policy";
+import ProfileInfoScreen from "../app/profile/profile-info";
 import TermsOfServiceScreen from "../app/profile/terms-of-service";
+import RecordDetailScreen from "../app/record/detail";
 import NewRecordScreen from "../app/record/new";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
@@ -115,6 +117,13 @@ export const pageList: PageConfig[] = [
     },
   },
   {
+    name: "RecordDetail",
+    component: RecordDetailScreen,
+    options: {
+      headerShown: false, // 커스텀 헤더 사용
+    },
+  },
+  {
     name: "Studios",
     component: StudiosScreen,
     options: {
@@ -201,6 +210,13 @@ export const pageList: PageConfig[] = [
   {
     name: "EditNickname",
     component: EditNicknameScreen,
+    options: {
+      headerShown: false, // 커스텀 헤더 사용
+    },
+  },
+  {
+    name: "ProfileInfo",
+    component: ProfileInfoScreen,
     options: {
       headerShown: false, // 커스텀 헤더 사용
     },

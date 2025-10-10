@@ -8,9 +8,11 @@ export type RootStackParamList = {
   Asanas: undefined;
   Record: undefined;
   NewRecord: undefined;
+  RecordDetail: { record: any };
   Studios: undefined;
   Profile: undefined;
   Settings: undefined;
+  ProfileInfo: undefined;
   EditNickname: undefined;
   AsanaDetail: { id: string };
   PrivacyPolicy: undefined;
