@@ -9,7 +9,7 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.contentText}>
           온매아웃 (이하 "회사")는 사용자의 개인정보를 소중히 여기며, 「개인정보
           보호법」 등 관련 법령을 준수하고 있습니다. 본 개인정보처리방침은
-          회사가 제공하는 **ONMATOUT 모바일 앱**(이하 "서비스") 이용과 관련하여
+          회사가 제공하는 ONMATOUT 모바일 앱(이하 "서비스") 이용과 관련하여
           사용자의 개인정보가 어떻게 수집, 이용, 보관, 제공되는지를 안내합니다.
         </Text>
 
