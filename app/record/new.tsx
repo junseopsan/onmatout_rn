@@ -95,9 +95,8 @@ export default function NewRecordScreen() {
 
   // 홈탭으로 이동
   const handleClose = () => {
-    // 여러 번 뒤로가기를 통해 홈탭으로 이동
-    navigation.goBack();
-    navigation.goBack();
+    // TabNavigator로 이동하여 홈탭으로 이동
+    navigation.navigate("TabNavigator" as any);
   };
 
   // 기록 저장
