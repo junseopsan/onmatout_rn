@@ -170,7 +170,7 @@ export default function NewRecordScreen() {
             style={styles.addAsanaButton}
             onPress={() => setSearchModalVisible(true)}
           >
-            <Text style={styles.addAsanaButtonText}>+ 아사나 추가</Text>
+            <Text style={styles.addAsanaButtonText}>+ 아사나</Text>
           </TouchableOpacity>
 
           <Text style={styles.asanaCountText}>
@@ -366,19 +366,21 @@ const styles = StyleSheet.create({
   },
   addAsanaButton: {
     backgroundColor: COLORS.primary,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     alignItems: "center",
     marginBottom: 16,
+    alignSelf: "center",
+    minWidth: 120,
     shadowColor: COLORS.primary,
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   addAsanaButtonText: {
     color: "white",
@@ -562,11 +564,11 @@ const styles = StyleSheet.create({
     color: "white",
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.surfaceDark,
-    opacity: 0.5,
+    backgroundColor: "#777777",
+    opacity: 0.7,
   },
   saveButtonTextDisabled: {
-    color: COLORS.textSecondary,
+    color: "#DDDDDD",
   },
   saveButtonContainer: {
     marginTop: 24,
