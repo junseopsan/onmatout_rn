@@ -186,8 +186,8 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         </View>
       )}
 
-      {/* 액션 버튼들 */}
-      <View style={styles.actions}>
+      {/* 액션 버튼들 - 우측하단 */}
+      <View style={styles.actionsContainer}>
         <TouchableOpacity
           style={[
             styles.actionButton,
@@ -198,7 +198,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         >
           <Ionicons
             name={stats?.isLiked ? "heart" : "heart-outline"}
-            size={20}
+            size={16}
             color={stats?.isLiked ? COLORS.primary : COLORS.textSecondary}
           />
           {stats?.likeCount && stats.likeCount > 0 ? (
@@ -208,7 +208,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
           <Ionicons
             name="chatbubble-outline"
-            size={20}
+            size={16}
             color={COLORS.textSecondary}
           />
           {stats?.commentCount && stats.commentCount > 0 ? (
@@ -404,25 +404,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  actions: {
+  actionsContainer: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    gap: 8,
   },
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 12,
   },
   actionButtonDisabled: {
     opacity: 0.6,
   },
   actionCount: {
-    marginLeft: 4,
-    fontSize: 14,
+    marginLeft: 2,
+    fontSize: 12,
     color: COLORS.textSecondary,
     fontWeight: "500",
   },
