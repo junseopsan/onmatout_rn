@@ -301,6 +301,7 @@ export default function AsanaSearchModal({
           {
             borderColor: isSelected ? COLORS.primary : "transparent",
             borderWidth: isSelected ? 2 : 0,
+            backgroundColor: isSelected ? "#FFFFFF" : COLORS.surface,
           },
         ]}
         onPress={() => toggleAsanaSelection(item)}

@@ -165,7 +165,7 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.userName}>
-            {userProfile?.name || "사용자"}
+            {userProfile?.name || "사용자"} 님,
           </Text>
         </View>
         <View style={styles.headerButtons}>

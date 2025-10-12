@@ -47,7 +47,6 @@ export default function AsanaDetailScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asana]);
 
-
   const checkImageExists = async (url: string) => {
     try {
       const response = await fetch(url, { method: "HEAD" });
@@ -71,52 +70,58 @@ export default function AsanaDetailScreen() {
   }, []);
 
   // 모든 이미지 미리 로딩
-  const preloadAllImages = useCallback(async (urls: string[]) => {
-    const preloadPromises = urls.map((url) => preloadImage(url));
-    await Promise.allSettled(preloadPromises);
-  }, [preloadImage]);
+  const preloadAllImages = useCallback(
+    async (urls: string[]) => {
+      const preloadPromises = urls.map((url) => preloadImage(url));
+      await Promise.allSettled(preloadPromises);
+    },
+    [preloadImage]
+  );
 
-  const loadValidImages = useCallback(async (imageNumber: string) => {
-    setImageLoading(true);
-    setShowIndicators(false);
-    const urls: string[] = [];
-    const baseNumber = imageNumber.padStart(3, "0");
+  const loadValidImages = useCallback(
+    async (imageNumber: string) => {
+      setImageLoading(true);
+      setShowIndicators(false);
+      const urls: string[] = [];
+      const baseNumber = imageNumber.padStart(3, "0");
 
-    // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가
-    const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
-    urls.push(firstImageUrl);
-    setImageUrls(urls); // 첫 번째 이미지를 즉시 표시
-    
-    // 첫 번째 이미지도 미리 로딩
-    preloadImage(firstImageUrl);
+      // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가
+      const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
+      urls.push(firstImageUrl);
+      setImageUrls(urls); // 첫 번째 이미지를 즉시 표시
 
-    // 추가 이미지들 확인 (백그라운드에서)
-    const additionalUrls: string[] = [];
-    for (let i = 2; i <= 10; i++) {
-      const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
-        .toString()
-        .padStart(3, "0")}.png`;
-      const exists = await checkImageExists(imageUrl);
-      if (exists) {
-        additionalUrls.push(imageUrl);
-      } else {
-        break; // 연속되지 않는 이미지가 있으면 중단
+      // 첫 번째 이미지도 미리 로딩
+      preloadImage(firstImageUrl);
+
+      // 추가 이미지들 확인 (백그라운드에서)
+      const additionalUrls: string[] = [];
+      for (let i = 2; i <= 10; i++) {
+        const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
+          .toString()
+          .padStart(3, "0")}.png`;
+        const exists = await checkImageExists(imageUrl);
+        if (exists) {
+          additionalUrls.push(imageUrl);
+        } else {
+          break; // 연속되지 않는 이미지가 있으면 중단
+        }
       }
-    }
 
-    // 추가 이미지들이 있으면 전체 URL 배열 업데이트
-    if (additionalUrls.length > 0) {
-      const allUrls = [...urls, ...additionalUrls];
-      setImageUrls(allUrls);
+      // 추가 이미지들이 있으면 전체 URL 배열 업데이트
+      if (additionalUrls.length > 0) {
+        const allUrls = [...urls, ...additionalUrls];
+        setImageUrls(allUrls);
 
-      // 모든 이미지 미리 로딩 (백그라운드에서)
-      preloadAllImages(allUrls);
-    }
+        // 모든 이미지 미리 로딩 (백그라운드에서)
+        preloadAllImages(allUrls);
+      }
 
-    setImageLoading(false);
-    // 인디케이터를 즉시 표시
-    setShowIndicators(true);
-  }, [preloadImage, preloadAllImages]);
+      setImageLoading(false);
+      // 인디케이터를 즉시 표시
+      setShowIndicators(true);
+    },
+    [preloadImage, preloadAllImages]
+  );
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -155,7 +160,6 @@ export default function AsanaDetailScreen() {
 
     return category?.label || categoryNameEn;
   };
-
 
   const nextImage = () => {
     if (imageUrls.length > 1) {

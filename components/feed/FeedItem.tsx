@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import {
-  useAddShare,
   useRecordStats,
   useToggleLike,
 } from "../../hooks/useRecords";
@@ -33,7 +32,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   // 소셜 기능 훅들
   const { data: stats } = useRecordStats(record.id);
   const toggleLikeMutation = useToggleLike();
-  const addShareMutation = useAddShare();
 
   // 아사나 정보 가져오기
   const getAsanaInfo = (asanaId: string) => {
@@ -105,13 +103,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     setShowCommentModal(true);
   };
 
-  const handleShare = () => {
-    addShareMutation.mutate(record.id, {
-      onSuccess: () => {
-        Alert.alert("공유 완료", "수련 기록이 공유되었습니다!");
-      },
-    });
-  };
 
   return (
     <TouchableOpacity
@@ -222,20 +213,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
           />
           {stats?.commentCount && stats.commentCount > 0 ? (
             <Text style={styles.actionCount}>{String(stats.commentCount)}</Text>
-          ) : null}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleShare}
-          disabled={addShareMutation.isPending}
-        >
-          <Ionicons
-            name="share-outline"
-            size={20}
-            color={COLORS.textSecondary}
-          />
-          {stats?.shareCount && stats.shareCount > 0 ? (
-            <Text style={styles.actionCount}>{String(stats.shareCount)}</Text>
           ) : null}
         </TouchableOpacity>
       </View>

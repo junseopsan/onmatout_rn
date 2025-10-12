@@ -24,7 +24,7 @@ export default function TabNavigator() {
           } else if (route.name === "Asanas") {
             iconName = focused ? "fitness" : "fitness-outline";
           } else if (route.name === "Record") {
-            iconName = focused ? "calendar" : "calendar-outline";
+            iconName = focused ? "add-circle" : "add-circle-outline";
           } else if (route.name === "Studios") {
             iconName = focused ? "location" : "location-outline";
           } else if (route.name === "Profile") {

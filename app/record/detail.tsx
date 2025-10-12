@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import React from "react";
@@ -15,11 +15,7 @@ import { COLORS } from "../../constants/Colors";
 import { useDeleteRecord } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
 
-type RecordDetailRouteProp = {
-  params: {
-    record: any;
-  };
-};
+type RecordDetailRouteProp = RouteProp<RootStackParamList, "RecordDetail">;
 
 export default function RecordDetailScreen() {
   const navigation =
@@ -104,7 +100,6 @@ export default function RecordDetailScreen() {
         <View style={styles.mainCard}>
           {/* 제목과 날짜 */}
           <View style={styles.headerCard}>
-            <Text style={styles.recordTitle}>{record.title}</Text>
             <View style={styles.dateContainer}>
               <Ionicons
                 name="calendar-outline"

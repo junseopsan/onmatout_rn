@@ -1,4 +1,4 @@
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback } from "react";
 import { View } from "react-native";
@@ -21,7 +21,5 @@ export default function RecordScreen() {
   );
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  return (
-    <View style={{ flex: 1, backgroundColor: "#000" }} />
-  );
+  return <View style={{ flex: 1, backgroundColor: "#000" }} />;
 }
