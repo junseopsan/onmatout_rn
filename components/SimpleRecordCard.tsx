@@ -35,8 +35,8 @@ export default function SimpleRecordCard({
       console.log("SimpleRecordCard - firstAsana:", firstAsana);
 
       // 아사나 객체에서 image_number 속성 사용
-      if (firstAsana && firstAsana?.image_number) {
-        const paddedId = firstAsana?.image_number.padStart(3, "0");
+      if (firstAsana && (firstAsana as any).image_number) {
+        const paddedId = (firstAsana as any).image_number.padStart(3, "0");
         const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${paddedId}_001.png`;
         console.log("SimpleRecordCard - generated imageUrl:", imageUrl);
         return imageUrl;
