@@ -106,7 +106,11 @@ export default function RecordDetailScreen() {
           <View style={styles.headerCard}>
             <Text style={styles.recordTitle}>{record.title}</Text>
             <View style={styles.dateContainer}>
-              <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
+              <Ionicons
+                name="calendar-outline"
+                size={16}
+                color={COLORS.primary}
+              />
               <Text style={styles.dateText}>
                 {formatDate(record.created_at)}
               </Text>
@@ -121,10 +125,16 @@ export default function RecordDetailScreen() {
           {record.asanas && record.asanas.length > 0 && (
             <View style={styles.asanasSection}>
               <View style={styles.asanasHeader}>
-                <Ionicons name="fitness-outline" size={20} color={COLORS.primary} />
+                <Ionicons
+                  name="fitness-outline"
+                  size={20}
+                  color={COLORS.primary}
+                />
                 <Text style={styles.asanasTitle}>수련한 아사나</Text>
                 <View style={styles.asanaCount}>
-                  <Text style={styles.asanaCountText}>{record.asanas.length}</Text>
+                  <Text style={styles.asanaCountText}>
+                    {record.asanas.length}
+                  </Text>
                 </View>
               </View>
               <View style={styles.asanasGrid}>
@@ -134,22 +144,26 @@ export default function RecordDetailScreen() {
                     <View key={index} style={styles.asanaCard}>
                       {imageUrl ? (
                         <View style={styles.asanaImageContainer}>
-                        <Image
-                          source={{ uri: imageUrl }}
-                          style={styles.asanaImage}
-                          contentFit="contain"
-                          placeholder="🧘‍♀️"
-                          placeholderContentFit="contain"
-                          onError={() => {
-                            console.log("아사나 이미지 로딩 실패:", imageUrl);
-                          }}
-                          cachePolicy="memory-disk"
-                          priority="normal"
-                        />
+                          <Image
+                            source={{ uri: imageUrl }}
+                            style={styles.asanaImage}
+                            contentFit="contain"
+                            placeholder="🧘‍♀️"
+                            placeholderContentFit="contain"
+                            onError={() => {
+                              console.log("아사나 이미지 로딩 실패:", imageUrl);
+                            }}
+                            cachePolicy="memory-disk"
+                            priority="normal"
+                          />
                         </View>
                       ) : (
                         <View style={styles.asanaImagePlaceholder}>
-                          <Ionicons name="fitness" size={24} color={COLORS.textSecondary} />
+                          <Ionicons
+                            name="fitness"
+                            size={24}
+                            color={COLORS.textSecondary}
+                          />
                         </View>
                       )}
                       <Text style={styles.asanaCardName} numberOfLines={2}>
@@ -166,7 +180,11 @@ export default function RecordDetailScreen() {
           {record.memo && (
             <View style={styles.memoCard}>
               <View style={styles.memoHeader}>
-                <Ionicons name="document-text-outline" size={20} color={COLORS.primary} />
+                <Ionicons
+                  name="document-text-outline"
+                  size={20}
+                  color={COLORS.primary}
+                />
                 <Text style={styles.memoTitle}>메모</Text>
               </View>
               <Text style={styles.memoContent}>{record.memo}</Text>
@@ -289,7 +307,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    minHeight: 120,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -309,6 +328,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
   },
   asanaImage: {
     width: "100%",
@@ -323,13 +343,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 12,
     marginBottom: 8,
+    position: "relative",
   },
   asanaCardName: {
     fontSize: 12,
     fontWeight: "600",
-    color: COLORS.text,
+    color: "#000000",
     textAlign: "center",
     lineHeight: 16,
+    marginTop: 8,
+    width: "100%",
   },
   memoCard: {
     backgroundColor: "white",
