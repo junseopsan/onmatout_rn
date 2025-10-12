@@ -161,9 +161,13 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 헤더 - 프로필 사진과 설정 아이콘 */}
+      {/* 헤더 - 닉네임, 프로필 사진과 설정 아이콘 */}
       <View style={styles.header}>
-        <Text style={styles.title}></Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.userName}>
+            {userProfile?.name || "사용자"}
+          </Text>
+        </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.settingsButton}
@@ -290,6 +294,14 @@ const styles = StyleSheet.create({
     paddingTop: 60, // 상태바 높이 + 여백
     paddingHorizontal: 24,
     paddingBottom: 24,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: COLORS.text,
   },
   title: {
     fontSize: 32,
