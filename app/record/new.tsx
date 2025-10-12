@@ -205,19 +205,20 @@ export default function NewRecordScreen() {
 
         {/* 날짜 선택 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>수련 날짜</Text>
           <TouchableOpacity
             style={styles.dateSelector}
             onPress={() => setShowDatePicker(true)}
           >
-            <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
+            <View style={styles.dateInputContent}>
+              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+              <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
+            </View>
             <Text style={styles.dateChangeText}>변경</Text>
           </TouchableOpacity>
         </View>
 
         {/* 제목 입력 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>기록 제목</Text>
           <TextInput
             style={styles.titleInput}
             placeholder="수련 기록의 제목을 입력해주세요..."
@@ -230,10 +231,6 @@ export default function NewRecordScreen() {
 
         {/* 아사나 선택 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>수련한 아사나</Text>
-          <Text style={styles.sectionSubtitle}>
-            최대 10개까지 선택 가능 ({selectedAsanas.length}/10)
-          </Text>
 
           {/* 아사나 추가 버튼 */}
           <TouchableOpacity
@@ -242,6 +239,10 @@ export default function NewRecordScreen() {
           >
             <Text style={styles.addAsanaButtonText}>+ 아사나 추가</Text>
           </TouchableOpacity>
+          
+          <Text style={styles.asanaCountText}>
+            최대 10개까지 선택 가능 ({selectedAsanas.length}/10)
+          </Text>
 
           {/* 선택된 아사나 */}
           {selectedAsanas.length > 0 && (
@@ -262,10 +263,6 @@ export default function NewRecordScreen() {
 
         {/* 상태 선택 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>수련 후 상태</Text>
-          <Text style={styles.sectionSubtitle}>
-            수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
-          </Text>
           <View style={styles.statesContainer}>
             {STATES.map((state) => (
               <TouchableOpacity
@@ -297,11 +294,16 @@ export default function NewRecordScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          <Text style={styles.stateSubtitleText}>
+            수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
+          </Text>
         </View>
 
         {/* 메모 작성 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>수련 메모</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="document-text-outline" size={24} color={COLORS.primary} />
+          </View>
           <TextInput
             style={styles.memoInput}
             placeholder="오늘 수련에서 느낀 점을 자유롭게 기록해보세요..."
@@ -477,36 +479,66 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 80,
   },
   section: {
-    marginBottom: 10,
-    marginTop: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  sectionHeader: {
+    alignItems: "center",
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "700",
     color: COLORS.text,
-    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   sectionSubtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 16,
+    lineHeight: 20,
   },
   addAsanaButton: {
     backgroundColor: COLORS.primary,
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: 16,
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   addAsanaButtonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  asanaCountText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "right",
+    marginTop: 8,
   },
   selectedAsanas: {
     marginTop: 16,
@@ -600,13 +632,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   memoInput: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
     padding: 16,
     fontSize: 16,
     color: COLORS.text,
     minHeight: 120,
     textAlignVertical: "top",
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   characterCount: {
     fontSize: 12,
@@ -621,15 +655,29 @@ const styles = StyleSheet.create({
   },
   stateChip: {
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
     borderWidth: 2,
     minWidth: 80,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   stateLabel: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  stateSubtitleText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "right",
+    marginTop: 12,
   },
   bottomActions: {
     flexDirection: "row",
@@ -642,10 +690,18 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 16,
     backgroundColor: COLORS.primary,
     alignItems: "center",
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   saveButtonText: {
     fontSize: 16,
@@ -667,26 +723,47 @@ const styles = StyleSheet.create({
     height: 100,
   },
   titleInput: {
-    backgroundColor: COLORS.surface,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
     fontSize: 16,
     color: COLORS.text,
     minHeight: 56,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   dateSelector: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: COLORS.surface,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  dateInputContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   dateText: {
     fontSize: 16,
