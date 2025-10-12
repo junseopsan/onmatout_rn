@@ -29,10 +29,6 @@ export default function NewRecordScreen() {
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // 아사나 선택 해제
   const handleAsanaRemove = (asanaId: string) => {
@@ -60,38 +56,7 @@ export default function NewRecordScreen() {
     });
   };
 
-  // 날짜 포맷팅
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-    const weekday = weekdays[date.getDay()];
-    return `${year}년 ${month}월 ${day}일 (${weekday})`;
-  };
 
-  // 날짜 선택 핸들러
-  const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
-    setShowDatePicker(false);
-  };
-
-  // 모달이 열릴 때 스크롤 위치 계산
-  const getInitialScrollIndex = () => {
-    const today = new Date().toISOString().split("T")[0];
-    const targetDate = selectedDate || today;
-
-    // 오늘 기준으로 몇 번째 인덱스인지 계산
-    const todayDate = new Date();
-    const targetDateObj = new Date(targetDate);
-    const diffDays = Math.floor(
-      (targetDateObj.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    // 오늘이 7번째 인덱스이므로, 차이를 더해서 계산
-    return Math.max(0, Math.min(16, 7 + diffDays));
-  };
 
   // 홈탭으로 이동
   const handleClose = () => {
@@ -125,7 +90,7 @@ export default function NewRecordScreen() {
         memo: memo.trim(),
         states: selectedStates,
         photos: [], // TODO: 사진 첨부 기능 추가
-        date: selectedDate, // 선택된 날짜 추가
+        date: new Date().toISOString().split("T")[0], // 오늘 날짜
       };
 
       const result = await recordsAPI.createRecord(recordData);
@@ -203,35 +168,8 @@ export default function NewRecordScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 날짜 선택 */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.dateSelector}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <View style={styles.dateInputContent}>
-              <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
-              <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-            </View>
-            <Text style={styles.dateChangeText}>변경</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 제목 입력 */}
-        <View style={styles.section}>
-          <TextInput
-            style={styles.titleInput}
-            placeholder="수련 기록의 제목을 입력해주세요..."
-            value={title}
-            onChangeText={setTitle}
-            maxLength={50}
-          />
-          <Text style={styles.characterCount}>{title.length}/50</Text>
-        </View>
-
         {/* 아사나 선택 */}
         <View style={styles.section}>
-
           {/* 아사나 추가 버튼 */}
           <TouchableOpacity
             style={styles.addAsanaButton}
@@ -239,7 +177,7 @@ export default function NewRecordScreen() {
           >
             <Text style={styles.addAsanaButtonText}>+ 아사나 추가</Text>
           </TouchableOpacity>
-          
+
           <Text style={styles.asanaCountText}>
             최대 10개까지 선택 가능 ({selectedAsanas.length}/10)
           </Text>
@@ -259,6 +197,18 @@ export default function NewRecordScreen() {
               />
             </View>
           )}
+        </View>
+
+        {/* 제목 입력 */}
+        <View style={styles.section}>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="수련 기록의 제목을 입력해주세요..."
+            value={title}
+            onChangeText={setTitle}
+            maxLength={50}
+          />
+          <Text style={styles.characterCount}>{title.length}/50</Text>
         </View>
 
         {/* 상태 선택 */}
@@ -301,9 +251,6 @@ export default function NewRecordScreen() {
 
         {/* 메모 작성 */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="document-text-outline" size={24} color={COLORS.primary} />
-          </View>
           <TextInput
             style={styles.memoInput}
             placeholder="오늘 수련에서 느낀 점을 자유롭게 기록해보세요..."
@@ -360,80 +307,6 @@ export default function NewRecordScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 날짜 선택 모달 */}
-      <Modal
-        visible={showDatePicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowDatePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.datePickerModal}>
-            <View style={styles.datePickerHeader}>
-              <Text style={styles.datePickerTitle}>날짜 선택</Text>
-              <TouchableOpacity
-                onPress={() => setShowDatePicker(false)}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeButtonText}>닫기</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              style={styles.datePickerContent}
-              showsVerticalScrollIndicator={true}
-              data={Array.from({ length: 17 }, (_, i) => {
-                const date = new Date();
-                date.setDate(date.getDate() - 7 + i);
-                return {
-                  id: i,
-                  dateString: date.toISOString().split("T")[0],
-                  isToday: i === 7,
-                  isFuture: i > 7,
-                };
-              })}
-              keyExtractor={(item) => item.id.toString()}
-              initialScrollIndex={getInitialScrollIndex()}
-              getItemLayout={(data, index) => ({
-                length: 56, // dateOption 높이 (48 + 8)
-                offset: 56 * index,
-                index,
-              })}
-              renderItem={({ item }) => {
-                const isSelected = item.dateString === selectedDate;
-
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.dateOption,
-                      isSelected && styles.dateOptionSelected,
-                      item.isToday && !isSelected && styles.dateOptionToday,
-                      item.isFuture && styles.dateOptionDisabled,
-                    ]}
-                    onPress={() =>
-                      !item.isFuture && handleDateSelect(item.dateString)
-                    }
-                    disabled={item.isFuture}
-                  >
-                    <Text
-                      style={[
-                        styles.dateOptionText,
-                        isSelected && styles.dateOptionTextSelected,
-                        item.isToday &&
-                          !isSelected &&
-                          styles.dateOptionTextToday,
-                        item.isFuture && styles.dateOptionTextDisabled,
-                      ]}
-                    >
-                      {formatDate(item.dateString)}
-                      {item.isFuture && " (선택 불가)"}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
 
       {/* 아사나 검색 모달 */}
       <AsanaSearchModal
@@ -740,121 +613,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
-  },
-  dateSelector: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: COLORS.background,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dateInputContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  dateText: {
-    fontSize: 16,
-    color: COLORS.text,
-    fontWeight: "500",
-  },
-  dateChangeText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: "600",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  datePickerModal: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 20,
-    width: "90%",
-    maxHeight: "80%",
-  },
-  datePickerHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  datePickerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.text,
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: COLORS.primary,
-    fontWeight: "600",
-  },
-  datePickerContent: {
-    maxHeight: 300,
-    paddingVertical: 8,
-  },
-  dateOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 48,
-  },
-  dateOptionSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  dateOptionToday: {
-    borderColor: COLORS.primary,
-    borderWidth: 2,
-  },
-  dateOptionText: {
-    fontSize: 16,
-    color: COLORS.text,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  dateOptionTextSelected: {
-    color: "white",
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  dateOptionTextToday: {
-    color: COLORS.primary,
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  dateOptionDisabled: {
-    backgroundColor: COLORS.border,
-    opacity: 0.5,
-  },
-  dateOptionTextDisabled: {
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
   },
 });
