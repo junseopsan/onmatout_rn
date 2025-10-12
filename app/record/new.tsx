@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,7 +23,6 @@ import { RecordFormData } from "../../types/record";
 export default function NewRecordScreen() {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("");
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
@@ -56,8 +54,6 @@ export default function NewRecordScreen() {
     });
   };
 
-
-
   // 홈탭으로 이동
   const handleClose = () => {
     // TabNavigator로 이동하여 홈탭으로 이동
@@ -66,11 +62,6 @@ export default function NewRecordScreen() {
 
   // 기록 저장
   const handleSave = async () => {
-    if (!title.trim()) {
-      Alert.alert("알림", "제목을 입력해주세요.");
-      return;
-    }
-
     if (selectedAsanas.length === 0) {
       Alert.alert("알림", "최소 1개의 아사나를 선택해주세요.");
       return;
@@ -81,11 +72,16 @@ export default function NewRecordScreen() {
       return;
     }
 
+    if (!memo.trim()) {
+      Alert.alert("알림", "메모를 입력해주세요.");
+      return;
+    }
+
     try {
       setLoading(true);
 
       const recordData: RecordFormData = {
-        title: title.trim(),
+        title: memo.trim(), // 메모 내용을 제목으로 사용
         asanas: selectedAsanas.map((asana) => asana.id),
         memo: memo.trim(),
         states: selectedStates,
@@ -140,7 +136,6 @@ export default function NewRecordScreen() {
           )}
         </View>
         <View style={styles.selectedAsanaInfo}>
-          <Text style={styles.selectedAsanaNumber}>{index + 1}</Text>
           <Text style={styles.selectedAsanaName} numberOfLines={1}>
             {item.sanskrit_name_kr}
           </Text>
@@ -197,18 +192,6 @@ export default function NewRecordScreen() {
               />
             </View>
           )}
-        </View>
-
-        {/* 제목 입력 */}
-        <View style={styles.section}>
-          <TextInput
-            style={styles.titleInput}
-            placeholder="수련 기록의 제목을 입력해주세요..."
-            value={title}
-            onChangeText={setTitle}
-            maxLength={50}
-          />
-          <Text style={styles.characterCount}>{title.length}/50</Text>
         </View>
 
         {/* 상태 선택 */}
@@ -273,7 +256,6 @@ export default function NewRecordScreen() {
           style={[
             styles.saveButton,
             (loading ||
-              !title.trim() ||
               selectedAsanas.length === 0 ||
               selectedStates.length === 0 ||
               memo.trim().length === 0) &&
@@ -282,7 +264,6 @@ export default function NewRecordScreen() {
           onPress={handleSave}
           disabled={
             loading ||
-            !title.trim() ||
             selectedAsanas.length === 0 ||
             selectedStates.length === 0 ||
             memo.trim().length === 0
@@ -294,8 +275,7 @@ export default function NewRecordScreen() {
             <Text
               style={[
                 styles.saveButtonText,
-                (!title.trim() ||
-                  !selectedAsanas.length ||
+                (!selectedAsanas.length ||
                   !selectedStates.length ||
                   !memo.trim()) &&
                   styles.saveButtonTextDisabled,
@@ -306,7 +286,6 @@ export default function NewRecordScreen() {
           )}
         </TouchableOpacity>
       </View>
-
 
       {/* 아사나 검색 모달 */}
       <AsanaSearchModal
@@ -444,11 +423,12 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 60,
     borderRadius: 6,
-    backgroundColor: "#8A8A8A",
+    backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
     overflow: "hidden",
+    paddingVertical: 8,
   },
   selectedAsanaImage: {
     width: "100%",
@@ -594,24 +574,5 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
-  },
-  titleInput: {
-    backgroundColor: COLORS.background,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    fontSize: 16,
-    color: COLORS.text,
-    minHeight: 56,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
 });
