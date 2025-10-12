@@ -24,7 +24,7 @@ interface AsanaSearchModalProps {
 }
 
 const { width: screenWidth } = Dimensions.get("window");
-const cardWidth = (screenWidth - 48 - 12) / 2; // 48 = 좌우 패딩, 12 = 카드 간 간격
+const cardWidth = (screenWidth - 80) / 2; // 더 작은 카드 너비로 왼쪽 정렬 강화
 
 export default function AsanaSearchModal({
   visible,
@@ -360,7 +360,6 @@ export default function AsanaSearchModal({
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>취소</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>아사나 검색</Text>
           <TouchableOpacity
             style={[
               styles.completeButton,
@@ -378,7 +377,6 @@ export default function AsanaSearchModal({
         {/* 검색창 */}
         <View style={styles.searchContainer}>
           <TamaguiInputComponent
-            label="아사나 검색"
             placeholder="아사나 이름을 검색하세요"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -542,11 +540,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   asanaList: {
-    paddingVertical: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 8,
   },
   asanaRow: {
-    justifyContent: "space-between",
+    flexDirection: "row",
+    justifyContent: "flex-start",
     marginBottom: 16,
+    gap: 6,
   },
   asanaCard: {
     width: cardWidth,
@@ -556,12 +557,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     position: "relative",
+    marginHorizontal: 4,
   },
   asanaImageContainer: {
     width: "100%",
     height: 80,
     borderRadius: 6,
-    backgroundColor: "#AAAAAA",
+    backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
@@ -575,7 +577,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 6,
-    backgroundColor: "#AAAAAA",
+    backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
   },
