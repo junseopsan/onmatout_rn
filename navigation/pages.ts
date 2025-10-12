@@ -99,21 +99,7 @@ export const pageList: PageConfig[] = [
     name: "NewRecord",
     component: NewRecordScreen,
     options: {
-      headerShown: true,
-      headerBackTitle: "",
-      headerTitleAlign: "center",
-      gestureEnabled: true,
-      headerBackButtonDisplayMode: "minimal",
-      title: "새 기록 작성",
-      headerStyle: {
-        backgroundColor: COLORS.background,
-      },
-      headerTintColor: COLORS.text,
-      headerTitleStyle: {
-        color: COLORS.text,
-        fontSize: 18,
-        fontWeight: "600",
-      },
+      headerShown: false,
     },
   },
   {

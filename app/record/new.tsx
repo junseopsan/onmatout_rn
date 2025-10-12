@@ -453,6 +453,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingTop: 60,
   },
   section: {
     marginBottom: 10,
