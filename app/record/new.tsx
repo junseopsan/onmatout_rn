@@ -1,5 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -90,6 +92,15 @@ export default function NewRecordScreen() {
 
     // 오늘이 7번째 인덱스이므로, 차이를 더해서 계산
     return Math.max(0, Math.min(16, 7 + diffDays));
+  };
+
+  // 홈탭으로 이동
+  const handleClose = () => {
+    // 스택을 리셋하고 홈탭으로 이동
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Dashboard" as any }],
+    });
   };
 
   // 기록 저장
@@ -189,6 +200,13 @@ export default function NewRecordScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* X 버튼 */}
+        <View style={styles.closeButtonContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Ionicons name="close" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+
         {/* 날짜 선택 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>수련 날짜</Text>
@@ -435,6 +453,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  closeButtonContainer: {
+    alignItems: "flex-end",
+    marginBottom: 0,
+    marginTop: -16,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
@@ -453,7 +482,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 80,
   },
   section: {
     marginBottom: 10,
