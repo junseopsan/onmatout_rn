@@ -25,23 +25,15 @@ export default function SimpleRecordCard({
     return `${month}월 ${day}일 (${weekday})`;
   };
 
-  // 첫 번째 아사나 이미지 가져오기
-  const getFirstAsanaImage = () => {
+  // 첫 번째 아사나 이미지 URL 생성 (아사나 ID를 기반으로)
+  const getFirstAsanaImageUrl = () => {
     if (record.asanas && record.asanas.length > 0) {
-      const firstAsana = record.asanas[0];
-
-      if (firstAsana.image_number) {
-        const baseNumber = firstAsana.image_number.padStart(3, "0");
-        const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
-        return imageUrl;
-      }
+      const firstAsanaId = record.asanas[0];
+      // 아사나 ID를 3자리로 패딩하여 이미지 URL 생성
+      const paddedId = firstAsanaId.padStart(3, "0");
+      return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${paddedId}_001.png`;
     }
     return null;
-  };
-
-  // 아사나 제목 가져오기 (record.title 사용)
-  const getAsanaTitle = () => {
-    return record.title || "수련 기록";
   };
 
   // 추가 아사나 개수 가져오기
@@ -52,8 +44,7 @@ export default function SimpleRecordCard({
     return 0;
   };
 
-  const imageUrl = getFirstAsanaImage();
-  const title = getAsanaTitle();
+  const imageUrl = getFirstAsanaImageUrl();
   const additionalCount = getAdditionalAsanaCount();
 
   return (
@@ -70,8 +61,8 @@ export default function SimpleRecordCard({
                 source={{ uri: imageUrl }}
                 style={styles.asanaImage}
                 contentFit="contain"
-                onError={(error) => {
-                  console.log("SimpleRecordCard - Image load error:", error);
+                onError={() => {
+                  console.log("SimpleRecordCard - Image load error:", imageUrl);
                 }}
                 onLoad={() => {
                   console.log("SimpleRecordCard - Image loaded successfully");
@@ -86,11 +77,18 @@ export default function SimpleRecordCard({
           ) : (
             <View style={styles.placeholderImage}>
               <Ionicons name="fitness" size={24} color={COLORS.textSecondary} />
+              {additionalCount > 0 && (
+                <View style={styles.overlay}>
+                  <Text style={styles.overlayText}>+{additionalCount}</Text>
+                </View>
+              )}
             </View>
           )}
           <View style={styles.textSection}>
             <Text style={styles.dateText}>{formatDate(record.created_at)}</Text>
-            <Text style={styles.titleText}>{title}</Text>
+            <Text style={styles.memoText} numberOfLines={2}>
+              {record.memo || "메모 없음"}
+            </Text>
           </View>
         </View>
         <Ionicons
@@ -159,6 +157,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    position: "relative",
   },
   textSection: {
     flex: 1,
@@ -166,11 +165,12 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  titleText: {
+  memoText: {
     fontSize: 16,
     fontWeight: "600",
     color: COLORS.text,
+    lineHeight: 20,
   },
 });
