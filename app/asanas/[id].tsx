@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   Dimensions,
   TouchableOpacity,
   View,
@@ -29,7 +28,9 @@ export default function AsanaDetailScreen() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
   const [showIndicators, setShowIndicators] = useState(false);
-  const slideAnimation = useRef(new Animated.Value(0)).current;
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(
+    new Set()
+  );
 
   // React Query로 아사나 상세 데이터 가져오기
   const {
@@ -43,22 +44,9 @@ export default function AsanaDetailScreen() {
     if (asana?.image_number) {
       loadValidImages(asana.image_number);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asana]);
 
-  const generateImageUrls = (imageNumber: string) => {
-    const urls: string[] = [];
-    const baseNumber = imageNumber.padStart(3, "0");
-
-    // 최대 10개까지 이미지가 있을 수 있다고 가정
-    for (let i = 1; i <= 10; i++) {
-      const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
-        .toString()
-        .padStart(3, "0")}.png`;
-      urls.push(imageUrl);
-    }
-
-    setImageUrls(urls);
-  };
 
   const checkImageExists = async (url: string) => {
     try {
@@ -69,7 +57,26 @@ export default function AsanaDetailScreen() {
     }
   };
 
-  const loadValidImages = async (imageNumber: string) => {
+  // 이미지 미리 로딩 함수
+  const preloadImage = useCallback(async (url: string) => {
+    try {
+      // expo-image의 캐시를 활용한 미리 로딩
+      await Image.prefetch(url);
+      setPreloadedImages((prev) => new Set([...prev, url]));
+      return true;
+    } catch (error) {
+      console.log("이미지 미리 로딩 실패:", url, error);
+      return false;
+    }
+  }, []);
+
+  // 모든 이미지 미리 로딩
+  const preloadAllImages = useCallback(async (urls: string[]) => {
+    const preloadPromises = urls.map((url) => preloadImage(url));
+    await Promise.allSettled(preloadPromises);
+  }, [preloadImage]);
+
+  const loadValidImages = useCallback(async (imageNumber: string) => {
     setImageLoading(true);
     setShowIndicators(false);
     const urls: string[] = [];
@@ -79,6 +86,9 @@ export default function AsanaDetailScreen() {
     const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
     urls.push(firstImageUrl);
     setImageUrls(urls); // 첫 번째 이미지를 즉시 표시
+    
+    // 첫 번째 이미지도 미리 로딩
+    preloadImage(firstImageUrl);
 
     // 추가 이미지들 확인 (백그라운드에서)
     const additionalUrls: string[] = [];
@@ -96,13 +106,17 @@ export default function AsanaDetailScreen() {
 
     // 추가 이미지들이 있으면 전체 URL 배열 업데이트
     if (additionalUrls.length > 0) {
-      setImageUrls([...urls, ...additionalUrls]);
+      const allUrls = [...urls, ...additionalUrls];
+      setImageUrls(allUrls);
+
+      // 모든 이미지 미리 로딩 (백그라운드에서)
+      preloadAllImages(allUrls);
     }
 
     setImageLoading(false);
     // 인디케이터를 즉시 표시
     setShowIndicators(true);
-  };
+  }, [preloadImage, preloadAllImages]);
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -142,17 +156,22 @@ export default function AsanaDetailScreen() {
     return category?.label || categoryNameEn;
   };
 
-  const getImageUrl = (imageNumber: string) => {
-    // image_number를 3자리 숫자로 포맷팅 (예: 1 -> 001)
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
 
   const nextImage = () => {
     if (imageUrls.length > 1) {
       const newIndex =
         currentImageIndex < imageUrls.length - 1 ? currentImageIndex + 1 : 0;
-      setCurrentImageIndex(newIndex);
+
+      // 다음 이미지가 미리 로딩되었는지 확인
+      const nextImageUrl = imageUrls[newIndex];
+      if (preloadedImages.has(nextImageUrl)) {
+        setCurrentImageIndex(newIndex);
+      } else {
+        // 미리 로딩되지 않은 경우 즉시 로딩
+        preloadImage(nextImageUrl).then(() => {
+          setCurrentImageIndex(newIndex);
+        });
+      }
     }
   };
 
@@ -160,13 +179,31 @@ export default function AsanaDetailScreen() {
     if (imageUrls.length > 1) {
       const newIndex =
         currentImageIndex > 0 ? currentImageIndex - 1 : imageUrls.length - 1;
-      setCurrentImageIndex(newIndex);
+
+      // 이전 이미지가 미리 로딩되었는지 확인
+      const prevImageUrl = imageUrls[newIndex];
+      if (preloadedImages.has(prevImageUrl)) {
+        setCurrentImageIndex(newIndex);
+      } else {
+        // 미리 로딩되지 않은 경우 즉시 로딩
+        preloadImage(prevImageUrl).then(() => {
+          setCurrentImageIndex(newIndex);
+        });
+      }
     }
   };
 
   const goToImage = (index: number) => {
     if (index >= 0 && index < imageUrls.length) {
-      setCurrentImageIndex(index);
+      const targetImageUrl = imageUrls[index];
+      if (preloadedImages.has(targetImageUrl)) {
+        setCurrentImageIndex(index);
+      } else {
+        // 미리 로딩되지 않은 경우 즉시 로딩
+        preloadImage(targetImageUrl).then(() => {
+          setCurrentImageIndex(index);
+        });
+      }
     }
   };
 
@@ -305,7 +342,9 @@ export default function AsanaDetailScreen() {
                     priority="high"
                     cachePolicy="memory-disk"
                     onLoad={() => setImageLoading(false)}
-                    transition={200}
+                    transition={0} // 전환 애니메이션 제거로 즉시 표시
+                    allowDownscaling={true}
+                    recyclingKey={imageUrls[currentImageIndex]} // 고유 키로 캐시 최적화
                   />
                 </TouchableOpacity>
 
@@ -416,8 +455,8 @@ export default function AsanaDetailScreen() {
         {/* 내용 영역 */}
         <YStack padding="$6">
           {/* 제목 */}
-          <Text fontSize={32} fontWeight="bold" color="$text" marginBottom="$2">
-            {asana.sanskrit_name_kr}
+          <Text fontSize={28} fontWeight="bold" color="$text" marginBottom="$2">
+            {asana?.sanskrit_name_kr || "아사나"}
           </Text>
           <Text
             fontSize={18}
@@ -425,7 +464,7 @@ export default function AsanaDetailScreen() {
             fontStyle="italic"
             marginBottom="$6"
           >
-            {asana.sanskrit_name_en}
+            {asana?.sanskrit_name_en || ""}
           </Text>
 
           {/* 레벨 */}
@@ -439,7 +478,7 @@ export default function AsanaDetailScreen() {
               난이도
             </Text>
             <Button
-              backgroundColor={getLevelColor(asana.level)}
+              backgroundColor={getLevelColor(asana?.level || "1")}
               alignSelf="flex-start"
               paddingHorizontal="$4"
               paddingVertical="$2"
@@ -449,7 +488,7 @@ export default function AsanaDetailScreen() {
               minHeight={32}
             >
               <Text fontSize={14} fontWeight="bold" color="white">
-                {getLevelText(asana.level)}
+                {getLevelText(asana?.level || "1")}
               </Text>
             </Button>
           </YStack>
@@ -465,7 +504,7 @@ export default function AsanaDetailScreen() {
               카테고리
             </Text>
             <Text fontSize={16} color="$textSecondary" lineHeight={24}>
-              {asana.category_name_en &&
+              {asana?.category_name_en &&
               asana.category_name_en !== "nan" &&
               asana.category_name_en !== "" &&
               asana.category_name_en !== null
@@ -475,7 +514,7 @@ export default function AsanaDetailScreen() {
           </YStack>
 
           {/* 의미 */}
-          {asana.asana_meaning && (
+          {asana?.asana_meaning && (
             <YStack marginBottom="$6">
               <Text
                 fontSize={18}
@@ -492,7 +531,7 @@ export default function AsanaDetailScreen() {
           )}
 
           {/* 효과 */}
-          {asana.effect && (
+          {asana?.effect && (
             <YStack marginBottom="$6">
               <Text
                 fontSize={18}
