@@ -568,6 +568,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
     overflow: "hidden",
+    paddingVertical: 8,
   },
   asanaImage: {
     width: "100%",
