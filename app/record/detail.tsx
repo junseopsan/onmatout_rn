@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Image } from "expo-image";
 import React from "react";
 import {
   Alert,
@@ -49,6 +50,13 @@ export default function RecordDetailScreen() {
     return `${hours}:${minutes}`;
   };
 
+  // 아사나 이미지 URL 생성
+  const getAsanaImageUrl = (imageNumber: string) => {
+    if (!imageNumber) return null;
+    const baseNumber = imageNumber.padStart(3, "0");
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
+  };
+
   // 기록 삭제
   const handleDeleteRecord = () => {
     Alert.alert("기록 삭제", "이 수련 기록을 삭제하시겠습니까?", [
@@ -92,40 +100,79 @@ export default function RecordDetailScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 제목 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제목</Text>
-          <Text style={styles.sectionContent}>{record.title}</Text>
-        </View>
+        {/* 메인 카드 */}
+        <View style={styles.mainCard}>
+          {/* 제목과 날짜 */}
+          <View style={styles.headerCard}>
+            <Text style={styles.recordTitle}>{record.title}</Text>
+            <View style={styles.dateContainer}>
+              <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
+              <Text style={styles.dateText}>
+                {formatDate(record.created_at)}
+              </Text>
+              <Ionicons name="time-outline" size={16} color={COLORS.primary} />
+              <Text style={styles.timeText}>
+                {formatTime(record.created_at)}
+              </Text>
+            </View>
+          </View>
 
-        {/* 날짜 및 시간 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>수련 일시</Text>
-          <Text style={styles.sectionContent}>
-            {formatDate(record.created_at)} {formatTime(record.created_at)}
-          </Text>
-        </View>
-
-        {/* 아사나 목록 */}
-        {record.asanas && record.asanas.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>수련한 아사나</Text>
-            {record.asanas.map((asana: any, index: number) => (
-              <View key={index} style={styles.asanaItem}>
-                <Text style={styles.asanaName}>{asana.sanskrit_name_kr}</Text>
-                <Text style={styles.asanaNameEn}>{asana.sanskrit_name_en}</Text>
+          {/* 아사나 그리드 */}
+          {record.asanas && record.asanas.length > 0 && (
+            <View style={styles.asanasSection}>
+              <View style={styles.asanasHeader}>
+                <Ionicons name="fitness-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.asanasTitle}>수련한 아사나</Text>
+                <View style={styles.asanaCount}>
+                  <Text style={styles.asanaCountText}>{record.asanas.length}</Text>
+                </View>
               </View>
-            ))}
-          </View>
-        )}
+              <View style={styles.asanasGrid}>
+                {record.asanas.map((asana: any, index: number) => {
+                  const imageUrl = getAsanaImageUrl(asana.image_number);
+                  return (
+                    <View key={index} style={styles.asanaCard}>
+                      {imageUrl ? (
+                        <View style={styles.asanaImageContainer}>
+                        <Image
+                          source={{ uri: imageUrl }}
+                          style={styles.asanaImage}
+                          contentFit="contain"
+                          placeholder="🧘‍♀️"
+                          placeholderContentFit="contain"
+                          onError={() => {
+                            console.log("아사나 이미지 로딩 실패:", imageUrl);
+                          }}
+                          cachePolicy="memory-disk"
+                          priority="normal"
+                        />
+                        </View>
+                      ) : (
+                        <View style={styles.asanaImagePlaceholder}>
+                          <Ionicons name="fitness" size={24} color={COLORS.textSecondary} />
+                        </View>
+                      )}
+                      <Text style={styles.asanaCardName} numberOfLines={2}>
+                        {asana.sanskrit_name_kr}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
-        {/* 메모 */}
-        {record.memo && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>메모</Text>
-            <Text style={styles.sectionContent}>{record.memo}</Text>
-          </View>
-        )}
+          {/* 메모 카드 */}
+          {record.memo && (
+            <View style={styles.memoCard}>
+              <View style={styles.memoHeader}>
+                <Ionicons name="document-text-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.memoTitle}>메모</Text>
+              </View>
+              <Text style={styles.memoContent}>{record.memo}</Text>
+            </View>
+          )}
+        </View>
 
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />
@@ -162,38 +209,156 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  section: {
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  sectionContent: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    lineHeight: 24,
-  },
-  asanaItem: {
+  mainCard: {
     backgroundColor: COLORS.surface,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  asanaName: {
-    fontSize: 16,
-    fontWeight: "600",
+  headerCard: {
+    marginBottom: 24,
+  },
+  recordTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
     color: COLORS.text,
-    marginBottom: 2,
+    marginBottom: 12,
+    lineHeight: 32,
   },
-  asanaNameEn: {
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    fontStyle: "italic",
+    fontWeight: "500",
+  },
+  timeText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  asanasSection: {
+    marginBottom: 24,
+  },
+  asanasHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    gap: 8,
+  },
+  asanasTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.text,
+    flex: 1,
+  },
+  asanaCount: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  asanaCountText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "white",
+  },
+  asanasGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  asanaCard: {
+    width: "30%",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  asanaImageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    backgroundColor: "white",
+    marginTop: 12,
+    marginBottom: 8,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  asanaImage: {
+    width: "100%",
+    height: "100%",
+  },
+  asanaImagePlaceholder: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  asanaCardName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.text,
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  memoCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  memoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
+  memoTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text,
+  },
+  memoContent: {
+    fontSize: 15,
+    color: "#000000",
+    lineHeight: 22,
   },
   bottomSpacer: {
     height: 40,
