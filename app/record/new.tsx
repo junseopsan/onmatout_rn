@@ -1,7 +1,6 @@
-import { useNavigation } from "@react-navigation/native";
-import { useFocusEffect } from "@react-navigation/native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -96,11 +95,9 @@ export default function NewRecordScreen() {
 
   // 홈탭으로 이동
   const handleClose = () => {
-    // 스택을 리셋하고 홈탭으로 이동
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Dashboard" as any }],
-    });
+    // 여러 번 뒤로가기를 통해 홈탭으로 이동
+    navigation.goBack();
+    navigation.goBack();
   };
 
   // 기록 저장
