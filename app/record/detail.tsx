@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActionSheetIOS,
   Alert,
@@ -26,6 +26,7 @@ export default function RecordDetailScreen() {
   const { record } = route.params;
 
   const deleteRecordMutation = useDeleteRecord();
+  const [showSnackbar, setShowSnackbar] = useState(false);
 
   // 메뉴 표시
   const showMenu = () => {
@@ -46,15 +47,11 @@ export default function RecordDetailScreen() {
         }
       );
     } else {
-      Alert.alert(
-        "수련 기록",
-        "작업을 선택하세요",
-        [
-          { text: "취소", style: "cancel" },
-          { text: "수정", onPress: handleEdit },
-          { text: "삭제", style: "destructive", onPress: handleDeleteRecord },
-        ]
-      );
+      Alert.alert("수련 기록", "작업을 선택하세요", [
+        { text: "취소", style: "cancel" },
+        { text: "수정", onPress: handleEdit },
+        { text: "삭제", style: "destructive", onPress: handleDeleteRecord },
+      ]);
     }
   };
 
@@ -104,7 +101,12 @@ export default function RecordDetailScreen() {
         onPress: async () => {
           try {
             await deleteRecordMutation.mutateAsync(record.id);
-            navigation.goBack();
+            setShowSnackbar(true);
+            // 스낵바를 2초 후에 숨기고 화면 이동
+            setTimeout(() => {
+              setShowSnackbar(false);
+              navigation.goBack();
+            }, 2000);
           } catch (error) {
             console.error("기록 삭제 실패:", error);
             Alert.alert("오류", "기록 삭제에 실패했습니다.");
@@ -125,10 +127,7 @@ export default function RecordDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>수련 기록</Text>
-        <TouchableOpacity
-          onPress={showMenu}
-          style={styles.menuButton}
-        >
+        <TouchableOpacity onPress={showMenu} style={styles.menuButton}>
           <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
         </TouchableOpacity>
       </View>
@@ -228,6 +227,13 @@ export default function RecordDetailScreen() {
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* 스낵바 */}
+      {showSnackbar && (
+        <View style={styles.snackbar}>
+          <Text style={styles.snackbarText}>수련 기록이 삭제되었습니다.</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -418,5 +424,29 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+  snackbar: {
+    position: "absolute",
+    bottom: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: COLORS.text,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  snackbarText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
