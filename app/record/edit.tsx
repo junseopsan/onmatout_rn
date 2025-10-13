@@ -146,10 +146,10 @@ export default function EditRecordScreen() {
 
       // 스택을 초기화하여 RecordDetail로 이동 (뒤로가기 시 마이페이지로 이동)
       navigation.reset({
-        index: 0,
+        index: 1,
         routes: [
-          { name: "TabNavigator" },
-          { name: "RecordDetail", params: { record: updatedRecord } }
+          { name: "TabNavigator", params: { screen: "Profile" } },
+          { name: "RecordDetail", params: { record: updatedRecord } },
         ],
       });
     } catch (error) {

@@ -7,7 +7,7 @@ import {
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { recordsAPI } from "../lib/api/records";
 import { supabase } from "../lib/supabase";
-import { Record } from "../types/record";
+import { Record, RecordFormData } from "../types/record";
 
 // 오늘의 수련 기록 조회
 export const useTodayRecords = () => {
