@@ -293,11 +293,11 @@ const styles = StyleSheet.create({
   asanasGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     gap: 12,
   },
   asanaCard: {
-    width: "30%",
+    width: "48%",
     backgroundColor: "white",
     borderRadius: 12,
     padding: 12,
