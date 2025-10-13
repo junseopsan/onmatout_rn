@@ -17,6 +17,7 @@ import {
 import AsanaSearchModal from "../../components/AsanaSearchModal";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
+import { useNotification } from "../../contexts/NotificationContext";
 import { Asana } from "../../lib/api/asanas";
 import { recordsAPI } from "../../lib/api/records";
 import { RootStackParamList } from "../../navigation/types";
@@ -31,6 +32,7 @@ export default function NewRecordScreen() {
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const { showSnackbar } = useNotification();
 
   // 아사나 선택 해제
   const handleAsanaRemove = (asanaId: string) => {
@@ -96,8 +98,9 @@ export default function NewRecordScreen() {
       const result = await recordsAPI.createRecord(recordData);
 
       if (result.success) {
-        // 성공 시 바로 모달 닫기
-        navigation.goBack();
+        // 성공 시 홈탭으로 이동하고 스낵바 표시
+        showSnackbar("수련 기록이 저장되었습니다.", "success");
+        navigation.navigate("TabNavigator");
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
