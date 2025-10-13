@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
@@ -18,10 +19,13 @@ import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { Asana } from "../../lib/api/asanas";
 import { recordsAPI } from "../../lib/api/records";
+import { RootStackParamList } from "../../navigation/types";
 import { RecordFormData } from "../../types/record";
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function NewRecordScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const [loading, setLoading] = useState(false);
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
@@ -57,7 +61,7 @@ export default function NewRecordScreen() {
   // 홈탭으로 이동
   const handleClose = () => {
     // TabNavigator로 이동하여 홈탭으로 이동
-    navigation.navigate("TabNavigator" as any);
+    navigation.navigate("TabNavigator");
   };
 
   // 기록 저장
@@ -564,11 +568,11 @@ const styles = StyleSheet.create({
     color: "white",
   },
   saveButtonDisabled: {
-    backgroundColor: "#777777",
-    opacity: 0.7,
+    backgroundColor: COLORS.surfaceDark,
+    opacity: 0.5,
   },
   saveButtonTextDisabled: {
-    color: "#DDDDDD",
+    color: COLORS.textSecondary,
   },
   saveButtonContainer: {
     marginTop: 24,
