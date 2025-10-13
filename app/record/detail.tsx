@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React from "react";
 import {
   ActionSheetIOS,
   Alert,
@@ -16,6 +16,7 @@ import {
 import { COLORS } from "../../constants/Colors";
 import { useDeleteRecord } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
+import { useNotification } from "../../contexts/NotificationContext";
 
 type RecordDetailRouteProp = RouteProp<RootStackParamList, "RecordDetail">;
 
@@ -26,7 +27,7 @@ export default function RecordDetailScreen() {
   const { record } = route.params;
 
   const deleteRecordMutation = useDeleteRecord();
-  const [showSnackbar, setShowSnackbar] = useState(false);
+  const { showSnackbar } = useNotification();
 
   // 메뉴 표시
   const showMenu = () => {
@@ -101,15 +102,11 @@ export default function RecordDetailScreen() {
         onPress: async () => {
           try {
             await deleteRecordMutation.mutateAsync(record.id);
-            setShowSnackbar(true);
-            // 스낵바를 2초 후에 숨기고 화면 이동
-            setTimeout(() => {
-              setShowSnackbar(false);
-              navigation.goBack();
-            }, 2000);
+            showSnackbar("수련 기록이 삭제되었습니다.", "success");
+            navigation.goBack();
           } catch (error) {
             console.error("기록 삭제 실패:", error);
-            Alert.alert("오류", "기록 삭제에 실패했습니다.");
+            showSnackbar("기록 삭제에 실패했습니다.", "error");
           }
         },
       },
@@ -227,13 +224,6 @@ export default function RecordDetailScreen() {
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      {/* 스낵바 */}
-      {showSnackbar && (
-        <View style={styles.snackbar}>
-          <Text style={styles.snackbarText}>수련 기록이 삭제되었습니다.</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -424,29 +414,5 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
-  },
-  snackbar: {
-    position: "absolute",
-    bottom: 50,
-    left: 20,
-    right: 20,
-    backgroundColor: COLORS.text,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  snackbarText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "500",
   },
 });
