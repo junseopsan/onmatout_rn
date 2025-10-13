@@ -128,9 +128,12 @@ export default function EditRecordScreen() {
         date: record.created_at.split("T")[0], // 기존 날짜 유지
       };
 
-      const result = await updateRecordMutation.mutateAsync({ id: record.id, recordData });
+      const result = await updateRecordMutation.mutateAsync({
+        id: record.id,
+        recordData,
+      });
       showSnackbar("수련 기록이 수정되었습니다.", "success");
-      
+
       // 수정된 데이터로 RecordDetail 화면으로 이동
       const updatedRecord = {
         ...record,
@@ -140,8 +143,15 @@ export default function EditRecordScreen() {
         asanas: selectedAsanas,
         updated_at: new Date().toISOString(),
       };
-      
-      navigation.navigate("RecordDetail", { record: updatedRecord });
+
+      // 스택을 초기화하여 RecordDetail로 이동 (뒤로가기 시 마이페이지로 이동)
+      navigation.reset({
+        index: 0,
+        routes: [
+          { name: "TabNavigator" },
+          { name: "RecordDetail", params: { record: updatedRecord } }
+        ],
+      });
     } catch (error) {
       Alert.alert("오류", "기록 수정 중 오류가 발생했습니다.");
     } finally {
