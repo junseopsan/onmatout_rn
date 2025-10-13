@@ -20,9 +20,8 @@ import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
 import { useUpdateRecord } from "../../hooks/useRecords";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
-import { recordsAPI } from "../../lib/api/records";
 import { RootStackParamList } from "../../navigation/types";
-import { Record, RecordFormData } from "../../types/record";
+import { RecordFormData } from "../../types/record";
 
 type EditRecordRouteProp = RouteProp<RootStackParamList, "EditRecord">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -31,7 +30,7 @@ export default function EditRecordScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<EditRecordRouteProp>();
   const { record } = route.params;
-  
+
   const [loading, setLoading] = useState(false);
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
@@ -53,17 +52,23 @@ export default function EditRecordScreen() {
   // 아사나 데이터 로드
   const loadAsanaData = async () => {
     if (record.asanas && record.asanas.length > 0) {
-      try {
-        const asanaPromises = record.asanas.map((asanaId: string) => 
-          asanasAPI.getAsanaById(asanaId)
-        );
-        const asanaResults = await Promise.all(asanaPromises);
-        const validAsanas = asanaResults
-          .filter(result => result.success && result.data)
-          .map(result => result.data!);
-        setSelectedAsanas(validAsanas);
-      } catch (error) {
-        console.error("아사나 데이터 로드 실패:", error);
+      // record.asanas가 이미 아사나 객체 배열인 경우
+      if (typeof record.asanas[0] === 'object' && record.asanas[0].id) {
+        setSelectedAsanas(record.asanas as Asana[]);
+      } else {
+        // record.asanas가 ID 배열인 경우
+        try {
+          const asanaPromises = record.asanas.map((asanaId: string) =>
+            asanasAPI.getAsanaById(asanaId)
+          );
+          const asanaResults = await Promise.all(asanaPromises);
+          const validAsanas = asanaResults
+            .filter((result) => result.success && result.data)
+            .map((result) => result.data!);
+          setSelectedAsanas(validAsanas);
+        } catch (error) {
+          console.error("아사나 데이터 로드 실패:", error);
+        }
       }
     }
   };
@@ -187,8 +192,8 @@ export default function EditRecordScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* X 버튼 */}
         <View style={styles.closeButtonContainer}>
-          <TouchableOpacity 
-            style={styles.closeButton} 
+          <TouchableOpacity
+            style={styles.closeButton}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="close" size={24} color={COLORS.text} />
@@ -313,7 +318,7 @@ export default function EditRecordScreen() {
                   styles.saveButtonTextDisabled,
               ]}
             >
-              수정 저장
+              완료
             </Text>
           )}
         </TouchableOpacity>

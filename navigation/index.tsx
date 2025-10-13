@@ -133,6 +133,11 @@ export default function AppNavigator() {
         options={pageList.find((p) => p.name === "RecordDetail")?.options}
       />
       <Stack.Screen
+        name="EditRecord"
+        component={pageList.find((p) => p.name === "EditRecord")?.component!}
+        options={pageList.find((p) => p.name === "EditRecord")?.options}
+      />
+      <Stack.Screen
         name="AsanaDetail"
         component={pageList.find((p) => p.name === "AsanaDetail")?.component!}
         options={pageList.find((p) => p.name === "AsanaDetail")?.options}

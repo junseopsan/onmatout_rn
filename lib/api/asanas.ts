@@ -22,6 +22,40 @@ export interface PaginatedResponse<T> {
 }
 
 export const asanasAPI = {
+  // ID로 아사나 조회
+  getAsanaById: async (
+    asanaId: string
+  ): Promise<{
+    success: boolean;
+    data?: Asana;
+    message?: string;
+  }> => {
+    try {
+      const { data, error } = await supabase
+        .from("asanas")
+        .select("*")
+        .eq("id", asanaId)
+        .single();
+
+      if (error) {
+        return {
+          success: false,
+          message: error.message || "아사나를 찾을 수 없습니다.",
+        };
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "아사나 조회 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
   // 즐겨찾기 추가/제거
   toggleFavorite: async (
     asanaId: string
@@ -183,7 +217,6 @@ export const asanasAPI = {
       const { data, error, count } = await query.range(from, to);
 
       if (error) {
-
         // 페이지네이션 범위 오류인 경우 전체 데이터를 가져옴
         if (error.code === "PGRST103") {
           console.log("페이지네이션 범위 오류, 전체 데이터 조회로 대체");
@@ -215,7 +248,9 @@ export const asanasAPI = {
       const hasMore = count ? from + limit < count : false;
 
       console.log(
-        `아사나 페이지네이션 성공: 페이지 ${page}, ${data?.length || 0}개, 전체 ${count}개, 더 있음: ${hasMore}`
+        `아사나 페이지네이션 성공: 페이지 ${page}, ${
+          data?.length || 0
+        }개, 전체 ${count}개, 더 있음: ${hasMore}`
       );
 
       // 카테고리 정보 로깅
