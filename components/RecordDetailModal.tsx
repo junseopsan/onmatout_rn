@@ -194,10 +194,10 @@ export default function RecordDetailModal({
         setIsEditMode(false);
         onClose();
       } else {
-        Alert.alert("오류", result.message || "수정 저장에 실패했습니다.");
+        Alert.alert("오류", result.message || "수정 중 오류가 발생했습니다.");
       }
     } catch (error) {
-      Alert.alert("오류", "수정 저장 중 오류가 발생했습니다.");
+      Alert.alert("오류", "수정 중 오류가 발생했습니다.");
     }
   };
 
