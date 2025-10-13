@@ -306,12 +306,14 @@ export default function AsanaSearchModal({
         ]}
         onPress={() => toggleAsanaSelection(item)}
       >
-        <View style={[
-          styles.asanaImageContainer,
-          {
-            backgroundColor: isSelected ? "#FFFFFF" : "white", // 이미지 영역만 선택 시 배경색 변경
-          }
-        ]}>
+        <View
+          style={[
+            styles.asanaImageContainer,
+            {
+              backgroundColor: isSelected ? "#FFFFFF" : "white", // 이미지 영역만 선택 시 배경색 변경
+            },
+          ]}
+        >
           {item.image_number ? (
             <Image
               source={{ uri: getImageUrl(item.image_number) }}
@@ -343,12 +345,12 @@ export default function AsanaSearchModal({
           <Text style={styles.asanaNameEn} numberOfLines={1}>
             {item.sanskrit_name_en}
           </Text>
-          {isSelected && (
-            <View style={styles.asanaCheckmark}>
-              <Text style={styles.asanaCheckmarkText}>✓</Text>
-            </View>
-          )}
         </View>
+        {isSelected && (
+          <View style={styles.asanaCheckmark}>
+            <Text style={styles.asanaCheckmarkText}>✓</Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
