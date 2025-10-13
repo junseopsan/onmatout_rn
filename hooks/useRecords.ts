@@ -71,10 +71,30 @@ export const useDeleteRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (date: string) => {
-      const result = await recordsAPI.deleteRecord(date);
+    mutationFn: async (id: string) => {
+      const result = await recordsAPI.deleteRecord(id);
       if (!result.success) {
         throw new Error(result.message || "기록 삭제에 실패했습니다.");
+      }
+      return result;
+    },
+    onSuccess: () => {
+      // 관련 쿼리들 무효화하여 새로고침
+      queryClient.invalidateQueries({ queryKey: ["todayRecords"] });
+      queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
+    },
+  });
+};
+
+// 기록 수정 mutation
+export const useUpdateRecord = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, recordData }: { id: string; recordData: RecordFormData }) => {
+      const result = await recordsAPI.updateRecord(id, recordData);
+      if (!result.success) {
+        throw new Error(result.message || "기록 수정에 실패했습니다.");
       }
       return result;
     },

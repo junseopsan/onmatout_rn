@@ -17,6 +17,7 @@ import PrivacyPolicyScreen from "../app/profile/privacy-policy";
 import ProfileInfoScreen from "../app/profile/profile-info";
 import TermsOfServiceScreen from "../app/profile/terms-of-service";
 import RecordDetailScreen from "../app/record/detail";
+import EditRecordScreen from "../app/record/edit";
 import NewRecordScreen from "../app/record/new";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
@@ -105,6 +106,13 @@ export const pageList: PageConfig[] = [
   {
     name: "RecordDetail",
     component: RecordDetailScreen,
+    options: {
+      headerShown: false, // 커스텀 헤더 사용
+    },
+  },
+  {
+    name: "EditRecord",
+    component: EditRecordScreen,
     options: {
       headerShown: false, // 커스텀 헤더 사용
     },

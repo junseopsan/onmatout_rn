@@ -9,6 +9,7 @@ export type RootStackParamList = {
   Record: undefined;
   NewRecord: undefined;
   RecordDetail: { record: any };
+  EditRecord: { record: any };
   Studios: undefined;
   Profile: undefined;
   Settings: undefined;

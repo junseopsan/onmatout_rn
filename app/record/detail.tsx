@@ -14,9 +14,9 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
+import { useNotification } from "../../contexts/NotificationContext";
 import { useDeleteRecord } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
-import { useNotification } from "../../contexts/NotificationContext";
 
 type RecordDetailRouteProp = RouteProp<RootStackParamList, "RecordDetail">;
 
@@ -58,7 +58,7 @@ export default function RecordDetailScreen() {
 
   // 수정 처리
   const handleEdit = () => {
-    Alert.alert("알림", "수정 기능은 준비 중입니다.");
+    navigation.navigate("EditRecord", { record });
   };
 
   // 날짜 포맷팅

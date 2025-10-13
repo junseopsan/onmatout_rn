@@ -216,7 +216,7 @@ export const recordsAPI = {
 
   // 기록 삭제
   deleteRecord: async (
-    date: string
+    id: string
   ): Promise<{
     success: boolean;
     message?: string;
@@ -225,7 +225,7 @@ export const recordsAPI = {
       const { error } = await supabase
         .from("practice_records")
         .delete()
-        .eq("practice_date", date);
+        .eq("id", id);
 
       if (error) {
         return {
@@ -241,6 +241,46 @@ export const recordsAPI = {
       return {
         success: false,
         message: "기록을 삭제하는 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
+  // 기록 수정
+  updateRecord: async (
+    recordId: string,
+    recordData: RecordFormData
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    try {
+      const { error } = await supabase
+        .from("practice_records")
+        .update({
+          title: recordData.title,
+          asanas: JSON.stringify(recordData.asanas),
+          states: JSON.stringify(recordData.states),
+          memo: recordData.memo,
+          photos: JSON.stringify(recordData.photos),
+          practice_date: recordData.date,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", recordId);
+
+      if (error) {
+        return {
+          success: false,
+          message: error.message || "기록을 수정하는데 실패했습니다.",
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "기록을 수정하는 중 오류가 발생했습니다.",
       };
     }
   },

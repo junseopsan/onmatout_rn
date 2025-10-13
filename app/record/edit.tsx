@@ -1,0 +1,571 @@
+import { Ionicons } from "@expo/vector-icons";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Image } from "expo-image";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import AsanaSearchModal from "../../components/AsanaSearchModal";
+import { COLORS } from "../../constants/Colors";
+import { STATES } from "../../constants/states";
+import { useNotification } from "../../contexts/NotificationContext";
+import { useUpdateRecord } from "../../hooks/useRecords";
+import { Asana, asanasAPI } from "../../lib/api/asanas";
+import { recordsAPI } from "../../lib/api/records";
+import { RootStackParamList } from "../../navigation/types";
+import { Record, RecordFormData } from "../../types/record";
+
+type EditRecordRouteProp = RouteProp<RootStackParamList, "EditRecord">;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+export default function EditRecordScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<EditRecordRouteProp>();
+  const { record } = route.params;
+  
+  const [loading, setLoading] = useState(false);
+  const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
+  const [memo, setMemo] = useState("");
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const { showSnackbar } = useNotification();
+  const updateRecordMutation = useUpdateRecord();
+
+  // 기존 데이터로 폼 초기화
+  useEffect(() => {
+    if (record) {
+      setMemo(record.memo || "");
+      setSelectedStates(record.states || []);
+      // 아사나 데이터는 별도로 로드해야 함
+      loadAsanaData();
+    }
+  }, [record]);
+
+  // 아사나 데이터 로드
+  const loadAsanaData = async () => {
+    if (record.asanas && record.asanas.length > 0) {
+      try {
+        const asanaPromises = record.asanas.map((asanaId: string) => 
+          asanasAPI.getAsanaById(asanaId)
+        );
+        const asanaResults = await Promise.all(asanaPromises);
+        const validAsanas = asanaResults
+          .filter(result => result.success && result.data)
+          .map(result => result.data!);
+        setSelectedAsanas(validAsanas);
+      } catch (error) {
+        console.error("아사나 데이터 로드 실패:", error);
+      }
+    }
+  };
+
+  // 아사나 선택 해제
+  const handleAsanaRemove = (asanaId: string) => {
+    setSelectedAsanas((prev) => prev.filter((asana) => asana.id !== asanaId));
+  };
+
+  // 모달에서 선택된 아사나 처리
+  const handleAsanaSelect = (newAsanas: Asana[]) => {
+    const totalCount = selectedAsanas.length + newAsanas.length;
+    if (totalCount > 10) {
+      Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+      return;
+    }
+    setSelectedAsanas((prev) => [...prev, ...newAsanas]);
+  };
+
+  // 상태 선택/해제
+  const toggleState = (stateId: string) => {
+    setSelectedStates((prev) => {
+      if (prev.includes(stateId)) {
+        return prev.filter((id) => id !== stateId);
+      } else {
+        return [...prev, stateId];
+      }
+    });
+  };
+
+  // 수정 저장
+  const handleSave = async () => {
+    if (selectedAsanas.length === 0) {
+      Alert.alert("알림", "최소 1개의 아사나를 선택해주세요.");
+      return;
+    }
+
+    if (selectedStates.length === 0) {
+      Alert.alert("알림", "상태를 선택해주세요.");
+      return;
+    }
+
+    if (!memo.trim()) {
+      Alert.alert("알림", "메모를 입력해주세요.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const recordData: RecordFormData = {
+        title: memo.trim(),
+        asanas: selectedAsanas.map((asana) => asana.id),
+        memo: memo.trim(),
+        states: selectedStates,
+        photos: [], // TODO: 사진 첨부 기능 추가
+        date: record.created_at.split("T")[0], // 기존 날짜 유지
+      };
+
+      await updateRecordMutation.mutateAsync({ id: record.id, recordData });
+      showSnackbar("수련 기록이 수정되었습니다.", "success");
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("오류", "기록 수정 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 이미지 URL 생성
+  const getImageUrl = (imageNumber: string) => {
+    const formattedNumber = imageNumber.padStart(3, "0");
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
+  };
+
+  // 선택된 아사나 카드 렌더링
+  const renderSelectedAsanaCard = ({
+    item,
+    index,
+  }: {
+    item: Asana;
+    index: number;
+  }) => {
+    return (
+      <View style={styles.selectedAsanaCard}>
+        <View style={styles.selectedAsanaImageContainer}>
+          {item.image_number ? (
+            <Image
+              source={{ uri: getImageUrl(item.image_number) }}
+              style={styles.selectedAsanaImage}
+              contentFit="contain"
+              placeholder="🖼️"
+              placeholderContentFit="contain"
+            />
+          ) : (
+            <View style={styles.selectedAsanaImagePlaceholder}>
+              <Text style={styles.selectedAsanaImagePlaceholderText}>📝</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.selectedAsanaInfo}>
+          <Text style={styles.selectedAsanaName} numberOfLines={1}>
+            {item.sanskrit_name_kr}
+          </Text>
+          <Text style={styles.selectedAsanaNameEn} numberOfLines={1}>
+            {item.sanskrit_name_en}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => handleAsanaRemove(item.id)}
+        >
+          <Text style={styles.removeButtonText}>×</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* X 버튼 */}
+        <View style={styles.closeButtonContainer}>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="close" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+
+        {/* 아사나 선택 */}
+        <View style={styles.section}>
+          {/* 아사나 추가 버튼 */}
+          <TouchableOpacity
+            style={styles.addAsanaButton}
+            onPress={() => setSearchModalVisible(true)}
+          >
+            <Text style={styles.addAsanaButtonText}>+ 아사나</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.asanaCountText}>
+            최대 10개까지 선택 가능 ({selectedAsanas.length}/10)
+          </Text>
+
+          {/* 선택된 아사나 */}
+          {selectedAsanas.length > 0 && (
+            <View style={styles.selectedAsanas}>
+              <Text style={styles.selectedAsanasTitle}>수련한 아사나</Text>
+              <FlatList
+                data={selectedAsanas}
+                renderItem={renderSelectedAsanaCard}
+                keyExtractor={(item) => item.id}
+                numColumns={2}
+                scrollEnabled={false}
+                columnWrapperStyle={styles.selectedAsanaRow}
+                contentContainerStyle={styles.selectedAsanaList}
+              />
+            </View>
+          )}
+        </View>
+
+        {/* 상태 선택 */}
+        <View style={styles.section}>
+          <View style={styles.statesContainer}>
+            {STATES.map((state) => (
+              <TouchableOpacity
+                key={state.id}
+                style={[
+                  styles.stateChip,
+                  {
+                    backgroundColor: COLORS.surface,
+                    borderColor: selectedStates.includes(state.id)
+                      ? state.color
+                      : "#666666",
+                    borderWidth: selectedStates.includes(state.id) ? 2 : 1,
+                  },
+                ]}
+                onPress={() => toggleState(state.id)}
+              >
+                <Text
+                  style={[
+                    styles.stateLabel,
+                    {
+                      color: selectedStates.includes(state.id)
+                        ? state.color
+                        : COLORS.text,
+                    },
+                  ]}
+                >
+                  {state.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.stateSubtitleText}>
+            수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
+          </Text>
+        </View>
+
+        {/* 메모 작성 */}
+        <View style={styles.section}>
+          <TextInput
+            style={styles.memoInput}
+            placeholder="오늘 수련에서 느낀 점을 자유롭게 기록해보세요..."
+            value={memo}
+            onChangeText={setMemo}
+            multiline
+            maxLength={500}
+            textAlignVertical="top"
+          />
+          <Text style={styles.characterCount}>{memo.length}/500</Text>
+        </View>
+
+        {/* 하단 여백 */}
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      {/* 저장 버튼 */}
+      <View style={styles.bottomActions}>
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            (loading ||
+              selectedAsanas.length === 0 ||
+              selectedStates.length === 0 ||
+              memo.trim().length === 0) &&
+              styles.saveButtonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={
+            loading ||
+            selectedAsanas.length === 0 ||
+            selectedStates.length === 0 ||
+            memo.trim().length === 0
+          }
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text
+              style={[
+                styles.saveButtonText,
+                (!selectedAsanas.length ||
+                  !selectedStates.length ||
+                  !memo.trim()) &&
+                  styles.saveButtonTextDisabled,
+              ]}
+            >
+              수정 저장
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* 아사나 검색 모달 */}
+      <AsanaSearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSelect={handleAsanaSelect}
+        selectedAsanas={selectedAsanas}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  closeButtonContainer: {
+    alignItems: "flex-end",
+    marginBottom: 0,
+    marginTop: -16,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 80,
+  },
+  section: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  addAsanaButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+    alignSelf: "center",
+    minWidth: 120,
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addAsanaButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  asanaCountText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "right",
+    marginTop: 8,
+  },
+  selectedAsanas: {
+    marginTop: 16,
+  },
+  selectedAsanasTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 12,
+  },
+  selectedAsanaList: {
+    paddingBottom: 8,
+  },
+  selectedAsanaRow: {
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  selectedAsanaCard: {
+    width: "48%",
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    alignItems: "center",
+    position: "relative",
+    overflow: "hidden",
+  },
+  selectedAsanaImageContainer: {
+    width: "100%",
+    height: 60,
+    borderRadius: 6,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    overflow: "hidden",
+    paddingVertical: 8,
+  },
+  selectedAsanaImage: {
+    width: "100%",
+    height: "100%",
+  },
+  selectedAsanaImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 6,
+    backgroundColor: "#8A8A8A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectedAsanaImagePlaceholderText: {
+    fontSize: 20,
+  },
+  selectedAsanaInfo: {
+    alignItems: "center",
+    width: "100%",
+  },
+  selectedAsanaName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  selectedAsanaNameEn: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  removeButton: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.error,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  removeButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  memoInput: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: COLORS.text,
+    minHeight: 120,
+    textAlignVertical: "top",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "right",
+    marginTop: 8,
+  },
+  statesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  stateChip: {
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 2,
+    minWidth: 80,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  stateLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  stateSubtitleText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "right",
+    marginTop: 12,
+  },
+  bottomActions: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.surfaceDark,
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 18,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "white",
+  },
+  saveButtonDisabled: {
+    backgroundColor: COLORS.surfaceDark,
+    opacity: 0.5,
+  },
+  saveButtonTextDisabled: {
+    color: COLORS.textSecondary,
+  },
+  bottomSpacing: {
+    height: 100,
+  },
+});
