@@ -91,7 +91,13 @@ export const useUpdateRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, recordData }: { id: string; recordData: RecordFormData }) => {
+    mutationFn: async ({
+      id,
+      recordData,
+    }: {
+      id: string;
+      recordData: RecordFormData;
+    }) => {
       const result = await recordsAPI.updateRecord(id, recordData);
       if (!result.success) {
         throw new Error(result.message || "기록 수정에 실패했습니다.");
@@ -102,6 +108,9 @@ export const useUpdateRecord = () => {
       // 관련 쿼리들 무효화하여 새로고침
       queryClient.invalidateQueries({ queryKey: ["todayRecords"] });
       queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
+      queryClient.invalidateQueries({ queryKey: ["feedRecords"] });
+      queryClient.invalidateQueries({ queryKey: ["favoriteAsanas"] });
+      queryClient.invalidateQueries({ queryKey: ["favoriteAsanasDetail"] });
     },
   });
 };
