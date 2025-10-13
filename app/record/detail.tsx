@@ -4,7 +4,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import React from "react";
 import {
+  ActionSheetIOS,
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,6 +26,42 @@ export default function RecordDetailScreen() {
   const { record } = route.params;
 
   const deleteRecordMutation = useDeleteRecord();
+
+  // 메뉴 표시
+  const showMenu = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["취소", "수정", "삭제"],
+          destructiveButtonIndex: 2,
+          cancelButtonIndex: 0,
+          title: "수련 기록",
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            handleEdit();
+          } else if (buttonIndex === 2) {
+            handleDeleteRecord();
+          }
+        }
+      );
+    } else {
+      Alert.alert(
+        "수련 기록",
+        "작업을 선택하세요",
+        [
+          { text: "취소", style: "cancel" },
+          { text: "수정", onPress: handleEdit },
+          { text: "삭제", style: "destructive", onPress: handleDeleteRecord },
+        ]
+      );
+    }
+  };
+
+  // 수정 처리
+  const handleEdit = () => {
+    Alert.alert("알림", "수정 기능은 준비 중입니다.");
+  };
 
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
@@ -88,10 +126,10 @@ export default function RecordDetailScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>수련 기록</Text>
         <TouchableOpacity
-          onPress={handleDeleteRecord}
-          style={styles.deleteButton}
+          onPress={showMenu}
+          style={styles.menuButton}
         >
-          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+          <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
         </TouchableOpacity>
       </View>
 
@@ -217,7 +255,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.text,
   },
-  deleteButton: {
+  menuButton: {
     padding: 8,
   },
   content: {
