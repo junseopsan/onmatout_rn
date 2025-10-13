@@ -301,12 +301,17 @@ export default function AsanaSearchModal({
           {
             borderColor: isSelected ? COLORS.primary : "transparent",
             borderWidth: isSelected ? 2 : 0,
-            backgroundColor: isSelected ? "#FFFFFF" : COLORS.surface,
+            backgroundColor: COLORS.surface, // 항상 동일한 배경색 유지
           },
         ]}
         onPress={() => toggleAsanaSelection(item)}
       >
-        <View style={styles.asanaImageContainer}>
+        <View style={[
+          styles.asanaImageContainer,
+          {
+            backgroundColor: isSelected ? "#FFFFFF" : "white", // 이미지 영역만 선택 시 배경색 변경
+          }
+        ]}>
           {item.image_number ? (
             <Image
               source={{ uri: getImageUrl(item.image_number) }}
@@ -338,12 +343,12 @@ export default function AsanaSearchModal({
           <Text style={styles.asanaNameEn} numberOfLines={1}>
             {item.sanskrit_name_en}
           </Text>
+          {isSelected && (
+            <View style={styles.asanaCheckmark}>
+              <Text style={styles.asanaCheckmarkText}>✓</Text>
+            </View>
+          )}
         </View>
-        {isSelected && (
-          <View style={styles.asanaCheckmark}>
-            <Text style={styles.asanaCheckmarkText}>✓</Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
@@ -628,6 +633,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 1,
   },
   asanaCheckmarkText: {
     color: "white",
