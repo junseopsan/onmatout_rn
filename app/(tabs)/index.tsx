@@ -30,11 +30,11 @@ export default function DashboardScreen() {
   } = useFeedRecords(10); // 페이지당 10개
 
   // 모든 페이지의 데이터를 평면화
-  const feedRecords = feedData?.pages?.flatMap((page) => page.data) || [];
+  const feedRecords = feedData?.pages?.flatMap((page: any) => page.data) || [];
 
   // 아사나 데이터 가져오기
   const { data: asanasData } = useAsanas();
-  const asanas = asanasData?.pages?.flatMap((page) => page.data) || [];
+  const asanas = asanasData?.pages?.flatMap((page: any) => page.data) || [];
 
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
@@ -70,11 +70,7 @@ export default function DashboardScreen() {
     </View>
   );
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.title}>수련 피드</Text>
-    </View>
-  );
+  const renderHeader = () => <View style={styles.header}></View>;
 
   return (
     <View style={styles.container}>
