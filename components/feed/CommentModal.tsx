@@ -3,7 +3,9 @@ import React, { useState } from "react";
 import {
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -94,7 +96,11 @@ export default function CommentModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -108,6 +114,7 @@ export default function CommentModal({
         <ScrollView
           style={styles.commentsList}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {comments && comments.length > 0 ? (
             comments.map((comment: any) => (
@@ -191,7 +198,7 @@ export default function CommentModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
