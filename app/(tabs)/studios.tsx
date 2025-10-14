@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import StudioMapView from "../../components/studios/StudioMapView";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useStudioSearch } from "../../hooks/useStudios";
@@ -19,7 +18,6 @@ import { Studio } from "../../lib/api/studio";
 export default function StudiosScreen() {
   const { isAuthenticated, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   // React Query로 요가원 데이터 가져오기
   const {
@@ -39,7 +37,6 @@ export default function StudiosScreen() {
   const handleSearch = (query: string) => {
     console.log("=== 요가원 탭 검색 디버깅 ===");
     console.log("입력된 검색어:", query);
-    console.log("현재 viewMode:", viewMode);
     setSearchQuery(query);
   };
 
@@ -74,7 +71,7 @@ export default function StudiosScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 검색 바 및 뷰 모드 전환 */}
+      {/* 검색 바 */}
       <View style={styles.headerContainer}>
         <View style={styles.searchContainer}>
           <TextInput
@@ -84,42 +81,6 @@ export default function StudiosScreen() {
             value={searchQuery}
             onChangeText={handleSearch}
           />
-        </View>
-
-        {/* 뷰 모드 전환 버튼 */}
-        <View style={styles.viewModeContainer}>
-          <TouchableOpacity
-            style={[
-              styles.viewModeButton,
-              viewMode === "list" && styles.viewModeButtonActive,
-            ]}
-            onPress={() => setViewMode("list")}
-          >
-            <Text
-              style={[
-                styles.viewModeButtonText,
-                viewMode === "list" && styles.viewModeButtonTextActive,
-              ]}
-            >
-              목록
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.viewModeButton,
-              viewMode === "map" && styles.viewModeButtonActive,
-            ]}
-            onPress={() => setViewMode("map")}
-          >
-            <Text
-              style={[
-                styles.viewModeButtonText,
-                viewMode === "map" && styles.viewModeButtonTextActive,
-              ]}
-            >
-              지도
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -138,71 +99,65 @@ export default function StudiosScreen() {
         </View>
       )}
 
-      {/* 메인 콘텐츠 */}
-      {viewMode === "map" ? (
-        // 지도 뷰
-        <StudioMapView studios={studios} searchQuery={searchQuery} />
-      ) : (
-        // 리스트 뷰
-        <ScrollView style={styles.studiosList}>
-          <Text style={styles.listTitle}>주변 요가원 ({studios.length}개)</Text>
+      {/* 메인 콘텐츠 - 요가원 목록 */}
+      <ScrollView style={styles.studiosList}>
+        <Text style={styles.listTitle}>주변 요가원 ({studios.length}개)</Text>
 
-          {loadingStudios ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>
-                요가원 정보를 불러오는 중...
-              </Text>
-            </View>
-          ) : studios.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {searchQuery.trim()
-                  ? "검색 결과가 없습니다."
-                  : "요가원 정보가 없습니다."}
-              </Text>
-            </View>
-          ) : (
-            studios.map((studio: Studio) => (
-              <TouchableOpacity key={studio.id} style={styles.studioCard}>
-                <Image
-                  source={{
-                    uri:
-                      studio.image_url ||
-                      "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Yoga+Studio",
-                  }}
-                  style={styles.studioImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.studioInfo}>
-                  <Text style={styles.studioName}>{studio.name}</Text>
-                  <Text style={styles.studioLocation}>📍 {studio.address}</Text>
+        {loadingStudios ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>
+              요가원 정보를 불러오는 중...
+            </Text>
+          </View>
+        ) : studios.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim()
+                ? "검색 결과가 없습니다."
+                : "요가원 정보가 없습니다."}
+            </Text>
+          </View>
+        ) : (
+          studios.map((studio: Studio) => (
+            <TouchableOpacity key={studio.id} style={styles.studioCard}>
+              <Image
+                source={{
+                  uri:
+                    studio.image_url ||
+                    "https://via.placeholder.com/300x200/4A4A4A/FFFFFF?text=Yoga+Studio",
+                }}
+                style={styles.studioImage}
+                resizeMode="cover"
+              />
+              <View style={styles.studioInfo}>
+                <Text style={styles.studioName}>{studio.name}</Text>
+                <Text style={styles.studioLocation}>📍 {studio.address}</Text>
 
-                  {studio.phone && (
-                    <Text style={styles.studioPhone}>📞 {studio.phone}</Text>
-                  )}
+                {studio.phone && (
+                  <Text style={styles.studioPhone}>📞 {studio.phone}</Text>
+                )}
 
-                  {studio.description && (
-                    <Text style={styles.studioDescription} numberOfLines={2}>
-                      {studio.description}
+                {studio.description && (
+                  <Text style={styles.studioDescription} numberOfLines={2}>
+                    {studio.description}
+                  </Text>
+                )}
+
+                {studio.instagram && (
+                  <TouchableOpacity
+                    style={styles.instagramButton}
+                    onPress={() => openInstagram(studio.instagram!)}
+                  >
+                    <Text style={styles.instagramText}>
+                      @{studio.instagram}
                     </Text>
-                  )}
-
-                  {studio.instagram && (
-                    <TouchableOpacity
-                      style={styles.instagramButton}
-                      onPress={() => openInstagram(studio.instagram!)}
-                    >
-                      <Text style={styles.instagramText}>
-                        @{studio.instagram}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
-      )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -231,30 +186,6 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 16,
-  },
-  viewModeContainer: {
-    flexDirection: "row",
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    padding: 4,
-  },
-  viewModeButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  viewModeButtonActive: {
-    backgroundColor: COLORS.primary,
-  },
-  viewModeButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
-  },
-  viewModeButtonTextActive: {
-    color: "white",
   },
   searchInput: {
     backgroundColor: COLORS.surface,
