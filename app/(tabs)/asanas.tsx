@@ -216,9 +216,22 @@ export default function AsanasScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* 헤더 상단 */}
-        <View style={styles.headerTop}>
-          <Text style={styles.title}>아사나</Text>
+        {/* 검색창과 즐겨찾기 버튼 */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder={
+                showFavoritesOnly
+                  ? "즐겨찾기 아사나 검색..."
+                  : "아사나 이름으로 검색..."
+              }
+              placeholderTextColor={COLORS.textSecondary}
+              value={searchQuery}
+              onChangeText={handleSearch}
+              clearButtonMode="while-editing"
+            />
+          </View>
           <TouchableOpacity
             style={styles.favoriteButton}
             onPress={handleFavoriteFilterToggle}
@@ -230,22 +243,6 @@ export default function AsanasScreen() {
               color={showFavoritesOnly ? COLORS.primary : COLORS.textSecondary}
             />
           </TouchableOpacity>
-        </View>
-
-        {/* 검색창 */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={
-              showFavoritesOnly
-                ? "즐겨찾기 아사나 검색..."
-                : "아사나 이름으로 검색..."
-            }
-            placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={handleSearch}
-            clearButtonMode="while-editing"
-          />
         </View>
       </View>
 
@@ -382,16 +379,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
-  headerTop: {
+  searchRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: COLORS.text,
+    gap: 12,
   },
   favoriteButton: {
     padding: 8,
@@ -512,8 +503,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   searchContainer: {
-    marginTop: 16,
-    marginBottom: 8,
+    flex: 1,
   },
   searchInput: {
     backgroundColor: COLORS.surface,
