@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -161,7 +163,11 @@ export default function NewRecordScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* X 버튼 */}
         <View style={styles.closeButtonContainer}>
@@ -288,7 +294,7 @@ export default function NewRecordScreen() {
                   styles.saveButtonTextDisabled,
               ]}
             >
-              기록 저장
+              저장
             </Text>
           )}
         </TouchableOpacity>
@@ -301,7 +307,7 @@ export default function NewRecordScreen() {
         onSelect={handleAsanaSelect}
         selectedAsanas={selectedAsanas}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
