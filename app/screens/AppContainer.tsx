@@ -70,8 +70,9 @@ export default function AppContainer() {
   // 인증 상태 로딩이 완료되고 스플래시도 완료된 후에 리다이렉트
   useEffect(() => {
     if (!isLoading && !authLoading && !hasRedirected) {
-      // 인증된 사용자는 TabNavigator로, 그렇지 않으면 Auth로
-      const targetRoute = isAuthenticated ? "TabNavigator" : "Auth";
+      // 모든 사용자(인증/비인증)를 TabNavigator로 이동
+      // TabNavigator 내부에서 비회원 사용자 처리
+      const targetRoute = "TabNavigator";
 
       // 중복 리다이렉트 방지
       setHasRedirected(true);
@@ -84,9 +85,9 @@ export default function AppContainer() {
             routes: [{ name: targetRoute }],
           });
         } catch (error) {
-          // 실패 시 강제로 Auth로 이동
+          // 실패 시 강제로 TabNavigator로 이동
           try {
-            navigation.navigate("Auth" as any);
+            navigation.navigate("TabNavigator" as any);
           } catch (fallbackError) {
             // Fallback 네비게이션도 실패
           }
@@ -95,14 +96,14 @@ export default function AppContainer() {
     }
   }, [isLoading, authLoading, isAuthenticated, navigation, hasRedirected]);
 
-  // 안전장치: 5초 후에도 리다이렉트가 안되면 강제로 Auth로 이동
+  // 안전장치: 5초 후에도 리다이렉트가 안되면 강제로 TabNavigator로 이동
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (isLoading || authLoading) {
         try {
           navigation.reset({
             index: 0,
-            routes: [{ name: "Auth" }],
+            routes: [{ name: "TabNavigator" }],
           });
         } catch (error) {}
       }
