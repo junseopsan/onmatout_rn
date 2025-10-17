@@ -191,8 +191,10 @@ export default function AsanasScreen() {
   };
 
   const renderAsanaCard = ({ item }: { item: any }) => {
-    // 즐겨찾기 상태 확인
-    const isFavorite = favoriteAsanas.some((fav: any) => fav.id === item.id);
+    // 즐겨찾기 상태 확인 (로그인된 사용자만)
+    const isFavorite = isAuthenticated
+      ? favoriteAsanas.some((fav: any) => fav.id === item.id)
+      : false;
 
     return (
       <View style={styles.cardContainer}>
@@ -200,7 +202,7 @@ export default function AsanasScreen() {
           asana={item}
           onPress={handleAsanaPress}
           isFavorite={isFavorite}
-          onFavoriteToggle={handleFavoriteToggle}
+          onFavoriteToggle={isAuthenticated ? handleFavoriteToggle : undefined}
         />
       </View>
     );
@@ -225,8 +227,8 @@ export default function AsanasScreen() {
     );
   };
 
-  // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading || !isAuthenticated) {
+  // 로딩 중인 경우만 빈 화면 표시 (비회원도 아사나 탭 접근 가능)
+  if (loading) {
     return (
       <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
     );
@@ -251,17 +253,21 @@ export default function AsanasScreen() {
               clearButtonMode="while-editing"
             />
           </View>
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={handleFavoriteFilterToggle}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={showFavoritesOnly ? "heart" : "heart-outline"}
-              size={24}
-              color={showFavoritesOnly ? COLORS.primary : COLORS.textSecondary}
-            />
-          </TouchableOpacity>
+          {isAuthenticated && (
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={handleFavoriteFilterToggle}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={showFavoritesOnly ? "heart" : "heart-outline"}
+                size={24}
+                color={
+                  showFavoritesOnly ? COLORS.primary : COLORS.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
