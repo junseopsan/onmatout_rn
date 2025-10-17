@@ -401,7 +401,7 @@ export default function AsanaDetailScreen() {
                     paddingHorizontal="$5"
                   >
                     <XStack gap="$2">
-                      {imageUrls.map((_, index) => (
+                      {imageUrls.map((_: any, index: number) => (
                         <TouchableOpacity
                           key={index}
                           onPress={() => goToImage(index)}

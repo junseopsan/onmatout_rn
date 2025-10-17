@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { authAPI } from "../lib/api/auth";
 import { userAPI } from "../lib/api/user";
@@ -23,6 +24,7 @@ interface AuthStore extends AuthState {
   setPhoneNumber: (phone: string) => void;
   resetAuth: () => void;
   clearSession: () => Promise<void>;
+  clearUser: () => void;
   signOut: () => Promise<void>;
   signInWithPhone: (credentials: LoginCredentials) => Promise<boolean>;
   verifyOTP: (credentials: VerifyCredentials) => Promise<boolean>;
@@ -48,6 +50,29 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return false;
       }
 
+      // 임시 사용자 ID인지 확인 (temp_로 시작)
+      if (currentUser.id.startsWith("temp_")) {
+        console.log("임시 사용자 - 로컬에만 저장");
+
+        // 임시 사용자에 대해서는 로컬에만 저장
+        const updatedUser = {
+          ...currentUser,
+          profile: {
+            ...currentUser.profile,
+            name: nickname,
+            id: currentUser.id,
+            user_id: currentUser.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as any,
+        };
+
+        set({ user: updatedUser });
+        console.log("임시 사용자 프로필 로컬 저장 완료:", updatedUser);
+        return true;
+      }
+
+      // 실제 사용자인 경우 Supabase에 저장
       const response = await userAPI.upsertUserProfile(currentUser.id, {
         name: nickname,
       });
@@ -70,9 +95,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         return true;
       } else {
+        console.log("사용자 프로필 저장 실패:", response.message);
         return false;
       }
     } catch (error) {
+      console.log("사용자 프로필 저장 오류:", error);
       return false;
     }
   },
@@ -113,23 +140,45 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
 
       const initPromise = (async () => {
-        // 현재 세션 확인 (persistSession=true로 저장된 세션 복원)
-        const session = await getCurrentSession();
-        console.log("=== 세션 복원 결과 ===");
-        console.log("세션 존재:", !!session);
-        console.log("세션 상세:", session ? "있음" : "없음");
-        if (session) {
-          console.log("세션 만료 시간:", session.expires_at);
-          console.log("현재 시간:", new Date().toISOString());
+        // 먼저 로컬 스토리지에서 사용자 정보 복원 시도
+        try {
+          const storedUser = await AsyncStorage.getItem("user");
+          const storedSession = await AsyncStorage.getItem("session");
+
+          console.log("로컬 스토리지에서 복원:", {
+            hasUser: !!storedUser,
+            hasSession: !!storedSession,
+          });
+
+          if (storedUser) {
+            const user = JSON.parse(storedUser);
+            const session = storedSession ? JSON.parse(storedSession) : null;
+
+            console.log("복원된 사용자:", user?.id);
+
+            set({
+              user: user as any,
+              session: session,
+              loading: false,
+            });
+
+            console.log("로컬 스토리지에서 사용자 정보 복원 완료");
+            return;
+          }
+        } catch (storageError) {
+          console.log("로컬 스토리지 복원 실패:", storageError);
         }
 
+        // 로컬 스토리지에 사용자 정보가 없으면 Supabase 세션 확인
+        const session = await getCurrentSession();
+        console.log("=== Supabase 세션 확인 ===");
+        console.log("세션 존재:", !!session);
+
         if (session) {
-          // 사용자 정보 가져오기
           const user = await getCurrentUser();
-          console.log("현재 사용자:", user);
+          console.log("Supabase 사용자:", user);
 
           if (user) {
-            // 사용자 프로필 확인
             try {
               const userProfile = await userAPI.getUserProfile(user.id);
               console.log("사용자 프로필:", userProfile);
@@ -168,8 +217,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             });
           }
         } else {
-          // 세션이 없으면 그대로 비로그인 상태 유지 (강제 로그아웃/초기화 없음)
-          console.log("세션 없음 - 이전 로그인 세션이 존재하지 않음");
+          console.log("세션 없음 - 로그인 필요");
           set({
             user: null,
             session: null,
@@ -238,6 +286,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         phoneNumber: null,
       });
     }
+  },
+
+  clearUser: () => {
+    console.log("사용자 정보 초기화");
+
+    // 로컬 스토리지에서 사용자 정보 삭제
+    try {
+      AsyncStorage.removeItem("user");
+      AsyncStorage.removeItem("session");
+      console.log("로컬 스토리지에서 사용자 정보 삭제 완료");
+    } catch (storageError) {
+      console.log("로컬 스토리지 삭제 실패:", storageError);
+    }
+
+    set({
+      user: null,
+      session: null,
+      loading: false,
+      error: null,
+      phoneNumber: null,
+    });
   },
 
   signInWithPhone: async (credentials) => {
@@ -310,7 +379,63 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             console.log("getCurrentUser 결과:", user);
           }
 
-          if (session) {
+          // 네이버 SMS 인증의 경우 사용자 정보만 있어도 성공으로 처리
+          if (user) {
+            console.log("사용자 정보 있음, 네이버 SMS 인증 성공으로 처리");
+
+            // 사용자 정보를 로컬 스토리지에 저장
+            try {
+              await AsyncStorage.setItem("user", JSON.stringify(user));
+              if (session) {
+                await AsyncStorage.setItem("session", JSON.stringify(session));
+              }
+              console.log("사용자 정보 로컬 스토리지에 저장 완료");
+            } catch (storageError) {
+              console.log("로컬 스토리지 저장 실패:", storageError);
+            }
+
+            set({
+              user: user as any,
+              session: session || null, // 세션이 없어도 사용자 정보가 있으면 성공
+            });
+
+            // 사용자 프로필 확인 (닉네임 존재 여부 체크)
+            try {
+              const userProfile = await get().getUserProfile();
+              console.log("사용자 프로필 확인:", userProfile);
+
+              if (
+                userProfile &&
+                userProfile.name &&
+                userProfile.name.trim() !== "" &&
+                userProfile.name !== "null"
+              ) {
+                console.log("닉네임 있음 - 대시보드로 이동");
+                // 닉네임이 있으면 사용자 정보에 프로필 추가
+                set({
+                  user: { ...user, profile: userProfile } as any,
+                  session: session || null,
+                });
+              } else {
+                console.log("닉네임 없음 - 닉네임 설정 화면으로 이동");
+                // 닉네임이 없으면 프로필 없이 설정
+                set({
+                  user: { ...user, profile: null } as any,
+                  session: session || null,
+                });
+              }
+            } catch (profileError) {
+              // 프로필 확인 실패 시 닉네임 없음으로 처리
+              set({
+                user: { ...user, profile: null } as any,
+                session: session || null,
+              });
+            }
+
+            // 마지막에 loading 상태를 false로 설정
+            set({ loading: false });
+            return true;
+          } else if (session) {
             console.log("세션 있음, 사용자 정보 확인");
 
             if (user) {
@@ -393,7 +518,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             set({ loading: false });
             return true;
           } else {
-            console.log("세션 없음, 인증 실패로 처리");
+            console.log("사용자 정보와 세션 모두 없음, 인증 실패로 처리");
             set({ loading: false });
             return false;
           }

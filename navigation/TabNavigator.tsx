@@ -15,8 +15,9 @@ const Tab = createBottomTabNavigator();
 export default function TabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
+      id={undefined}
+      screenOptions={({ route }: any) => ({
+        tabBarIcon: ({ focused, color, size }: any) => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
           if (route.name === "Dashboard") {

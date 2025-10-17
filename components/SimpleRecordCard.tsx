@@ -14,8 +14,6 @@ export default function SimpleRecordCard({
   record,
   onPress,
 }: SimpleRecordCardProps) {
-  console.log("SimpleRecordCard 렌더링됨 - record:", record);
-
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -29,16 +27,13 @@ export default function SimpleRecordCard({
 
   // 첫 번째 아사나 이미지 URL 생성 (아사나 객체에서 image_number 사용)
   const getFirstAsanaImageUrl = () => {
-    console.log("SimpleRecordCard - record.asanas:", record.asanas);
     if (record.asanas && record.asanas.length > 0) {
       const firstAsana = record.asanas[0];
-      console.log("SimpleRecordCard - firstAsana:", firstAsana);
 
       // 아사나 객체에서 image_number 속성 사용
       if (firstAsana && (firstAsana as any).image_number) {
         const paddedId = (firstAsana as any).image_number.padStart(3, "0");
         const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${paddedId}_001.png`;
-        console.log("SimpleRecordCard - generated imageUrl:", imageUrl);
         return imageUrl;
       }
     }
@@ -71,10 +66,10 @@ export default function SimpleRecordCard({
                 style={styles.asanaImage}
                 contentFit="contain"
                 onError={() => {
-                  console.log("SimpleRecordCard - Image load error:", imageUrl);
+                  // 이미지 로드 실패 시 조용히 처리
                 }}
                 onLoad={() => {
-                  console.log("SimpleRecordCard - Image loaded successfully");
+                  // 이미지 로드 성공 시 조용히 처리
                 }}
               />
               {additionalCount > 0 && (

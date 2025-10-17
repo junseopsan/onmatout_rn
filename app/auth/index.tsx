@@ -41,7 +41,7 @@ export default function AuthScreen() {
 
   const { signInWithPhone, verifyOTP, loading, error, clearError } =
     useAuthStore();
-  const { showSnackbar, showDialog } = useNotification();
+  const { showSnackbar, showDialog, hideDialog } = useNotification();
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -276,6 +276,7 @@ export default function AuthScreen() {
                   setShowVerifyScreen(false);
                   setVerificationCode(["", "", "", "", "", ""]);
                   setAttemptCount(0);
+                  hideDialog(); // Dialog 닫기
                 },
               },
             ]

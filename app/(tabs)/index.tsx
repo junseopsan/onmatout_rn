@@ -13,9 +13,11 @@ import { COLORS } from "../../constants/Colors";
 import { useAsanas } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeedRecords } from "../../hooks/useRecords";
+import { useAuthStore } from "../../stores/authStore";
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
+  const { user } = useAuthStore();
 
   // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
@@ -31,6 +33,18 @@ export default function DashboardScreen() {
 
   // 모든 페이지의 데이터를 평면화
   const feedRecords = feedData?.pages?.flatMap((page: any) => page.data) || [];
+
+  // 데이터 로딩 상태 로깅
+  console.log("홈 탭 데이터 상태:", {
+    isAuthenticated,
+    loading,
+    loadingData,
+    isError,
+    error: error?.message,
+    feedDataLength: feedData?.pages?.length || 0,
+    feedRecordsLength: feedRecords.length,
+    user: user?.id,
+  });
 
   // 아사나 데이터 가져오기
   const { data: asanasData } = useAsanas();
@@ -65,7 +79,7 @@ export default function DashboardScreen() {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        아직 수련 기록이 없어요.{"\n"}첫 번째 수련을 시작해보세요!
+        아직 수련 기록이 없어요.\n첫 번째 수련을 시작해보세요!
       </Text>
     </View>
   );

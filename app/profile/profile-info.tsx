@@ -210,7 +210,6 @@ export default function ProfileInfoScreen() {
               </View>
             </TouchableOpacity>
             <Text style={styles.avatarLabel}>프로필 사진</Text>
-            <Text style={styles.avatarDescription}>탭하여 변경</Text>
           </View>
 
           {/* 개인정보 섹션 */}

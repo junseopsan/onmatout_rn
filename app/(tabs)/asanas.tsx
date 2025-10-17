@@ -49,6 +49,16 @@ export default function AsanasScreen() {
 
   const { data: favoriteAsanas = [] } = useFavoriteAsanasDetail();
 
+  // 디버깅을 위한 로그 추가
+  console.log("아사나 탭 상태:", {
+    isAuthenticated,
+    loading,
+    isLoading,
+    isError,
+    asanasDataLength: asanasData?.pages?.length || 0,
+    favoriteAsanasLength: favoriteAsanas.length,
+  });
+
   const { data: searchResults = [], isLoading: isSearching } =
     useAsanaSearch(searchQuery);
 
@@ -131,7 +141,9 @@ export default function AsanasScreen() {
     const currentCategories = selectedCategories;
     const isSelected = currentCategories.includes(category);
     if (isSelected) {
-      setSelectedCategories(currentCategories.filter((c) => c !== category));
+      setSelectedCategories(
+        currentCategories.filter((c: any) => c !== category)
+      );
     } else {
       setSelectedCategories([...currentCategories, category]);
     }
@@ -179,7 +191,7 @@ export default function AsanasScreen() {
 
   const renderAsanaCard = ({ item }: { item: any }) => {
     // 즐겨찾기 상태 확인
-    const isFavorite = favoriteAsanas.some((fav) => fav.id === item.id);
+    const isFavorite = favoriteAsanas.some((fav: any) => fav.id === item.id);
 
     return (
       <View style={styles.cardContainer}>

@@ -245,46 +245,6 @@ export const recordsAPI = {
     }
   },
 
-  // 기록 수정
-  updateRecord: async (
-    recordId: string,
-    recordData: RecordFormData
-  ): Promise<{
-    success: boolean;
-    message?: string;
-  }> => {
-    try {
-      const { error } = await supabase
-        .from("practice_records")
-        .update({
-          title: recordData.title,
-          asanas: JSON.stringify(recordData.asanas),
-          states: JSON.stringify(recordData.states),
-          memo: recordData.memo,
-          photos: JSON.stringify(recordData.photos),
-          practice_date: recordData.date,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", recordId);
-
-      if (error) {
-        return {
-          success: false,
-          message: error.message || "기록을 수정하는데 실패했습니다.",
-        };
-      }
-
-      return {
-        success: true,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: "기록을 수정하는 중 오류가 발생했습니다.",
-      };
-    }
-  },
-
   // ID로 기록 조회
   getRecordById: async (
     recordId: string
@@ -459,27 +419,26 @@ export const recordsAPI = {
   },
 
   // 모든 수련 기록 가져오기 (프로필 통계용)
-  getAllRecords: async (): Promise<{
+  getAllRecords: async (
+    userId?: string
+  ): Promise<{
     success: boolean;
     data?: Record[];
     message?: string;
   }> => {
     try {
-      // 현재 사용자 ID 가져오기
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      // 사용자 ID가 없으면 오류 반환
+      if (!userId) {
         return {
           success: false,
-          message: "사용자 인증이 필요합니다.",
+          message: "사용자 ID가 필요합니다.",
         };
       }
 
       const { data, error } = await supabase
         .from("practice_records")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("practice_date", { ascending: false });
 
       if (error) {
@@ -684,11 +643,18 @@ export const recordsAPI = {
       const offset = page * pageSize;
 
       // 먼저 practice_records를 가져오고, 각 기록에 대해 user_profiles를 별도로 조회
+      console.log("getFeedRecords 시작:", { page, pageSize, offset });
       const { data: records, error: recordsError } = await supabase
         .from("practice_records")
         .select("*")
-        .order("practice_time", { ascending: false })
+        .order("created_at", { ascending: false })
         .range(offset, offset + pageSize - 1);
+
+      console.log("practice_records 조회 결과:", {
+        recordsLength: records?.length || 0,
+        recordsError: recordsError?.message,
+        records: records?.slice(0, 2), // 처음 2개만 로깅
+      });
 
       if (recordsError) {
         return {

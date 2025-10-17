@@ -95,16 +95,7 @@ export default function Dialog({
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.dialog}>
-              {/* 헤더 */}
-              {showCloseButton && (
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <Ionicons
-                    name="close"
-                    size={24}
-                    color={COLORS.textSecondary}
-                  />
-                </TouchableOpacity>
-              )}
+              {/* 헤더 - X 아이콘 제거 */}
 
               {/* 아이콘 */}
               <View style={styles.iconContainer}>
@@ -191,7 +182,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: "center",
     lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: 32,
+    marginTop: 8,
   },
   buttonContainer: {
     flexDirection: "row",

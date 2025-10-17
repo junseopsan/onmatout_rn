@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -15,8 +15,9 @@ import SimpleRecordCard from "../../components/SimpleRecordCard";
 // SettingsModal 제거됨 - 페이지로 변경
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { useDashboardData } from "../../hooks/useDashboard";
+import { useProfileStats } from "../../hooks/useDashboard";
 import { useRecordData } from "../../hooks/useRecords";
+import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -35,8 +36,15 @@ export default function ProfileScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
-  // 대시보드 데이터 가져오기 (통계용)
-  const { allRecords, isLoading: loadingData, refetch } = useDashboardData();
+  // 프로필 통계 데이터 가져오기 (allRecords만)
+  const testUserId = user?.id || "260d9314-3fa8-472f-8250-32ef3a9dc7fc";
+  const {
+    allRecords,
+    isLoading: loadingData,
+    isError,
+    error,
+    refetch,
+  } = useProfileStats(testUserId);
 
   // 기록 데이터 가져오기
   const { recentRecords, refetch: refetchRecords } = useRecordData();
@@ -50,35 +58,6 @@ export default function ProfileScreen() {
     return recordYear === selectedYear && recordMonth === selectedMonth;
   });
 
-  // 사용자 프로필 가져오기
-  useEffect(() => {
-    console.log("=== 프로필 탭 useEffect 실행 ===");
-    console.log("user:", user);
-    console.log("loading:", loading);
-    console.log("isAuthenticated:", isAuthenticated);
-
-    const loadUserProfile = async () => {
-      if (user) {
-        try {
-          console.log("프로필 로드 시작...");
-          const profile = await getUserProfile();
-          console.log("프로필 로드 결과:", profile);
-          setUserProfile(profile);
-        } catch (error) {
-          console.error("프로필 로드 실패:", error);
-        } finally {
-          console.log("프로필 로딩 완료");
-          setLoadingProfile(false);
-        }
-      } else {
-        console.log("사용자 없음 - 로딩 완료");
-        setLoadingProfile(false);
-      }
-    };
-
-    loadUserProfile();
-  }, [user, getUserProfile, isAuthenticated, loading]);
-
   // 통계 계산 함수들
   const getThisWeekCount = () => {
     const now = new Date();
@@ -86,21 +65,45 @@ export default function ProfileScreen() {
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
-    return allRecords.filter((record) => {
+    const weekCount = allRecords.filter((record) => {
       const recordDate = new Date(record.created_at);
       return recordDate >= startOfWeek;
     }).length;
+
+    return weekCount;
   };
 
   const getThisMonthCount = () => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    return allRecords.filter((record) => {
+    const monthCount = allRecords.filter((record) => {
       const recordDate = new Date(record.created_at);
       return recordDate >= startOfMonth;
     }).length;
+
+    return monthCount;
   };
+
+  // 사용자 프로필 가져오기
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        try {
+          const profile = await getUserProfile();
+          setUserProfile(profile);
+        } catch (error) {
+          console.error("프로필 로드 실패:", error);
+        } finally {
+          setLoadingProfile(false);
+        }
+      } else {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadUserProfile();
+  }, [user, getUserProfile, isAuthenticated, loading]);
 
   // 기록 관련 핸들러 함수들
   const handleRecordPress = (record: any) => {
@@ -117,12 +120,22 @@ export default function ProfileScreen() {
     setDatePickerVisible(true);
   };
 
-  // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
+  // 로그아웃 함수
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      // authStore도 초기화
+      useAuthStore.getState().clearUser();
+      console.log("로그아웃 완료");
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    }
+  };
 
+  // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
-        console.log("프로필: 화면 포커스 시 데이터 새로고침");
         refetch();
         refetchRecords();
       }
@@ -131,9 +144,6 @@ export default function ProfileScreen() {
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
   if (loading || !isAuthenticated) {
-    console.log("=== 빈 화면 표시 ===");
-    console.log("loading:", loading);
-    console.log("isAuthenticated:", isAuthenticated);
     return (
       <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
     );
@@ -141,8 +151,6 @@ export default function ProfileScreen() {
 
   // 프로필 로딩 중일 때 스켈레톤 로딩 표시
   if (loadingProfile) {
-    console.log("=== 스켈레톤 로딩 표시 ===");
-    console.log("loadingProfile:", loadingProfile);
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -155,9 +163,6 @@ export default function ProfileScreen() {
       </View>
     );
   }
-
-  console.log("=== 메인 프로필 화면 렌더링 ===");
-  console.log("userProfile:", userProfile);
 
   return (
     <View style={styles.container}>
@@ -209,21 +214,15 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>
-                {loadingData ? "..." : allRecords.length}
-              </Text>
+              <Text style={styles.statNumber}>{allRecords?.length || 0}</Text>
               <Text style={styles.statLabel}>총 수련 횟수</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>
-                {loadingData ? "..." : getThisWeekCount()}
-              </Text>
+              <Text style={styles.statNumber}>{getThisWeekCount()}</Text>
               <Text style={styles.statLabel}>이번 주</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>
-                {loadingData ? "..." : getThisMonthCount()}
-              </Text>
+              <Text style={styles.statNumber}>{getThisMonthCount()}</Text>
               <Text style={styles.statLabel}>이번 달</Text>
             </View>
           </View>
@@ -256,14 +255,27 @@ export default function ProfileScreen() {
           ) : (
             <View style={styles.recordsList}>
               {filteredRecords.map((record) => (
-                <SimpleRecordCard
-                  key={record.id}
-                  record={record}
-                  onPress={handleRecordPress}
-                />
+                <Fragment key={record.id}>
+                  <SimpleRecordCard
+                    record={record}
+                    onPress={handleRecordPress}
+                  />
+                </Fragment>
               ))}
             </View>
           )}
+        </View>
+
+        {/* 로그아웃 버튼 */}
+        <View style={styles.logoutSection}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="log-out-outline" size={20} color="white" />
+            <Text style={styles.logoutButtonText}>로그아웃</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 하단 여백 */}
@@ -472,5 +484,24 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+  logoutSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+  },
+  logoutButton: {
+    backgroundColor: COLORS.error,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  logoutButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

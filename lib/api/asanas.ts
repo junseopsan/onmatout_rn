@@ -253,18 +253,6 @@ export const asanasAPI = {
         }개, 전체 ${count}개, 더 있음: ${hasMore}`
       );
 
-      // 카테고리 정보 로깅
-      if (data && data.length > 0) {
-        console.log(
-          "반환된 아사나 카테고리들:",
-          data.map((a) => a.category_name_en)
-        );
-        console.log("첫 번째 아사나 상세:", {
-          name: data[0].sanskrit_name_kr,
-          category: data[0].category_name_en,
-          type: typeof data[0].category_name_en,
-        });
-      }
 
       return {
         success: true,
@@ -287,7 +275,6 @@ export const asanasAPI = {
     message?: string;
   }> => {
     try {
-      console.log("아사나 데이터 가져오기 시작");
 
       const { data, error } = await supabase
         .from("asanas")
@@ -301,16 +288,7 @@ export const asanasAPI = {
         };
       }
 
-      // 카테고리 정보 디버깅
-      if (data && data.length > 0) {
-        console.log("첫 번째 아사나 카테고리 정보:", {
-          name: data[0].sanskrit_name_kr,
-          category: data[0].category_name_en,
-          allFields: Object.keys(data[0]),
-        });
-      }
 
-      console.log("아사나 데이터 가져오기 성공:", data?.length || 0, "개");
       return {
         success: true,
         data: data || [],
@@ -328,7 +306,6 @@ export const asanasAPI = {
     category: string
   ): Promise<{ success: boolean; data?: Asana[]; message?: string }> => {
     try {
-      console.log("카테고리별 아사나 데이터 가져오기 시작:", category);
 
       const { data, error } = await supabase
         .from("asanas")
@@ -345,11 +322,6 @@ export const asanasAPI = {
         };
       }
 
-      console.log(
-        "카테고리별 아사나 데이터 가져오기 성공:",
-        data?.length || 0,
-        "개"
-      );
       return {
         success: true,
         data: data || [],
@@ -367,7 +339,6 @@ export const asanasAPI = {
     level: string
   ): Promise<{ success: boolean; data?: Asana[]; message?: string }> => {
     try {
-      console.log("레벨별 아사나 데이터 가져오기 시작:", level);
 
       const { data, error } = await supabase
         .from("asanas")
@@ -383,11 +354,6 @@ export const asanasAPI = {
         };
       }
 
-      console.log(
-        "레벨별 아사나 데이터 가져오기 성공:",
-        data?.length || 0,
-        "개"
-      );
       return {
         success: true,
         data: data || [],

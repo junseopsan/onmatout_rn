@@ -42,11 +42,14 @@ export const useRecentRecords = () => {
 };
 
 // 전체 수련 기록 조회 (프로필 통계용)
-export const useAllRecords = () => {
+export const useAllRecords = (userId?: string) => {
   return useQuery({
-    queryKey: ["allRecords"],
+    queryKey: ["allRecords", userId],
     queryFn: async () => {
-      const result = await recordsAPI.getAllRecords();
+      if (!userId) {
+        throw new Error("사용자 ID가 필요합니다.");
+      }
+      const result = await recordsAPI.getAllRecords(userId);
       if (!result.success) {
         throw new Error(
           result.message || "전체 수련 기록을 불러오는데 실패했습니다."
@@ -54,6 +57,7 @@ export const useAllRecords = () => {
       }
       return result.data || [];
     },
+    enabled: !!userId, // userId가 있을 때만 쿼리 실행
     staleTime: 5 * 60 * 1000, // 5분
     gcTime: 10 * 60 * 1000, // 10분
     retry: 2,
@@ -99,11 +103,26 @@ export const useFavoriteAsanasDetail = () => {
   });
 };
 
+// 프로필 통계용 데이터 조회 (allRecords만)
+export const useProfileStats = (userId?: string) => {
+  const allRecordsQuery = useAllRecords(userId);
+
+  return {
+    allRecords: (allRecordsQuery.data || []) as Record[],
+    isLoading: allRecordsQuery.isLoading,
+    isError: allRecordsQuery.isError,
+    error: allRecordsQuery.error,
+    refetch: () => {
+      allRecordsQuery.refetch();
+    },
+  };
+};
+
 // 대시보드 전체 데이터 조회 (병렬 처리)
-export const useDashboardData = () => {
+export const useDashboardData = (userId?: string) => {
   const todayRecordsQuery = useTodayRecords();
   const recentRecordsQuery = useRecentRecords();
-  const allRecordsQuery = useAllRecords();
+  const allRecordsQuery = useAllRecords(userId);
   const favoriteAsanasQuery = useFavoriteAsanasDetail();
 
   return {

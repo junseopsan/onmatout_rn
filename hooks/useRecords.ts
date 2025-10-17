@@ -120,10 +120,18 @@ export const useFeedRecords = (pageSize: number = 10) => {
   return useInfiniteQuery({
     queryKey: ["feedRecords"],
     queryFn: async ({ pageParam = 0 }) => {
+      console.log("useFeedRecords 쿼리 실행:", { pageParam, pageSize });
       const result = await recordsAPI.getFeedRecords(
         pageParam as number,
         pageSize
       );
+      console.log("useFeedRecords API 결과:", {
+        success: result.success,
+        dataLength: result.data?.length || 0,
+        hasMore: result.hasMore,
+        total: result.total,
+        message: result.message,
+      });
       if (!result.success) {
         throw new Error(
           result.message || "피드 기록을 불러오는데 실패했습니다."

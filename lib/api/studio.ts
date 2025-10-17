@@ -6,9 +6,8 @@ export interface Studio {
   address: string;
   phone: string;
   website?: string;
-  instagram?: string;
+  url?: string; // 카카오 지도 URL
   description?: string;
-  image_url?: string;
   latitude: number;
   longitude: number;
   created_at: string;

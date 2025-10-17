@@ -34,7 +34,12 @@
     "@tamagui/theme-base": "^1.132.13",
     "@tanstack/react-query": "^5.87.1",
     "ajv": "^8.17.1",
+    "axios": "^1.12.2",
     "babel-plugin-transform-inline-environment-variables": "^0.4.4",
+    "better-sqlite3": "^12.4.1",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.3",
     "expo": "^53.0.22",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",
@@ -50,6 +55,7 @@
     "expo-symbols": "~0.4.5",
     "expo-system-ui": "~5.0.11",
     "expo-web-browser": "~14.2.0",
+    "fast-csv": "^5.0.5",
     "metro": "^0.82.0",
     "metro-cache": "^0.82.5",
     "metro-config": "^0.82.0",
@@ -75,6 +81,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
+    "@types/react-native": "^0.72.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "typescript": "~5.8.3"

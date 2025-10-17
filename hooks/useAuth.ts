@@ -67,8 +67,8 @@ export const useAuth = () => {
     };
   }, []); // 빈 의존성 배열로 한 번만 실행
 
-  // 세션이 있으면 인증된 것으로 판단 (사용자 정보는 나중에 채워질 수 있음)
-  const isAuthenticated = !!session;
+  // 세션이 있거나 사용자 정보가 있으면 인증된 것으로 판단
+  const isAuthenticated = !!session || !!user;
 
   return {
     // State
