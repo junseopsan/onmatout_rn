@@ -43,7 +43,7 @@ export default function SplashScreen() {
         }}
       >
         <Image
-          source={require("../../images/asana_bg.png")}
+          source={require("../../images/asanas/asana_bg.png")}
           style={{
             width: "100%",
             height: "100%",
