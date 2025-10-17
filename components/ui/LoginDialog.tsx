@@ -33,18 +33,12 @@ export const LoginDialog: React.FC<LoginDialogProps> = ({
       <View style={styles.overlay}>
         <View style={styles.dialogContainer}>
           <View style={styles.dialog}>
-            {/* 아이콘 */}
-            <View style={styles.iconContainer}>
-              <Ionicons name="lock-closed" size={48} color={COLORS.primary} />
-            </View>
-
             {/* 제목 */}
             <Text style={styles.title}>로그인이 필요합니다</Text>
 
             {/* 설명 */}
             <Text style={styles.message}>
-              이 기능을 사용하려면{"\n"}
-              로그인해주세요.
+              이 기능을 사용하려면 로그인해주세요.
             </Text>
 
             {/* 버튼들 */}
@@ -88,9 +82,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 16,
-  },
-  iconContainer: {
-    marginBottom: 16,
   },
   title: {
     fontSize: 20,
