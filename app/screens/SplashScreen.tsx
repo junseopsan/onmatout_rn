@@ -43,11 +43,11 @@ export default function SplashScreen() {
         }}
       >
         <Image
-          source={require("../../images/logo.png")}
+          source={require("../../images/asana_bg.png")}
           style={{
             width: "100%",
             height: "100%",
-            resizeMode: "contain",
+            resizeMode: "cover",
           }}
         />
       </Animated.View>
