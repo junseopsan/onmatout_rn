@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { AsanaCard } from "../../components/AsanaCard";
+import { AsanaCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { useAsanas, useAsanaSearch } from "../../hooks/useAsanas";
@@ -205,6 +206,12 @@ export default function AsanasScreen() {
     );
   };
 
+  const renderSkeletonItem = () => (
+    <View style={styles.cardContainer}>
+      <AsanaCardSkeleton />
+    </View>
+  );
+
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
 
@@ -354,15 +361,17 @@ export default function AsanasScreen() {
         </View>
       ) : (
         <FlatList
-          data={getDisplayAsanas()}
-          renderItem={renderAsanaCard}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
+          data={isLoading ? Array(6).fill(null) : getDisplayAsanas()}
+          renderItem={isLoading ? renderSkeletonItem : renderAsanaCard}
+          keyExtractor={(item, index) =>
+            isLoading ? `skeleton-${index}` : `${item.id}-${index}`
+          }
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={true}
           showsHorizontalScrollIndicator={false}
-          onEndReached={handleLoadMore}
+          onEndReached={!isLoading ? handleLoadMore : undefined}
           onEndReachedThreshold={0.1}
           ListFooterComponent={renderFooter}
           ListFooterComponentStyle={styles.footer}

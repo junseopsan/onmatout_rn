@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import FeedItem from "../../components/feed/FeedItem";
+import { FeedItemSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { useAsanas } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
@@ -76,6 +77,8 @@ export default function DashboardScreen() {
     <FeedItem record={item} asanas={asanas} onPress={handleRecordPress} />
   );
 
+  const renderSkeletonItem = () => <FeedItemSkeleton />;
+
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
@@ -106,20 +109,22 @@ export default function DashboardScreen() {
 
       {/* 피드 리스트 */}
       <FlatList
-        data={feedRecords}
-        renderItem={renderFeedItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={renderEmptyComponent}
+        data={loadingData ? Array(5).fill(null) : feedRecords}
+        renderItem={loadingData ? renderSkeletonItem : renderFeedItem}
+        keyExtractor={(item, index) =>
+          loadingData ? `skeleton-${index}` : item.id
+        }
+        ListEmptyComponent={!loadingData ? renderEmptyComponent : null}
         refreshControl={
           <RefreshControl
-            refreshing={loadingData}
+            refreshing={false}
             onRefresh={refetch}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
           />
         }
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
+          if (hasNextPage && !isFetchingNextPage && !loadingData) {
             fetchNextPage();
           }
         }}

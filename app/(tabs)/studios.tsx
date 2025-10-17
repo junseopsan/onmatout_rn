@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { StudioCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useStudioSearch } from "../../hooks/useStudios";
@@ -413,8 +414,12 @@ export default function StudiosScreen() {
       {/* 메인 콘텐츠 - 요가원 목록 */}
       <ScrollView style={styles.studiosList}>
         {loadingStudios ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>요가원 정보를 불러오는 중...</Text>
+          <View style={styles.skeletonContainer}>
+            {Array(5)
+              .fill(null)
+              .map((_, index) => (
+                <StudioCardSkeleton key={`skeleton-${index}`} />
+              ))}
           </View>
         ) : studios.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -607,6 +612,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: COLORS.textSecondary,
+  },
+  skeletonContainer: {
+    padding: 16,
   },
   headerContainer: {
     paddingHorizontal: 24,
