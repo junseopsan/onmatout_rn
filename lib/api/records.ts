@@ -815,19 +815,28 @@ export const recordsAPI = {
     message?: string;
   }> => {
     try {
+      console.log("=== 댓글 추가 시작 ===");
+      console.log("입력 파라미터:", { recordId, content, userId });
+
       // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
       let user_id = userId;
       if (!user_id) {
+        console.log("userId가 제공되지 않음, auth에서 조회 시도");
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user) {
+          console.log("사용자 인증 실패");
           return {
             success: false,
             message: "사용자 인증이 필요합니다.",
           };
         }
         user_id = userData.user.id;
+        console.log("auth에서 사용자 ID 조회:", user_id);
+      } else {
+        console.log("제공된 사용자 ID 사용:", user_id);
       }
 
+      console.log("댓글 삽입 시도:", { user_id, record_id: recordId, content });
       const { data, error } = await supabase
         .from("feed_comments")
         .insert({
@@ -839,24 +848,33 @@ export const recordsAPI = {
         .single();
 
       if (error) {
+        console.log("댓글 삽입 실패:", error);
         throw error;
       }
+
+      console.log("댓글 삽입 성공:", data);
 
       // 사용자 프로필 정보 별도 조회
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("name, avatar_url")
-        .eq("user_id", user.id)
+        .eq("user_id", user_id)
         .single();
 
-      return {
+      console.log("사용자 프로필 조회:", profile);
+
+      const result = {
         success: true,
         data: {
           ...data,
           user_profiles: profile,
         },
       };
+
+      console.log("댓글 추가 최종 결과:", result);
+      return result;
     } catch (error) {
+      console.log("댓글 추가 오류:", error);
       return {
         success: false,
         message: "댓글 추가에 실패했습니다.",

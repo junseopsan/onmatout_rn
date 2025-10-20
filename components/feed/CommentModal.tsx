@@ -39,11 +39,14 @@ export default function CommentModal({
   const queryClient = useQueryClient();
 
   const handleAddComment = () => {
+    console.log("댓글 등록 시도:", { recordId, content: commentText.trim() });
+    
     if (commentText.trim()) {
       addCommentMutation.mutate(
         { recordId, content: commentText.trim() },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
+            console.log("댓글 등록 성공:", data);
             setCommentText("");
             setInputHeight(32); // 입력 후 높이 초기화
             
@@ -51,8 +54,13 @@ export default function CommentModal({
             queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
             queryClient.invalidateQueries({ queryKey: ["recordStats", recordId] });
           },
+          onError: (error) => {
+            console.log("댓글 등록 실패:", error);
+          },
         }
       );
+    } else {
+      console.log("댓글 텍스트가 비어있음");
     }
   };
 
