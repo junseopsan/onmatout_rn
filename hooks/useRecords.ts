@@ -242,6 +242,7 @@ export const useToggleLike = () => {
 // 댓글 추가 mutation
 export const useAddComment = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -251,7 +252,7 @@ export const useAddComment = () => {
       recordId: string;
       content: string;
     }) => {
-      const result = await recordsAPI.addComment(recordId, content);
+      const result = await recordsAPI.addComment(recordId, content, user?.id);
       if (!result.success) {
         throw new Error(result.message || "댓글 추가에 실패했습니다.");
       }

@@ -807,27 +807,31 @@ export const recordsAPI = {
   // 댓글 추가
   addComment: async (
     recordId: string,
-    content: string
+    content: string,
+    userId?: string
   ): Promise<{
     success: boolean;
     data?: any;
     message?: string;
   }> => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "사용자 인증이 필요합니다.",
-        };
+      // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
+      let user_id = userId;
+      if (!user_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) {
+          return {
+            success: false,
+            message: "사용자 인증이 필요합니다.",
+          };
+        }
+        user_id = userData.user.id;
       }
 
       const { data, error } = await supabase
         .from("feed_comments")
         .insert({
-          user_id: user.id,
+          user_id: user_id,
           record_id: recordId,
           content,
         })
