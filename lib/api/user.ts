@@ -88,12 +88,12 @@ export const userAPI = {
       // 2단계: 기존 프로필이 있으면 업데이트, 없으면 생성
       if (existingProfiles && existingProfiles.length > 0) {
         console.log("기존 프로필 업데이트 중...");
-        const { data: updatedProfile, error: updateError } = await supabase
+        
+        // 먼저 업데이트 실행 (single() 사용하지 않음)
+        const { error: updateError } = await supabase
           .from("user_profiles")
           .update(updateData)
-          .eq("user_id", userId)
-          .select()
-          .single();
+          .eq("user_id", userId);
 
         if (updateError) {
           console.log("프로필 업데이트 실패:", updateError);
@@ -103,6 +103,21 @@ export const userAPI = {
           };
         }
 
+        // 업데이트 후 다시 조회 (single() 사용하지 않음)
+        const { data: updatedProfiles, error: selectError } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", userId);
+
+        if (selectError) {
+          console.log("업데이트된 프로필 조회 실패:", selectError);
+          return {
+            success: false,
+            message: `업데이트된 프로필 조회 실패: ${selectError.message}`,
+          };
+        }
+
+        const updatedProfile = updatedProfiles && updatedProfiles.length > 0 ? updatedProfiles[0] : null;
         console.log("프로필 업데이트 성공:", updatedProfile);
         return {
           success: true,
