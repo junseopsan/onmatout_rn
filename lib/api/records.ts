@@ -104,7 +104,8 @@ export const recordsAPI = {
 
   // 기록 생성 (하루에 여러 기록 허용)
   createRecord: async (
-    recordData: RecordFormData
+    recordData: RecordFormData,
+    userId?: string
   ): Promise<{
     success: boolean;
     data?: Record;
@@ -114,20 +115,24 @@ export const recordsAPI = {
       const practiceDate =
         recordData.date || new Date().toISOString().split("T")[0];
 
-      // 현재 사용자 ID 가져오기
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "사용자 인증이 필요합니다.",
-        };
+      // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
+      let user_id = userId;
+      if (!user_id) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          return {
+            success: false,
+            message: "사용자 인증이 필요합니다.",
+          };
+        }
+        user_id = user.id;
       }
 
       // 새로운 기록 생성 (하루에 여러 기록 허용)
       const recordPayload = {
-        user_id: user.id,
+        user_id: user_id,
         practice_date: practiceDate,
         practice_time: new Date().toISOString(), // 현재 시간으로 수련 시간 설정
         title: recordData.title, // 기록 제목

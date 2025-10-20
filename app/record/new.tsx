@@ -26,12 +26,14 @@ import { Asana } from "../../lib/api/asanas";
 import { recordsAPI } from "../../lib/api/records";
 import { RootStackParamList } from "../../navigation/types";
 import { RecordFormData } from "../../types/record";
+import { useAuthStore } from "../../stores/authStore";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function NewRecordScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated } = useAuth();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
@@ -109,7 +111,7 @@ export default function NewRecordScreen() {
         date: new Date().toISOString().split("T")[0], // 오늘 날짜
       };
 
-      const result = await recordsAPI.createRecord(recordData);
+      const result = await recordsAPI.createRecord(recordData, user?.id);
 
       if (result.success) {
         // 성공 시 홈탭으로 이동하고 스낵바 표시
