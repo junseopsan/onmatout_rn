@@ -97,7 +97,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
-      <Text style={getTextStyle()}>{loading ? "로딩 중..." : title}</Text>
+      <Text style={getTextStyle()}>{loading ? "..." : title}</Text>
     </TouchableOpacity>
   );
 };

@@ -42,10 +42,10 @@ export function TamaguiButtonComponent({
     variant === "primary"
       ? undefined
       : variant === "outline"
-        ? "outlined"
-        : variant === "secondary"
-          ? "secondary"
-          : undefined;
+      ? "outlined"
+      : variant === "secondary"
+      ? "secondary"
+      : undefined;
 
   // 크기에 따른 스타일
   const sizeStyle = {
@@ -70,7 +70,7 @@ export function TamaguiButtonComponent({
       {...props}
     >
       <Text style={{ fontSize: size === "small" ? 14 : 16, fontWeight: "600" }}>
-        {loading ? "로딩 중..." : title}
+        {loading ? "..." : title}
       </Text>
     </StyledButton>
   );
