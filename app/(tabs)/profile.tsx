@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import DatePickerModal from "../../components/DatePickerModal";
 import SimpleRecordCard from "../../components/SimpleRecordCard";
+import { AlertDialog } from "../../components/ui/AlertDialog";
 // SettingsModal 제거됨 - 페이지로 변경
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
@@ -130,6 +131,18 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
+  };
+
+  // 로그아웃 확인 다이얼로그
+  const showLogoutDialog = () => {
+    AlertDialog.confirm(
+      "로그아웃",
+      "정말로 로그아웃하시겠습니까?",
+      handleLogout,
+      () => {}, // 취소 시 아무것도 하지 않음
+      "로그아웃",
+      "취소"
+    );
   };
 
   // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
@@ -270,7 +283,7 @@ export default function ProfileScreen() {
         <View style={styles.logoutSection}>
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={handleLogout}
+            onPress={showLogoutDialog}
             activeOpacity={0.7}
           >
             <Ionicons name="log-out-outline" size={20} color="white" />

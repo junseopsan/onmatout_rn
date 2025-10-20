@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import { Alert } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthStore } from "../stores/authStore";
+import { AlertDialog } from "../components/ui/AlertDialog";
 
 // Screens
 import AsanasScreen from "../app/(tabs)/asanas";
@@ -30,19 +30,9 @@ export default function TabNavigator() {
 
     // 로그인되지 않은 경우 Alert 표시
     if (!isAuthenticated || !user) {
-      Alert.alert(
-        "로그인이 필요합니다",
-        "이 기능을 사용하려면 로그인해주세요.",
-        [
-          {
-            text: "취소",
-            style: "cancel",
-          },
-          {
-            text: "로그인",
-            onPress: () => navigation.navigate("Auth" as never),
-          },
-        ]
+      AlertDialog.login(
+        () => navigation.navigate("Auth" as never),
+        () => {} // 취소 시 아무것도 하지 않음
       );
       return false; // 탭 전환 방지
     }
