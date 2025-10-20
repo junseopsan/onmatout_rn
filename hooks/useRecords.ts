@@ -258,95 +258,10 @@ export const useAddComment = () => {
       }
       return { recordId, comment: result.data };
     },
-    onMutate: async ({ recordId, content }) => {
-      // 진행 중인 쿼리 취소
-      await queryClient.cancelQueries({ queryKey: ["comments", recordId] });
-      await queryClient.cancelQueries({ queryKey: ["recordStats", recordId] });
-
-      // 이전 데이터 백업
-      const previousComments = queryClient.getQueryData(["comments", recordId]);
-      const previousStats = queryClient.getQueryData(["recordStats", recordId]);
-
-      // 현재 사용자 정보 가져오기
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      let currentUserProfile = null;
-
-      if (user) {
-        try {
-          const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("name, avatar_url")
-            .eq("user_id", user.id)
-            .single();
-          currentUserProfile = profile;
-        } catch (error) {
-          console.log("현재 사용자 프로필 조회 실패:", error);
-        }
-      }
-
-      // 임시 댓글 ID 생성
-      const tempId = `temp-${Date.now()}`;
-
-      // 낙관적 업데이트 - 댓글 목록에 임시 댓글 추가
-      queryClient.setQueryData(["comments", recordId], (old: any[]) => {
-        const newComment = {
-          id: tempId,
-          user_id: user?.id || "current-user",
-          record_id: recordId,
-          content,
-          created_at: new Date().toISOString(),
-          user_profiles: {
-            name: currentUserProfile?.name || "나",
-            avatar_url: currentUserProfile?.avatar_url || null,
-          },
-        };
-        return [...(old || []), newComment];
-      });
-
-      // 댓글 개수 증가
-      queryClient.setQueryData(["recordStats", recordId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          commentCount: old.commentCount + 1,
-        };
-      });
-
-      return { previousComments, previousStats, tempId };
-    },
-    onError: (err, variables, context) => {
-      // 에러 시 이전 데이터로 롤백
-      if (context?.previousComments) {
-        queryClient.setQueryData(
-          ["comments", variables.recordId],
-          context.previousComments
-        );
-      }
-      if (context?.previousStats) {
-        queryClient.setQueryData(
-          ["recordStats", variables.recordId],
-          context.previousStats
-        );
-      }
-    },
-    onSuccess: (data, variables, context) => {
-      // 성공 시 임시 댓글을 실제 댓글로 교체
-      queryClient.setQueryData(["comments", data.recordId], (old: any[]) => {
-        return (
-          old?.map((comment) =>
-            comment.id === context?.tempId ? data.comment : comment
-          ) || []
-        );
-      });
-    },
-    onSettled: (data) => {
-      // 최종 데이터 동기화
-      queryClient.invalidateQueries({ queryKey: ["comments", data?.recordId] });
-      queryClient.invalidateQueries({
-        queryKey: ["recordStats", data?.recordId],
-      });
+    onSuccess: (data) => {
+      // 댓글 추가 성공 시 댓글 목록 새로고침
+      queryClient.invalidateQueries({ queryKey: ["comments", data.recordId] });
+      queryClient.invalidateQueries({ queryKey: ["recordStats", data.recordId] });
     },
   });
 };
