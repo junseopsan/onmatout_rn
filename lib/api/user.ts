@@ -68,49 +68,74 @@ export const userAPI = {
       if (profile.language !== undefined)
         updateData.language = profile.language;
 
-      // 1단계: 모든 중복 레코드 삭제 후 새로 생성하는 방식으로 변경
-      console.log("기존 프로필 레코드 삭제 중...");
-      const { error: deleteError } = await supabase
+      // 1단계: 기존 프로필 확인
+      console.log("기존 프로필 확인 중...");
+      const { data: existingProfiles, error: checkError } = await supabase
         .from("user_profiles")
-        .delete()
+        .select("*")
         .eq("user_id", userId);
 
-      if (deleteError) {
-        console.log("기존 레코드 삭제 실패:", deleteError);
+      if (checkError) {
+        console.log("기존 프로필 확인 실패:", checkError);
         return {
           success: false,
-          message: `기존 프로필 삭제 실패: ${deleteError.message}`,
+          message: `기존 프로필 확인 실패: ${checkError.message}`,
         };
       }
 
-      console.log("기존 프로필 레코드 삭제 완료");
+      console.log("기존 프로필 개수:", existingProfiles?.length || 0);
 
-      // 2단계: 새로운 프로필 생성
-      const insertData = {
-        user_id: userId,
-        ...updateData,
-      };
+      // 2단계: 기존 프로필이 있으면 업데이트, 없으면 생성
+      if (existingProfiles && existingProfiles.length > 0) {
+        console.log("기존 프로필 업데이트 중...");
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from("user_profiles")
+          .update(updateData)
+          .eq("user_id", userId)
+          .select()
+          .single();
 
-      console.log("새 프로필 생성 중:", insertData);
-      const { data: newProfile, error: insertError } = await supabase
-        .from("user_profiles")
-        .insert(insertData)
-        .select()
-        .single();
+        if (updateError) {
+          console.log("프로필 업데이트 실패:", updateError);
+          return {
+            success: false,
+            message: `프로필 업데이트 실패: ${updateError.message}`,
+          };
+        }
 
-      if (insertError) {
-        console.log("새 프로필 생성 실패:", insertError);
+        console.log("프로필 업데이트 성공:", updatedProfile);
         return {
-          success: false,
-          message: `프로필 생성 실패: ${insertError.message}`,
+          success: true,
+          data: updatedProfile,
+        };
+      } else {
+        console.log("새 프로필 생성 중...");
+        const insertData = {
+          user_id: userId,
+          ...updateData,
+        };
+
+        console.log("삽입할 데이터:", insertData);
+        const { data: newProfile, error: insertError } = await supabase
+          .from("user_profiles")
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.log("새 프로필 생성 실패:", insertError);
+          return {
+            success: false,
+            message: `프로필 생성 실패: ${insertError.message}`,
+          };
+        }
+
+        console.log("새 프로필 생성 성공:", newProfile);
+        return {
+          success: true,
+          data: newProfile,
         };
       }
-
-      console.log("새 프로필 생성 성공:", newProfile);
-      return {
-        success: true,
-        data: newProfile,
-      };
     } catch (error) {
       return {
         success: false,
