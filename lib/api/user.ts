@@ -90,10 +90,12 @@ export const userAPI = {
         console.log("기존 프로필 업데이트 중...");
 
         // 먼저 업데이트 실행 (single() 사용하지 않음)
-        const { error: updateError } = await supabase
+        console.log("업데이트할 데이터:", updateData);
+        const { data: updateResult, error: updateError } = await supabase
           .from("user_profiles")
           .update(updateData)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select();
 
         if (updateError) {
           console.log("프로필 업데이트 실패:", updateError);
@@ -102,6 +104,8 @@ export const userAPI = {
             message: `프로필 업데이트 실패: ${updateError.message}`,
           };
         }
+
+        console.log("업데이트 결과:", updateResult);
 
         // 업데이트 후 다시 조회 (single() 사용하지 않음)
         const { data: updatedProfiles, error: selectError } = await supabase
@@ -125,7 +129,7 @@ export const userAPI = {
         console.log("반환할 데이터 구조:", {
           success: true,
           data: updatedProfile,
-          dataKeys: updatedProfile ? Object.keys(updatedProfile) : 'null'
+          dataKeys: updatedProfile ? Object.keys(updatedProfile) : "null",
         });
         return {
           success: true,
