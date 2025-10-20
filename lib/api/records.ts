@@ -324,19 +324,25 @@ export const recordsAPI = {
   // 기록 수정
   updateRecord: async (
     recordId: string,
-    formData: RecordFormData
+    formData: RecordFormData,
+    userId?: string
   ): Promise<{
     success: boolean;
     data?: Record;
     message?: string;
   }> => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        return {
-          success: false,
-          message: "사용자 인증이 필요합니다.",
-        };
+      // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
+      let user_id = userId;
+      if (!user_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) {
+          return {
+            success: false,
+            message: "사용자 인증이 필요합니다.",
+          };
+        }
+        user_id = userData.user.id;
       }
 
       const { data, error } = await supabase
@@ -350,7 +356,7 @@ export const recordsAPI = {
           updated_at: new Date().toISOString(),
         })
         .eq("id", recordId)
-        .eq("user_id", userData.user.id)
+        .eq("user_id", user_id)
         .select()
         .single();
 

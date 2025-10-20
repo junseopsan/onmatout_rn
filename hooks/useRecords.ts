@@ -7,6 +7,7 @@ import {
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { recordsAPI } from "../lib/api/records";
 import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../stores/authStore";
 import { Record, RecordFormData } from "../types/record";
 
 // 오늘의 수련 기록 조회
@@ -89,6 +90,7 @@ export const useDeleteRecord = () => {
 // 기록 수정 mutation
 export const useUpdateRecord = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -98,7 +100,7 @@ export const useUpdateRecord = () => {
       id: string;
       recordData: RecordFormData;
     }) => {
-      const result = await recordsAPI.updateRecord(id, recordData);
+      const result = await recordsAPI.updateRecord(id, recordData, user?.id);
       if (!result.success) {
         throw new Error(result.message || "기록 수정에 실패했습니다.");
       }
