@@ -25,8 +25,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { Asana } from "../../lib/api/asanas";
 import { recordsAPI } from "../../lib/api/records";
 import { RootStackParamList } from "../../navigation/types";
-import { RecordFormData } from "../../types/record";
 import { useAuthStore } from "../../stores/authStore";
+import { RecordFormData } from "../../types/record";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -116,7 +116,10 @@ export default function NewRecordScreen() {
       if (result.success) {
         // 성공 시 홈탭으로 이동하고 스낵바 표시
         showSnackbar("수련 기록이 저장되었습니다.", "success");
-        navigation.navigate("TabNavigator");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "TabNavigator", params: { screen: "Dashboard" } }],
+        });
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
