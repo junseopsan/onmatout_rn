@@ -89,7 +89,7 @@ export const userAPI = {
       if (existingProfiles && existingProfiles.length > 0) {
         console.log("기존 프로필 업데이트 중...");
 
-        // 먼저 업데이트 실행 (single() 사용하지 않음)
+        // 먼저 업데이트 실행 (RLS가 비활성화되어야 함)
         console.log("업데이트할 데이터:", updateData);
         const { data: updateResult, error: updateError } = await supabase
           .from("user_profiles")
