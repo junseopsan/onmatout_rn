@@ -68,19 +68,40 @@ export const userAPI = {
       if (profile.language !== undefined)
         updateData.language = profile.language;
 
-      // 먼저 기존 프로필이 있는지 확인
-      const { data: existingProfile, error: checkError } = await supabase
+      // 먼저 기존 프로필이 있는지 확인 (중복 레코드 처리)
+      const { data: existingProfiles, error: checkError } = await supabase
         .from("user_profiles")
         .select("*")
-        .eq("user_id", userId)
-        .single();
+        .eq("user_id", userId);
 
-      if (checkError && checkError.code !== "PGRST116") {
+      if (checkError) {
         return {
           success: false,
           message: checkError.message,
         };
       }
+
+      // 중복 레코드가 있는 경우 가장 최근 것을 제외하고 삭제
+      if (existingProfiles && existingProfiles.length > 1) {
+        console.log("중복 프로필 발견, 정리 중...", existingProfiles.length);
+        
+        // created_at 기준으로 정렬하여 가장 최근 것만 남기고 나머지 삭제
+        const sortedProfiles = existingProfiles.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        
+        const profilesToDelete = sortedProfiles.slice(1);
+        for (const profile of profilesToDelete) {
+          await supabase
+            .from("user_profiles")
+            .delete()
+            .eq("id", profile.id);
+        }
+        
+        console.log("중복 프로필 정리 완료");
+      }
+
+      const existingProfile = existingProfiles && existingProfiles.length > 0 ? existingProfiles[0] : null;
 
       if (existingProfile) {
         // 기존 프로필이 있으면 업데이트
