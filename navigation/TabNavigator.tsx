@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
-import { LoginDialog } from "../components/ui/LoginDialog";
+import React from "react";
+import { Alert } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthStore } from "../stores/authStore";
@@ -19,7 +19,6 @@ const Tab = createBottomTabNavigator();
 export default function TabNavigator() {
   const { isAuthenticated } = useAuth();
   const { user } = useAuthStore();
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const navigation = useNavigation();
 
   // 비회원 사용자가 로그인이 필요한 탭을 클릭했을 때
@@ -29,23 +28,26 @@ export default function TabNavigator() {
       return true;
     }
 
-    // 로그인되지 않은 경우 다이얼로그 표시
+    // 로그인되지 않은 경우 Alert 표시
     if (!isAuthenticated || !user) {
-      setShowLoginDialog(true);
+      Alert.alert(
+        "로그인이 필요합니다",
+        "이 기능을 사용하려면 로그인해주세요.",
+        [
+          {
+            text: "취소",
+            style: "cancel",
+          },
+          {
+            text: "로그인",
+            onPress: () => navigation.navigate("Auth" as never),
+          },
+        ]
+      );
       return false; // 탭 전환 방지
     }
 
     return true; // 탭 전환 허용
-  };
-
-  const handleLogin = () => {
-    setShowLoginDialog(false);
-    // 로그인 페이지로 이동
-    navigation.navigate("Auth" as never);
-  };
-
-  const handleCloseDialog = () => {
-    setShowLoginDialog(false);
   };
 
   return (
@@ -130,13 +132,6 @@ export default function TabNavigator() {
           options={{ tabBarLabel: "프로필" }}
         />
       </Tab.Navigator>
-
-      {/* 로그인 다이얼로그 */}
-      <LoginDialog
-        visible={showLoginDialog}
-        onClose={handleCloseDialog}
-        onLogin={handleLogin}
-      />
     </>
   );
 }
