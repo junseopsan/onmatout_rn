@@ -65,7 +65,7 @@ export default function Snackbar({
     switch (type) {
       case "success":
         return {
-          backgroundColor: "#4CAF50",
+          backgroundColor: COLORS.primary,
           icon: "checkmark-circle" as const,
         };
       case "error":
@@ -150,7 +150,8 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     borderRadius: 8,
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
