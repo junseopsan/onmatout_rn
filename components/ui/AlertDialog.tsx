@@ -1,4 +1,3 @@
-import React from "react";
 import { Alert } from "react-native";
 
 interface AlertDialogProps {
@@ -46,41 +45,33 @@ export const AlertDialog = {
 
   // 로그인 다이얼로그 (특화)
   login: (onLogin?: () => void, onCancel?: () => void) => {
-    Alert.alert(
-      "로그인이 필요합니다",
-      "이 기능을 사용하려면 로그인해주세요.",
-      [
-        {
-          text: "취소",
-          style: "cancel",
-          onPress: onCancel,
-        },
-        {
-          text: "로그인",
-          onPress: onLogin,
-        },
-      ]
-    );
+    Alert.alert("로그인이 필요합니다", "이 기능을 사용하려면 로그인해주세요.", [
+      {
+        text: "취소",
+        style: "cancel",
+        onPress: onCancel,
+      },
+      {
+        text: "로그인",
+        onPress: onLogin,
+      },
+    ]);
   },
 
   // 삭제 확인 다이얼로그
   delete: (onDelete?: () => void, onCancel?: () => void) => {
-    Alert.alert(
-      "삭제 확인",
-      "정말로 삭제하시겠습니까?",
-      [
-        {
-          text: "취소",
-          style: "cancel",
-          onPress: onCancel,
-        },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: onDelete,
-        },
-      ]
-    );
+    Alert.alert("삭제 확인", "정말로 삭제하시겠습니까?", [
+      {
+        text: "취소",
+        style: "cancel",
+        onPress: onCancel,
+      },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: onDelete,
+      },
+    ]);
   },
 
   // 에러 다이얼로그

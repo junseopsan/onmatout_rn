@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
+import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
 import { useAuthStore } from "../stores/authStore";
-import { AlertDialog } from "../components/ui/AlertDialog";
 
 // Screens
 import AsanasScreen from "../app/(tabs)/asanas";

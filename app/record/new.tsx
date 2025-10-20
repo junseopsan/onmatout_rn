@@ -17,9 +17,11 @@ import {
   View,
 } from "react-native";
 import AsanaSearchModal from "../../components/AsanaSearchModal";
+import { AlertDialog } from "../../components/ui/AlertDialog";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
+import { useAuth } from "../../hooks/useAuth";
 import { Asana } from "../../lib/api/asanas";
 import { recordsAPI } from "../../lib/api/records";
 import { RootStackParamList } from "../../navigation/types";
@@ -29,6 +31,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function NewRecordScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
@@ -70,6 +73,15 @@ export default function NewRecordScreen() {
 
   // 기록 저장
   const handleSave = async () => {
+    // 로그인 체크
+    if (!isAuthenticated) {
+      AlertDialog.login(
+        () => navigation.navigate("Auth" as never),
+        () => {} // 취소 시 아무것도 하지 않음
+      );
+      return;
+    }
+
     if (selectedAsanas.length === 0) {
       Alert.alert("알림", "최소 1개의 아사나를 선택해주세요.");
       return;
