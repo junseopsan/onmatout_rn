@@ -73,8 +73,11 @@ export default function EditNicknameScreen() {
       const result = await saveUserProfile(nickname.trim());
 
       if (result) {
-        showSnackbar("닉네임이 성공적으로 변경되었습니다.", "success");
-        setTimeout(() => navigation.goBack(), 1500);
+        // 개인정보 화면으로 돌아간 후 스낵바 표시
+        navigation.goBack();
+        setTimeout(() => {
+          showSnackbar("닉네임이 성공적으로 변경되었습니다.", "success");
+        }, 100);
       } else {
         showSnackbar("닉네임 변경에 실패했습니다.", "error");
       }
