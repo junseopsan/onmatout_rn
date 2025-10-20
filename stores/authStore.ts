@@ -85,13 +85,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           ...currentUser,
           profile: {
             ...currentUser.profile,
-            name: nickname,
-            ...response.data, // 서버에서 반환된 전체 프로필 정보
+            name: nickname, // 닉네임 직접 설정
+            ...(response.data || {}), // 서버에서 반환된 데이터가 있으면 병합
+            updated_at: new Date().toISOString(), // 업데이트 시간 설정
           } as any, // 타입 호환성을 위해 any로 캐스팅
         };
 
         set({ user: updatedUser });
         console.log("사용자 정보 업데이트 완료:", updatedUser);
+        console.log("업데이트된 프로필:", updatedUser.profile);
 
         return true;
       } else {

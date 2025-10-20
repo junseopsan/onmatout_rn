@@ -88,7 +88,7 @@ export const userAPI = {
       // 2단계: 기존 프로필이 있으면 업데이트, 없으면 생성
       if (existingProfiles && existingProfiles.length > 0) {
         console.log("기존 프로필 업데이트 중...");
-        
+
         // 먼저 업데이트 실행 (single() 사용하지 않음)
         const { error: updateError } = await supabase
           .from("user_profiles")
@@ -117,8 +117,16 @@ export const userAPI = {
           };
         }
 
-        const updatedProfile = updatedProfiles && updatedProfiles.length > 0 ? updatedProfiles[0] : null;
+        const updatedProfile =
+          updatedProfiles && updatedProfiles.length > 0
+            ? updatedProfiles[0]
+            : null;
         console.log("프로필 업데이트 성공:", updatedProfile);
+        console.log("반환할 데이터 구조:", {
+          success: true,
+          data: updatedProfile,
+          dataKeys: updatedProfile ? Object.keys(updatedProfile) : 'null'
+        });
         return {
           success: true,
           data: updatedProfile,
