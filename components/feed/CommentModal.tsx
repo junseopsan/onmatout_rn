@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { useAddComment, useComments } from "../../hooks/useRecords";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CommentModalProps {
   visible: boolean;
@@ -35,6 +36,7 @@ export default function CommentModal({
   const [inputHeight, setInputHeight] = useState(32);
   const { data: comments, isLoading } = useComments(recordId);
   const addCommentMutation = useAddComment();
+  const queryClient = useQueryClient();
 
   const handleAddComment = () => {
     if (commentText.trim()) {
@@ -44,6 +46,10 @@ export default function CommentModal({
           onSuccess: () => {
             setCommentText("");
             setInputHeight(32); // 입력 후 높이 초기화
+            
+            // 댓글 목록 즉시 새로고침
+            queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
+            queryClient.invalidateQueries({ queryKey: ["recordStats", recordId] });
           },
         }
       );
