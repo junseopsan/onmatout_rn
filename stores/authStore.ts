@@ -112,18 +112,28 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       const currentUser = get().user;
       if (!currentUser) {
+        console.log("현재 사용자 없음");
         return null;
       }
 
+      // 이미 프로필이 있으면 캐시된 데이터 반환
+      if (currentUser.profile && currentUser.profile.name) {
+        console.log("캐시된 프로필 사용:", currentUser.profile);
+        return currentUser.profile;
+      }
+
+      console.log("사용자 프로필 조회 시작:", currentUser.id);
       const response = await userAPI.getUserProfile(currentUser.id);
 
       if (response.success) {
         console.log("사용자 프로필 조회 성공:", response.data);
         return response.data;
       } else {
+        console.log("사용자 프로필 조회 실패:", response.message);
         return null;
       }
     } catch (error) {
+      console.log("사용자 프로필 조회 오류:", error);
       return null;
     }
   },
