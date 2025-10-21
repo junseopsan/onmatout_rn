@@ -36,4 +36,6 @@ export interface AuthResponse {
   success: boolean;
   message: string;
   data?: any;
+  user?: any;
+  session?: any;
 }
