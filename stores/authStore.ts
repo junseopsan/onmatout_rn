@@ -368,8 +368,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log("API 응답 데이터:", response.data);
 
         // API 응답에서 직접 세션과 사용자 정보 가져오기
-        const apiSession = response.data?.session;
-        const apiUser = response.data?.user;
+        const apiSession = response.data?.session || response.session;
+        const apiUser = response.data?.user || response.user;
 
         console.log("API 응답 세션:", apiSession);
         console.log("API 응답 사용자:", apiUser);

@@ -18,7 +18,12 @@ export const authAPI = {
       let normalizedPhone = credentials.phone;
       if (credentials.phone === "+821000000000") {
         normalizedPhone = "01000000000";
-        console.log("전화번호 형식 정규화:", credentials.phone, "->", normalizedPhone);
+        console.log(
+          "전화번호 형식 정규화:",
+          credentials.phone,
+          "->",
+          normalizedPhone
+        );
       }
 
       // 테스트 계정 확인 (심사용)
@@ -66,14 +71,16 @@ export const authAPI = {
       let normalizedPhone = credentials.phone;
       if (credentials.phone === "+821000000000") {
         normalizedPhone = "01000000000";
-        console.log("전화번호 형식 정규화:", credentials.phone, "->", normalizedPhone);
+        console.log(
+          "전화번호 형식 정규화:",
+          credentials.phone,
+          "->",
+          normalizedPhone
+        );
       }
 
       // 테스트 계정 확인 (심사용)
-      if (
-        normalizedPhone === "01000000000" &&
-        credentials.code === "123456"
-      ) {
+      if (normalizedPhone === "01000000000" && credentials.code === "123456") {
         console.log("테스트 계정 인증번호 검증 (우회)");
         // 테스트 계정용 가짜 인증 성공 처리
         const result = { success: true };
