@@ -14,6 +14,15 @@ export const authAPI = {
     try {
       console.log("네이버 SMS 인증번호 발송 시작:", credentials.phone);
 
+      // 테스트 계정 확인 (심사용)
+      if (credentials.phone === "01000000000") {
+        console.log("테스트 계정 인증번호 발송 (우회)");
+        return {
+          success: true,
+          message: "테스트 계정용 인증번호가 발송되었습니다.",
+        };
+      }
+
       // 네이버 SMS로 인증번호 발송
       const result = await sendVerificationCode(credentials.phone);
 
@@ -46,6 +55,19 @@ export const authAPI = {
     console.log("인증 코드:", credentials.code);
 
     try {
+      // 테스트 계정 확인 (심사용)
+      if (credentials.phone === "01000000000" && credentials.code === "123456") {
+        console.log("테스트 계정 인증번호 검증 (우회)");
+        // 테스트 계정용 가짜 인증 성공 처리
+        const result = { success: true };
+      } else if (credentials.phone === "01000000000") {
+        console.log("테스트 계정 인증번호 불일치");
+        return {
+          success: false,
+          message: "테스트 계정의 인증번호는 123456입니다.",
+        };
+      }
+
       // 네이버 SMS 인증번호 검증
       const result = await verifyCode(credentials.phone, credentials.code);
 
