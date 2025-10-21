@@ -1,6 +1,25 @@
 -- 심사용 테스트 계정 생성
 
--- 1. 테스트용 사용자 프로필 생성 (01000000000)
+-- 1. 테스트용 사용자 생성 (users 테이블)
+INSERT INTO auth.users (
+    id,
+    email,
+    phone,
+    created_at,
+    updated_at,
+    email_confirmed_at,
+    phone_confirmed_at
+) VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    'test@example.com',
+    '+821000000000',
+    NOW(),
+    NOW(),
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO NOTHING;
+
+-- 2. 테스트용 사용자 프로필 생성 (01000000000)
 INSERT INTO user_profiles (
     user_id,
     name,
@@ -28,7 +47,7 @@ INSERT INTO user_profiles (
     phone = EXCLUDED.phone,
     updated_at = NOW();
 
--- 2. 테스트용 수련 기록 생성 (샘플 데이터)
+-- 3. 테스트용 수련 기록 생성 (샘플 데이터)
 INSERT INTO practice_records (
     id,
     user_id,
@@ -53,7 +72,7 @@ INSERT INTO practice_records (
     NOW()
 ) ON CONFLICT DO NOTHING;
 
--- 3. 테스트 계정 확인
+-- 4. 테스트 계정 확인
 SELECT 
     user_id,
     name,
@@ -62,7 +81,7 @@ SELECT
 FROM user_profiles 
 WHERE phone = '01000000000';
 
--- 4. 테스트 수련 기록 확인
+-- 5. 테스트 수련 기록 확인
 SELECT 
     id,
     user_id,
