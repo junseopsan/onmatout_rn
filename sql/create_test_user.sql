@@ -13,7 +13,7 @@ INSERT INTO user_profiles (
     created_at,
     updated_at
 ) VALUES (
-    'test-user-01000000000',
+    '00000000-0000-0000-0000-000000000001',
     '테스트 사용자',
     '01000000000',
     true,
@@ -42,7 +42,7 @@ INSERT INTO practice_records (
     updated_at
 ) VALUES (
     gen_random_uuid(),
-    'test-user-01000000000',
+    '00000000-0000-0000-0000-000000000001',
     '테스트 수련 기록',
     '[{"id": "asana1", "name": "아도무카스바나사나", "image_number": "001"}]',
     '["energized", "focused"]',
@@ -70,4 +70,4 @@ SELECT
     memo,
     created_at
 FROM practice_records 
-WHERE user_id = 'test-user-01000000000';
+WHERE user_id = '00000000-0000-0000-0000-000000000001';

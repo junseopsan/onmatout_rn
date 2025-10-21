@@ -56,7 +56,10 @@ export const authAPI = {
 
     try {
       // 테스트 계정 확인 (심사용)
-      if (credentials.phone === "01000000000" && credentials.code === "123456") {
+      if (
+        credentials.phone === "01000000000" &&
+        credentials.code === "123456"
+      ) {
         console.log("테스트 계정 인증번호 검증 (우회)");
         // 테스트 계정용 가짜 인증 성공 처리
         const result = { success: true };
