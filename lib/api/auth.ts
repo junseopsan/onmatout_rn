@@ -63,6 +63,43 @@ export const authAPI = {
         console.log("테스트 계정 인증번호 검증 (우회)");
         // 테스트 계정용 가짜 인증 성공 처리
         const result = { success: true };
+        
+        // 테스트 계정 인증 성공 처리
+        console.log("테스트 계정 인증 성공, Supabase 사용자 조회/생성 시작");
+        
+        // 기존 사용자 조회 (전화번호로)
+        const { data: existingProfiles, error: profileError } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("phone", "821000000000")
+          .limit(1);
+
+        if (profileError) {
+          console.log("기존 사용자 조회 실패:", profileError);
+          return {
+            success: false,
+            message: "사용자 조회에 실패했습니다.",
+          };
+        }
+
+        if (existingProfiles && existingProfiles.length > 0) {
+          console.log("기존 사용자 발견:", existingProfiles[0]);
+          return {
+            success: true,
+            message: "테스트 계정 로그인 성공",
+            user: {
+              id: existingProfiles[0].user_id,
+              phone: credentials.phone,
+              profile: existingProfiles[0],
+            },
+          };
+        } else {
+          console.log("기존 사용자 없음, 테스트 계정 생성 필요");
+          return {
+            success: false,
+            message: "테스트 계정이 생성되지 않았습니다. 관리자에게 문의하세요.",
+          };
+        }
       } else if (credentials.phone === "01000000000") {
         console.log("테스트 계정 인증번호 불일치");
         return {
