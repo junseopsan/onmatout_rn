@@ -14,8 +14,15 @@ export const authAPI = {
     try {
       console.log("네이버 SMS 인증번호 발송 시작:", credentials.phone);
 
+      // 전화번호 형식 정규화 (테스트 계정용)
+      let normalizedPhone = credentials.phone;
+      if (credentials.phone === "+821000000000") {
+        normalizedPhone = "01000000000";
+        console.log("전화번호 형식 정규화:", credentials.phone, "->", normalizedPhone);
+      }
+
       // 테스트 계정 확인 (심사용)
-      if (credentials.phone === "01000000000") {
+      if (normalizedPhone === "01000000000") {
         console.log("테스트 계정 인증번호 발송 (우회)");
         return {
           success: true,
@@ -55,18 +62,25 @@ export const authAPI = {
     console.log("인증 코드:", credentials.code);
 
     try {
+      // 전화번호 형식 정규화 (테스트 계정용)
+      let normalizedPhone = credentials.phone;
+      if (credentials.phone === "+821000000000") {
+        normalizedPhone = "01000000000";
+        console.log("전화번호 형식 정규화:", credentials.phone, "->", normalizedPhone);
+      }
+
       // 테스트 계정 확인 (심사용)
       if (
-        credentials.phone === "01000000000" &&
+        normalizedPhone === "01000000000" &&
         credentials.code === "123456"
       ) {
         console.log("테스트 계정 인증번호 검증 (우회)");
         // 테스트 계정용 가짜 인증 성공 처리
         const result = { success: true };
-        
+
         // 테스트 계정 인증 성공 처리
         console.log("테스트 계정 인증 성공, Supabase 사용자 조회/생성 시작");
-        
+
         // 기존 사용자 조회 (전화번호로)
         const { data: existingProfiles, error: profileError } = await supabase
           .from("user_profiles")
@@ -97,7 +111,8 @@ export const authAPI = {
           console.log("기존 사용자 없음, 테스트 계정 생성 필요");
           return {
             success: false,
-            message: "테스트 계정이 생성되지 않았습니다. 관리자에게 문의하세요.",
+            message:
+              "테스트 계정이 생성되지 않았습니다. 관리자에게 문의하세요.",
           };
         }
       } else if (credentials.phone === "01000000000") {
