@@ -458,18 +458,45 @@ export default function AsanaDetailScreen() {
 
         {/* 내용 영역 */}
         <YStack padding="$6">
-          {/* 제목 */}
-          <Text fontSize={28} fontWeight="bold" color="$text" marginBottom="$2">
-            {asana?.sanskrit_name_kr || "아사나"}
-          </Text>
-          <Text
-            fontSize={18}
-            color="$textSecondary"
-            fontStyle="italic"
-            marginBottom="$6"
-          >
-            {asana?.sanskrit_name_en || ""}
-          </Text>
+          {/* 산스크리트 이름 섹션 */}
+          <YStack marginBottom="$6">
+            <Text
+              fontSize={18}
+              fontWeight="bold"
+              color="$text"
+              marginBottom="$3"
+            >
+              산스크리트 이름
+            </Text>
+            <Text fontSize={28} fontWeight="bold" color="$text" marginBottom="$2">
+              {asana?.sanskrit_name_kr || "아사나"}
+            </Text>
+            <Text
+              fontSize={18}
+              color="$textSecondary"
+              fontStyle="italic"
+              marginBottom="$2"
+            >
+              {asana?.sanskrit_name_en || ""}
+            </Text>
+            {/* 산스크리트 발음 */}
+            {asana?.sanskrit_pronunciation_kr && (
+              <Text fontSize={16} color="$textSecondary" marginBottom="$1">
+                발음: {asana.sanskrit_pronunciation_kr}
+              </Text>
+            )}
+            {asana?.sanskrit_pronunciation_en && (
+              <Text fontSize={16} color="$textSecondary" marginBottom="$1">
+                Pronunciation: {asana.sanskrit_pronunciation_en}
+              </Text>
+            )}
+            {/* 산스크리트 의미 */}
+            {asana?.sanskrit_meaning && (
+              <Text fontSize={16} color="$textSecondary">
+                의미: {asana.sanskrit_meaning}
+              </Text>
+            )}
+          </YStack>
 
           {/* 레벨 */}
           <YStack marginBottom="$6">
