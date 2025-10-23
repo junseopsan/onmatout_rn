@@ -470,14 +470,14 @@ export default function AsanaDetailScreen() {
           >
             {asana?.sanskrit_name_en || ""}
           </Text>
-          
+
           {/* 산스크리트어 발음 */}
-          {asana?.sanskrit_pronunciation_kr && (
+          {asana?.sanskrit_name && (
             <Text fontSize={16} color="$textSecondary" marginBottom="$2">
-              발음: {asana.sanskrit_pronunciation_kr}
+              발음: {asana.sanskrit_name}
             </Text>
           )}
-          
+
           {/* 산스크리트어 의미 */}
           {asana?.sanskrit_meaning && (
             <Text fontSize={16} color="$textSecondary" marginBottom="$6">
