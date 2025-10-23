@@ -2,6 +2,8 @@ export interface Asana {
   id: string;
   sanskrit_name_kr: string;
   sanskrit_name_en: string;
+  sanskrit_name?: string;
+  sanskrit_meaning?: string;
   level: string;
   effect: string;
   created_at: string;
