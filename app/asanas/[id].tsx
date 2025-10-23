@@ -472,16 +472,16 @@ export default function AsanaDetailScreen() {
           </Text>
 
           {/* 산스크리트어 발음 */}
-          {asana?.sanskrit_name && (
+          {(asana as any)?.sanskrit_name && (
             <Text fontSize={16} color="$textSecondary" marginBottom="$2">
-              발음: {asana.sanskrit_name}
+              발음: {(asana as any).sanskrit_name}
             </Text>
           )}
 
           {/* 산스크리트어 의미 */}
-          {asana?.sanskrit_meaning && (
+          {(asana as any)?.sanskrit_meaning && (
             <Text fontSize={16} color="$textSecondary" marginBottom="$6">
-              의미: {asana.sanskrit_meaning}
+              의미: {(asana as any).sanskrit_meaning}
             </Text>
           )}
 
