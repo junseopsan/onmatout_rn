@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Verify: undefined;
   Nickname: undefined;
   TabNavigator: undefined;
+  Dashboard: undefined;
   Asanas: undefined;
   Record: undefined;
   NewRecord: undefined;
@@ -18,4 +19,5 @@ export type RootStackParamList = {
   AsanaDetail: { id: string };
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
+  EditProfile: undefined;
 };
