@@ -461,7 +461,11 @@ export default function AsanaDetailScreen() {
           {/* 제목 섹션 */}
           <YStack marginBottom="$8">
             {/* 아사나 이름과 난이도 */}
-            <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+            <XStack
+              justifyContent="space-between"
+              alignItems="center"
+              marginBottom="$3"
+            >
               <Text fontSize={32} fontWeight="800" color="$text" flex={1}>
                 {asana?.sanskrit_name_kr || "아사나"}
               </Text>
@@ -476,7 +480,7 @@ export default function AsanaDetailScreen() {
                 </Text>
               </XStack>
             </XStack>
-            
+
             <Text
               fontSize={20}
               color="$textSecondary"
@@ -485,12 +489,17 @@ export default function AsanaDetailScreen() {
             >
               {asana?.sanskrit_name_en || ""}
             </Text>
-            
+
             {/* 산스크리트어와 의미 */}
             <XStack gap="$4" marginBottom="$8">
               {(asana as any)?.sanskrit_name && (
                 <YStack flex={1}>
-                  <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
+                  <Text
+                    fontSize={14}
+                    fontWeight="600"
+                    color="$textSecondary"
+                    marginBottom="$2"
+                  >
                     산스크리트어
                   </Text>
                   <Text fontSize={16} color="$text" fontWeight="500">
@@ -498,10 +507,15 @@ export default function AsanaDetailScreen() {
                   </Text>
                 </YStack>
               )}
-              
+
               {(asana as any)?.sanskrit_meaning && (
                 <YStack flex={1}>
-                  <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
+                  <Text
+                    fontSize={14}
+                    fontWeight="600"
+                    color="$textSecondary"
+                    marginBottom="$2"
+                  >
                     의미
                   </Text>
                   <Text fontSize={16} color="$text" fontWeight="500">
@@ -513,7 +527,12 @@ export default function AsanaDetailScreen() {
 
             {/* 카테고리 */}
             <YStack marginBottom="$8">
-              <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
+              <Text
+                fontSize={14}
+                fontWeight="600"
+                color="$textSecondary"
+                marginBottom="$2"
+              >
                 카테고리
               </Text>
               <Text fontSize={16} color="$text" fontWeight="500">
@@ -530,15 +549,10 @@ export default function AsanaDetailScreen() {
           {/* 아사나 의미 */}
           {asana?.asana_meaning && (
             <YStack marginBottom="$8">
-              <Text
-                fontSize={20}
-                fontWeight="700"
-                color="$text"
-                marginBottom="$4"
-              >
+              <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
                 아사나 의미
               </Text>
-              <Text fontSize={16} color="$textSecondary" lineHeight={26}>
+              <Text fontSize={16} color="$text" fontWeight="500">
                 {asana.asana_meaning}
               </Text>
             </YStack>
