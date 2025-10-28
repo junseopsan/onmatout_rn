@@ -458,19 +458,21 @@ export default function AsanaDetailScreen() {
 
         {/* 내용 영역 */}
         <YStack padding="$4" gap="$4">
-          {/* 헤더 카드 */}
+          {/* 헤더 카드 - 그라데이션 배경 */}
           <YStack
-            backgroundColor="white"
+            backgroundColor="#F8F9FA"
             borderRadius="$4"
             padding="$5"
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.1}
-            shadowRadius={8}
-            elevation={3}
+            borderWidth={1}
+            borderColor="#E9ECEF"
           >
             {/* 제목 */}
-            <Text fontSize={32} fontWeight="800" color="$text" marginBottom="$2">
+            <Text
+              fontSize={32}
+              fontWeight="800"
+              color="$text"
+              marginBottom="$2"
+            >
               {asana?.sanskrit_name_kr || "아사나"}
             </Text>
             <Text
@@ -481,12 +483,12 @@ export default function AsanaDetailScreen() {
             >
               {asana?.sanskrit_name_en || ""}
             </Text>
-            
+
             {/* 산스크리트어 정보 */}
             <YStack gap="$2">
               {(asana as any)?.sanskrit_name && (
                 <XStack alignItems="center" gap="$2">
-                  <Ionicons name="language" size={16} color={COLORS.primary} />
+                  <Ionicons name="language" size={16} color="#6C5CE7" />
                   <Text fontSize={16} color="$textSecondary">
                     {(asana as any).sanskrit_name}
                   </Text>
@@ -494,7 +496,7 @@ export default function AsanaDetailScreen() {
               )}
               {(asana as any)?.sanskrit_meaning && (
                 <XStack alignItems="center" gap="$2">
-                  <Ionicons name="book" size={16} color={COLORS.primary} />
+                  <Ionicons name="book" size={16} color="#6C5CE7" />
                   <Text fontSize={16} color="$textSecondary">
                     {(asana as any).sanskrit_meaning}
                   </Text>
@@ -505,21 +507,22 @@ export default function AsanaDetailScreen() {
 
           {/* 정보 카드들 */}
           <XStack gap="$3" flexWrap="wrap">
-            {/* 난이도 카드 */}
+            {/* 난이도 카드 - 색상별 배경 */}
             <YStack
-              backgroundColor="white"
+              backgroundColor={getLevelColor(asana?.level || "1") + "15"}
               borderRadius="$4"
               padding="$4"
               flex={1}
               minWidth="45%"
-              shadowColor="#000"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-              elevation={3}
+              borderWidth={1}
+              borderColor={getLevelColor(asana?.level || "1") + "30"}
             >
               <XStack alignItems="center" gap="$2" marginBottom="$2">
-                <Ionicons name="trending-up" size={18} color={getLevelColor(asana?.level || "1")} />
+                <Ionicons
+                  name="trending-up"
+                  size={18}
+                  color={getLevelColor(asana?.level || "1")}
+                />
                 <Text fontSize={16} fontWeight="600" color="$text">
                   난이도
                 </Text>
@@ -540,21 +543,18 @@ export default function AsanaDetailScreen() {
               </Button>
             </YStack>
 
-            {/* 카테고리 카드 */}
+            {/* 카테고리 카드 - 파란색 테마 */}
             <YStack
-              backgroundColor="white"
+              backgroundColor="#E3F2FD"
               borderRadius="$4"
               padding="$4"
               flex={1}
               minWidth="45%"
-              shadowColor="#000"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-              elevation={3}
+              borderWidth={1}
+              borderColor="#BBDEFB"
             >
               <XStack alignItems="center" gap="$2" marginBottom="$2">
-                <Ionicons name="grid" size={18} color={COLORS.primary} />
+                <Ionicons name="grid" size={18} color="#1976D2" />
                 <Text fontSize={16} fontWeight="600" color="$text">
                   카테고리
                 </Text>
@@ -570,20 +570,17 @@ export default function AsanaDetailScreen() {
             </YStack>
           </XStack>
 
-          {/* 의미 카드 */}
+          {/* 의미 카드 - 노란색 테마 */}
           {asana?.asana_meaning && (
             <YStack
-              backgroundColor="white"
+              backgroundColor="#FFF8E1"
               borderRadius="$4"
               padding="$5"
-              shadowColor="#000"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-              elevation={3}
+              borderWidth={1}
+              borderColor="#FFECB3"
             >
               <XStack alignItems="center" gap="$2" marginBottom="$3">
-                <Ionicons name="bulb" size={20} color={COLORS.primary} />
+                <Ionicons name="bulb" size={20} color="#F57C00" />
                 <Text fontSize={18} fontWeight="700" color="$text">
                   의미
                 </Text>
@@ -594,20 +591,17 @@ export default function AsanaDetailScreen() {
             </YStack>
           )}
 
-          {/* 효과 카드 */}
+          {/* 효과 카드 - 핑크색 테마 */}
           {asana?.effect && (
             <YStack
-              backgroundColor="white"
+              backgroundColor="#FCE4EC"
               borderRadius="$4"
               padding="$5"
-              shadowColor="#000"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-              elevation={3}
+              borderWidth={1}
+              borderColor="#F8BBD9"
             >
               <XStack alignItems="center" gap="$2" marginBottom="$3">
-                <Ionicons name="heart" size={20} color="#FF6B6B" />
+                <Ionicons name="heart" size={20} color="#C2185B" />
                 <Text fontSize={18} fontWeight="700" color="$text">
                   효과
                 </Text>
