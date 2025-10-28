@@ -471,13 +471,13 @@ export default function AsanaDetailScreen() {
               </Text>
               <XStack
                 backgroundColor="transparent"
-                paddingHorizontal="$3"
-                paddingVertical="$1"
-                borderRadius="$2"
-                borderWidth={1}
-                borderColor={COLORS.textSecondary}
+                paddingHorizontal="$4"
+                paddingVertical="$2"
+                borderRadius="$3"
+                borderWidth={1.5}
+                borderColor="$text"
               >
-                <Text fontSize={12} fontWeight="700" color="$textSecondary">
+                <Text fontSize={14} fontWeight="800" color="$text">
                   {getLevelText(asana?.level || "1")}
                 </Text>
               </XStack>
