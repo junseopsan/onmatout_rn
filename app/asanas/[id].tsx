@@ -471,10 +471,10 @@ export default function AsanaDetailScreen() {
             {asana?.sanskrit_name_en || ""}
           </Text>
 
-          {/* 산스크리트어 발음 */}
+          {/* 산스크리트어 원문 */}
           {(asana as any)?.sanskrit_name && (
             <Text fontSize={16} color="$textSecondary" marginBottom="$2">
-              발음: {(asana as any).sanskrit_name}
+              산스크리트어: {(asana as any).sanskrit_name}
             </Text>
           )}
 
