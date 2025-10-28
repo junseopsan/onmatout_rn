@@ -229,7 +229,7 @@ export function AsanaCard({
             height="auto"
             minHeight={24}
           >
-            <Text fontSize={11} fontWeight="bold" color={categoryInfo.color}>
+            <Text fontSize={11} fontWeight="bold" color="white">
               {categoryInfo.label}
             </Text>
           </Button>
