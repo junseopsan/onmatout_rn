@@ -457,167 +457,107 @@ export default function AsanaDetailScreen() {
         </YStack>
 
         {/* 내용 영역 */}
-        <YStack padding="$4" gap="$4">
-          {/* 제목 카드 */}
-          <YStack
-            backgroundColor="white"
-            borderRadius="$4"
-            padding="$5"
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.1}
-            shadowRadius={8}
-            elevation={3}
-          >
-            <Text
-              fontSize={24}
-              fontWeight="bold"
-              color="$text"
-              marginBottom="$2"
-            >
+        <YStack padding="$6" backgroundColor={COLORS.background}>
+          {/* 제목 섹션 */}
+          <YStack marginBottom="$8">
+            <Text fontSize={32} fontWeight="800" color="$text" marginBottom="$3">
               {asana?.sanskrit_name_kr || "아사나"}
             </Text>
-            {asana?.sanskrit_name_en && (
-              <Text
-                fontSize={16}
-                color="$textSecondary"
-                fontStyle="italic"
-                marginBottom="$3"
-              >
-                {asana.sanskrit_name_en}
-              </Text>
-            )}
-
+            <Text
+              fontSize={20}
+              color="$textSecondary"
+              fontStyle="italic"
+              marginBottom="$4"
+            >
+              {asana?.sanskrit_name_en || ""}
+            </Text>
+            
             {/* 산스크리트어 정보 */}
-            <YStack gap="$2">
+            <YStack gap="$3">
               {(asana as any)?.sanskrit_name && (
-                <XStack alignItems="center" gap="$2">
-                  <Ionicons name="language" size={16} color={COLORS.primary} />
-                  <Text fontSize={14} color="$textSecondary">
+                <YStack>
+                  <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$1">
+                    산스크리트어
+                  </Text>
+                  <Text fontSize={18} color="$text" fontWeight="500">
                     {(asana as any).sanskrit_name}
                   </Text>
-                </XStack>
+                </YStack>
               )}
+              
               {(asana as any)?.sanskrit_meaning && (
-                <XStack alignItems="center" gap="$2">
-                  <Ionicons name="book" size={16} color={COLORS.primary} />
-                  <Text fontSize={14} color="$textSecondary">
+                <YStack>
+                  <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$1">
+                    의미
+                  </Text>
+                  <Text fontSize={18} color="$text" fontWeight="500">
                     {(asana as any).sanskrit_meaning}
                   </Text>
-                </XStack>
+                </YStack>
               )}
             </YStack>
           </YStack>
 
-          {/* 기본 정보 카드 */}
-          <YStack
-            backgroundColor="white"
-            borderRadius="$4"
-            padding="$5"
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.1}
-            shadowRadius={8}
-            elevation={3}
-            gap="$4"
-          >
-            {/* 난이도와 카테고리 */}
-            <XStack gap="$4" flexWrap="wrap">
-              <YStack flex={1} minWidth={120}>
-                <XStack alignItems="center" gap="$2" marginBottom="$2">
-                  <Ionicons
-                    name="trending-up"
-                    size={16}
-                    color={COLORS.primary}
-                  />
-                  <Text fontSize={14} fontWeight="600" color="$text">
-                    난이도
-                  </Text>
-                </XStack>
-                <Button
-                  backgroundColor={getLevelColor(asana?.level || "1")}
-                  paddingHorizontal="$3"
-                  paddingVertical="$2"
-                  borderRadius="$3"
-                  disabled
-                  height="auto"
-                  minHeight={28}
-                >
-                  <Text fontSize={12} fontWeight="bold" color="white">
-                    {getLevelText(asana?.level || "1")}
-                  </Text>
-                </Button>
-              </YStack>
-
-              <YStack flex={1} minWidth={120}>
-                <XStack alignItems="center" gap="$2" marginBottom="$2">
-                  <Ionicons name="grid" size={16} color={COLORS.primary} />
-                  <Text fontSize={14} fontWeight="600" color="$text">
-                    카테고리
-                  </Text>
-                </XStack>
-                <Text fontSize={14} color="$textSecondary" lineHeight={20}>
-                  {asana?.category_name_en &&
-                  asana.category_name_en !== "nan" &&
-                  asana.category_name_en !== "" &&
-                  asana.category_name_en !== null
-                    ? getCategoryLabel(asana.category_name_en)
-                    : "정보 없음"}
-                </Text>
-              </YStack>
-            </XStack>
-          </YStack>
-
-          {/* 의미 카드 */}
-          {asana?.asana_meaning && (
-            <YStack
-              backgroundColor="white"
-              borderRadius="$4"
-              padding="$5"
-              shadowColor="#000"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-              elevation={3}
-            >
-              <XStack alignItems="center" gap="$2" marginBottom="$3">
-                <Ionicons name="bulb" size={18} color={COLORS.primary} />
-                <Text fontSize={16} fontWeight="600" color="$text">
-                  의미
+          {/* 레벨과 카테고리 */}
+          <XStack gap="$4" marginBottom="$8">
+            <YStack flex={1}>
+              <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
+                난이도
+              </Text>
+              <XStack
+                backgroundColor={getLevelColor(asana?.level || "1")}
+                paddingHorizontal="$4"
+                paddingVertical="$2"
+                borderRadius="$3"
+                alignSelf="flex-start"
+              >
+                <Text fontSize={14} fontWeight="700" color="white">
+                  {getLevelText(asana?.level || "1")}
                 </Text>
               </XStack>
-              <Text fontSize={15} color="$textSecondary" lineHeight={22}>
+            </YStack>
+            
+            <YStack flex={1}>
+              <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
+                카테고리
+              </Text>
+              <Text fontSize={16} color="$text" fontWeight="500">
+                {asana?.category_name_en &&
+                asana.category_name_en !== "nan" &&
+                asana.category_name_en !== "" &&
+                asana.category_name_en !== null
+                  ? getCategoryLabel(asana.category_name_en)
+                  : "정보 없음"}
+              </Text>
+            </YStack>
+          </XStack>
+
+          {/* 아사나 의미 */}
+          {asana?.asana_meaning && (
+            <YStack marginBottom="$8">
+              <Text fontSize={20} fontWeight="700" color="$text" marginBottom="$4">
+                아사나 의미
+              </Text>
+              <Text fontSize={16} color="$textSecondary" lineHeight={26}>
                 {asana.asana_meaning}
               </Text>
             </YStack>
           )}
 
-          {/* 효과 카드 */}
+          {/* 효과 */}
           {asana?.effect && (
-            <YStack
-              backgroundColor="white"
-              borderRadius="$4"
-              padding="$5"
-              shadowColor="#000"
-              shadowOffset={{ width: 0, height: 2 }}
-              shadowOpacity={0.1}
-              shadowRadius={8}
-              elevation={3}
-            >
-              <XStack alignItems="center" gap="$2" marginBottom="$3">
-                <Ionicons name="heart" size={18} color={COLORS.primary} />
-                <Text fontSize={16} fontWeight="600" color="$text">
-                  효과
-                </Text>
-              </XStack>
-              <Text fontSize={15} color="$textSecondary" lineHeight={22}>
+            <YStack marginBottom="$8">
+              <Text fontSize={20} fontWeight="700" color="$text" marginBottom="$4">
+                효과
+              </Text>
+              <Text fontSize={16} color="$textSecondary" lineHeight={26}>
                 {asana.effect}
               </Text>
             </YStack>
           )}
 
           {/* 하단 여백 */}
-          <YStack height={20} />
+          <YStack height={60} />
         </YStack>
       </ScrollView>
     </View>
