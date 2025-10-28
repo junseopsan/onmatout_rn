@@ -11,8 +11,8 @@ INSERT INTO auth.users (
     phone_confirmed_at
 ) VALUES (
     '00000000-0000-0000-0000-000000000001',
-    'test@example.com',
-    '+821000000000',
+    'test@hillyheally.com',
+    '821000000000',
     NOW(),
     NOW(),
     NOW(),
@@ -34,7 +34,7 @@ INSERT INTO user_profiles (
 ) VALUES (
     '00000000-0000-0000-0000-000000000001',
     '테스트 사용자',
-    '01000000000',
+    '821000000000',
     true,
     false,
     true,
