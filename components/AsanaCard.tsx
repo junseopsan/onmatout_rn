@@ -218,7 +218,9 @@ export function AsanaCard({
 
           {/* 카테고리 배지를 우측 끝에 배치 */}
           <Button
-            backgroundColor={categoryInfo.color}
+            backgroundColor="transparent"
+            borderWidth={1}
+            borderColor={categoryInfo.color}
             paddingHorizontal="$2"
             paddingVertical="$1"
             borderRadius="$5"
@@ -227,7 +229,7 @@ export function AsanaCard({
             height="auto"
             minHeight={24}
           >
-            <Text fontSize={11} fontWeight="bold" color="white">
+            <Text fontSize={11} fontWeight="bold" color={categoryInfo.color}>
               {categoryInfo.label}
             </Text>
           </Button>
