@@ -466,23 +466,25 @@ export default function AsanaDetailScreen() {
               alignItems="center"
               marginBottom="$3"
             >
-              <Text fontSize={32} fontWeight="800" color="$text" flex={1}>
+              <Text fontSize={26} fontWeight="800" color="$text" flex={1}>
                 {asana?.sanskrit_name_kr || "아사나"}
               </Text>
               <XStack
-                backgroundColor={getLevelColor(asana?.level || "1")}
+                backgroundColor="transparent"
                 paddingHorizontal="$3"
                 paddingVertical="$1"
                 borderRadius="$2"
+                borderWidth={1}
+                borderColor={COLORS.textSecondary}
               >
-                <Text fontSize={12} fontWeight="700" color="white">
+                <Text fontSize={12} fontWeight="700" color="$textSecondary">
                   {getLevelText(asana?.level || "1")}
                 </Text>
               </XStack>
             </XStack>
 
             <Text
-              fontSize={20}
+              fontSize={18}
               color="$textSecondary"
               fontStyle="italic"
               marginBottom="$8"
@@ -523,7 +525,7 @@ export default function AsanaDetailScreen() {
                   >
                     산스크리트어
                   </Text>
-                  <Text fontSize={16} color="$text" fontWeight="500">
+                  <Text fontSize={20} color="$text" fontWeight="500">
                     {(asana as any).sanskrit_name}
                   </Text>
                 </YStack>
