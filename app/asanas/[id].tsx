@@ -469,15 +469,25 @@ export default function AsanaDetailScreen() {
             shadowRadius={8}
             elevation={3}
           >
-            <Text fontSize={24} fontWeight="bold" color="$text" marginBottom="$2">
+            <Text
+              fontSize={24}
+              fontWeight="bold"
+              color="$text"
+              marginBottom="$2"
+            >
               {asana?.sanskrit_name_kr || "아사나"}
             </Text>
             {asana?.sanskrit_name_en && (
-              <Text fontSize={16} color="$textSecondary" fontStyle="italic" marginBottom="$3">
+              <Text
+                fontSize={16}
+                color="$textSecondary"
+                fontStyle="italic"
+                marginBottom="$3"
+              >
                 {asana.sanskrit_name_en}
               </Text>
             )}
-            
+
             {/* 산스크리트어 정보 */}
             <YStack gap="$2">
               {(asana as any)?.sanskrit_name && (
@@ -515,7 +525,11 @@ export default function AsanaDetailScreen() {
             <XStack gap="$4" flexWrap="wrap">
               <YStack flex={1} minWidth={120}>
                 <XStack alignItems="center" gap="$2" marginBottom="$2">
-                  <Ionicons name="trending-up" size={16} color={COLORS.primary} />
+                  <Ionicons
+                    name="trending-up"
+                    size={16}
+                    color={COLORS.primary}
+                  />
                   <Text fontSize={14} fontWeight="600" color="$text">
                     난이도
                   </Text>
