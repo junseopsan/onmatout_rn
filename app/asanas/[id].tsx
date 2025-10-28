@@ -487,20 +487,14 @@ export default function AsanaDetailScreen() {
             {/* 산스크리트어 정보 */}
             <YStack gap="$2">
               {(asana as any)?.sanskrit_name && (
-                <XStack alignItems="center" gap="$2">
-                  <Ionicons name="language" size={16} color="#6C5CE7" />
-                  <Text fontSize={16} color="$textSecondary">
-                    {(asana as any).sanskrit_name}
-                  </Text>
-                </XStack>
+                <Text fontSize={16} color="$textSecondary">
+                  {(asana as any).sanskrit_name}
+                </Text>
               )}
               {(asana as any)?.sanskrit_meaning && (
-                <XStack alignItems="center" gap="$2">
-                  <Ionicons name="book" size={16} color="#6C5CE7" />
-                  <Text fontSize={16} color="$textSecondary">
-                    {(asana as any).sanskrit_meaning}
-                  </Text>
-                </XStack>
+                <Text fontSize={16} color="$textSecondary">
+                  {(asana as any).sanskrit_meaning}
+                </Text>
               )}
             </YStack>
           </YStack>
@@ -517,16 +511,9 @@ export default function AsanaDetailScreen() {
               borderWidth={1}
               borderColor={getLevelColor(asana?.level || "1") + "30"}
             >
-              <XStack alignItems="center" gap="$2" marginBottom="$2">
-                <Ionicons
-                  name="trending-up"
-                  size={18}
-                  color={getLevelColor(asana?.level || "1")}
-                />
-                <Text fontSize={16} fontWeight="600" color="$text">
-                  난이도
-                </Text>
-              </XStack>
+              <Text fontSize={16} fontWeight="600" color="$text" marginBottom="$2">
+                난이도
+              </Text>
               <Button
                 backgroundColor={getLevelColor(asana?.level || "1")}
                 alignSelf="flex-start"
@@ -553,12 +540,9 @@ export default function AsanaDetailScreen() {
               borderWidth={1}
               borderColor="#BBDEFB"
             >
-              <XStack alignItems="center" gap="$2" marginBottom="$2">
-                <Ionicons name="grid" size={18} color="#1976D2" />
-                <Text fontSize={16} fontWeight="600" color="$text">
-                  카테고리
-                </Text>
-              </XStack>
+              <Text fontSize={16} fontWeight="600" color="$text" marginBottom="$2">
+                카테고리
+              </Text>
               <Text fontSize={14} color="$textSecondary" lineHeight={20}>
                 {asana?.category_name_en &&
                 asana.category_name_en !== "nan" &&
@@ -579,12 +563,9 @@ export default function AsanaDetailScreen() {
               borderWidth={1}
               borderColor="#FFECB3"
             >
-              <XStack alignItems="center" gap="$2" marginBottom="$3">
-                <Ionicons name="bulb" size={20} color="#F57C00" />
-                <Text fontSize={18} fontWeight="700" color="$text">
-                  의미
-                </Text>
-              </XStack>
+              <Text fontSize={18} fontWeight="700" color="$text" marginBottom="$3">
+                의미
+              </Text>
               <Text fontSize={16} color="$textSecondary" lineHeight={24}>
                 {asana.asana_meaning}
               </Text>
@@ -600,12 +581,9 @@ export default function AsanaDetailScreen() {
               borderWidth={1}
               borderColor="#F8BBD9"
             >
-              <XStack alignItems="center" gap="$2" marginBottom="$3">
-                <Ionicons name="heart" size={20} color="#C2185B" />
-                <Text fontSize={18} fontWeight="700" color="$text">
-                  효과
-                </Text>
-              </XStack>
+              <Text fontSize={18} fontWeight="700" color="$text" marginBottom="$3">
+                효과
+              </Text>
               <Text fontSize={16} color="$textSecondary" lineHeight={24}>
                 {asana.effect}
               </Text>
