@@ -485,15 +485,36 @@ export default function AsanaDetailScreen() {
               fontSize={20}
               color="$textSecondary"
               fontStyle="italic"
-              marginBottom="$4"
+              marginBottom="$8"
             >
               {asana?.sanskrit_name_en || ""}
             </Text>
 
-            {/* 산스크리트어와 의미 */}
-            <XStack gap="$4" marginBottom="$8">
+            {/* 정보 섹션 */}
+            <YStack gap="$6" marginBottom="$8">
+              {/* 카테고리 */}
+              <YStack>
+                <Text
+                  fontSize={14}
+                  fontWeight="600"
+                  color="$textSecondary"
+                  marginBottom="$2"
+                >
+                  카테고리
+                </Text>
+                <Text fontSize={16} color="$text" fontWeight="500">
+                  {asana?.category_name_en &&
+                  asana.category_name_en !== "nan" &&
+                  asana.category_name_en !== "" &&
+                  asana.category_name_en !== null
+                    ? getCategoryLabel(asana.category_name_en)
+                    : "정보 없음"}
+                </Text>
+              </YStack>
+
+              {/* 산스크리트어 */}
               {(asana as any)?.sanskrit_name && (
-                <YStack flex={1}>
+                <YStack>
                   <Text
                     fontSize={14}
                     fontWeight="600"
@@ -508,55 +529,24 @@ export default function AsanaDetailScreen() {
                 </YStack>
               )}
 
-              {(asana as any)?.sanskrit_meaning && (
-                <YStack flex={1}>
+              {/* 아사나 의미 */}
+              {asana?.asana_meaning && (
+                <YStack>
                   <Text
                     fontSize={14}
                     fontWeight="600"
                     color="$textSecondary"
                     marginBottom="$2"
                   >
-                    의미
+                    아사나 의미
                   </Text>
                   <Text fontSize={16} color="$text" fontWeight="500">
-                    {(asana as any).sanskrit_meaning}
+                    {asana.asana_meaning}
                   </Text>
                 </YStack>
               )}
-            </XStack>
-
-            {/* 카테고리 */}
-            <YStack marginBottom="$8">
-              <Text
-                fontSize={14}
-                fontWeight="600"
-                color="$textSecondary"
-                marginBottom="$2"
-              >
-                카테고리
-              </Text>
-              <Text fontSize={16} color="$text" fontWeight="500">
-                {asana?.category_name_en &&
-                asana.category_name_en !== "nan" &&
-                asana.category_name_en !== "" &&
-                asana.category_name_en !== null
-                  ? getCategoryLabel(asana.category_name_en)
-                  : "정보 없음"}
-              </Text>
             </YStack>
           </YStack>
-
-          {/* 아사나 의미 */}
-          {asana?.asana_meaning && (
-            <YStack marginBottom="$8">
-              <Text fontSize={14} fontWeight="600" color="$textSecondary" marginBottom="$2">
-                아사나 의미
-              </Text>
-              <Text fontSize={16} color="$text" fontWeight="500">
-                {asana.asana_meaning}
-              </Text>
-            </YStack>
-          )}
 
           {/* 효과 */}
           {asana?.effect && (
