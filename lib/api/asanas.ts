@@ -64,15 +64,27 @@ export const asanasAPI = {
     message?: string;
   }> => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      // 현재 세션 확인
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("세션 확인 에러:", sessionError);
+        return {
+          success: false,
+          message: "세션 확인 중 오류가 발생했습니다.",
+        };
+      }
+
+      if (!session?.user) {
+        console.log("사용자 세션이 없음");
         return {
           success: false,
           message: "사용자 인증이 필요합니다.",
         };
       }
+
+      const user = session.user;
+      console.log("사용자 ID:", user.id);
 
       // 기존 즐겨찾기 확인
       const { data: existingFavorite } = await supabase
