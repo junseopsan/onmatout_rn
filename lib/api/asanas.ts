@@ -86,7 +86,7 @@ export const asanasAPI = {
       const { data: existingFavorite } = await supabase
         .from("user_favorite_asanas")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", user_id)
         .eq("asana_id", asanaId)
         .single();
 
@@ -95,7 +95,7 @@ export const asanasAPI = {
         const { error } = await supabase
           .from("user_favorite_asanas")
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", user_id)
           .eq("asana_id", asanaId);
 
         if (error) {
@@ -112,7 +112,7 @@ export const asanasAPI = {
       } else {
         // 즐겨찾기 추가
         const { error } = await supabase.from("user_favorite_asanas").insert({
-          user_id: user.id,
+          user_id: user_id,
           asana_id: asanaId,
         });
 
