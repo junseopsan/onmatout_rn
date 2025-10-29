@@ -67,8 +67,8 @@ export const useAuth = () => {
     };
   }, []); // 빈 의존성 배열로 한 번만 실행
 
-  // 세션이 있을 때만 인증된 것으로 판단 (RLS 호환)
-  const isAuthenticated = !!session;
+  // 사용자 정보가 있으면 인증된 것으로 판단 (세션 없이도 허용)
+  const isAuthenticated = !!user;
 
   return {
     // State

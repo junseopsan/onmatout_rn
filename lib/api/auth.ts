@@ -192,43 +192,21 @@ export const authAPI = {
 
           if (existingProfiles && existingProfiles.length > 0) {
             console.log("기존 사용자 발견:", existingProfiles[0]);
-            
-            // 기존 사용자가 있으면 익명 로그인으로 세션 생성
-            console.log("익명 로그인으로 세션 생성 시작");
-            const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-            
-            if (anonError) {
-              console.log("익명 로그인 실패:", anonError);
-              return {
-                success: false,
-                message: "로그인 세션 생성에 실패했습니다.",
-              };
-            }
-            
-            console.log("익명 로그인 성공:", anonData.user?.id);
-            
-            // 익명 사용자와 기존 사용자 연결 (user_profiles 업데이트)
-            try {
-              await supabase
-                .from("user_profiles")
-                .update({ user_id: anonData.user!.id })
-                .eq("user_id", existingProfiles[0].user_id);
-              console.log("사용자 연결 완료");
-            } catch (linkError) {
-              console.log("사용자 연결 실패:", linkError);
-            }
+
+            // 기존 사용자가 있으면 로그인 성공 (세션 없이)
+            console.log("기존 사용자 로그인 성공 (세션 없음)");
             
             return {
               success: true,
               message: "인증이 완료되었습니다.",
               data: {
                 user: {
-                  id: anonData.user!.id,
+                  id: existingProfiles[0].user_id,
                   phone: credentials.phone,
                   profile: existingProfiles[0],
-                  created_at: anonData.user!.created_at,
+                  created_at: new Date().toISOString(),
                 },
-                session: anonData.session,
+                session: null, // 세션 없이 로그인 성공
               },
             };
           }
