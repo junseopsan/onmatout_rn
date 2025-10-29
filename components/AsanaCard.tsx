@@ -37,17 +37,23 @@ export function AsanaCard({
 
     if (isLoading) return;
 
+    console.log("즐겨찾기 토글 시작:", asana.id, "현재 상태:", favorite);
     setIsLoading(true);
 
     try {
       const result = await asanasAPI.toggleFavorite(asana.id);
+      console.log("즐겨찾기 API 결과:", result);
 
       if (result.success) {
         const newFavoriteState = !favorite;
         setFavorite(newFavoriteState);
+        console.log("즐겨찾기 상태 변경:", newFavoriteState);
         onFavoriteToggle?.(asana.id, newFavoriteState);
+      } else {
+        console.error("즐겨찾기 토글 실패:", result.message);
       }
     } catch (error) {
+      console.error("즐겨찾기 토글 에러:", error);
     } finally {
       setIsLoading(false);
     }
