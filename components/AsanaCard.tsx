@@ -126,80 +126,38 @@ export function AsanaCard({
           </YStack>
         )}
 
-        {/* 즐겨찾기 버튼 */}
-        {showFavoriteIndicator && onFavoriteToggle && (
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: "transparent",
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
-              elevation: 5,
-            }}
-            onPress={handleFavoriteToggle}
-            disabled={isLoading}
+        {/* 카테고리 배지를 이미지 영역 좌측 상단에 배치 */}
+        <View
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+            elevation: 5,
+          }}
+        >
+          <Button
+            backgroundColor={categoryInfo.color}
+            paddingHorizontal="$2"
+            paddingVertical="$1"
+            borderRadius="$5"
+            disabled
+            height="auto"
+            minHeight={24}
           >
-            <Text
-              style={{
-                fontSize: 16,
-                color: favorite ? "#FF6B6B" : "#FFFFFF",
-                textShadowColor: "rgba(0, 0, 0, 0.8)",
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 2,
-              }}
-            >
-              {favorite ? "♥" : "♡"}
+            <Text fontSize={11} fontWeight="bold" color="white">
+              {categoryInfo.label}
             </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* 즐겨찾기 표시 (읽기 전용) */}
-        {showFavoriteIndicator && !onFavoriteToggle && (
-          <View
-            style={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: "transparent",
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
-              elevation: 5,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                color: "#FF6B6B",
-                textShadowColor: "rgba(0, 0, 0, 0.8)",
-                textShadowOffset: { width: 1, height: 1 },
-                textShadowRadius: 2,
-              }}
-            >
-              ♥
-            </Text>
-          </View>
-        )}
+          </Button>
+        </View>
       </YStack>
 
       {/* 내용 영역 */}
       <YStack padding="$3" paddingTop="$3.5">
-        {/* 한국어 이름과 카테고리를 한 행에 배치 */}
+        {/* 한국어 이름과 즐겨찾기 버튼을 한 행에 배치 */}
         <XStack
           justifyContent="space-between"
           alignItems="center"
@@ -211,26 +169,60 @@ export function AsanaCard({
             color="$text"
             flex={1}
             marginRight="$2"
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {asana.sanskrit_name_kr}
           </Text>
 
-          {/* 카테고리 배지를 우측 끝에 배치 */}
-          <Button
-            backgroundColor={categoryInfo.color}
-            paddingHorizontal="$2"
-            paddingVertical="$1"
-            borderRadius="$5"
-            marginLeft="$2"
-            disabled
-            height="auto"
-            minHeight={24}
-          >
-            <Text fontSize={11} fontWeight="bold" color="white">
-              {categoryInfo.label}
-            </Text>
-          </Button>
+          {/* 즐겨찾기 버튼을 우측 끝에 배치 */}
+          {showFavoriteIndicator && onFavoriteToggle && (
+            <TouchableOpacity
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: "transparent",
+                justifyContent: "center",
+                alignItems: "center",
+                marginLeft: 8,
+              }}
+              onPress={handleFavoriteToggle}
+              disabled={isLoading}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: favorite ? "#FF6B6B" : "#B0B0B0",
+                }}
+              >
+                {favorite ? "♥" : "♡"}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* 즐겨찾기 표시 (읽기 전용) */}
+          {showFavoriteIndicator && !onFavoriteToggle && (
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: "transparent",
+                justifyContent: "center",
+                alignItems: "center",
+                marginLeft: 8,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#FF6B6B",
+                }}
+              >
+                ♥
+              </Text>
+            </View>
+          )}
         </XStack>
 
         {/* 영어 이름은 별도 행에 배치 */}
