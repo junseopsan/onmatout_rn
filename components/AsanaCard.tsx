@@ -156,7 +156,7 @@ export function AsanaCard({
       </YStack>
 
       {/* 내용 영역 */}
-      <YStack padding="$3" paddingTop="$3.5">
+      <YStack padding="$3" paddingTop="$2">
         {/* 한국어 이름과 즐겨찾기 버튼을 한 행에 배치 */}
         <XStack
           justifyContent="space-between"
