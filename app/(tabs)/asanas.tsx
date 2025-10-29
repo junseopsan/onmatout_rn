@@ -219,9 +219,7 @@ export default function AsanasScreen() {
     if (!hasNextPage && allAsanas.length > 0) {
       return (
         <View style={styles.endOfListContainer}>
-          <Text style={styles.endOfListText}>
-            모든 아사나를 불러왔습니다
-          </Text>
+          <Text style={styles.endOfListText}>모든 아사나를 불러왔습니다</Text>
         </View>
       );
     }
@@ -437,7 +435,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16, // 좌우 여백 추가
-    paddingBottom: 120, // 탭바 높이 + 여백 증가
+    paddingBottom: 200, // 탭바 높이 + 여백 증가 (마지막 카드가 잘리지 않도록 충분한 여백)
   },
   row: {
     justifyContent: "space-between",
