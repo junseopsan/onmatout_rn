@@ -130,8 +130,8 @@ export function AsanaCard({
         <View
           style={{
             position: "absolute",
-            top: 8,
-            left: 8,
+            top: 0,
+            left: 0,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.3,
@@ -143,7 +143,11 @@ export function AsanaCard({
             backgroundColor={categoryInfo.color}
             paddingHorizontal="$2"
             paddingVertical="$1"
-            borderRadius="$5"
+            borderRadius={0}
+            borderTopLeftRadius={0}
+            borderTopRightRadius={8}
+            borderBottomLeftRadius={0}
+            borderBottomRightRadius={8}
             disabled
             height="auto"
             minHeight={24}
@@ -156,7 +160,7 @@ export function AsanaCard({
       </YStack>
 
       {/* 내용 영역 */}
-      <YStack padding="$3" paddingTop="$2">
+      <YStack padding="$3" paddingTop="$1">
         {/* 한국어 이름과 즐겨찾기 버튼을 한 행에 배치 */}
         <XStack
           justifyContent="space-between"
@@ -164,7 +168,7 @@ export function AsanaCard({
           marginBottom="$1"
         >
           <Text
-            fontSize={12}
+            fontSize={14}
             fontWeight="bold"
             color="$text"
             flex={1}
