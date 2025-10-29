@@ -99,9 +99,10 @@ export const asanasAPI = {
           .eq("asana_id", asanaId);
 
         if (error) {
+          console.error("즐겨찾기 제거 에러:", error);
           return {
             success: false,
-            message: "즐겨찾기 제거에 실패했습니다.",
+            message: `즐겨찾기 제거에 실패했습니다: ${error.message}`,
           };
         }
 
@@ -117,9 +118,10 @@ export const asanasAPI = {
         });
 
         if (error) {
+          console.error("즐겨찾기 추가 에러:", error);
           return {
             success: false,
-            message: "즐겨찾기 추가에 실패했습니다.",
+            message: `즐겨찾기 추가에 실패했습니다: ${error.message}`,
           };
         }
 
