@@ -58,33 +58,29 @@ export const asanasAPI = {
 
   // 즐겨찾기 추가/제거
   toggleFavorite: async (
-    asanaId: string
+    asanaId: string,
+    userId?: string
   ): Promise<{
     success: boolean;
     message?: string;
   }> => {
     try {
-      // 현재 세션 확인
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("세션 확인 에러:", sessionError);
-        return {
-          success: false,
-          message: "세션 확인 중 오류가 발생했습니다.",
-        };
+      // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
+      let user_id = userId;
+      if (!user_id) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          return {
+            success: false,
+            message: "사용자 인증이 필요합니다.",
+          };
+        }
+        user_id = user.id;
       }
 
-      if (!session?.user) {
-        console.log("사용자 세션이 없음");
-        return {
-          success: false,
-          message: "사용자 인증이 필요합니다.",
-        };
-      }
-
-      const user = session.user;
-      console.log("사용자 ID:", user.id);
+      console.log("사용자 ID:", user_id);
 
       // 기존 즐겨찾기 확인
       const { data: existingFavorite } = await supabase
@@ -265,7 +261,6 @@ export const asanasAPI = {
         }개, 전체 ${count}개, 더 있음: ${hasMore}`
       );
 
-
       return {
         success: true,
         data: data || [],
@@ -287,7 +282,6 @@ export const asanasAPI = {
     message?: string;
   }> => {
     try {
-
       const { data, error } = await supabase
         .from("asanas")
         .select("*")
@@ -299,7 +293,6 @@ export const asanasAPI = {
           message: error.message || "아사나 데이터를 가져오는데 실패했습니다.",
         };
       }
-
 
       return {
         success: true,
@@ -318,7 +311,6 @@ export const asanasAPI = {
     category: string
   ): Promise<{ success: boolean; data?: Asana[]; message?: string }> => {
     try {
-
       const { data, error } = await supabase
         .from("asanas")
         .select("*")
@@ -351,7 +343,6 @@ export const asanasAPI = {
     level: string
   ): Promise<{ success: boolean; data?: Asana[]; message?: string }> => {
     try {
-
       const { data, error } = await supabase
         .from("asanas")
         .select("*")

@@ -14,6 +14,7 @@ interface AsanaCardProps {
   onFavoriteToggle?: (asanaId: string, isFavorite: boolean) => void;
   showFavoriteIndicator?: boolean; // 즐겨찾기 표시 여부
   compact?: boolean; // 컴팩트 모드 (대시보드용)
+  userId?: string; // 사용자 ID 추가
 }
 
 export function AsanaCard({
@@ -23,6 +24,7 @@ export function AsanaCard({
   onFavoriteToggle,
   showFavoriteIndicator = true,
   compact = false,
+  userId,
 }: AsanaCardProps) {
   const [favorite, setFavorite] = useState(isFavorite);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +43,7 @@ export function AsanaCard({
     setIsLoading(true);
 
     try {
-      const result = await asanasAPI.toggleFavorite(asana.id);
+      const result = await asanasAPI.toggleFavorite(asana.id, userId);
       console.log("즐겨찾기 API 결과:", result);
 
       if (result.success) {

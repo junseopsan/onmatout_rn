@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,7 +20,6 @@ import { CATEGORIES } from "../../constants/categories";
 import { useAsanas, useAsanaSearch } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFavoriteAsanasDetail } from "../../hooks/useDashboard";
-import { useQueryClient } from "@tanstack/react-query";
 import { RootStackParamList } from "../../navigation/types";
 import { AsanaCategory } from "../../types/asana";
 
@@ -29,7 +29,7 @@ const cardWidth = (screenWidth - 32 - 24) / 2; // 32 = 좌우 패딩, 24 = 카�
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AsanasScreen() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -115,12 +115,12 @@ export default function AsanasScreen() {
   const handleFavoriteToggle = (asanaId: string, isFavorite: boolean) => {
     // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
     console.log("즐겨찾기 토글:", asanaId, isFavorite);
-    
+
     // 즐겨찾기 관련 쿼리 캐시 무효화
     queryClient.invalidateQueries({
       queryKey: ["favoriteAsanas"],
     });
-    
+
     // 즐겨찾기 모드가 활성화된 경우 아사나 목록도 새로고침
     if (showFavoritesOnly) {
       queryClient.invalidateQueries({
@@ -216,6 +216,7 @@ export default function AsanasScreen() {
           onPress={handleAsanaPress}
           isFavorite={isFavorite}
           onFavoriteToggle={isAuthenticated ? handleFavoriteToggle : undefined}
+          userId={user?.id}
         />
       </View>
     );
