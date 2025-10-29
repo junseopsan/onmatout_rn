@@ -164,12 +164,12 @@ export function AsanaCard({
           marginBottom="$1"
         >
           <Text
-            fontSize={16}
+            fontSize={12}
             fontWeight="bold"
             color="$text"
             flex={1}
             marginRight="$2"
-            numberOfLines={2}
+            numberOfLines={1}
           >
             {asana.sanskrit_name_kr}
           </Text>
