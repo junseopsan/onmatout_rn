@@ -240,6 +240,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       // 타임아웃과 함께 실행
       await Promise.race([initPromise, timeoutPromise]);
+
+      // 인증 상태 구독으로 세션/유저 자동 동기화 (앱 생명주기 동안 1회 설정)
+      const { data } = supabase.auth.onAuthStateChange(
+        async (_event, session) => {
+          try {
+            const nextUser = session?.user ?? null;
+            set({ session: session ?? null, user: (nextUser as any) ?? null });
+
+            // 로컬에도 보존
+            if (nextUser) {
+              await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+            } else {
+              await AsyncStorage.removeItem("user");
+            }
+
+            if (session) {
+              await AsyncStorage.setItem("session", JSON.stringify(session));
+            } else {
+              await AsyncStorage.removeItem("session");
+            }
+          } catch (e) {
+            console.log("auth state sync 실패:", e);
+          }
+        }
+      );
+
+      // 구독 핸들을 상태에 들고 있지 않으므로, 프로세스 생존 동안 유지됨
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "인증 초기화 실패",
@@ -391,62 +418,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             console.log("getCurrentUser 결과:", user);
           }
 
-          // 네이버 SMS 인증의 경우 사용자 정보만 있어도 성공으로 처리
-          if (user) {
-            console.log("사용자 정보 있음, 네이버 SMS 인증 성공으로 처리");
-
-            // 사용자 정보를 로컬 스토리지에 저장
-            try {
-              await AsyncStorage.setItem("user", JSON.stringify(user));
-              if (session) {
-                await AsyncStorage.setItem("session", JSON.stringify(session));
-              }
-              console.log("사용자 정보 로컬 스토리지에 저장 완료");
-            } catch (storageError) {
-              console.log("로컬 스토리지 저장 실패:", storageError);
-            }
-
-            set({
-              user: user as any,
-              session: session || null, // 세션이 없어도 사용자 정보가 있으면 성공
-            });
-
-            // 사용자 프로필 확인 (닉네임 존재 여부 체크)
-            try {
-              const userProfile = await get().getUserProfile();
-              console.log("사용자 프로필 확인:", userProfile);
-
-              if (
-                userProfile &&
-                userProfile.name &&
-                userProfile.name.trim() !== "" &&
-                userProfile.name !== "null"
-              ) {
-                console.log("닉네임 있음 - 대시보드로 이동");
-                // 닉네임이 있으면 사용자 정보에 프로필 추가
-                set({
-                  user: { ...user, profile: userProfile } as any,
-                  session: session || null,
-                });
-              } else {
-                console.log("닉네임 없음 - 닉네임 설정 화면으로 이동");
-                // 닉네임이 없으면 프로필 없이 설정
-                set({
-                  user: { ...user, profile: null } as any,
-                  session: session || null,
-                });
-              }
-            } catch (profileError) {
-              // 프로필 확인 실패 시 닉네임 없음으로 처리
-              set({
-                user: { ...user, profile: null } as any,
-                session: session || null,
-              });
-            }
-
-            // 마지막에 loading 상태를 false로 설정
+          // 세션이 없으면 인증 실패 처리 (로그인 화면으로 유도)
+          if (!session) {
+            console.log("세션 없음 - 인증 실패 처리");
             set({ loading: false });
-            return true;
+            return false;
           } else if (session) {
             console.log("세션 있음, 사용자 정보 확인");
 
