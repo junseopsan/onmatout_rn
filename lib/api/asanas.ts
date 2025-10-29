@@ -81,6 +81,7 @@ export const asanasAPI = {
       }
 
       console.log("사용자 ID:", user_id);
+      console.log("auth.uid():", (await supabase.auth.getUser()).data.user?.id);
 
       // 기존 즐겨찾기 확인
       const { data: existingFavorite } = await supabase
