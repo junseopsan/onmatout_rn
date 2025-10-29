@@ -151,45 +151,32 @@ export const authAPI = {
           const normalizedPhone = credentials.phone.replace(/[^0-9]/g, "");
           console.log("정규화된 전화번호:", normalizedPhone);
 
-          // 먼저 정확한 전화번호로 조회 (+ 기호 포함)
-          let { data: existingProfiles, error: profileError } = await supabase
-            .from("user_profiles")
-            .select("*")
-            .eq("phone", credentials.phone)
-            .limit(1);
+          // RPC로 전화번호 존재 여부 조회 (RLS 안전)
+          console.log("RPC로 전화번호 존재 여부 조회:", normalizedPhone);
+          const { data: rpcData, error: rpcError } = await supabase.rpc(
+            "get_user_by_phone",
+            { p_phone: normalizedPhone }
+          );
 
-          // + 기호 포함 조회가 실패하면 숫자만으로 조회
-          if (!existingProfiles || existingProfiles.length === 0) {
-            console.log("+ 기호 포함 조회 실패, 숫자만으로 재조회");
-            const { data: profilesWithoutPlus } = await supabase
-              .from("user_profiles")
-              .select("*")
-              .eq("phone", normalizedPhone)
-              .limit(1);
+          console.log("RPC 조회 결과:", { rpcData, rpcError });
 
-            if (profilesWithoutPlus && profilesWithoutPlus.length > 0) {
-              existingProfiles = profilesWithoutPlus;
-              console.log("숫자만으로 조회 성공:", existingProfiles);
-            }
-          }
+          let existingProfiles = null;
+          let profileError = null;
 
-          // 정확한 조회가 실패하면 RLS 정책 문제일 수 있음
-          if (!existingProfiles || existingProfiles.length === 0) {
-            console.log("user_profiles 조회 실패 - RLS 정책 문제일 수 있음");
-            console.log("기존 사용자 수동 매칭 시도");
-
-            // 알려진 기존 사용자 ID로 직접 조회
-            const knownUserId = "260d9314-3fa8-472f-8250-32ef3a9dc7fc";
-            const { data: knownUserProfile } = await supabase
-              .from("user_profiles")
-              .select("*")
-              .eq("user_id", knownUserId)
-              .single();
-
-            if (knownUserProfile) {
-              console.log("알려진 사용자 프로필 조회 성공:", knownUserProfile);
-              existingProfiles = [knownUserProfile];
-            }
+          if (rpcError) {
+            console.log("RPC 조회 실패:", rpcError);
+            profileError = rpcError;
+          } else if (rpcData && rpcData.length > 0) {
+            console.log("RPC로 기존 사용자 발견:", rpcData[0]);
+            // RPC 결과를 기존 형식에 맞게 변환
+            existingProfiles = [{
+              user_id: rpcData[0].user_id,
+              phone: rpcData[0].phone,
+              // 필요한 다른 필드들은 별도로 조회하거나 기본값 사용
+            }];
+          } else {
+            console.log("RPC로 기존 사용자 없음 확인");
+            existingProfiles = [];
           }
 
           console.log("사용자 프로필 조회 결과:", {
