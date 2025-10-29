@@ -19,6 +19,7 @@ import { CATEGORIES } from "../../constants/categories";
 import { useAsanas, useAsanaSearch } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFavoriteAsanasDetail } from "../../hooks/useDashboard";
+import { useQueryClient } from "@tanstack/react-query";
 import { RootStackParamList } from "../../navigation/types";
 import { AsanaCategory } from "../../types/asana";
 
@@ -30,6 +31,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function AsanasScreen() {
   const { isAuthenticated, loading } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<AsanaCategory[]>(
     []
@@ -111,9 +113,20 @@ export default function AsanasScreen() {
   };
 
   const handleFavoriteToggle = (asanaId: string, isFavorite: boolean) => {
-    // 즐겨찾기 토글 로직은 API 호출로 처리
-    // TODO: 즐겨찾기 API 호출 및 캐시 무효화
+    // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
     console.log("즐겨찾기 토글:", asanaId, isFavorite);
+    
+    // 즐겨찾기 관련 쿼리 캐시 무효화
+    queryClient.invalidateQueries({
+      queryKey: ["favoriteAsanas"],
+    });
+    
+    // 즐겨찾기 모드가 활성화된 경우 아사나 목록도 새로고침
+    if (showFavoritesOnly) {
+      queryClient.invalidateQueries({
+        queryKey: ["asanas"],
+      });
+    }
   };
 
   // 즐겨찾기 필터 토글
@@ -217,11 +230,7 @@ export default function AsanasScreen() {
   const renderFooter = () => {
     // 더 이상 로드할 데이터가 없고, 현재 데이터가 있는 경우
     if (!hasNextPage && allAsanas.length > 0) {
-      return (
-        <View style={styles.endOfListContainer}>
-          <Text style={styles.endOfListText}>모든 아사나를 불러왔습니다</Text>
-        </View>
-      );
+      return <View style={styles.endOfListContainer}></View>;
     }
 
     // 다음 페이지를 로드 중인 경우
