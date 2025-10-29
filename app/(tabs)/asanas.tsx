@@ -215,16 +215,30 @@ export default function AsanasScreen() {
   );
 
   const renderFooter = () => {
-    if (!isFetchingNextPage) return null;
+    // 더 이상 로드할 데이터가 없고, 현재 데이터가 있는 경우
+    if (!hasNextPage && allAsanas.length > 0) {
+      return (
+        <View style={styles.endOfListContainer}>
+          <Text style={styles.endOfListText}>
+            모든 아사나를 불러왔습니다
+          </Text>
+        </View>
+      );
+    }
 
-    return (
-      <View style={styles.loadingMoreContainer}>
-        <ActivityIndicator size="small" color={COLORS.primary} />
-        <Text style={styles.loadingMoreText}>
-          더 많은 아사나를 불러오는 중...
-        </Text>
-      </View>
-    );
+    // 다음 페이지를 로드 중인 경우
+    if (isFetchingNextPage) {
+      return (
+        <View style={styles.loadingMoreContainer}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Text style={styles.loadingMoreText}>
+            더 많은 아사나를 불러오는 중...
+          </Text>
+        </View>
+      );
+    }
+
+    return null;
   };
 
   // 로딩 중인 경우만 빈 화면 표시 (비회원도 아사나 탭 접근 가능)
@@ -465,6 +479,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     marginLeft: 8,
+  },
+  endOfListContainer: {
+    alignItems: "center",
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  endOfListText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    opacity: 0.7,
   },
   errorContainer: {
     flex: 1,
