@@ -145,7 +145,7 @@ export function AsanaCard({
             paddingVertical="$1"
             borderRadius={0}
             borderTopLeftRadius={0}
-            borderTopRightRadius={8}
+            borderTopRightRadius={0}
             borderBottomLeftRadius={0}
             borderBottomRightRadius={8}
             disabled
