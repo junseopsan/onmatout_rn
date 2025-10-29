@@ -268,48 +268,6 @@ export default function AsanaDetailScreen() {
         <YStack height={imageHeight} backgroundColor="white" marginTop={0}>
           {imageUrls.length > 0 ? (
             <YStack flex={1} position="relative">
-              {/* 좌우 슬라이드 버튼 */}
-              {imageUrls.length > 1 && (
-                <>
-                  {/* 왼쪽 버튼 */}
-                  <TouchableOpacity
-                    style={{
-                      position: "absolute",
-                      left: 15,
-                      top: "50%",
-                      transform: [{ translateY: -15 }],
-                      zIndex: 10,
-                      width: 30,
-                      height: 30,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                    onPress={prevImage}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="chevron-back" size={20} color="black" />
-                  </TouchableOpacity>
-
-                  {/* 오른쪽 버튼 */}
-                  <TouchableOpacity
-                    style={{
-                      position: "absolute",
-                      right: 15,
-                      top: "50%",
-                      transform: [{ translateY: -15 }],
-                      zIndex: 10,
-                      width: 30,
-                      height: 30,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                    onPress={nextImage}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="chevron-forward" size={20} color="black" />
-                  </TouchableOpacity>
-                </>
-              )}
 
               <YStack
                 flex={1}
@@ -466,7 +424,7 @@ export default function AsanaDetailScreen() {
               alignItems="center"
               marginBottom="$3"
             >
-              <Text fontSize={26} fontWeight="800" color="$text" flex={1}>
+              <Text fontSize={22} fontWeight="800" color="$text" flex={1}>
                 {asana?.sanskrit_name_kr || "아사나"}
               </Text>
               <XStack
