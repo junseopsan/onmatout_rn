@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useState } from "react";
@@ -8,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, ScrollView, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
@@ -211,6 +211,23 @@ export default function AsanaDetailScreen() {
     }
   };
 
+  // 스와이프 제스처 핸들러
+  const onPanGestureEvent = useCallback((event: any) => {
+    const { translationX, state } = event.nativeEvent;
+    
+    if (state === State.END) {
+      const threshold = 50; // 스와이프 임계값
+      
+      if (translationX > threshold) {
+        // 오른쪽으로 스와이프 - 이전 이미지
+        prevImage();
+      } else if (translationX < -threshold) {
+        // 왼쪽으로 스와이프 - 다음 이미지
+        nextImage();
+      }
+    }
+  }, [nextImage, prevImage]);
+
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
@@ -268,47 +285,52 @@ export default function AsanaDetailScreen() {
         <YStack height={imageHeight} backgroundColor="white" marginTop={0}>
           {imageUrls.length > 0 ? (
             <YStack flex={1} position="relative">
-
               <YStack
                 flex={1}
                 justifyContent="center"
                 alignItems="center"
                 backgroundColor="white"
               >
-                <TouchableOpacity
-                  style={{
-                    flex: 1,
-                    width: "100%",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                  onPress={nextImage}
-                  activeOpacity={0.9}
+                <PanGestureHandler
+                  onHandlerStateChange={onPanGestureEvent}
+                  minPointers={1}
+                  maxPointers={1}
                 >
-                  <Image
-                    source={{ uri: imageUrls[currentImageIndex] }}
+                  <TouchableOpacity
                     style={{
-                      width: "85%",
-                      height: "85%",
-                      maxWidth: 280,
-                      maxHeight: 220,
+                      flex: 1,
+                      width: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
                     }}
-                    contentFit="contain"
-                    placeholder="🖼️"
-                    placeholderContentFit="contain"
-                    onError={() => {
-                      console.log(
-                        `이미지 로딩 실패: ${imageUrls[currentImageIndex]}`
-                      );
-                    }}
-                    priority="high"
-                    cachePolicy="memory-disk"
-                    onLoad={() => setImageLoading(false)}
-                    transition={0} // 전환 애니메이션 제거로 즉시 표시
-                    allowDownscaling={true}
-                    recyclingKey={imageUrls[currentImageIndex]} // 고유 키로 캐시 최적화
-                  />
-                </TouchableOpacity>
+                    onPress={nextImage}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={{ uri: imageUrls[currentImageIndex] }}
+                      style={{
+                        width: "85%",
+                        height: "85%",
+                        maxWidth: 280,
+                        maxHeight: 220,
+                      }}
+                      contentFit="contain"
+                      placeholder="🖼️"
+                      placeholderContentFit="contain"
+                      onError={() => {
+                        console.log(
+                          `이미지 로딩 실패: ${imageUrls[currentImageIndex]}`
+                        );
+                      }}
+                      priority="high"
+                      cachePolicy="memory-disk"
+                      onLoad={() => setImageLoading(false)}
+                      transition={0} // 전환 애니메이션 제거로 즉시 표시
+                      allowDownscaling={true}
+                      recyclingKey={imageUrls[currentImageIndex]} // 고유 키로 캐시 최적화
+                    />
+                  </TouchableOpacity>
+                </PanGestureHandler>
 
                 {/* 스켈레톤 로딩 */}
                 {imageLoading && (
