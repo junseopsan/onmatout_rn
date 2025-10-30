@@ -418,11 +418,26 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             console.log("getCurrentUser 결과:", user);
           }
 
-          // 세션이 없으면 인증 실패 처리 (로그인 화면으로 유도)
-          if (!session) {
-            console.log("세션 없음 - 인증 실패 처리");
+          // 세션이 없어도 사용자 정보가 있으면 로그인 성공으로 처리
+          if (!session && user) {
+            console.log("세션 없음, 그러나 사용자 정보 있음 → 로그인 성공 처리");
+            // API가 프로필을 포함해줬다면 반영
+            const apiProfile = (response.data?.user as any)?.profile ?? null;
+            set({
+              user: apiProfile ? ({ ...user, profile: apiProfile } as any) : (user as any),
+              session: null,
+            });
+
+            // 프로필 추가 확인 시도 (실패해도 무시)
+            try {
+              const userProfile = await get().getUserProfile();
+              if (userProfile) {
+                set({ user: { ...(get().user as any), profile: userProfile } as any });
+              }
+            } catch {}
+
             set({ loading: false });
-            return false;
+            return true;
           } else if (session) {
             console.log("세션 있음, 사용자 정보 확인");
 
