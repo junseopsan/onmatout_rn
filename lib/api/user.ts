@@ -1,5 +1,5 @@
 import { UpdateUserProfileRequest, UserProfile } from "../../types/user";
-import { supabase } from "../supabase";
+import { ensureAuthenticated, supabase } from "../supabase";
 
 export const userAPI = {
   // 사용자 프로필 조회
@@ -52,9 +52,64 @@ export const userAPI = {
       console.log("=== 사용자 프로필 저장 시작 ===");
       console.log("입력 파라미터:", { userId, profile });
 
+      // 세션 확인 (RPC를 사용하더라도 세션이 있어야 함)
+      const auth = await ensureAuthenticated();
+      if (!auth) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
+        };
+      }
+
+      // userId가 세션의 사용자 ID와 일치하는지 확인
+      if (userId !== auth.userId) {
+        return {
+          success: false,
+          message: "권한이 없습니다.",
+        };
+      }
+
+      // 세션 명시적으로 확인 (RLS 정책이 auth.uid()를 사용하므로 필수)
+      const {
+        data: { user: currentUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !currentUser) {
+        console.error("세션 확인 실패:", userError);
+        return {
+          success: false,
+          message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      if (currentUser.id !== userId) {
+        console.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.");
+        return {
+          success: false,
+          message: "권한이 없습니다.",
+        };
+      }
+
+      // 기존 프로필 조회 (name 필드가 필수이므로)
+      const existingProfile = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
       // 업데이트할 데이터 준비
-      const updateData: any = {};
-      if (profile.name !== undefined) updateData.name = profile.name;
+      const updateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      // name이 제공되지 않았고 기존 프로필이 있으면 기존 name 유지
+      if (profile.name !== undefined) {
+        updateData.name = profile.name;
+      } else if (existingProfile.data?.name) {
+        updateData.name = existingProfile.data.name;
+      }
+
       if (profile.email !== undefined) updateData.email = profile.email;
       if (profile.avatar_url !== undefined)
         updateData.avatar_url = profile.avatar_url;
@@ -68,29 +123,44 @@ export const userAPI = {
       if (profile.language !== undefined)
         updateData.language = profile.language;
 
-      // RLS를 우회하기 위해 SECURITY DEFINER RPC 사용 (세션 없이도 동작)
-      console.log("RPC upsert_user_profile 호출 시작...");
+      let result;
 
-      const { data: rpcProfile, error: rpcError } = await supabase.rpc(
-        "upsert_user_profile",
-        {
-          p_user_id: userId,
-          p_name: updateData.name ?? null,
-        }
-      );
+      // 기존 프로필이 있으면 update, 없으면 insert
+      if (existingProfile.data) {
+        console.log("기존 프로필 업데이트 시작...");
+        result = await supabase
+          .from("user_profiles")
+          .update(updateData)
+          .eq("user_id", userId)
+          .select()
+          .single();
+      } else {
+        console.log("새 프로필 생성 시작...");
+        // 새 프로필 생성 시 필수 필드 포함
+        const insertData = {
+          user_id: userId,
+          name: profile.name || "사용자", // name이 필수이므로 기본값 제공
+          ...updateData,
+        };
+        result = await supabase
+          .from("user_profiles")
+          .insert(insertData)
+          .select()
+          .single();
+      }
 
-      if (rpcError) {
-        console.log("RPC upsert_user_profile 실패:", rpcError);
+      if (result.error) {
+        console.error("프로필 저장 실패:", result.error);
         return {
           success: false,
-          message: `프로필 생성 실패: ${rpcError.message}`,
+          message: `프로필 저장 실패: ${result.error.message}`,
         };
       }
 
-      console.log("RPC upsert_user_profile 성공:", rpcProfile);
+      console.log("프로필 저장 성공:", result.data);
       return {
         success: true,
-        data: rpcProfile as any,
+        data: result.data,
       };
     } catch (error) {
       return {

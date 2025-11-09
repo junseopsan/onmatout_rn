@@ -50,6 +50,43 @@ export const getCurrentSession = async () => {
   return session;
 };
 
+// 세션 확인 및 사용자 ID 가져오기 (API 호출 전 사용)
+export const ensureAuthenticated = async (): Promise<{
+  userId: string;
+  session: any;
+} | null> => {
+  try {
+    // 먼저 세션 확인
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      console.log("세션이 없습니다.");
+      return null;
+    }
+
+    // 세션이 있으면 사용자 정보 가져오기
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.log("사용자 정보를 가져올 수 없습니다:", userError);
+      return null;
+    }
+
+    return {
+      userId: user.id,
+      session,
+    };
+  } catch (error) {
+    console.error("인증 확인 중 오류:", error);
+    return null;
+  }
+};
+
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
   return { error };

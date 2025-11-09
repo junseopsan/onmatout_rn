@@ -4,15 +4,14 @@ import {
   VerifyCredentials,
 } from "../../types/auth";
 import { supabase } from "../supabase";
-import { sendVerificationCode, verifyCode } from "./sms";
 
 export const authAPI = {
-  // 전화번호로 로그인/회원가입 요청 (네이버 SMS 사용)
+  // 전화번호로 로그인/회원가입 요청 (Twilio OTP 사용)
   signInWithPhone: async (
     credentials: LoginCredentials
   ): Promise<AuthResponse> => {
     try {
-      console.log("네이버 SMS 인증번호 발송 시작:", credentials.phone);
+      console.log("OTP 인증번호 발송 시작:", credentials.phone);
 
       // 전화번호 형식 정규화 (테스트 계정용)
       let normalizedPhone = credentials.phone;
@@ -35,24 +34,26 @@ export const authAPI = {
         };
       }
 
-      // 네이버 SMS로 인증번호 발송
-      const result = await sendVerificationCode(credentials.phone);
+      // Supabase Twilio OTP로 인증번호 발송
+      const { data, error } = await supabase.auth.signInWithOtp({
+        phone: credentials.phone,
+      });
 
-      if (result.success) {
-        console.log("네이버 SMS 인증번호 발송 성공");
-        return {
-          success: true,
-          message: "인증 코드가 전송되었습니다.",
-        };
-      } else {
-        console.log("네이버 SMS 인증번호 발송 실패:", result.message);
+      if (error) {
+        console.log("OTP 인증번호 발송 실패:", error.message);
         return {
           success: false,
-          message: result.message || "인증번호 발송에 실패했습니다.",
+          message: error.message || "인증번호 발송에 실패했습니다.",
         };
       }
+
+      console.log("OTP 인증번호 발송 성공");
+      return {
+        success: true,
+        message: "인증 코드가 전송되었습니다.",
+      };
     } catch (error) {
-      console.error("SMS 발송 오류:", error);
+      console.error("OTP 발송 오류:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "인증번호 발송 실패",
@@ -60,9 +61,9 @@ export const authAPI = {
     }
   },
 
-  // 인증 코드 확인 (네이버 SMS 검증)
+  // 인증 코드 확인 (Twilio OTP 검증)
   verifyOTP: async (credentials: VerifyCredentials): Promise<AuthResponse> => {
-    console.log("=== 네이버 SMS 인증번호 검증 시작 ===");
+    console.log("=== OTP 인증번호 검증 시작 ===");
     console.log("전화번호:", credentials.phone);
     console.log("인증 코드:", credentials.code);
 
@@ -82,8 +83,6 @@ export const authAPI = {
       // 테스트 계정 확인 (심사용)
       if (normalizedPhone === "01000000000" && credentials.code === "123456") {
         console.log("테스트 계정 인증번호 검증 (우회)");
-        // 테스트 계정용 가짜 인증 성공 처리
-        const result = { success: true };
 
         // 테스트 계정 인증 성공 처리
         console.log("테스트 계정 인증 성공, Supabase 사용자 조회/생성 시작");
@@ -130,114 +129,118 @@ export const authAPI = {
         };
       }
 
-      // 네이버 SMS 인증번호 검증
-      const result = await verifyCode(credentials.phone, credentials.code);
+      // Supabase Twilio OTP 인증번호 검증
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: credentials.phone,
+        token: credentials.code,
+        type: "sms",
+      });
 
-      if (result.success) {
-        console.log("네이버 SMS 인증번호 검증 성공");
+      if (error) {
+        console.log("OTP 인증번호 검증 실패:", error.message);
+        return {
+          success: false,
+          message: error.message || "인증번호가 일치하지 않습니다.",
+        };
+      }
 
-        // 인증 성공 후 Supabase에서 사용자 생성/로그인 처리
-        try {
-          // 네이버 SMS 인증이 성공했으므로 Supabase에서 사용자 조회/생성
-          console.log("Supabase 사용자 조회/생성 시작:", credentials.phone);
+      console.log("OTP 인증번호 검증 성공");
 
-          // 네이버 SMS 인증 성공 후 기존 사용자 조회
-          console.log("기존 사용자 조회 시작:", credentials.phone);
+      // 인증 성공 후 Supabase에서 사용자 조회/생성 처리
+      try {
+        console.log("Supabase 사용자 조회/생성 시작:", credentials.phone);
 
-          // user_profiles 테이블에서 전화번호로 사용자 조회
-          console.log("조회할 전화번호:", credentials.phone);
+        // 전화번호 정규화 (숫자만 추출)
+        const normalizedPhone = credentials.phone.replace(/[^0-9]/g, "");
+        console.log("정규화된 전화번호:", normalizedPhone);
 
-          // 전화번호 정규화 (숫자만 추출)
-          const normalizedPhone = credentials.phone.replace(/[^0-9]/g, "");
-          console.log("정규화된 전화번호:", normalizedPhone);
+        // 세션 확인 (RLS 정책이 auth.uid()를 사용하므로 필수)
+        const {
+          data: { user: currentUser },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-          // RPC로 전화번호 존재 여부 조회 (RLS 안전)
-          console.log("RPC로 전화번호 존재 여부 조회:", normalizedPhone);
-          const { data: rpcData, error: rpcError } = await supabase.rpc(
-            "get_user_by_phone",
-            { p_phone: normalizedPhone }
-          );
-
-          console.log("RPC 조회 결과:", { rpcData, rpcError });
-
-          let existingProfiles = null;
-          let profileError = null;
-
-          if (rpcError) {
-            console.log("RPC 조회 실패:", rpcError);
-            profileError = rpcError;
-          } else if (rpcData && rpcData.length > 0) {
-            console.log("RPC로 기존 사용자 발견:", rpcData[0]);
-            // RPC 결과를 기존 형식에 맞게 변환
-            existingProfiles = [
-              {
-                user_id: rpcData[0].user_id,
-                phone: rpcData[0].phone,
-                // 필요한 다른 필드들은 별도로 조회하거나 기본값 사용
-              },
-            ];
-          } else {
-            console.log("RPC로 기존 사용자 없음 확인");
-            existingProfiles = [];
-          }
-
-          console.log("사용자 프로필 조회 결과:", {
-            existingProfiles,
-            profileError,
-          });
-
-          if (profileError) {
-            console.log("사용자 프로필 조회 오류:", profileError);
-          }
-
-          if (existingProfiles && existingProfiles.length > 0) {
-            console.log("기존 사용자 발견:", existingProfiles[0]);
-
-            // 기존 사용자가 있으면 로그인 성공 (세션 없이)
-            console.log("기존 사용자 로그인 성공 (세션 없음)");
-            
-            return {
-              success: true,
-              message: "인증이 완료되었습니다.",
-              data: {
-                user: {
-                  id: existingProfiles[0].user_id,
-                  phone: credentials.phone,
-                  profile: existingProfiles[0],
-                  created_at: new Date().toISOString(),
-                },
-                session: null, // 세션 없이 로그인 성공
-              },
-            };
-          }
-
-          // 기존 사용자가 없으면 오류 반환
-          console.log("기존 사용자 없음 - 회원가입 필요");
+        if (userError || !currentUser) {
+          console.error("세션 확인 실패:", userError);
           return {
             success: false,
-            message: "등록되지 않은 전화번호입니다. 회원가입이 필요합니다.",
+            message: "세션이 만료되었습니다. 다시 로그인해주세요.",
           };
-        } catch (supabaseError) {
-          console.log("Supabase 처리 중 오류:", supabaseError);
-          // 네이버 SMS 인증은 성공했으므로 성공으로 처리
+        }
+
+        // 전화번호로 사용자 프로필 조회 (세션 기반)
+        console.log("전화번호로 사용자 프로필 조회:", normalizedPhone);
+        const { data: existingProfilesData, error: profileError } =
+          await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("phone", normalizedPhone)
+            .limit(1);
+
+        console.log("사용자 프로필 조회 결과:", {
+          existingProfilesData,
+          profileError,
+        });
+
+        let existingProfiles = null;
+
+        if (profileError) {
+          console.log("사용자 프로필 조회 실패:", profileError);
+          existingProfiles = [];
+        } else if (existingProfilesData && existingProfilesData.length > 0) {
+          console.log("기존 사용자 발견:", existingProfilesData[0]);
+          existingProfiles = existingProfilesData;
+        } else {
+          console.log("기존 사용자 없음 확인");
+          existingProfiles = [];
+        }
+
+        if (existingProfiles && existingProfiles.length > 0) {
+          console.log("기존 사용자 발견:", existingProfiles[0]);
+
+          // 기존 사용자가 있으면 로그인 성공
+          console.log("기존 사용자 로그인 성공");
+
+          // Supabase 세션에서 사용자 정보 사용 (세션이 있으면)
+          const sessionUser = data.session?.user || data.user;
+
           return {
             success: true,
             message: "인증이 완료되었습니다.",
             data: {
-              user: {
-                id: `temp_${Date.now()}`,
-                phone: credentials.phone,
-                created_at: new Date().toISOString(),
-              },
-              session: null,
+              user: sessionUser
+                ? {
+                    ...sessionUser,
+                    profile: existingProfiles[0],
+                  }
+                : {
+                    id: existingProfiles[0].user_id,
+                    phone: credentials.phone,
+                    profile: existingProfiles[0],
+                    created_at: new Date().toISOString(),
+                  },
+              session: data.session,
             },
           };
         }
-      } else {
-        console.log("네이버 SMS 인증번호 검증 실패:", result.message);
+
+        // 기존 사용자가 없으면 오류 반환
+        console.log("기존 사용자 없음 - 회원가입 필요");
         return {
           success: false,
-          message: result.message || "인증번호가 일치하지 않습니다.",
+          message: "등록되지 않은 전화번호입니다. 회원가입이 필요합니다.",
+        };
+      } catch (supabaseError) {
+        console.log("Supabase 처리 중 오류:", supabaseError);
+        // OTP 인증은 성공했으므로 성공으로 처리
+        // Supabase가 세션을 자동으로 저장했으므로 세션과 사용자 정보 반환
+        return {
+          success: true,
+          message: "인증이 완료되었습니다.",
+          data: {
+            user: data.user,
+            session: data.session,
+          },
         };
       }
     } catch (error) {

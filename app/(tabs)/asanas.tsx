@@ -50,7 +50,8 @@ export default function AsanasScreen() {
     refetch,
   } = useAsanas(20);
 
-  const { data: favoriteAsanas = [] } = useFavoriteAsanasDetail();
+  const { data: favoriteAsanas = [], refetch: refetchFavorites } =
+    useFavoriteAsanasDetail();
 
   // 디버깅을 위한 로그 추가
   console.log("아사나 탭 상태:", {
@@ -100,12 +101,13 @@ export default function AsanasScreen() {
       if (isAuthenticated) {
         console.log("아사나 탭: 화면 포커스 시 데이터 새로고침 및 필터 초기화");
         refetch();
+        refetchFavorites(); // 즐겨찾기 목록도 새로고침
         // 필터/검색/즐겨찾기 상태 초기화
         setSearchQuery("");
         setSelectedCategories([]);
         setShowFavoritesOnly(false);
       }
-    }, [isAuthenticated, refetch])
+    }, [isAuthenticated, refetch, refetchFavorites])
   );
 
   const handleAsanaPress = (asana: any) => {
@@ -116,9 +118,12 @@ export default function AsanasScreen() {
     // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
     console.log("즐겨찾기 토글:", asanaId, isFavorite);
 
-    // 즐겨찾기 관련 쿼리 캐시 무효화
+    // 즐겨찾기 관련 쿼리 캐시 무효화 (모든 즐겨찾기 관련 쿼리)
     queryClient.invalidateQueries({
       queryKey: ["favoriteAsanas"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["favoriteAsanasDetail"],
     });
 
     // 즐겨찾기 모드가 활성화된 경우 아사나 목록도 새로고침

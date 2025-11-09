@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { Fragment, useCallback, useEffect, useState } from "react";
+import React, { Fragment, useCallback, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -24,13 +24,11 @@ import { useAuthStore } from "../../stores/authStore";
 
 export default function ProfileScreen() {
   const { isAuthenticated, loading } = useAuth();
-  const { user, getUserProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  // 설정 모달 상태 제거
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
+  // authStore의 프로필 사용 (로컬 state 제거)
 
   // 날짜 선택 상태
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -39,13 +37,7 @@ export default function ProfileScreen() {
 
   // 프로필 통계 데이터 가져오기 (allRecords만)
   const testUserId = user?.id || "260d9314-3fa8-472f-8250-32ef3a9dc7fc";
-  const {
-    allRecords,
-    isLoading: loadingData,
-    isError,
-    error,
-    refetch,
-  } = useProfileStats(testUserId);
+  const { allRecords, refetch } = useProfileStats(testUserId);
 
   // 기록 데이터 가져오기
   const { recentRecords, refetch: refetchRecords } = useRecordData();
@@ -86,25 +78,8 @@ export default function ProfileScreen() {
     return monthCount;
   };
 
-  // 사용자 프로필 가져오기
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      if (user) {
-        try {
-          const profile = await getUserProfile();
-          setUserProfile(profile);
-        } catch (error) {
-          console.error("프로필 로드 실패:", error);
-        } finally {
-          setLoadingProfile(false);
-        }
-      } else {
-        setLoadingProfile(false);
-      }
-    };
-
-    loadUserProfile();
-  }, [user, getUserProfile, isAuthenticated, loading]);
+  // authStore에서 프로필 가져오기 (user.profile 사용)
+  const userProfile = user?.profile;
 
   // 기록 관련 핸들러 함수들
   const handleRecordPress = (record: any) => {
@@ -159,21 +134,6 @@ export default function ProfileScreen() {
   if (loading || !isAuthenticated) {
     return (
       <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
-    );
-  }
-
-  // 프로필 로딩 중일 때 스켈레톤 로딩 표시
-  if (loadingProfile) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.skeletonAvatar} />
-          <View style={styles.skeletonInfo}>
-            <View style={styles.skeletonText} />
-            <View style={[styles.skeletonText, { width: "60%" }]} />
-          </View>
-        </View>
-      </View>
     );
   }
 

@@ -402,29 +402,38 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log("API 응답 사용자:", apiUser);
 
         try {
-          // API 응답에 세션이 있으면 사용, 없으면 getCurrentSession 시도
+          // Supabase 세션 우선 사용
           let session = apiSession;
           let user = apiUser;
 
+          // API 응답에 세션이 없으면 getCurrentSession 시도 (Supabase가 자동으로 저장했을 수 있음)
           if (!session) {
             console.log("API 응답에 세션 없음, getCurrentSession 시도");
             session = await getCurrentSession();
             console.log("getCurrentSession 결과:", session);
           }
 
-          if (!user && session) {
+          // 세션이 있으면 세션에서 사용자 정보 가져오기
+          if (session && session.user) {
+            console.log("세션에서 사용자 정보 사용");
+            user = session.user;
+          } else if (!user && session) {
             console.log("API 응답에 사용자 없음, getCurrentUser 시도");
             user = await getCurrentUser();
             console.log("getCurrentUser 결과:", user);
           }
 
-          // 세션이 없어도 사용자 정보가 있으면 로그인 성공으로 처리
+          // 테스트 계정의 경우 세션이 없을 수 있으므로 사용자 정보만으로 처리
           if (!session && user) {
-            console.log("세션 없음, 그러나 사용자 정보 있음 → 로그인 성공 처리");
+            console.log(
+              "세션 없음, 그러나 사용자 정보 있음 (테스트 계정) → 로그인 성공 처리"
+            );
             // API가 프로필을 포함해줬다면 반영
             const apiProfile = (response.data?.user as any)?.profile ?? null;
             set({
-              user: apiProfile ? ({ ...user, profile: apiProfile } as any) : (user as any),
+              user: apiProfile
+                ? ({ ...user, profile: apiProfile } as any)
+                : (user as any),
               session: null,
             });
 
@@ -432,37 +441,38 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             try {
               const userProfile = await get().getUserProfile();
               if (userProfile) {
-                set({ user: { ...(get().user as any), profile: userProfile } as any });
+                set({
+                  user: { ...(get().user as any), profile: userProfile } as any,
+                });
               }
             } catch {}
 
             set({ loading: false });
             return true;
           } else if (session) {
-            console.log("세션 있음, 사용자 정보 확인");
+            console.log("세션 있음, Supabase 세션 기반 인증");
 
-            if (user) {
-              console.log("사용자 정보도 있음, 완전한 인증 상태");
+            // 세션에서 사용자 정보 사용
+            if (session.user) {
+              console.log("세션에서 사용자 정보 사용");
+              user = session.user;
+            }
+
+            // API 응답에 프로필이 포함되어 있으면 사용
+            const apiProfile = (response.data?.user as any)?.profile ?? null;
+
+            if (apiProfile) {
+              console.log("API 응답에 프로필 포함됨");
+              set({
+                user: { ...user, profile: apiProfile } as any,
+                session,
+              });
+            } else {
+              console.log("API 응답에 프로필 없음, 세션 기반으로 사용자 설정");
               set({
                 user: user as any,
                 session,
               });
-            } else {
-              console.log("사용자 정보 없음, 세션 기반으로 임시 사용자 생성");
-              // 세션에서 사용자 정보 추출하여 임시 사용자 생성
-              const tempUser = {
-                id: session.user.id,
-                phone: session.user.phone,
-                created_at: session.user.created_at,
-                updated_at: session.user.updated_at,
-              };
-
-              set({
-                user: tempUser as any,
-                session,
-              });
-
-              console.log("임시 사용자 정보 생성:", tempUser);
             }
 
             // 즉시 상태 확인

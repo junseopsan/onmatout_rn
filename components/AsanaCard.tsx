@@ -29,10 +29,10 @@ export function AsanaCard({
   const [favorite, setFavorite] = useState(isFavorite);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 즐겨찾기 상태가 변경될 때 업데이트
+  // 즐겨찾기 상태가 변경될 때 업데이트 (아사나 ID도 함께 확인)
   useEffect(() => {
     setFavorite(isFavorite);
-  }, [isFavorite]);
+  }, [isFavorite, asana.id]);
 
   const handleFavoriteToggle = async (e: any) => {
     e.stopPropagation(); // 카드 클릭 이벤트 전파 방지

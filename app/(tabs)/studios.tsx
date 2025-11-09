@@ -369,24 +369,20 @@ export default function StudiosScreen() {
                     setSelectedRegion(null);
                     setSelectedDistrict(null);
                   }}
+                  style={styles.filterTagCloseButton}
                 >
-                  <Ionicons
-                    name="close"
-                    size={14}
-                    color={COLORS.textSecondary}
-                  />
+                  <Ionicons name="close" size={16} color="white" />
                 </TouchableOpacity>
               </View>
             )}
             {selectedDistrict && (
               <View style={styles.filterTag}>
                 <Text style={styles.filterTagText}>{selectedDistrict}</Text>
-                <TouchableOpacity onPress={() => setSelectedDistrict(null)}>
-                  <Ionicons
-                    name="close"
-                    size={14}
-                    color={COLORS.textSecondary}
-                  />
+                <TouchableOpacity
+                  onPress={() => setSelectedDistrict(null)}
+                  style={styles.filterTagCloseButton}
+                >
+                  <Ionicons name="close" size={16} color="white" />
                 </TouchableOpacity>
               </View>
             )}
@@ -816,20 +812,36 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     marginTop: 8,
+    marginLeft: -24, // filterAndCountContainer의 paddingLeft를 상쇄하여 왼쪽으로 붙임
   },
   filterTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: COLORS.primaryLight,
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   filterTagText: {
-    fontSize: 12,
+    fontSize: 13,
     color: "white",
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  filterTagCloseButton: {
+    marginLeft: 2,
+    padding: 2,
   },
   // 모달 스타일
   modalOverlay: {

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Image,
@@ -14,33 +14,20 @@ import {
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { storageAPI } from "../../lib/api/storage";
+import { userAPI } from "../../lib/api/user";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function ProfileInfoScreen() {
   const { user } = useAuth();
-  const { getUserProfile } = useAuthStore();
+  const { setUser } = useAuthStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // 사용자 프로필 가져오기
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      if (user) {
-        try {
-          const profile = await getUserProfile();
-          setUserProfile(profile);
-        } catch (error) {
-          console.error("프로필 로드 실패:", error);
-        }
-      }
-    };
-
-    loadUserProfile();
-  }, [user, getUserProfile]);
+  // authStore의 프로필 사용 (로컬 state 제거)
+  const userProfile = user?.profile;
 
   // 전화번호 포맷팅 함수
   const formatPhoneNumber = (phone: string): string => {
@@ -110,16 +97,40 @@ export default function ProfileInfoScreen() {
   const takePhoto = async () => {
     try {
       setIsUploadingAvatar(true);
-      if (user) {
-        const result = await storageAPI.uploadProfileImage(user.id);
-        if (result.success) {
-          // 프로필 정보 새로고침
-          const profile = await getUserProfile();
-          setUserProfile(profile);
+      if (!user) {
+        Alert.alert("오류", "사용자 정보가 없습니다.");
+        return;
+      }
+
+      const result = await storageAPI.uploadProfileImage(user.id);
+      if (result.success && result.url) {
+        // 업로드된 이미지 URL을 프로필에 저장
+        const updateResult = await userAPI.upsertUserProfile(user.id, {
+          avatar_url: result.url,
+        });
+
+        if (updateResult.success && updateResult.data) {
+          // authStore의 프로필 업데이트
+          if (user) {
+            const updatedUser = {
+              ...user,
+              profile: updateResult.data,
+            };
+            setUser(updatedUser);
+          }
+          Alert.alert("완료", "프로필 사진이 변경되었습니다.");
+        } else {
+          Alert.alert(
+            "오류",
+            updateResult.message || "프로필 사진 저장에 실패했습니다."
+          );
         }
+      } else {
+        Alert.alert("오류", result.message || "이미지 업로드에 실패했습니다.");
       }
     } catch (error) {
       console.error("사진 촬영 실패:", error);
+      Alert.alert("오류", "사진 촬영 중 오류가 발생했습니다.");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -129,16 +140,40 @@ export default function ProfileInfoScreen() {
   const pickImage = async () => {
     try {
       setIsUploadingAvatar(true);
-      if (user) {
-        const result = await storageAPI.uploadProfileImage(user.id);
-        if (result.success) {
-          // 프로필 정보 새로고침
-          const profile = await getUserProfile();
-          setUserProfile(profile);
+      if (!user) {
+        Alert.alert("오류", "사용자 정보가 없습니다.");
+        return;
+      }
+
+      const result = await storageAPI.uploadProfileImage(user.id);
+      if (result.success && result.url) {
+        // 업로드된 이미지 URL을 프로필에 저장
+        const updateResult = await userAPI.upsertUserProfile(user.id, {
+          avatar_url: result.url,
+        });
+
+        if (updateResult.success && updateResult.data) {
+          // authStore의 프로필 업데이트
+          if (user) {
+            const updatedUser = {
+              ...user,
+              profile: updateResult.data,
+            };
+            setUser(updatedUser);
+          }
+          Alert.alert("완료", "프로필 사진이 변경되었습니다.");
+        } else {
+          Alert.alert(
+            "오류",
+            updateResult.message || "프로필 사진 저장에 실패했습니다."
+          );
         }
+      } else {
+        Alert.alert("오류", result.message || "이미지 업로드에 실패했습니다.");
       }
     } catch (error) {
       console.error("이미지 선택 실패:", error);
+      Alert.alert("오류", "이미지 선택 중 오류가 발생했습니다.");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -147,18 +182,44 @@ export default function ProfileInfoScreen() {
   // 아바타 제거
   const removeAvatar = async () => {
     try {
+      if (!user) {
+        console.error("사용자 정보가 없습니다.");
+        return;
+      }
+
+      setIsUploadingAvatar(true);
+
+      // 기존 이미지가 있으면 스토리지에서 삭제
       if (userProfile?.avatar_url) {
-        const result = await storageAPI.deleteProfileImage(
-          userProfile.avatar_url
-        );
-        if (result.success) {
-          // 프로필 정보 새로고침
-          const profile = await getUserProfile();
-          setUserProfile(profile);
+        await storageAPI.deleteProfileImage(userProfile.avatar_url);
+      }
+
+      // 프로필의 avatar_url을 null로 업데이트
+      const result = await userAPI.upsertUserProfile(user.id, {
+        avatar_url: null,
+      });
+
+      if (result.success && result.data) {
+        // authStore의 프로필 업데이트
+        if (user) {
+          const updatedUser = {
+            ...user,
+            profile: result.data,
+          };
+          setUser(updatedUser);
         }
+        Alert.alert("완료", "프로필 이미지가 기본 이미지로 변경되었습니다.");
+      } else {
+        Alert.alert(
+          "오류",
+          result.message || "프로필 이미지 변경에 실패했습니다."
+        );
       }
     } catch (error) {
       console.error("아바타 제거 실패:", error);
+      Alert.alert("오류", "프로필 이미지 변경 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 

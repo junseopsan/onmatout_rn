@@ -1,5 +1,5 @@
 import { Record, RecordFormData } from "../../types/record";
-import { supabase } from "../supabase";
+import { ensureAuthenticated, supabase } from "../supabase";
 
 export const recordsAPI = {
   // 오늘 기록들 가져오기 (하루에 여러 기록 허용)
@@ -12,13 +12,11 @@ export const recordsAPI = {
       const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD 형식
 
       // 현재 사용자 ID 가져오기
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      const auth = await ensureAuthenticated();
+      if (!auth) {
         return {
           success: false,
-          message: "사용자 인증이 필요합니다.",
+          message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
         };
       }
 
@@ -26,7 +24,7 @@ export const recordsAPI = {
         .from("practice_records")
         .select("*")
         .eq("practice_date", today)
-        .eq("user_id", user.id)
+        .eq("user_id", auth.userId)
         .order("practice_time", { ascending: false });
 
       if (error && error.code !== "PGRST116") {
@@ -118,17 +116,86 @@ export const recordsAPI = {
       // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
       let user_id = userId;
       if (!user_id) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
+        const auth = await ensureAuthenticated();
+        if (!auth) {
           return {
             success: false,
-            message: "사용자 인증이 필요합니다.",
+            message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
           };
         }
-        user_id = user.id;
+        user_id = auth.userId;
       }
+
+      // 세션 명시적으로 확인 및 갱신 (RLS 정책이 auth.uid()를 사용하므로 필수)
+      // getUser()를 호출하면 세션이 자동으로 갱신되고 검증됨
+      const {
+        data: { user: currentUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !currentUser) {
+        console.error("세션 확인 실패:", userError);
+        return {
+          success: false,
+          message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      // 세션의 사용자 ID와 일치하는지 확인
+      if (currentUser.id !== user_id) {
+        console.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.", {
+          sessionUserId: currentUser.id,
+          requestUserId: user_id,
+        });
+        return {
+          success: false,
+          message: "권한이 없습니다.",
+        };
+      }
+
+      // 세션 확인 및 갱신 (getUser() 후 세션을 다시 가져와서 최신 상태 확인)
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        console.error("세션 가져오기 실패:", sessionError);
+        return {
+          success: false,
+          message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      // 세션이 만료되었는지 확인
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at && session.expires_at < now) {
+        console.error("세션이 만료되었습니다:", {
+          expiresAt: session.expires_at,
+          now: now,
+        });
+        return {
+          success: false,
+          message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      // access_token이 있는지 확인
+      if (!session.access_token) {
+        console.error("세션에 access_token이 없습니다.");
+        return {
+          success: false,
+          message: "세션이 유효하지 않습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      console.log("세션 확인 완료:", {
+        userId: user_id,
+        sessionUserId: currentUser.id,
+        sessionExpiresAt: session.expires_at,
+        hasAccessToken: !!session.access_token,
+        accessTokenLength: session.access_token?.length || 0,
+      });
 
       // 새로운 기록 생성 (하루에 여러 기록 허용)
       const recordPayload = {
@@ -143,6 +210,32 @@ export const recordsAPI = {
         updated_at: new Date().toISOString(),
       };
 
+      // 새 기록 생성 전에 세션 상태를 한 번 더 확인
+      // Supabase 클라이언트가 세션을 자동으로 포함하지만, 명시적으로 확인
+      const {
+        data: { user: verifyUser },
+      } = await supabase.auth.getUser();
+
+      if (!verifyUser || verifyUser.id !== user_id) {
+        console.error("최종 세션 검증 실패:", {
+          verifyUserId: verifyUser?.id,
+          expectedUserId: user_id,
+        });
+        return {
+          success: false,
+          message: "세션 검증에 실패했습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      console.log("기록 저장 시도:", {
+        userId: user_id,
+        payload: {
+          ...recordPayload,
+          asanas: recordPayload.asanas.length,
+          states: recordPayload.states.length,
+        },
+      });
+
       // 새 기록 생성
       const { data, error } = await supabase
         .from("practice_records")
@@ -151,6 +244,31 @@ export const recordsAPI = {
         .single();
 
       if (error) {
+        console.error("기록 저장 실패:", {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          userId: user_id,
+          hasSession: !!session,
+          sessionUserId: verifyUser.id,
+          sessionExpiresAt: session.expires_at,
+        });
+
+        // RLS 정책 위반 에러인 경우 더 명확한 메시지
+        if (
+          error.code === "42501" ||
+          error.message.includes("row-level security")
+        ) {
+          // RLS 정책 위반은 보통 세션이 제대로 전달되지 않았을 때 발생
+          // 세션을 다시 확인하고 사용자에게 재로그인 안내
+          console.error("RLS 정책 위반 - 세션 재확인 필요");
+          return {
+            success: false,
+            message: "인증이 필요합니다. 다시 로그인해주세요.",
+          };
+        }
+
         return {
           success: false,
           message: error.message || "기록을 저장하는데 실패했습니다.",
@@ -335,14 +453,14 @@ export const recordsAPI = {
       // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
       let user_id = userId;
       if (!user_id) {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) {
+        const auth = await ensureAuthenticated();
+        if (!auth) {
           return {
             success: false,
-            message: "사용자 인증이 필요합니다.",
+            message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
           };
         }
-        user_id = userData.user.id;
+        user_id = auth.userId;
       }
 
       const { data, error } = await supabase
@@ -740,13 +858,11 @@ export const recordsAPI = {
     message?: string;
   }> => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      const auth = await ensureAuthenticated();
+      if (!auth) {
         return {
           success: false,
-          message: "사용자 인증이 필요합니다.",
+          message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
         };
       }
 
@@ -754,7 +870,7 @@ export const recordsAPI = {
       const { data: existingLike } = await supabase
         .from("feed_likes")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", auth.userId)
         .eq("record_id", recordId)
         .single();
 
@@ -763,7 +879,7 @@ export const recordsAPI = {
         const { error: deleteError } = await supabase
           .from("feed_likes")
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", auth.userId)
           .eq("record_id", recordId);
 
         if (deleteError) {
@@ -774,7 +890,7 @@ export const recordsAPI = {
         const { error: insertError } = await supabase
           .from("feed_likes")
           .insert({
-            user_id: user.id,
+            user_id: auth.userId,
             record_id: recordId,
           });
 
@@ -822,15 +938,15 @@ export const recordsAPI = {
       let user_id = userId;
       if (!user_id) {
         console.log("userId가 제공되지 않음, auth에서 조회 시도");
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) {
+        const auth = await ensureAuthenticated();
+        if (!auth) {
           console.log("사용자 인증 실패");
           return {
             success: false,
-            message: "사용자 인증이 필요합니다.",
+            message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
           };
         }
-        user_id = userData.user.id;
+        user_id = auth.userId;
         console.log("auth에서 사용자 ID 조회:", user_id);
       } else {
         console.log("제공된 사용자 ID 사용:", user_id);
@@ -1000,13 +1116,11 @@ export const recordsAPI = {
     message?: string;
   }> => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
+      const auth = await ensureAuthenticated();
+      if (!auth) {
         return {
           success: false,
-          message: "사용자 인증이 필요합니다.",
+          message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
         };
       }
 
@@ -1019,7 +1133,7 @@ export const recordsAPI = {
       const { data: userLike } = await supabase
         .from("feed_likes")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", auth.userId)
         .eq("record_id", recordId)
         .single();
 

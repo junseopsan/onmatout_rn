@@ -73,8 +73,7 @@ export default function PrivacyPolicyScreen() {
           있습니다.
         </Text>
         <Text style={styles.contentText}>
-          • Supabase Inc.: 인증 및 데이터베이스 관리{"\n"}• NHN Cloud:
-          문자·카카오 알림톡 발송{"\n"}• Naver Cloud: 알림 전송
+          • Supabase Inc.: 인증 및 데이터베이스 관리
         </Text>
 
         <Text style={styles.sectionTitle}>6. 이용자의 권리</Text>
