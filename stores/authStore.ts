@@ -168,11 +168,46 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
             console.log("복원된 사용자:", user?.id);
 
-            set({
-              user: user as any,
-              session: session,
-              loading: false,
-            });
+            // 로컬 스토리지에서 복원한 후 서버에서 최신 프로필 가져오기
+            if (user?.id) {
+              try {
+                const userProfile = await userAPI.getUserProfile(user.id);
+                console.log("최신 사용자 프로필:", userProfile);
+
+                if (
+                  userProfile.success &&
+                  userProfile.data &&
+                  userProfile.data.name &&
+                  userProfile.data.name.trim() !== "" &&
+                  userProfile.data.name !== "null"
+                ) {
+                  set({
+                    user: { ...user, profile: userProfile.data } as any,
+                    session: session,
+                    loading: false,
+                  });
+                } else {
+                  set({
+                    user: { ...user, profile: user.profile || null } as any,
+                    session: session,
+                    loading: false,
+                  });
+                }
+              } catch (profileError) {
+                console.log("프로필 조회 실패, 로컬 데이터 사용:", profileError);
+                set({
+                  user: user as any,
+                  session: session,
+                  loading: false,
+                });
+              }
+            } else {
+              set({
+                user: user as any,
+                session: session,
+                loading: false,
+              });
+            }
 
             console.log("로컬 스토리지에서 사용자 정보 복원 완료");
             return;
@@ -246,13 +281,47 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         async (_event, session) => {
           try {
             const nextUser = session?.user ?? null;
-            set({ session: session ?? null, user: (nextUser as any) ?? null });
-
-            // 로컬에도 보존
-            if (nextUser) {
-              await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+            
+            // 사용자가 있으면 최신 프로필 가져오기
+            if (nextUser?.id) {
+              try {
+                const userProfile = await userAPI.getUserProfile(nextUser.id);
+                if (
+                  userProfile.success &&
+                  userProfile.data &&
+                  userProfile.data.name &&
+                  userProfile.data.name.trim() !== "" &&
+                  userProfile.data.name !== "null"
+                ) {
+                  const userWithProfile = { ...nextUser, profile: userProfile.data } as any;
+                  set({ session: session ?? null, user: userWithProfile });
+                  
+                  // 로컬에도 보존
+                  await AsyncStorage.setItem("user", JSON.stringify(userWithProfile));
+                } else {
+                  set({ session: session ?? null, user: (nextUser as any) ?? null });
+                  if (nextUser) {
+                    await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+                  } else {
+                    await AsyncStorage.removeItem("user");
+                  }
+                }
+              } catch (profileError) {
+                console.log("프로필 조회 실패:", profileError);
+                set({ session: session ?? null, user: (nextUser as any) ?? null });
+                if (nextUser) {
+                  await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+                } else {
+                  await AsyncStorage.removeItem("user");
+                }
+              }
             } else {
-              await AsyncStorage.removeItem("user");
+              set({ session: session ?? null, user: (nextUser as any) ?? null });
+              if (nextUser) {
+                await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+              } else {
+                await AsyncStorage.removeItem("user");
+              }
             }
 
             if (session) {
