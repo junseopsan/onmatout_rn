@@ -1,5 +1,10 @@
 import { UpdateUserProfileRequest, UserProfile } from "../../types/user";
-import { ensureAuthenticated, supabase } from "../supabase";
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  ensureAuthenticated,
+  supabase,
+} from "../supabase";
 
 export const userAPI = {
   // 사용자 프로필 조회
@@ -32,6 +37,7 @@ export const userAPI = {
         data,
       };
     } catch (error) {
+      console.error("사용자 프로필 조회 오류:", error);
       return {
         success: false,
         message: "사용자 프로필 조회 중 오류가 발생했습니다.",
@@ -163,6 +169,7 @@ export const userAPI = {
         data: result.data,
       };
     } catch (error) {
+      console.error("사용자 프로필 저장 중 오류:", error);
       return {
         success: false,
         message: "사용자 프로필 저장 중 오류가 발생했습니다.",
@@ -218,9 +225,93 @@ export const userAPI = {
         data: data,
       };
     } catch (error) {
+      console.error("사용자 프로필 업데이트 중 오류:", error);
       return {
         success: false,
         message: "사용자 프로필 업데이트 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
+  // 계정 삭제
+  deleteAccount: async (): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    try {
+      const auth = await ensureAuthenticated();
+      if (!auth) {
+        return {
+          success: false,
+          message: "로그인이 필요합니다. 다시 시도해주세요.",
+        };
+      }
+
+      const { userId, session } = auth;
+
+      // 세션 및 사용자 확인
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user || user.id !== userId) {
+        return {
+          success: false,
+          message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        };
+      }
+
+      // 사용자 데이터 삭제 (연관 테이블)
+      const tablesToClean = [
+        "practice_records",
+        "user_favorite_asanas",
+        "user_settings",
+        "user_profiles",
+      ];
+
+      for (const table of tablesToClean) {
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error(`테이블 ${table} 데이터 삭제 실패:`, error);
+          return {
+            success: false,
+            message: "계정 데이터를 삭제하는 중 오류가 발생했습니다.",
+          };
+        }
+      }
+
+      // Supabase Auth 사용자 삭제 (자기 계정 삭제 엔드포인트)
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (!response.ok) {
+        console.error("Supabase 사용자 삭제 실패:", await response.text());
+        return {
+          success: false,
+          message: "계정을 삭제할 수 없습니다. 잠시 후 다시 시도해주세요.",
+        };
+      }
+
+      await supabase.auth.signOut();
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error("계정 삭제 중 오류:", error);
+      return {
+        success: false,
+        message: "계정 삭제 중 오류가 발생했습니다.",
       };
     }
   },

@@ -13,15 +13,17 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
 import { RootStackParamList } from "../navigation/types";
+import { userAPI } from "../lib/api/user";
 import { useAuthStore } from "../stores/authStore";
 
 export default function SettingsScreen() {
   const { user } = useAuth();
-  const { getUserProfile } = useAuthStore();
+  const { getUserProfile, clearSession } = useAuthStore();
   const { showSnackbar } = useNotification();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -30,6 +32,7 @@ export default function SettingsScreen() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [notificationPermissionStatus, setNotificationPermissionStatus] =
     useState<string>("unknown");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // 알림 권한 상태 확인
   useEffect(() => {
@@ -188,6 +191,39 @@ export default function SettingsScreen() {
     navigation.navigate("TermsOfService");
   };
 
+  const confirmDeleteAccount = () => {
+    AlertDialog.confirm(
+      "회원 탈퇴",
+      "탈퇴 시 모든 수련 기록과 즐겨찾기 정보가 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
+      async () => {
+        setIsDeletingAccount(true);
+        try {
+          const result = await userAPI.deleteAccount();
+          if (result.success) {
+            showSnackbar("계정이 삭제되었습니다.", "success");
+            await clearSession();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Auth" }],
+            });
+          } else {
+            showSnackbar(
+              result.message || "계정을 삭제할 수 없습니다. 다시 시도해주세요.",
+              "error"
+            );
+          }
+        } catch (error) {
+          showSnackbar("계정 삭제 중 오류가 발생했습니다.", "error");
+        } finally {
+          setIsDeletingAccount(false);
+        }
+      },
+      undefined,
+      "탈퇴하기",
+      "취소"
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* 헤더 */}
@@ -255,6 +291,32 @@ export default function SettingsScreen() {
               <Text style={styles.settingText}>이용약관</Text>
             </View>
             <Text style={styles.arrowText}>›</Text>
+          </TouchableOpacity>
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>계정</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              styles.dangerItem,
+              isDeletingAccount && styles.disabledItem,
+            ]}
+            onPress={confirmDeleteAccount}
+            disabled={isDeletingAccount}
+          >
+            <View style={styles.settingContent}>
+              <Text style={[styles.settingText, styles.dangerText]}>
+                회원 탈퇴
+              </Text>
+              <Text style={[styles.settingDescription, styles.dangerDescription]}>
+                모든 개인 데이터와 수련 기록이 영구 삭제됩니다.
+              </Text>
+            </View>
+            <Text style={[styles.arrowText, styles.dangerText]}>
+              {isDeletingAccount ? "…" : "›"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -331,6 +393,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: COLORS.textSecondary,
     fontWeight: "300",
+  },
+  dangerItem: {
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+  },
+  dangerText: {
+    color: "#F87171",
+    fontWeight: "600",
+  },
+  dangerDescription: {
+    color: "#FCA5A5",
+  },
+  disabledItem: {
+    opacity: 0.6,
   },
   permissionWarning: {
     fontSize: 12,
