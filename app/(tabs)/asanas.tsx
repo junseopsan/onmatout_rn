@@ -17,11 +17,11 @@ import { AsanaCard } from "../../components/AsanaCard";
 import { AsanaCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
-import { useAsanas, useAsanaSearch } from "../../hooks/useAsanas";
+import { useAsanas, useAsanaSearch, useFavoriteAsanas } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFavoriteAsanasDetail } from "../../hooks/useDashboard";
 import { RootStackParamList } from "../../navigation/types";
-import { AsanaCategory } from "../../types/asana";
+import { Asana, AsanaCategory } from "../../types/asana";
 
 const { width: screenWidth } = Dimensions.get("window");
 const cardWidth = (screenWidth - 32 - 24) / 2; // 32 = 좌우 패딩, 24 = 카드 간 간격
@@ -52,6 +52,7 @@ export default function AsanasScreen() {
 
   const { data: favoriteAsanas = [], refetch: refetchFavorites } =
     useFavoriteAsanasDetail();
+  const { data: favoriteAsanaIds = [] } = useFavoriteAsanas();
 
   // 디버깅을 위한 로그 추가
   console.log("아사나 탭 상태:", {
@@ -76,9 +77,12 @@ export default function AsanasScreen() {
   const filteredAsanas = useMemo(() => {
     let filtered;
 
-    // 즐겨찾기 모드인 경우 즐겨찾기 아사나에서 시작
+    // 즐겨찾기 모드인 경우 즐겨찾기 ID 목록을 기준으로 필터링
     if (showFavoritesOnly) {
-      filtered = favoriteAsanas;
+      // favoriteAsanaIds에 포함된 아사나만 표시 (해제한 아사나는 제외)
+      filtered = favoriteAsanas.filter((asana) =>
+        favoriteAsanaIds.includes(asana.id)
+      );
     } else {
       filtered = allAsanas;
     }
@@ -93,7 +97,7 @@ export default function AsanasScreen() {
     }
 
     return filtered;
-  }, [allAsanas, favoriteAsanas, selectedCategories, showFavoritesOnly]);
+  }, [allAsanas, favoriteAsanas, favoriteAsanaIds, selectedCategories, showFavoritesOnly]);
 
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
@@ -118,20 +122,23 @@ export default function AsanasScreen() {
     // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
     console.log("즐겨찾기 토글:", asanaId, isFavorite);
 
-    // 즐겨찾기 관련 쿼리 캐시 무효화 (모든 즐겨찾기 관련 쿼리)
-    queryClient.invalidateQueries({
-      queryKey: ["favoriteAsanas"],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["favoriteAsanasDetail"],
-    });
-
-    // 즐겨찾기 모드가 활성화된 경우 아사나 목록도 새로고침
-    if (showFavoritesOnly) {
-      queryClient.invalidateQueries({
-        queryKey: ["asanas"],
+    // 즐겨찾기 해제 시 ID 목록에서만 제거 (목록에는 남아있고 하트만 비어있는 상태로 표시)
+    if (!isFavorite) {
+      queryClient.setQueryData<string[]>(["favoriteAsanas"], (oldData) => {
+        if (!oldData) return oldData;
+        return oldData.filter((id) => id !== asanaId);
+      });
+    } else {
+      // 즐겨찾기 추가 시 ID 목록에 추가
+      queryClient.setQueryData<string[]>(["favoriteAsanas"], (oldData) => {
+        if (!oldData) return [asanaId];
+        if (oldData.includes(asanaId)) return oldData;
+        return [...oldData, asanaId];
       });
     }
+
+    // 즐겨찾기 상세 목록은 무효화하지 않음 (목록에 남아있도록)
+    // 즐겨찾기 모드가 활성화된 경우 아사나 목록도 새로고침하지 않음
   };
 
   // 즐겨찾기 필터 토글
@@ -210,8 +217,9 @@ export default function AsanasScreen() {
 
   const renderAsanaCard = ({ item }: { item: any }) => {
     // 즐겨찾기 상태 확인 (로그인된 사용자만)
+    // ID 목록을 우선 확인 (즉시 반영되도록)
     const isFavorite = isAuthenticated
-      ? favoriteAsanas.some((fav: any) => fav.id === item.id)
+      ? favoriteAsanaIds.includes(item.id)
       : false;
 
     return (
