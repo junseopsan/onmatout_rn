@@ -1,4 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
+import { Image } from "expo-image";
 import React, { useCallback } from "react";
 import {
   FlatList,
@@ -87,11 +88,18 @@ export default function DashboardScreen() {
     </View>
   );
 
-  const renderHeader = () => <View style={styles.header}></View>;
+  const renderListHeader = () => (
+    <View style={styles.logoContainer}>
+      <Image
+        source={require("../../images/onthemat_rm_bg.png")}
+        style={styles.logo}
+        contentFit="contain"
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {renderHeader()}
       {/* 에러 상태 */}
       {isError && (
         <View style={styles.errorContainer}>
@@ -114,6 +122,7 @@ export default function DashboardScreen() {
         keyExtractor={(item, index) =>
           loadingData ? `skeleton-${index}` : item.id
         }
+        ListHeaderComponent={renderListHeader}
         ListEmptyComponent={!loadingData ? renderEmptyComponent : null}
         refreshControl={
           <RefreshControl
@@ -153,10 +162,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  logoContainer: {
     paddingTop: 60, // 상태바 높이 + 여백
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingLeft: 18,
+    paddingBottom: 0,
+  },
+  logo: {
+    width: 120,
+    height: 40,
   },
   title: {
     fontSize: 28,
@@ -169,6 +182,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   listContainer: {
+    paddingTop: 0,
     paddingBottom: 20,
   },
   emptyContainer: {
