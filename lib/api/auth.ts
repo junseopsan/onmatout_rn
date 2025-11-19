@@ -224,11 +224,72 @@ export const authAPI = {
           };
         }
 
-        // 기존 사용자가 없으면 오류 반환
-        console.log("기존 사용자 없음 - 회원가입 필요");
+        // 기존 사용자가 없으면 프로필 자동 생성
+        console.log("기존 사용자 없음 - 프로필 자동 생성");
+        
+        // user_id로 프로필 조회 (혹시 모를 경우를 대비)
+        const { data: profileByUserId } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        let userProfile = null;
+
+        if (profileByUserId) {
+          console.log("user_id로 프로필 발견:", profileByUserId);
+          userProfile = profileByUserId;
+        } else {
+          // 프로필이 없으면 자동 생성 (name은 빈 문자열로 설정하여 닉네임 설정 화면으로 리다이렉트)
+          console.log("프로필 자동 생성 시작");
+          const { data: newProfile, error: createError } = await supabase
+            .from("user_profiles")
+            .insert({
+              user_id: currentUser.id,
+              phone: normalizedPhone,
+              name: "", // 닉네임 설정 화면으로 리다이렉트하기 위해 빈 문자열로 설정 (NOT NULL 제약조건 만족)
+              push_notifications: true,
+              email_notifications: false,
+              practice_reminders: true,
+              theme: "light",
+              language: "ko",
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("프로필 생성 실패:", createError);
+            // 프로필 생성 실패 시 에러 반환 (세션이 있어도 프로필이 없으면 문제)
+            return {
+              success: false,
+              message: "프로필 생성에 실패했습니다. 다시 시도해주세요.",
+            };
+          }
+
+          console.log("프로필 자동 생성 성공:", newProfile);
+          userProfile = newProfile;
+        }
+
+        // Supabase 세션에서 사용자 정보 사용
+        const sessionUser = data.session?.user || data.user || currentUser;
+
         return {
-          success: false,
-          message: "등록되지 않은 전화번호입니다. 회원가입이 필요합니다.",
+          success: true,
+          message: "인증이 완료되었습니다.",
+          data: {
+            user: sessionUser
+              ? {
+                  ...sessionUser,
+                  profile: userProfile,
+                }
+              : {
+                  id: currentUser.id,
+                  phone: credentials.phone,
+                  profile: userProfile,
+                  created_at: new Date().toISOString(),
+                },
+            session: data.session,
+          },
         };
       } catch (supabaseError) {
         console.log("Supabase 처리 중 오류:", supabaseError);

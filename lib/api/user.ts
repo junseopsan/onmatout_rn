@@ -1,7 +1,5 @@
 import { UpdateUserProfileRequest, UserProfile } from "../../types/user";
 import {
-  SUPABASE_ANON_KEY,
-  SUPABASE_URL,
   ensureAuthenticated,
   supabase,
 } from "../supabase";
@@ -22,12 +20,21 @@ export const userAPI = {
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle(); // single() 대신 maybeSingle() 사용 (0개 또는 1개 행 허용)
 
       if (error) {
+        console.error("사용자 프로필 조회 실패:", error);
         return {
           success: false,
           message: error.message,
+        };
+      }
+
+      if (!data) {
+        console.log("사용자 프로필이 없습니다.");
+        return {
+          success: false,
+          message: "사용자 프로필을 찾을 수 없습니다.",
         };
       }
 
@@ -102,7 +109,7 @@ export const userAPI = {
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle(); // single() 대신 maybeSingle() 사용
 
       // 업데이트할 데이터 준비
       const updateData: any = {
@@ -263,10 +270,10 @@ export const userAPI = {
       }
 
       // 사용자 데이터 삭제 (연관 테이블)
+      // user_profiles에는 사용자 정보와 설정이 모두 포함되어 있음
       const tablesToClean = [
         "practice_records",
         "user_favorite_asanas",
-        "user_settings",
         "user_profiles",
       ];
 
@@ -285,23 +292,10 @@ export const userAPI = {
         }
       }
 
-      // Supabase Auth 사용자 삭제 (자기 계정 삭제 엔드포인트)
-      const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: SUPABASE_ANON_KEY,
-        },
-      });
-
-      if (!response.ok) {
-        console.error("Supabase 사용자 삭제 실패:", await response.text());
-        return {
-          success: false,
-          message: "계정을 삭제할 수 없습니다. 잠시 후 다시 시도해주세요.",
-        };
-      }
-
+      // Supabase Auth 사용자 삭제는 관리자 권한이 필요하므로
+      // 사용자 데이터만 삭제하고 로그아웃 처리
+      // auth.users는 CASCADE로 자동 삭제되거나 관리자가 삭제해야 함
+      console.log("사용자 데이터 삭제 완료. 로그아웃 처리 중...");
       await supabase.auth.signOut();
 
       return {

@@ -545,8 +545,8 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   logo: {
-    width: 900,
-    height: 360,
+    width: 300,
+    height: 100,
     alignSelf: "center",
   },
   menuText: {
