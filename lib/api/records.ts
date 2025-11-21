@@ -1,5 +1,6 @@
 import { Record, RecordFormData } from "../../types/record";
 import { ensureAuthenticated, supabase } from "../supabase";
+import { logger } from "../utils/logger";
 
 export const recordsAPI = {
   // 오늘 기록들 가져오기 (하루에 여러 기록 허용)
@@ -134,7 +135,7 @@ export const recordsAPI = {
       } = await supabase.auth.getUser();
 
       if (userError || !currentUser) {
-        console.error("세션 확인 실패:", userError);
+        logger.error("세션 확인 실패:", userError);
         return {
           success: false,
           message: "세션이 만료되었습니다. 다시 로그인해주세요.",
@@ -143,7 +144,7 @@ export const recordsAPI = {
 
       // 세션의 사용자 ID와 일치하는지 확인
       if (currentUser.id !== user_id) {
-        console.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.", {
+        logger.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.", {
           sessionUserId: currentUser.id,
           requestUserId: user_id,
         });
@@ -160,7 +161,7 @@ export const recordsAPI = {
       } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
-        console.error("세션 가져오기 실패:", sessionError);
+        logger.error("세션 가져오기 실패:", sessionError);
         return {
           success: false,
           message: "세션이 만료되었습니다. 다시 로그인해주세요.",
@@ -170,7 +171,7 @@ export const recordsAPI = {
       // 세션이 만료되었는지 확인
       const now = Math.floor(Date.now() / 1000);
       if (session.expires_at && session.expires_at < now) {
-        console.error("세션이 만료되었습니다:", {
+        logger.error("세션이 만료되었습니다:", {
           expiresAt: session.expires_at,
           now: now,
         });
@@ -182,14 +183,14 @@ export const recordsAPI = {
 
       // access_token이 있는지 확인
       if (!session.access_token) {
-        console.error("세션에 access_token이 없습니다.");
+        logger.error("세션에 access_token이 없습니다.");
         return {
           success: false,
           message: "세션이 유효하지 않습니다. 다시 로그인해주세요.",
         };
       }
 
-      console.log("세션 확인 완료:", {
+      logger.log("세션 확인 완료:", {
         userId: user_id,
         sessionUserId: currentUser.id,
         sessionExpiresAt: session.expires_at,
@@ -217,7 +218,7 @@ export const recordsAPI = {
       } = await supabase.auth.getUser();
 
       if (!verifyUser || verifyUser.id !== user_id) {
-        console.error("최종 세션 검증 실패:", {
+        logger.error("최종 세션 검증 실패:", {
           verifyUserId: verifyUser?.id,
           expectedUserId: user_id,
         });
@@ -227,7 +228,7 @@ export const recordsAPI = {
         };
       }
 
-      console.log("기록 저장 시도:", {
+      logger.log("기록 저장 시도:", {
         userId: user_id,
         payload: {
           ...recordPayload,
@@ -244,7 +245,7 @@ export const recordsAPI = {
         .single();
 
       if (error) {
-        console.error("기록 저장 실패:", {
+        logger.error("기록 저장 실패:", {
           error: error.message,
           code: error.code,
           details: error.details,
@@ -262,7 +263,7 @@ export const recordsAPI = {
         ) {
           // RLS 정책 위반은 보통 세션이 제대로 전달되지 않았을 때 발생
           // 세션을 다시 확인하고 사용자에게 재로그인 안내
-          console.error("RLS 정책 위반 - 세션 재확인 필요");
+          logger.error("RLS 정책 위반 - 세션 재확인 필요");
           return {
             success: false,
             message: "인증이 필요합니다. 다시 로그인해주세요.",
@@ -684,7 +685,7 @@ export const recordsAPI = {
       const allAsanas = await supabase.from("asanas").select("*");
 
       if (allAsanas.error) {
-        console.error("아사나 데이터 조회 실패:", allAsanas.error);
+        logger.error("아사나 데이터 조회 실패:", allAsanas.error);
       }
 
       const asanasMap = new Map();
@@ -772,14 +773,14 @@ export const recordsAPI = {
       const offset = page * pageSize;
 
       // 먼저 practice_records를 가져오고, 각 기록에 대해 user_profiles를 별도로 조회
-      console.log("getFeedRecords 시작:", { page, pageSize, offset });
+      logger.log("getFeedRecords 시작:", { page, pageSize, offset });
       const { data: records, error: recordsError } = await supabase
         .from("practice_records")
         .select("*")
         .order("created_at", { ascending: false })
         .range(offset, offset + pageSize - 1);
 
-      console.log("practice_records 조회 결과:", {
+      logger.log("practice_records 조회 결과:", {
         recordsLength: records?.length || 0,
         recordsError: recordsError?.message,
         records: records?.slice(0, 2), // 처음 2개만 로깅
@@ -931,28 +932,28 @@ export const recordsAPI = {
     message?: string;
   }> => {
     try {
-      console.log("=== 댓글 추가 시작 ===");
-      console.log("입력 파라미터:", { recordId, content, userId });
+      logger.log("=== 댓글 추가 시작 ===");
+      logger.log("입력 파라미터:", { recordId, content, userId });
 
       // 사용자 ID 확인 (파라미터로 받거나 auth에서 가져오기)
       let user_id = userId;
       if (!user_id) {
-        console.log("userId가 제공되지 않음, auth에서 조회 시도");
+        logger.log("userId가 제공되지 않음, auth에서 조회 시도");
         const auth = await ensureAuthenticated();
         if (!auth) {
-          console.log("사용자 인증 실패");
+          logger.log("사용자 인증 실패");
           return {
             success: false,
             message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
           };
         }
         user_id = auth.userId;
-        console.log("auth에서 사용자 ID 조회:", user_id);
+        logger.log("auth에서 사용자 ID 조회:", user_id);
       } else {
-        console.log("제공된 사용자 ID 사용:", user_id);
+        logger.log("제공된 사용자 ID 사용:", user_id);
       }
 
-      console.log("댓글 삽입 시도:", { user_id, record_id: recordId, content });
+      logger.log("댓글 삽입 시도:", { user_id, record_id: recordId, content });
       const { data, error } = await supabase
         .from("feed_comments")
         .insert({
@@ -964,11 +965,11 @@ export const recordsAPI = {
         .single();
 
       if (error) {
-        console.log("댓글 삽입 실패:", error);
+        logger.log("댓글 삽입 실패:", error);
         throw error;
       }
 
-      console.log("댓글 삽입 성공:", data);
+      logger.log("댓글 삽입 성공:", data);
 
       // 사용자 프로필 정보 별도 조회
       const { data: profile } = await supabase
@@ -977,7 +978,7 @@ export const recordsAPI = {
         .eq("user_id", user_id)
         .single();
 
-      console.log("사용자 프로필 조회:", profile);
+      logger.log("사용자 프로필 조회:", profile);
 
       const result = {
         success: true,
@@ -987,10 +988,10 @@ export const recordsAPI = {
         },
       };
 
-      console.log("댓글 추가 최종 결과:", result);
+      logger.log("댓글 추가 최종 결과:", result);
       return result;
     } catch (error) {
-      console.log("댓글 추가 오류:", error);
+      logger.log("댓글 추가 오류:", error);
       return {
         success: false,
         message: "댓글 추가에 실패했습니다.",

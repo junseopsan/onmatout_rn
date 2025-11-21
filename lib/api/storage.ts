@@ -2,6 +2,7 @@ import Constants from "expo-constants";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../supabase";
+import { logger } from "../utils/logger";
 
 export const storageAPI = {
   // 이미지 선택 및 업로드
@@ -13,7 +14,7 @@ export const storageAPI = {
     message?: string;
   }> => {
     try {
-      console.log("프로필 이미지 업로드 시작:", userId);
+      logger.log("프로필 이미지 업로드 시작:", userId);
 
       // Supabase 인증 상태 확인
       const {
@@ -54,7 +55,7 @@ export const storageAPI = {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const imageAsset = result.assets[0];
         const imageUri = imageAsset.uri;
-        console.log("선택된 이미지:", imageUri);
+        logger.log("선택된 이미지:", imageUri);
 
         // 파일 확장자 및 MIME 타입 추출
         const fileExtension = (
@@ -66,7 +67,7 @@ export const storageAPI = {
         const fileName = `${Date.now()}.${fileExtension}`;
         let filePath = `${userId}/${fileName}`;
 
-        console.log("업로드할 파일 경로:", filePath);
+        logger.log("업로드할 파일 경로:", filePath);
 
         // RN/Expo에서는 FileSystem을 통한 base64 업로드가 더 안정적
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
@@ -81,7 +82,7 @@ export const storageAPI = {
         }
         const byteArray = new Uint8Array(byteNumbers);
 
-        console.log("이미지 byteArray 생성 완료, 크기:", byteArray.length);
+        logger.log("이미지 byteArray 생성 완료, 크기:", byteArray.length);
 
         // 파일 크기 제한 (5MB)
         const maxSize = 5 * 1024 * 1024; // 5MB
@@ -104,13 +105,13 @@ export const storageAPI = {
 
         // 업로드 실패 시 여러 방식으로 재시도
         if (uploadResult.error) {
-          console.log("첫 번째 업로드 실패:", uploadResult.error.message);
+          logger.log("첫 번째 업로드 실패:", uploadResult.error.message);
 
           // 1. 파일명을 더 간단하게 변경하여 재시도
           const simpleFileName = `avatar_${Date.now()}.${fileExtension}`;
           const simpleFilePath = `${userId}/${simpleFileName}`;
 
-          console.log("간단한 파일명으로 재시도:", simpleFilePath);
+          logger.log("간단한 파일명으로 재시도:", simpleFilePath);
           uploadResult = await supabase.storage
             .from("avatars")
             .upload(simpleFilePath, byteArray, {
@@ -120,11 +121,11 @@ export const storageAPI = {
             });
 
           if (uploadResult.error) {
-            console.log("간단한 파일명도 실패:", uploadResult.error.message);
+            logger.log("간단한 파일명도 실패:", uploadResult.error.message);
 
             // 2. 루트 경로에 직접 업로드 시도
             const rootFileName = `avatar_${Date.now()}.${fileExtension}`;
-            console.log("루트 경로로 재시도:", rootFileName);
+            logger.log("루트 경로로 재시도:", rootFileName);
 
             uploadResult = await supabase.storage
               .from("avatars")
@@ -154,7 +155,7 @@ export const storageAPI = {
           .from("avatars")
           .getPublicUrl(filePath);
 
-        console.log("업로드 성공:", urlData.publicUrl);
+        logger.log("업로드 성공:", urlData.publicUrl);
         return {
           success: true,
           url: urlData.publicUrl,
@@ -183,7 +184,7 @@ export const storageAPI = {
     message?: string;
   }> => {
     try {
-      console.log("프로필 이미지 삭제 시작:", imageUrl);
+      logger.log("프로필 이미지 삭제 시작:", imageUrl);
 
       // URL에서 파일 경로 추출
       const urlParts = imageUrl.split("/");
@@ -201,7 +202,7 @@ export const storageAPI = {
         };
       }
 
-      console.log("삭제 성공");
+      logger.log("삭제 성공");
       return {
         success: true,
       };

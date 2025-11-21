@@ -4,6 +4,7 @@ import {
   VerifyCredentials,
 } from "../../types/auth";
 import { supabase } from "../supabase";
+import { logger } from "../utils/logger";
 
 export const authAPI = {
   // 전화번호로 로그인/회원가입 요청 (Twilio OTP 사용)
@@ -11,13 +12,13 @@ export const authAPI = {
     credentials: LoginCredentials
   ): Promise<AuthResponse> => {
     try {
-      console.log("OTP 인증번호 발송 시작:", credentials.phone);
+      logger.log("OTP 인증번호 발송 시작:", credentials.phone);
 
       // 전화번호 형식 정규화 (테스트 계정용)
       let normalizedPhone = credentials.phone;
       if (credentials.phone === "+821000000000") {
         normalizedPhone = "01000000000";
-        console.log(
+        logger.log(
           "전화번호 형식 정규화:",
           credentials.phone,
           "->",
@@ -27,7 +28,7 @@ export const authAPI = {
 
       // 테스트 계정 확인 (심사용)
       if (normalizedPhone === "01000000000") {
-        console.log("테스트 계정 인증번호 발송 (우회)");
+        logger.log("테스트 계정 인증번호 발송 (우회)");
         return {
           success: true,
           message: "테스트 계정용 인증번호가 발송되었습니다.",
@@ -40,20 +41,20 @@ export const authAPI = {
       });
 
       if (error) {
-        console.log("OTP 인증번호 발송 실패:", error.message);
+        logger.log("OTP 인증번호 발송 실패:", error.message);
         return {
           success: false,
           message: error.message || "인증번호 발송에 실패했습니다.",
         };
       }
 
-      console.log("OTP 인증번호 발송 성공");
+      logger.log("OTP 인증번호 발송 성공");
       return {
         success: true,
         message: "인증 코드가 전송되었습니다.",
       };
     } catch (error) {
-      console.error("OTP 발송 오류:", error);
+      logger.error("OTP 발송 오류:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "인증번호 발송 실패",
@@ -63,16 +64,16 @@ export const authAPI = {
 
   // 인증 코드 확인 (Twilio OTP 검증)
   verifyOTP: async (credentials: VerifyCredentials): Promise<AuthResponse> => {
-    console.log("=== OTP 인증번호 검증 시작 ===");
-    console.log("전화번호:", credentials.phone);
-    console.log("인증 코드:", credentials.code);
+    logger.log("=== OTP 인증번호 검증 시작 ===");
+    logger.log("전화번호:", credentials.phone);
+    logger.log("인증 코드:", credentials.code);
 
     try {
       // 전화번호 형식 정규화 (테스트 계정용)
       let normalizedPhone = credentials.phone;
       if (credentials.phone === "+821000000000") {
         normalizedPhone = "01000000000";
-        console.log(
+        logger.log(
           "전화번호 형식 정규화:",
           credentials.phone,
           "->",
@@ -82,10 +83,10 @@ export const authAPI = {
 
       // 테스트 계정 확인 (심사용)
       if (normalizedPhone === "01000000000" && credentials.code === "123456") {
-        console.log("테스트 계정 인증번호 검증 (우회)");
+        logger.log("테스트 계정 인증번호 검증 (우회)");
 
         // 테스트 계정 인증 성공 처리
-        console.log("테스트 계정 인증 성공, Supabase 사용자 조회/생성 시작");
+        logger.log("테스트 계정 인증 성공, Supabase 사용자 조회/생성 시작");
 
         // 기존 사용자 조회 (전화번호로)
         const { data: existingProfiles, error: profileError } = await supabase
@@ -95,7 +96,7 @@ export const authAPI = {
           .limit(1);
 
         if (profileError) {
-          console.log("기존 사용자 조회 실패:", profileError);
+          logger.log("기존 사용자 조회 실패:", profileError);
           return {
             success: false,
             message: "사용자 조회에 실패했습니다.",
@@ -103,7 +104,7 @@ export const authAPI = {
         }
 
         if (existingProfiles && existingProfiles.length > 0) {
-          console.log("기존 사용자 발견:", existingProfiles[0]);
+          logger.log("기존 사용자 발견:", existingProfiles[0]);
           return {
             success: true,
             message: "테스트 계정 로그인 성공",
@@ -114,7 +115,7 @@ export const authAPI = {
             },
           };
         } else {
-          console.log("기존 사용자 없음, 테스트 계정 생성 필요");
+          logger.log("기존 사용자 없음, 테스트 계정 생성 필요");
           return {
             success: false,
             message:
@@ -122,7 +123,7 @@ export const authAPI = {
           };
         }
       } else if (credentials.phone === "01000000000") {
-        console.log("테스트 계정 인증번호 불일치");
+        logger.log("테스트 계정 인증번호 불일치");
         return {
           success: false,
           message: "테스트 계정의 인증번호는 123456입니다.",
@@ -137,22 +138,22 @@ export const authAPI = {
       });
 
       if (error) {
-        console.log("OTP 인증번호 검증 실패:", error.message);
+        logger.log("OTP 인증번호 검증 실패:", error.message);
         return {
           success: false,
           message: error.message || "인증번호가 일치하지 않습니다.",
         };
       }
 
-      console.log("OTP 인증번호 검증 성공");
+      logger.log("OTP 인증번호 검증 성공");
 
       // 인증 성공 후 Supabase에서 사용자 조회/생성 처리
       try {
-        console.log("Supabase 사용자 조회/생성 시작:", credentials.phone);
+        logger.log("Supabase 사용자 조회/생성 시작:", credentials.phone);
 
         // 전화번호 정규화 (숫자만 추출)
         const normalizedPhone = credentials.phone.replace(/[^0-9]/g, "");
-        console.log("정규화된 전화번호:", normalizedPhone);
+        logger.log("정규화된 전화번호:", normalizedPhone);
 
         // 세션 확인 (RLS 정책이 auth.uid()를 사용하므로 필수)
         const {
@@ -161,7 +162,7 @@ export const authAPI = {
         } = await supabase.auth.getUser();
 
         if (userError || !currentUser) {
-          console.error("세션 확인 실패:", userError);
+          logger.error("세션 확인 실패:", userError);
           return {
             success: false,
             message: "세션이 만료되었습니다. 다시 로그인해주세요.",
@@ -169,7 +170,7 @@ export const authAPI = {
         }
 
         // 전화번호로 사용자 프로필 조회 (세션 기반)
-        console.log("전화번호로 사용자 프로필 조회:", normalizedPhone);
+        logger.log("전화번호로 사용자 프로필 조회:", normalizedPhone);
         const { data: existingProfilesData, error: profileError } =
           await supabase
             .from("user_profiles")
@@ -177,7 +178,7 @@ export const authAPI = {
             .eq("phone", normalizedPhone)
             .limit(1);
 
-        console.log("사용자 프로필 조회 결과:", {
+        logger.log("사용자 프로필 조회 결과:", {
           existingProfilesData,
           profileError,
         });
@@ -185,21 +186,21 @@ export const authAPI = {
         let existingProfiles = null;
 
         if (profileError) {
-          console.log("사용자 프로필 조회 실패:", profileError);
+          logger.log("사용자 프로필 조회 실패:", profileError);
           existingProfiles = [];
         } else if (existingProfilesData && existingProfilesData.length > 0) {
-          console.log("기존 사용자 발견:", existingProfilesData[0]);
+          logger.log("기존 사용자 발견:", existingProfilesData[0]);
           existingProfiles = existingProfilesData;
         } else {
-          console.log("기존 사용자 없음 확인");
+          logger.log("기존 사용자 없음 확인");
           existingProfiles = [];
         }
 
         if (existingProfiles && existingProfiles.length > 0) {
-          console.log("기존 사용자 발견:", existingProfiles[0]);
+          logger.log("기존 사용자 발견:", existingProfiles[0]);
 
           // 기존 사용자가 있으면 로그인 성공
-          console.log("기존 사용자 로그인 성공");
+          logger.log("기존 사용자 로그인 성공");
 
           // Supabase 세션에서 사용자 정보 사용 (세션이 있으면)
           const sessionUser = data.session?.user || data.user;
@@ -225,7 +226,7 @@ export const authAPI = {
         }
 
         // 기존 사용자가 없으면 프로필 자동 생성
-        console.log("기존 사용자 없음 - 프로필 자동 생성");
+        logger.log("기존 사용자 없음 - 프로필 자동 생성");
         
         // user_id로 프로필 조회 (혹시 모를 경우를 대비)
         const { data: profileByUserId } = await supabase
@@ -237,11 +238,11 @@ export const authAPI = {
         let userProfile = null;
 
         if (profileByUserId) {
-          console.log("user_id로 프로필 발견:", profileByUserId);
+          logger.log("user_id로 프로필 발견:", profileByUserId);
           userProfile = profileByUserId;
         } else {
           // 프로필이 없으면 자동 생성 (name은 빈 문자열로 설정하여 닉네임 설정 화면으로 리다이렉트)
-          console.log("프로필 자동 생성 시작");
+          logger.log("프로필 자동 생성 시작");
           const { data: newProfile, error: createError } = await supabase
             .from("user_profiles")
             .insert({
@@ -258,7 +259,7 @@ export const authAPI = {
             .single();
 
           if (createError) {
-            console.error("프로필 생성 실패:", createError);
+            logger.error("프로필 생성 실패:", createError);
             // 프로필 생성 실패 시 에러 반환 (세션이 있어도 프로필이 없으면 문제)
             return {
               success: false,
@@ -266,7 +267,7 @@ export const authAPI = {
             };
           }
 
-          console.log("프로필 자동 생성 성공:", newProfile);
+          logger.log("프로필 자동 생성 성공:", newProfile);
           userProfile = newProfile;
         }
 
@@ -292,7 +293,7 @@ export const authAPI = {
           },
         };
       } catch (supabaseError) {
-        console.log("Supabase 처리 중 오류:", supabaseError);
+        logger.log("Supabase 처리 중 오류:", supabaseError);
         // OTP 인증은 성공했으므로 성공으로 처리
         // Supabase가 세션을 자동으로 저장했으므로 세션과 사용자 정보 반환
         return {
@@ -305,7 +306,7 @@ export const authAPI = {
         };
       }
     } catch (error) {
-      console.error("인증번호 검증 오류:", error);
+      logger.error("인증번호 검증 오류:", error);
       return {
         success: false,
         message: error instanceof Error ? error.message : "인증번호 검증 실패",

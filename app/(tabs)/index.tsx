@@ -83,7 +83,7 @@ export default function DashboardScreen() {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        아직 수련 기록이 없어요.\n첫 번째 수련을 시작해보세요!
+        아직 수련 기록이 없어요.{"\n"}첫 번째 수련을 시작해보세요!
       </Text>
     </View>
   );

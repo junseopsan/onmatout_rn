@@ -3,6 +3,7 @@ import {
   ensureAuthenticated,
   supabase,
 } from "../supabase";
+import { logger } from "../utils/logger";
 
 export const userAPI = {
   // 사용자 프로필 조회
@@ -14,7 +15,7 @@ export const userAPI = {
     message?: string;
   }> => {
     try {
-      console.log("사용자 프로필 조회 시작:", userId);
+      logger.log("사용자 프로필 조회 시작:", userId);
 
       const { data, error } = await supabase
         .from("user_profiles")
@@ -23,7 +24,7 @@ export const userAPI = {
         .maybeSingle(); // single() 대신 maybeSingle() 사용 (0개 또는 1개 행 허용)
 
       if (error) {
-        console.error("사용자 프로필 조회 실패:", error);
+        logger.error("사용자 프로필 조회 실패:", error);
         return {
           success: false,
           message: error.message,
@@ -31,20 +32,20 @@ export const userAPI = {
       }
 
       if (!data) {
-        console.log("사용자 프로필이 없습니다.");
+        logger.log("사용자 프로필이 없습니다.");
         return {
           success: false,
           message: "사용자 프로필을 찾을 수 없습니다.",
         };
       }
 
-      console.log("사용자 프로필 조회 성공:", data);
+      logger.log("사용자 프로필 조회 성공:", data);
       return {
         success: true,
         data,
       };
     } catch (error) {
-      console.error("사용자 프로필 조회 오류:", error);
+      logger.error("사용자 프로필 조회 오류:", error);
       return {
         success: false,
         message: "사용자 프로필 조회 중 오류가 발생했습니다.",
@@ -62,8 +63,8 @@ export const userAPI = {
     message?: string;
   }> => {
     try {
-      console.log("=== 사용자 프로필 저장 시작 ===");
-      console.log("입력 파라미터:", { userId, profile });
+      logger.log("=== 사용자 프로필 저장 시작 ===");
+      logger.log("입력 파라미터:", { userId, profile });
 
       // 세션 확인 (RPC를 사용하더라도 세션이 있어야 함)
       const auth = await ensureAuthenticated();
@@ -89,7 +90,7 @@ export const userAPI = {
       } = await supabase.auth.getUser();
 
       if (userError || !currentUser) {
-        console.error("세션 확인 실패:", userError);
+        logger.error("세션 확인 실패:", userError);
         return {
           success: false,
           message: "세션이 만료되었습니다. 다시 로그인해주세요.",
@@ -97,7 +98,7 @@ export const userAPI = {
       }
 
       if (currentUser.id !== userId) {
-        console.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.");
+        logger.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.");
         return {
           success: false,
           message: "권한이 없습니다.",
@@ -140,7 +141,7 @@ export const userAPI = {
 
       // 기존 프로필이 있으면 update, 없으면 insert
       if (existingProfile.data) {
-        console.log("기존 프로필 업데이트 시작...");
+        logger.log("기존 프로필 업데이트 시작...");
         result = await supabase
           .from("user_profiles")
           .update(updateData)
@@ -148,7 +149,7 @@ export const userAPI = {
           .select()
           .single();
       } else {
-        console.log("새 프로필 생성 시작...");
+        logger.log("새 프로필 생성 시작...");
         // 새 프로필 생성 시 필수 필드 포함
         const insertData = {
           user_id: userId,
@@ -163,20 +164,20 @@ export const userAPI = {
       }
 
       if (result.error) {
-        console.error("프로필 저장 실패:", result.error);
+        logger.error("프로필 저장 실패:", result.error);
         return {
           success: false,
           message: `프로필 저장 실패: ${result.error.message}`,
         };
       }
 
-      console.log("프로필 저장 성공:", result.data);
+      logger.log("프로필 저장 성공:", result.data);
       return {
         success: true,
         data: result.data,
       };
     } catch (error) {
-      console.error("사용자 프로필 저장 중 오류:", error);
+      logger.error("사용자 프로필 저장 중 오류:", error);
       return {
         success: false,
         message: "사용자 프로필 저장 중 오류가 발생했습니다.",
@@ -194,7 +195,7 @@ export const userAPI = {
     message?: string;
   }> => {
     try {
-      console.log("사용자 프로필 업데이트 시작:", { userId, profile });
+      logger.log("사용자 프로필 업데이트 시작:", { userId, profile });
 
       // 업데이트할 데이터 준비
       const updateData: any = {};
@@ -226,13 +227,13 @@ export const userAPI = {
         };
       }
 
-      console.log("사용자 프로필 업데이트 성공:", data);
+      logger.log("사용자 프로필 업데이트 성공:", data);
       return {
         success: true,
         data: data,
       };
     } catch (error) {
-      console.error("사용자 프로필 업데이트 중 오류:", error);
+      logger.error("사용자 프로필 업데이트 중 오류:", error);
       return {
         success: false,
         message: "사용자 프로필 업데이트 중 오류가 발생했습니다.",
@@ -284,7 +285,7 @@ export const userAPI = {
           .eq("user_id", userId);
 
         if (error) {
-          console.error(`테이블 ${table} 데이터 삭제 실패:`, error);
+          logger.error(`테이블 ${table} 데이터 삭제 실패:`, error);
           return {
             success: false,
             message: "계정 데이터를 삭제하는 중 오류가 발생했습니다.",
@@ -295,14 +296,14 @@ export const userAPI = {
       // Supabase Auth 사용자 삭제는 관리자 권한이 필요하므로
       // 사용자 데이터만 삭제하고 로그아웃 처리
       // auth.users는 CASCADE로 자동 삭제되거나 관리자가 삭제해야 함
-      console.log("사용자 데이터 삭제 완료. 로그아웃 처리 중...");
+      logger.log("사용자 데이터 삭제 완료. 로그아웃 처리 중...");
       await supabase.auth.signOut();
 
       return {
         success: true,
       };
     } catch (error) {
-      console.error("계정 삭제 중 오류:", error);
+      logger.error("계정 삭제 중 오류:", error);
       return {
         success: false,
         message: "계정 삭제 중 오류가 발생했습니다.",

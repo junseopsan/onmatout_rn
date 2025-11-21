@@ -11,6 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.onmatout.app",
       "buildNumber": "5",
+      "privacyPolicyUrl": "https://www.onmatout.com/privacy-policy",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -31,6 +32,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.onmatout.app",
       "versionCode": 1,
+      "privacyPolicyUrl": "https://www.onmatout.com/privacy-policy",
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "config": {
         "googleMapsApiKey": "AIzaSyD2BOFCuW4iHtfQGd2CWdcHVNt8Hi1dLVM"

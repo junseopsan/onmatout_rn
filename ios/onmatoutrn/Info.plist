@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -33,18 +33,30 @@
     </array>
     <key>CFBundleVersion</key>
     <string>5</string>
+    <key>GMSApiKey</key>
+    <string>AIzaSyD2BOFCuW4iHtfQGd2CWdcHVNt8Hi1dLVM</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>NMFClientId</key>
+    <string>t64x6v66aj</string>
     <key>NSAppTransportSecurity</key>
     <dict>
       <key>NSAllowsArbitraryLoads</key>
       <true/>
     </dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>주변 요가원을 찾기 위해 위치 정보가 필요합니다.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
+    </array>
+    <key>NSUserNotificationUsageDescription</key>
+    <string>요가 수련 리마인더와 중요 알림을 받기 위해 알림 권한이 필요합니다.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>remote-notification</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
@@ -72,7 +84,5 @@
     <string>Dark</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
-    <key>NMFClientId</key>
-    <string>t64x6v66aj</string>
   </dict>
 </plist>

@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { logger } from "../utils/logger";
 
 export interface Asana {
   id: string;
@@ -80,17 +81,17 @@ export const asanasAPI = {
         user_id = user.id;
       }
 
-      console.log("사용자 ID:", user_id);
-      console.log("auth.uid():", (await supabase.auth.getUser()).data.user?.id);
+      logger.log("사용자 ID:", user_id);
+      logger.log("auth.uid():", (await supabase.auth.getUser()).data.user?.id);
 
       // RLS 정책을 우회하기 위해 서비스 키를 사용하거나, 
       // 현재 사용자 ID가 auth.uid()와 일치하는지 확인
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (currentUser && currentUser.id !== user_id) {
-        console.log("사용자 ID 불일치 - auth.uid()와 전달받은 user_id가 다름");
+        logger.log("사용자 ID 불일치 - auth.uid()와 전달받은 user_id가 다름");
         // auth.uid()가 undefined인 경우 전달받은 user_id 사용
         if (!currentUser.id) {
-          console.log("auth.uid()가 undefined이므로 전달받은 user_id 사용");
+          logger.log("auth.uid()가 undefined이므로 전달받은 user_id 사용");
         } else {
           return {
             success: false,
@@ -116,7 +117,7 @@ export const asanasAPI = {
           .eq("asana_id", asanaId);
 
         if (error) {
-          console.error("즐겨찾기 제거 에러:", error);
+          logger.error("즐겨찾기 제거 에러:", error);
           return {
             success: false,
             message: `즐겨찾기 제거에 실패했습니다: ${error.message}`,
@@ -135,7 +136,7 @@ export const asanasAPI = {
         });
 
         if (error) {
-          console.error("즐겨찾기 추가 에러:", error);
+          logger.error("즐겨찾기 추가 에러:", error);
           return {
             success: false,
             message: `즐겨찾기 추가에 실패했습니다: ${error.message}`,
@@ -203,7 +204,7 @@ export const asanasAPI = {
     categories?: string[]
   ): Promise<PaginatedResponse<Asana>> => {
     try {
-      console.log(
+      logger.log(
         `아사나 페이지네이션 시작: 페이지 ${page}, 개수 ${limit}, 카테고리:`,
         categories
       );
@@ -216,21 +217,21 @@ export const asanasAPI = {
       // 카테고리 필터 적용
       if (categories && categories.length > 0) {
         query = query.in("category_name_en", categories);
-        console.log(`카테고리 필터 적용:`, categories);
+        logger.log(`카테고리 필터 적용:`, categories);
       }
 
       // 페이지네이션 적용 (안전한 범위 계산)
       const from = Math.max(0, (page - 1) * limit);
       const to = from + limit - 1;
 
-      console.log(`페이지네이션 범위: ${from} ~ ${to}`);
+      logger.log(`페이지네이션 범위: ${from} ~ ${to}`);
 
       // 먼저 전체 개수를 확인
       const { count: totalCount } = await query.range(0, 0);
 
       // 범위가 전체 개수를 초과하는지 확인
       if (totalCount && from >= totalCount) {
-        console.log(
+        logger.log(
           `페이지네이션 범위 초과: ${from} >= ${totalCount}, 빈 결과 반환`
         );
         return {
@@ -246,7 +247,7 @@ export const asanasAPI = {
       if (error) {
         // 페이지네이션 범위 오류인 경우 전체 데이터를 가져옴
         if (error.code === "PGRST103") {
-          console.log("페이지네이션 범위 오류, 전체 데이터 조회로 대체");
+          logger.log("페이지네이션 범위 오류, 전체 데이터 조회로 대체");
 
           const { data: allData, error: allError } = await query.range(0, 999);
 
@@ -274,7 +275,7 @@ export const asanasAPI = {
 
       const hasMore = count ? from + limit < count : false;
 
-      console.log(
+      logger.log(
         `아사나 페이지네이션 성공: 페이지 ${page}, ${
           data?.length || 0
         }개, 전체 ${count}개, 더 있음: ${hasMore}`
@@ -393,7 +394,7 @@ export const asanasAPI = {
     query: string
   ): Promise<{ success: boolean; data?: Asana[]; message?: string }> => {
     try {
-      console.log("아사나 검색 시작:", query);
+      logger.log("아사나 검색 시작:", query);
 
       const { data, error } = await supabase
         .from("asanas")
@@ -411,7 +412,7 @@ export const asanasAPI = {
         };
       }
 
-      console.log("아사나 검색 성공:", data?.length || 0, "개");
+      logger.log("아사나 검색 성공:", data?.length || 0, "개");
       return {
         success: true,
         data: data || [],
