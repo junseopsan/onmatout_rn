@@ -1,7 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { Image } from "expo-image";
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import {
+  Animated,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -52,6 +53,12 @@ export default function DashboardScreen() {
   const { data: asanasData } = useAsanas();
   const asanas = asanasData?.pages?.flatMap((page: any) => page.data) || [];
 
+  // 스크롤 애니메이션을 위한 ref
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<"up" | "down">("up");
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+
   // 화면이 포커스될 때마다 데이터 새로고침
   useFocusEffect(
     useCallback(() => {
@@ -88,18 +95,89 @@ export default function DashboardScreen() {
     </View>
   );
 
-  const renderListHeader = () => (
-    <View style={styles.logoContainer}>
-      <Image
-        source={require("../../images/onthemat_rm_bg.png")}
-        style={styles.logo}
-        contentFit="contain"
-      />
-    </View>
+  // 스크롤 이벤트 핸들러
+  const handleScroll = useCallback(
+    (event: any) => {
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDifference = currentScrollY - lastScrollY.current;
+
+      // 스크롤 방향 결정 (10px 이상 움직였을 때만)
+      if (Math.abs(scrollDifference) > 10) {
+        if (scrollDifference > 0 && currentScrollY > 50) {
+          // 아래로 스크롤 - 헤더 숨기기
+          if (scrollDirection.current !== "down") {
+            scrollDirection.current = "down";
+            Animated.parallel([
+              Animated.timing(headerTranslateY, {
+                toValue: -120, // 로고 영역 높이만큼 위로 이동
+                duration: 300,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (scrollDifference < 0) {
+          // 위로 스크롤 - 헤더 보이기
+          if (scrollDirection.current !== "up") {
+            scrollDirection.current = "up";
+            Animated.parallel([
+              Animated.timing(headerTranslateY, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        }
+        lastScrollY.current = currentScrollY;
+      }
+    },
+    [headerTranslateY, headerOpacity]
   );
+
+  // 헤더 애니메이션 스타일
+  const headerAnimatedStyle = {
+    transform: [{ translateY: headerTranslateY }],
+    opacity: headerOpacity,
+  };
 
   return (
     <View style={styles.container}>
+      {/* 상태바 영역까지 포함한 배경 레이어 */}
+      <Animated.View
+        style={[
+          styles.logoBackgroundLayer,
+          headerAnimatedStyle,
+          { opacity: headerOpacity },
+        ]}
+      />
+
+      {/* 로고 영역 */}
+      <Animated.View
+        style={[
+          styles.logoWrapper,
+          headerAnimatedStyle,
+          { opacity: headerOpacity },
+        ]}
+      >
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../../images/onthemat_rm_bg.png")}
+            style={styles.logo}
+            contentFit="contain"
+          />
+        </View>
+      </Animated.View>
+
       {/* 에러 상태 */}
       {isError && (
         <View style={styles.errorContainer}>
@@ -122,7 +200,6 @@ export default function DashboardScreen() {
         keyExtractor={(item, index) =>
           loadingData ? `skeleton-${index}` : item.id
         }
-        ListHeaderComponent={renderListHeader}
         ListEmptyComponent={!loadingData ? renderEmptyComponent : null}
         refreshControl={
           <RefreshControl
@@ -132,6 +209,8 @@ export default function DashboardScreen() {
             tintColor={COLORS.primary}
           />
         }
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage && !loadingData) {
             fetchNextPage();
@@ -162,8 +241,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  logoContainer: {
+  logoBackgroundLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100, // 로고 영역 높이 (상태바 60 + 로고 40)
+    backgroundColor: COLORS.background,
+    zIndex: 9,
+  },
+  logoWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     paddingTop: 60, // 상태바 높이 + 여백
+    zIndex: 10,
+  },
+  logoContainer: {
     paddingLeft: 18,
     paddingBottom: 0,
   },
@@ -182,7 +277,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   listContainer: {
-    paddingTop: 0,
+    paddingTop: 100, // 로고 영역 높이만큼 상단 여백 (로고가 absolute이므로)
     paddingBottom: 20,
   },
   emptyContainer: {
