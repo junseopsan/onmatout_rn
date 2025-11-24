@@ -2,9 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   FlatList,
   StyleSheet,
@@ -17,11 +18,15 @@ import { AsanaCard } from "../../components/AsanaCard";
 import { AsanaCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
-import { useAsanas, useAsanaSearch, useFavoriteAsanas } from "../../hooks/useAsanas";
+import {
+  useAsanas,
+  useAsanaSearch,
+  useFavoriteAsanas,
+} from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFavoriteAsanasDetail } from "../../hooks/useDashboard";
 import { RootStackParamList } from "../../navigation/types";
-import { Asana, AsanaCategory } from "../../types/asana";
+import { AsanaCategory } from "../../types/asana";
 
 const { width: screenWidth } = Dimensions.get("window");
 const cardWidth = (screenWidth - 32 - 24) / 2; // 32 = 좌우 패딩, 24 = 카드 간 간격
@@ -37,6 +42,20 @@ export default function AsanasScreen() {
     []
   );
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // 상세 화면에서 돌아온 경우를 추적하기 위한 ref
+  const isReturningFromDetail = useRef(false);
+  const previousFocusedState = useRef(false);
+
+  // 무한 스크롤 디바운싱을 위한 ref
+  const loadingMoreRef = useRef(false);
+
+  // 스크롤 애니메이션을 위한 ref
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<"up" | "down">("up");
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
 
   // React Query hooks
   const {
@@ -97,13 +116,40 @@ export default function AsanasScreen() {
     }
 
     return filtered;
-  }, [allAsanas, favoriteAsanas, favoriteAsanaIds, selectedCategories, showFavoritesOnly]);
+  }, [
+    allAsanas,
+    favoriteAsanas,
+    favoriteAsanaIds,
+    selectedCategories,
+    showFavoritesOnly,
+  ]);
 
-  // 화면이 포커스될 때마다 데이터 새로고침
+  // 화면이 포커스될 때마다 데이터 새로고침 (상세 화면에서 돌아온 경우 제외)
   useFocusEffect(
     useCallback(() => {
+      // 이전에 포커스되지 않았던 경우 (첫 마운트 또는 탭 직접 클릭)
+      if (!previousFocusedState.current) {
+        previousFocusedState.current = true;
+        if (isAuthenticated) {
+          console.log("아사나 탭: 초기 포커스 시 데이터 새로고침");
+          refetch();
+          refetchFavorites();
+        }
+        return;
+      }
+
+      // 상세 화면에서 돌아온 경우 새로고침하지 않음
+      if (isReturningFromDetail.current) {
+        console.log("아사나 탭: 상세 화면에서 돌아옴 - 새로고침 건너뜀");
+        isReturningFromDetail.current = false;
+        return;
+      }
+
+      // 탭을 직접 클릭한 경우 새로고침
       if (isAuthenticated) {
-        console.log("아사나 탭: 화면 포커스 시 데이터 새로고침 및 필터 초기화");
+        console.log(
+          "아사나 탭: 탭 직접 접근 시 데이터 새로고침 및 필터 초기화"
+        );
         refetch();
         refetchFavorites(); // 즐겨찾기 목록도 새로고침
         // 필터/검색/즐겨찾기 상태 초기화
@@ -115,6 +161,8 @@ export default function AsanasScreen() {
   );
 
   const handleAsanaPress = (asana: any) => {
+    // 상세 화면으로 이동할 때 플래그 설정
+    isReturningFromDetail.current = true;
     navigation.navigate("AsanaDetail", { id: asana.id });
   };
 
@@ -175,11 +223,74 @@ export default function AsanasScreen() {
     }
   };
 
-  const handleLoadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+  const handleLoadMore = useCallback(() => {
+    // 디바운싱: 이미 로딩 중이면 건너뜀
+    if (
+      loadingMoreRef.current ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      isLoading
+    ) {
+      return;
     }
-  };
+
+    loadingMoreRef.current = true;
+    fetchNextPage().finally(() => {
+      // 약간의 딜레이 후 플래그 리셋 (너무 빠른 연속 호출 방지)
+      setTimeout(() => {
+        loadingMoreRef.current = false;
+      }, 200);
+    });
+  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = useCallback(
+    (event: any) => {
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDifference = currentScrollY - lastScrollY.current;
+
+      // 스크롤 방향 결정 (10px 이상 움직였을 때만)
+      if (Math.abs(scrollDifference) > 10) {
+        if (scrollDifference > 0 && currentScrollY > 50) {
+          // 아래로 스크롤 - 헤더 숨기기
+          if (scrollDirection.current !== "down") {
+            scrollDirection.current = "down";
+            Animated.parallel([
+              Animated.timing(headerTranslateY, {
+                toValue: -200, // 헤더 + 필터 높이만큼 위로 이동
+                duration: 500,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerOpacity, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (scrollDifference < 0) {
+          // 위로 스크롤 - 헤더 보이기
+          if (scrollDirection.current !== "up") {
+            scrollDirection.current = "up";
+            Animated.parallel([
+              Animated.timing(headerTranslateY, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerOpacity, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        }
+        lastScrollY.current = currentScrollY;
+      }
+    },
+    [headerTranslateY, headerOpacity]
+  );
 
   const renderCategoryButton = (category: AsanaCategory) => {
     const categoryInfo = CATEGORIES[category];
@@ -244,17 +355,14 @@ export default function AsanasScreen() {
   const renderFooter = () => {
     // 더 이상 로드할 데이터가 없고, 현재 데이터가 있는 경우
     if (!hasNextPage && allAsanas.length > 0) {
-      return <View style={styles.endOfListContainer}></View>;
+      return null; // 인스타그램처럼 끝에 아무것도 표시하지 않음
     }
 
-    // 다음 페이지를 로드 중인 경우
+    // 다음 페이지를 로드 중인 경우 - 작은 인디케이터만 표시
     if (isFetchingNextPage) {
       return (
         <View style={styles.loadingMoreContainer}>
           <ActivityIndicator size="small" color={COLORS.primary} />
-          <Text style={styles.loadingMoreText}>
-            더 많은 아사나를 불러오는 중...
-          </Text>
         </View>
       );
     }
@@ -269,67 +377,91 @@ export default function AsanasScreen() {
     );
   }
 
+  // 헤더 애니메이션 스타일
+  const headerAnimatedStyle = {
+    transform: [{ translateY: headerTranslateY }],
+    opacity: headerOpacity,
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        {/* 검색창과 즐겨찾기 버튼 */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder={
-                showFavoritesOnly
-                  ? "즐겨찾기 아사나 검색..."
-                  : "아사나 이름으로 검색..."
-              }
-              placeholderTextColor={COLORS.textSecondary}
-              value={searchQuery}
-              onChangeText={handleSearch}
-              clearButtonMode="while-editing"
-            />
-          </View>
-          {isAuthenticated && (
-            <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={handleFavoriteFilterToggle}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={showFavoritesOnly ? "heart" : "heart-outline"}
-                size={24}
-                color={
-                  showFavoritesOnly ? COLORS.primary : COLORS.textSecondary
-                }
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      {/* 상태바 영역까지 포함한 배경 레이어 */}
+      <Animated.View
+        style={[
+          styles.headerBackgroundLayer,
+          headerAnimatedStyle,
+          { opacity: headerOpacity },
+        ]}
+      />
 
-      {/* 카테고리 필터 */}
-      <View style={styles.categoryContainer}>
-        <FlatList
-          data={
-            [
-              "Basic",
-              "SideBend",
-              "BackBend",
-              "ForwardBend",
-              "Twist",
-              "Inversion",
-              "Standing",
-              "Armbalance",
-              "Core",
-              "Rest",
-            ] as AsanaCategory[]
-          }
-          renderItem={({ item }) => renderCategoryButton(item)}
-          keyExtractor={(item) => item}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScrollView}
-        />
-      </View>
+      {/* 헤더와 필터를 하나로 묶어서 배경 처리 */}
+      <Animated.View
+        style={[
+          styles.headerWrapper,
+          headerAnimatedStyle,
+          { opacity: headerOpacity },
+        ]}
+      >
+        <View style={styles.header}>
+          {/* 검색창과 즐겨찾기 버튼 */}
+          <View style={styles.searchRow}>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder={
+                  showFavoritesOnly
+                    ? "즐겨찾기 아사나 검색..."
+                    : "아사나 이름으로 검색..."
+                }
+                placeholderTextColor={COLORS.textSecondary}
+                value={searchQuery}
+                onChangeText={handleSearch}
+                clearButtonMode="while-editing"
+              />
+            </View>
+            {isAuthenticated && (
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={handleFavoriteFilterToggle}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showFavoritesOnly ? "heart" : "heart-outline"}
+                  size={24}
+                  color={
+                    showFavoritesOnly ? COLORS.primary : COLORS.textSecondary
+                  }
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* 카테고리 필터 */}
+        <View style={styles.categoryContainer}>
+          <FlatList
+            data={
+              [
+                "Basic",
+                "SideBend",
+                "BackBend",
+                "ForwardBend",
+                "Twist",
+                "Inversion",
+                "Standing",
+                "Armbalance",
+                "Core",
+                "Rest",
+              ] as AsanaCategory[]
+            }
+            renderItem={({ item }) => renderCategoryButton(item)}
+            keyExtractor={(item) => item}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScrollView}
+          />
+        </View>
+      </Animated.View>
 
       {/* 에러 상태 */}
       {isError && (
@@ -405,26 +537,27 @@ export default function AsanasScreen() {
           data={isLoading ? Array(6).fill(null) : getDisplayAsanas()}
           renderItem={isLoading ? renderSkeletonItem : renderAsanaCard}
           keyExtractor={(item, index) =>
-            isLoading ? `skeleton-${index}` : `${item.id}-${index}`
+            isLoading ? `skeleton-${index}` : item.id
           }
+          extraData={[isLoading, isFetchingNextPage, getDisplayAsanas().length]}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={true}
           showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           onEndReached={!isLoading ? handleLoadMore : undefined}
-          onEndReachedThreshold={0.1}
+          onEndReachedThreshold={0.6}
           ListFooterComponent={renderFooter}
           ListFooterComponentStyle={styles.footer}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={8}
-          getItemLayout={(data, index) => ({
-            length: 200, // 카드 높이 + 마진
-            offset: 200 * Math.floor(index / 2),
-            index,
-          })}
+          removeClippedSubviews={false}
+          maxToRenderPerBatch={12}
+          windowSize={5}
+          initialNumToRender={12}
+          updateCellsBatchingPeriod={50}
+          // getItemLayout 제거: numColumns={2}와 함께 사용할 때 정확한 높이 계산이 어려워
+          // 동적 높이 계산으로 전환하여 빈 공백 문제 해결
         />
       )}
     </View>
@@ -436,10 +569,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  headerBackgroundLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 170, // 헤더 + 필터 전체 높이
+    backgroundColor: COLORS.background,
+    zIndex: 9,
+  },
+  headerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     paddingTop: 60, // 상태바 높이 + 여백
+    zIndex: 10,
+  },
+  header: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 12,
+    zIndex: 10,
   },
   searchRow: {
     flexDirection: "row",
@@ -458,6 +608,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16, // 좌우 여백 추가
+    paddingTop: 200, // 헤더 + 필터 높이만큼 상단 여백 (헤더가 absolute이므로)
     paddingBottom: 200, // 탭바 높이 + 여백 증가 (마지막 카드가 잘리지 않도록 충분한 여백)
   },
   row: {
@@ -491,15 +642,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loadingMoreContainer: {
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 20,
-  },
-  loadingMoreText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginLeft: 8,
+    paddingVertical: 16,
+    paddingBottom: 24,
   },
   endOfListContainer: {
     alignItems: "center",
@@ -556,7 +702,9 @@ const styles = StyleSheet.create({
   },
   categoryContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 0,
+    paddingBottom: 12,
+    zIndex: 10,
   },
   categoryScrollView: {
     flexDirection: "row",
