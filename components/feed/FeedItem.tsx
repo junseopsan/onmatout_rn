@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
-  Alert,
   Dimensions,
   StyleSheet,
   Text,
@@ -10,10 +9,8 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
-import {
-  useRecordStats,
-  useToggleLike,
-} from "../../hooks/useRecords";
+import { STATES } from "../../constants/states";
+import { useRecordStats, useToggleLike } from "../../hooks/useRecords";
 import { Asana } from "../../lib/api/asanas";
 import { Record } from "../../types/record";
 import CommentModal from "./CommentModal";
@@ -94,6 +91,11 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     return stateTexts[state] || "평온한";
   };
 
+  // 상태 정보 가져오기
+  const getStateInfo = (stateId: string) => {
+    return STATES.find((state) => state.id === stateId);
+  };
+
   // 소셜 기능 핸들러들
   const handleLike = () => {
     toggleLikeMutation.mutate(record.id);
@@ -102,7 +104,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   const handleComment = () => {
     setShowCommentModal(true);
   };
-
 
   return (
     <TouchableOpacity
@@ -178,11 +179,27 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
       {/* 상태 정보 */}
       {record.states && record.states.length > 0 && (
         <View style={styles.statesContainer}>
-          {record.states.map((state, index) => (
-            <View key={index} style={styles.stateItem}>
-              <Text style={styles.stateText}>{getStateText(state)}</Text>
-            </View>
-          ))}
+          {record.states.map((stateId, index) => {
+            const state = getStateInfo(stateId);
+            if (!state) return null;
+
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.stateItem,
+                  {
+                    borderColor: state.color,
+                    backgroundColor: `${state.color}15`,
+                  },
+                ]}
+              >
+                <Text style={[styles.stateText, { color: state.color }]}>
+                  {state.emoji} {state.label}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -305,10 +322,10 @@ const styles = StyleSheet.create({
   stateItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
     marginRight: 8,
     marginBottom: 4,
   },
@@ -318,7 +335,7 @@ const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    fontWeight: "500",
   },
   asanasContainer: {
     marginBottom: 12,
