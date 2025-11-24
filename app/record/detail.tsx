@@ -13,10 +13,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Button, Card, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
+import { CATEGORIES } from "../../constants/categories";
+import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
 import { useDeleteRecord } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
+import { AsanaCategory } from "../../types/asana";
 
 type RecordDetailRouteProp = RouteProp<RootStackParamList, "RecordDetail">;
 
@@ -86,7 +90,27 @@ export default function RecordDetailScreen() {
   const getAsanaImageUrl = (imageNumber: string) => {
     if (!imageNumber) return null;
     const baseNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
+    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${baseNumber}.png`;
+  };
+
+  // 카테고리 정보 가져오기
+  const getCategoryInfo = (categoryName: string) => {
+    const category = CATEGORIES[categoryName as AsanaCategory];
+    if (category) {
+      return {
+        label: category.label,
+        color: category.color,
+      };
+    }
+    return {
+      label: "기타",
+      color: COLORS.textSecondary,
+    };
+  };
+
+  // 상태 정보 가져오기
+  const getStateInfo = (stateId: string) => {
+    return STATES.find((state) => state.id === stateId);
   };
 
   // 기록 삭제
@@ -154,11 +178,6 @@ export default function RecordDetailScreen() {
           {record.asanas && record.asanas.length > 0 && (
             <View style={styles.asanasSection}>
               <View style={styles.asanasHeader}>
-                <Ionicons
-                  name="fitness-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
                 <Text style={styles.asanasTitle}>수련한 아사나</Text>
                 <View style={styles.asanaCount}>
                   <Text style={styles.asanaCountText}>
@@ -169,34 +188,163 @@ export default function RecordDetailScreen() {
               <View style={styles.asanasGrid}>
                 {record.asanas.map((asana: any, index: number) => {
                   const imageUrl = getAsanaImageUrl(asana.image_number);
+                  const categoryInfo = getCategoryInfo(
+                    asana.category_name_en || ""
+                  );
                   return (
-                    <View key={index} style={styles.asanaCard}>
-                      {imageUrl ? (
-                        <View style={styles.asanaImageContainer}>
-                          <Image
-                            source={{ uri: imageUrl }}
-                            style={styles.asanaImage}
-                            contentFit="contain"
-                            placeholder="🧘‍♀️"
-                            placeholderContentFit="contain"
-                            onError={() => {
-                              console.log("아사나 이미지 로딩 실패:", imageUrl);
-                            }}
-                            cachePolicy="memory-disk"
-                            priority="normal"
-                          />
+                    <Card
+                      key={index}
+                      backgroundColor="#4A4A4A"
+                      borderRadius="$4"
+                      overflow="hidden"
+                      shadowColor="$shadow"
+                      shadowOffset={{ width: 0, height: 2 }}
+                      shadowOpacity={0.1}
+                      shadowRadius={4}
+                      elevation={3}
+                      width="48%"
+                      pressStyle={{ opacity: 0.8 }}
+                    >
+                      {/* 이미지 영역 */}
+                      <YStack
+                        height={160}
+                        backgroundColor="#9A9A9A"
+                        position="relative"
+                      >
+                        {imageUrl ? (
+                          <YStack
+                            flex={1}
+                            justifyContent="center"
+                            alignItems="center"
+                            backgroundColor="#FFFFFF"
+                          >
+                            <Image
+                              source={{ uri: imageUrl }}
+                              style={{
+                                width: "80%",
+                                height: "80%",
+                                maxWidth: 120,
+                                maxHeight: 100,
+                              }}
+                              contentFit="contain"
+                              placeholder="이미지 로딩 중..."
+                              placeholderContentFit="contain"
+                              onError={() => {
+                                console.log(
+                                  "아사나 이미지 로딩 실패:",
+                                  imageUrl
+                                );
+                              }}
+                            />
+                          </YStack>
+                        ) : (
+                          <YStack
+                            flex={1}
+                            justifyContent="center"
+                            alignItems="center"
+                            backgroundColor="#9A9A9A"
+                          >
+                            <Text
+                              fontSize={28}
+                              fontWeight="bold"
+                              color="$textSecondary"
+                            >
+                              이미지 없음
+                            </Text>
+                          </YStack>
+                        )}
+
+                        {/* 카테고리 배지를 이미지 영역 좌측 상단에 배치 */}
+                        <View
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 4,
+                            elevation: 5,
+                          }}
+                        >
+                          <Button
+                            backgroundColor={categoryInfo.color}
+                            paddingHorizontal="$2"
+                            paddingVertical="$1"
+                            borderRadius={0}
+                            borderTopLeftRadius={0}
+                            borderTopRightRadius={0}
+                            borderBottomLeftRadius={0}
+                            borderBottomRightRadius={8}
+                            disabled
+                            height="auto"
+                            minHeight={24}
+                          >
+                            <Text fontSize={11} fontWeight="bold" color="white">
+                              {categoryInfo.label}
+                            </Text>
+                          </Button>
                         </View>
-                      ) : (
-                        <View style={styles.asanaImagePlaceholder}>
-                          <Ionicons
-                            name="fitness"
-                            size={24}
-                            color={COLORS.textSecondary}
-                          />
-                        </View>
-                      )}
-                      <Text style={styles.asanaCardName} numberOfLines={2}>
-                        {asana.sanskrit_name_kr}
+                      </YStack>
+
+                      {/* 내용 영역 */}
+                      <YStack padding="$3" paddingTop="$1">
+                        {/* 한국어 이름 */}
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "bold",
+                            color: "#FFFFFF",
+                            marginBottom: 4,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {asana.sanskrit_name_kr}
+                        </Text>
+
+                        {/* 영어 이름 */}
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#E0E0E0",
+                            fontStyle: "italic",
+                          }}
+                          numberOfLines={1}
+                        >
+                          {asana.sanskrit_name_en}
+                        </Text>
+                      </YStack>
+                    </Card>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* 감정 상태 섹션 */}
+          {record.states && record.states.length > 0 && (
+            <View style={styles.statesSection}>
+              <View style={styles.statesHeader}>
+                <Text style={styles.statesTitle}>수련 후 상태</Text>
+              </View>
+              <View style={styles.statesContainer}>
+                {record.states.map((stateId: string) => {
+                  const state = getStateInfo(stateId);
+                  if (!state) return null;
+
+                  return (
+                    <View
+                      key={stateId}
+                      style={[
+                        styles.stateChip,
+                        {
+                          borderColor: state.color,
+                          backgroundColor: `${state.color}15`,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.stateText, { color: state.color }]}>
+                        {state.emoji} {state.label}
                       </Text>
                     </View>
                   );
@@ -327,61 +475,37 @@ const styles = StyleSheet.create({
   asanasGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     gap: 12,
   },
-  asanaCard: {
-    width: "48%",
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 12,
+  statesSection: {
+    marginBottom: 24,
+  },
+  statesHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-    minHeight: 120,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    marginBottom: 16,
+    gap: 8,
   },
-  asanaImageContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-    backgroundColor: "white",
-    marginTop: 12,
-    marginBottom: 8,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  asanaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  asanaImagePlaceholder: {
-    width: 70,
-    height: 70,
-    borderRadius: 8,
-    backgroundColor: COLORS.background,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 8,
-    position: "relative",
-  },
-  asanaCardName: {
-    fontSize: 12,
+  statesTitle: {
+    fontSize: 18,
     fontWeight: "600",
-    color: "#000000",
-    textAlign: "center",
-    lineHeight: 16,
-    marginTop: 8,
-    width: "100%",
+    color: COLORS.text,
+  },
+  statesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  stateChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  stateText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   memoCard: {
     backgroundColor: "white",
