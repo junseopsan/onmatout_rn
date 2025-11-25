@@ -169,13 +169,13 @@ export default function DashboardScreen() {
           { opacity: headerOpacity },
         ]}
       >
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../../images/onthemat_rm_bg.png")}
-            style={styles.logo}
-            contentFit="contain"
-          />
-        </View>
+    <View style={styles.logoContainer}>
+      <Image
+        source={require("../../images/onthemat_rm_bg.png")}
+        style={styles.logo}
+        contentFit="contain"
+      />
+    </View>
       </Animated.View>
 
       {/* 에러 상태 */}

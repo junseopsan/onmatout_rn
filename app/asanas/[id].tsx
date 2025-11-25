@@ -1,11 +1,13 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +22,59 @@ const imageHeight = screenWidth * 0.85; // 화면 너비의 85% 높이로 증가
 
 type AsanaDetailRouteProp = RouteProp<RootStackParamList, "AsanaDetail">;
 
+// 공통으로 사용할 Shimmer 스켈레톤 컴포넌트
+const ShimmerSkeleton: React.FC<{ style?: ViewStyle }> = ({ style }) => {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+
+    return () => {
+      loop.stop();
+    };
+  }, [shimmerAnim]);
+
+  const translateX = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    // 화면 전체를 기준으로 넉넉하게 좌 → 우로 이동하도록 설정
+    outputRange: [-screenWidth, screenWidth],
+  });
+
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: "#f0f0f0",
+          borderRadius: 8,
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          // 컨테이너보다 조금 넓게 해서 양 끝까지 자연스럽게 흐르게 함
+          width: "60%",
+          transform: [{ translateX }],
+          backgroundColor: "#e6e6e6",
+          opacity: 0.85,
+        }}
+      />
+    </View>
+  );
+};
+
 export default function AsanaDetailScreen() {
   const route = useRoute<AsanaDetailRouteProp>();
   const navigation = useNavigation();
@@ -31,6 +86,10 @@ export default function AsanaDetailScreen() {
   const [preloadedImages, setPreloadedImages] = useState<Set<string>>(
     new Set()
   );
+
+  // 스와이프 애니메이션을 위한 ref
+  const gestureX = useRef(new Animated.Value(0)).current;
+  const screenWidthValue = useRef(new Animated.Value(screenWidth)).current;
 
   // React Query로 아사나 상세 데이터 가져오기
   const {
@@ -91,7 +150,7 @@ export default function AsanaDetailScreen() {
       setImageUrls(urls); // 첫 번째 이미지를 즉시 표시
 
       // 첫 번째 이미지도 미리 로딩
-      preloadImage(firstImageUrl);
+      await preloadImage(firstImageUrl);
 
       // 추가 이미지들 확인 (백그라운드에서)
       const additionalUrls: string[] = [];
@@ -112,13 +171,19 @@ export default function AsanaDetailScreen() {
         const allUrls = [...urls, ...additionalUrls];
         setImageUrls(allUrls);
 
-        // 모든 이미지 미리 로딩 (백그라운드에서)
-        preloadAllImages(allUrls);
+        // 모든 이미지 미리 로딩 완료까지 대기
+        await preloadAllImages(allUrls);
+      } else {
+        // 이미지가 하나만 있는 경우 첫 번째 이미지만 로드
+        // 이미 위에서 await preloadImage(firstImageUrl)로 로드했으므로 추가 작업 없음
       }
 
+      // 모든 이미지 로딩 완료 후 상태 업데이트
       setImageLoading(false);
-      // 인디케이터를 즉시 표시
+      // 인디케이터를 표시 (이미지가 2개 이상인 경우에만)
+      if (urls.length + additionalUrls.length > 1) {
       setShowIndicators(true);
+      }
     },
     [preloadImage, preloadAllImages]
   );
@@ -161,7 +226,7 @@ export default function AsanaDetailScreen() {
     return category?.label || categoryNameEn;
   };
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     if (imageUrls.length > 1) {
       const newIndex =
         currentImageIndex < imageUrls.length - 1 ? currentImageIndex + 1 : 0;
@@ -169,6 +234,7 @@ export default function AsanaDetailScreen() {
       // 다음 이미지가 미리 로딩되었는지 확인
       const nextImageUrl = imageUrls[newIndex];
       if (preloadedImages.has(nextImageUrl)) {
+        // 인덱스만 변경 (gestureX 리셋은 호출하는 쪽에서 처리)
         setCurrentImageIndex(newIndex);
       } else {
         // 미리 로딩되지 않은 경우 즉시 로딩
@@ -177,9 +243,9 @@ export default function AsanaDetailScreen() {
         });
       }
     }
-  };
+  }, [imageUrls, currentImageIndex, preloadedImages, preloadImage]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     if (imageUrls.length > 1) {
       const newIndex =
         currentImageIndex > 0 ? currentImageIndex - 1 : imageUrls.length - 1;
@@ -187,6 +253,7 @@ export default function AsanaDetailScreen() {
       // 이전 이미지가 미리 로딩되었는지 확인
       const prevImageUrl = imageUrls[newIndex];
       if (preloadedImages.has(prevImageUrl)) {
+        // 인덱스만 변경 (gestureX 리셋은 호출하는 쪽에서 처리)
         setCurrentImageIndex(newIndex);
       } else {
         // 미리 로딩되지 않은 경우 즉시 로딩
@@ -195,38 +262,117 @@ export default function AsanaDetailScreen() {
         });
       }
     }
-  };
+  }, [imageUrls, currentImageIndex, preloadedImages, preloadImage]);
 
-  const goToImage = (index: number) => {
+  const goToImage = useCallback(
+    (index: number) => {
     if (index >= 0 && index < imageUrls.length) {
       const targetImageUrl = imageUrls[index];
       if (preloadedImages.has(targetImageUrl)) {
+          gestureX.setValue(0);
         setCurrentImageIndex(index);
       } else {
         // 미리 로딩되지 않은 경우 즉시 로딩
         preloadImage(targetImageUrl).then(() => {
+            gestureX.setValue(0);
           setCurrentImageIndex(index);
         });
       }
     }
-  };
+    },
+    [imageUrls, preloadedImages, preloadImage, gestureX]
+  );
 
-  // 스와이프 제스처 핸들러
-  const onPanGestureEvent = useCallback((event: any) => {
+  // 다음/이전 이미지 인덱스 계산
+  const nextIndex =
+    imageUrls.length > 1 && currentImageIndex < imageUrls.length - 1
+      ? currentImageIndex + 1
+      : currentImageIndex;
+  const prevIndex =
+    imageUrls.length > 1 && currentImageIndex > 0
+      ? currentImageIndex - 1
+      : currentImageIndex;
+
+  // 다음 이미지 위치 계산 (왼쪽으로 스와이프할 때 오른쪽에서 나타남)
+  const nextImageTranslateX = Animated.add(gestureX, screenWidthValue);
+
+  // 이전 이미지 위치 계산 (오른쪽으로 스와이프할 때 왼쪽에서 나타남)
+  const negativeScreenWidth = useRef(new Animated.Value(-screenWidth)).current;
+  const prevImageTranslateX = Animated.add(gestureX, negativeScreenWidth);
+
+  // 스와이프 제스처 핸들러 - 실시간 업데이트
+  const onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: gestureX } }],
+    { useNativeDriver: true }
+  );
+
+  // 스와이프 종료 핸들러
+  const onHandlerStateChange = useCallback(
+    (event: any) => {
     const { translationX, state } = event.nativeEvent;
+
+      if (state === State.BEGAN) {
+        // 제스처 시작 시 gestureX를 리셋하여 깜빡임 방지
+        gestureX.setValue(0);
+      }
     
     if (state === State.END) {
       const threshold = 50; // 스와이프 임계값
       
-      if (translationX > threshold) {
+        if (translationX > threshold && currentImageIndex > 0) {
         // 오른쪽으로 스와이프 - 이전 이미지
-        prevImage();
-      } else if (translationX < -threshold) {
+          Animated.timing(gestureX, {
+            toValue: screenWidth,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            // 인덱스 변경과 동시에 gestureX를 리셋하되, 이미지가 보이지 않도록 처리
+            const newIndex =
+              currentImageIndex > 0
+                ? currentImageIndex - 1
+                : imageUrls.length - 1;
+            // 인덱스를 먼저 변경
+            setCurrentImageIndex(newIndex);
+            // 다음 프레임에서 gestureX 리셋 (인덱스 변경 후 리셋하여 깜빡임 방지)
+            setTimeout(() => {
+              gestureX.setValue(0);
+            }, 0);
+          });
+        } else if (
+          translationX < -threshold &&
+          currentImageIndex < imageUrls.length - 1
+        ) {
         // 왼쪽으로 스와이프 - 다음 이미지
-        nextImage();
+          Animated.timing(gestureX, {
+            toValue: -screenWidth,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            // 인덱스 변경과 동시에 gestureX를 리셋하되, 이미지가 보이지 않도록 처리
+            const newIndex =
+              currentImageIndex < imageUrls.length - 1
+                ? currentImageIndex + 1
+                : 0;
+            // 인덱스를 먼저 변경
+            setCurrentImageIndex(newIndex);
+            // 다음 프레임에서 gestureX 리셋 (인덱스 변경 후 리셋하여 깜빡임 방지)
+            setTimeout(() => {
+              gestureX.setValue(0);
+            }, 0);
+          });
+        } else {
+          // 임계값 미만이면 원래 위치로 복귀
+          Animated.spring(gestureX, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 7,
+          }).start();
+        }
       }
-    }
-  }, [nextImage, prevImage]);
+    },
+    [currentImageIndex, imageUrls.length, gestureX]
+  );
 
   if (loading) {
     return (
@@ -292,27 +438,78 @@ export default function AsanaDetailScreen() {
                 backgroundColor="white"
               >
                 <PanGestureHandler
-                  onHandlerStateChange={onPanGestureEvent}
+                  onGestureEvent={onGestureEvent}
+                  onHandlerStateChange={onHandlerStateChange}
                   minPointers={1}
                   maxPointers={1}
+                  activeOffsetX={[-10, 10]}
                 >
-                  <TouchableOpacity
+                  <Animated.View
                     style={{
                       flex: 1,
                       width: "100%",
                       justifyContent: "center",
                       alignItems: "center",
+                      overflow: "hidden",
                     }}
-                    onPress={nextImage}
-                    activeOpacity={0.9}
+                  >
+                    {/* 이전 이미지 (오른쪽으로 스와이프할 때) */}
+                    {imageUrls.length > 1 && currentImageIndex > 0 && (
+                      <Animated.View
+                        style={{
+                          position: "absolute",
+                          width: "85%",
+                          height: "85%",
+                          maxWidth: 280,
+                          maxHeight: 220,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          transform: [{ translateX: prevImageTranslateX }],
+                        }}
                   >
                     <Image
-                      source={{ uri: imageUrls[currentImageIndex] }}
+                          source={{ uri: imageUrls[prevIndex] }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                          }}
+                          contentFit="contain"
+                          placeholder="🖼️"
+                          placeholderContentFit="contain"
+                          priority="normal"
+                          cachePolicy="memory-disk"
+                          allowDownscaling={true}
+                        />
+                      </Animated.View>
+                    )}
+
+                    {/* 현재 이미지 */}
+                    <Animated.View
                       style={{
                         width: "85%",
                         height: "85%",
                         maxWidth: 280,
                         maxHeight: 220,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        transform: [{ translateX: gestureX }],
+                      }}
+                    >
+                      <TouchableOpacity
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                        onPress={nextImage}
+                        activeOpacity={0.9}
+                      >
+                        <Image
+                          source={{ uri: imageUrls[currentImageIndex] }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
                       }}
                       contentFit="contain"
                       placeholder="🖼️"
@@ -324,12 +521,44 @@ export default function AsanaDetailScreen() {
                       }}
                       priority="high"
                       cachePolicy="memory-disk"
-                      onLoad={() => setImageLoading(false)}
-                      transition={0} // 전환 애니메이션 제거로 즉시 표시
+                          transition={0}
                       allowDownscaling={true}
-                      recyclingKey={imageUrls[currentImageIndex]} // 고유 키로 캐시 최적화
+                          recyclingKey={imageUrls[currentImageIndex]}
                     />
                   </TouchableOpacity>
+                    </Animated.View>
+
+                    {/* 다음 이미지 (왼쪽으로 스와이프할 때) */}
+                    {imageUrls.length > 1 &&
+                      currentImageIndex < imageUrls.length - 1 && (
+                        <Animated.View
+                          style={{
+                            position: "absolute",
+                            width: "85%",
+                            height: "85%",
+                            maxWidth: 280,
+                            maxHeight: 220,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            transform: [{ translateX: nextImageTranslateX }],
+                          }}
+                        >
+                          <Image
+                            source={{ uri: imageUrls[nextIndex] }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                            contentFit="contain"
+                            placeholder="🖼️"
+                            placeholderContentFit="contain"
+                            priority="normal"
+                            cachePolicy="memory-disk"
+                            allowDownscaling={true}
+                          />
+                        </Animated.View>
+                      )}
+                  </Animated.View>
                 </PanGestureHandler>
 
                 {/* 스켈레톤 로딩 */}
@@ -345,27 +574,12 @@ export default function AsanaDetailScreen() {
                     backgroundColor="white"
                     zIndex={1}
                   >
-                    <View
+                    <ShimmerSkeleton
                       style={{
-                        width: "85%",
-                        height: "85%",
-                        maxWidth: 280,
-                        maxHeight: 220,
-                        backgroundColor: "#f0f0f0",
-                        borderRadius: 8,
-                        justifyContent: "center",
-                        alignItems: "center",
+                        width: "100%",
+                        height: "100%",
                       }}
-                    >
-                      <View
-                        style={{
-                          width: "60%",
-                          height: "60%",
-                          backgroundColor: "#e0e0e0",
-                          borderRadius: 4,
-                        }}
-                      />
-                    </View>
+                    />
                   </YStack>
                 )}
 
@@ -411,27 +625,12 @@ export default function AsanaDetailScreen() {
               alignItems="center"
               backgroundColor="white"
             >
-              <View
+              <ShimmerSkeleton
                 style={{
-                  width: "85%",
-                  height: "85%",
-                  maxWidth: 280,
-                  maxHeight: 220,
-                  backgroundColor: "#f0f0f0",
-                  borderRadius: 8,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  width: "100%",
+                  height: "100%",
                 }}
-              >
-                <View
-                  style={{
-                    width: "60%",
-                    height: "60%",
-                    backgroundColor: "#e0e0e0",
-                    borderRadius: 4,
-                  }}
-                />
-              </View>
+              />
             </YStack>
           )}
         </YStack>

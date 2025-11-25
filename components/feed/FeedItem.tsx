@@ -173,37 +173,10 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         </View>
       )}
 
-      {/* 메모 */}
+      {/* 메모 - 아이콘 위쪽 */}
       {record.memo && <Text style={styles.memo}>{record.memo}</Text>}
 
-      {/* 상태 정보 */}
-      {record.states && record.states.length > 0 && (
-        <View style={styles.statesContainer}>
-          {record.states.map((stateId, index) => {
-            const state = getStateInfo(stateId);
-            if (!state) return null;
-
-            return (
-              <View
-                key={index}
-                style={[
-                  styles.stateItem,
-                  {
-                    borderColor: state.color,
-                    backgroundColor: `${state.color}15`,
-                  },
-                ]}
-              >
-                <Text style={[styles.stateText, { color: state.color }]}>
-                  {state.emoji} {state.label}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      {/* 액션 버튼들 - 우측하단 */}
+      {/* 액션 버튼들 - 메모 아래쪽 */}
       <View style={styles.actionsContainer}>
         <TouchableOpacity
           style={[
@@ -422,11 +395,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   actionsContainer: {
-    position: "absolute",
-    bottom: 12,
-    right: 12,
     flexDirection: "row",
     gap: 8,
+    marginBottom: 12,
   },
   actionButton: {
     flexDirection: "row",

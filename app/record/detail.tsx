@@ -245,9 +245,11 @@ export default function RecordDetailScreen() {
                             backgroundColor="#9A9A9A"
                           >
                             <Text
-                              fontSize={28}
-                              fontWeight="bold"
-                              color="$textSecondary"
+                              style={{
+                                fontSize: 28,
+                                fontWeight: "bold",
+                                color: COLORS.textSecondary,
+                              }}
                             >
                               이미지 없음
                             </Text>
@@ -280,7 +282,13 @@ export default function RecordDetailScreen() {
                             height="auto"
                             minHeight={24}
                           >
-                            <Text fontSize={11} fontWeight="bold" color="white">
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                fontWeight: "bold",
+                                color: "white",
+                              }}
+                            >
                               {categoryInfo.label}
                             </Text>
                           </Button>

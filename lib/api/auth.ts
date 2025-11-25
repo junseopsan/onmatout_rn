@@ -1,5 +1,6 @@
 import {
   AuthResponse,
+  EmailLoginCredentials,
   LoginCredentials,
   VerifyCredentials,
 } from "../../types/auth";
@@ -7,6 +8,53 @@ import { supabase } from "../supabase";
 import { logger } from "../utils/logger";
 
 export const authAPI = {
+  // 이메일/비밀번호 로그인 (필요 시 자동 회원가입 시도)
+  signInWithEmail: async (
+    credentials: EmailLoginCredentials
+  ): Promise<AuthResponse> => {
+    try {
+      logger.log("이메일 로그인 시도:", credentials.email);
+
+      // 비밀번호 없이 이메일만으로 로그인 (비밀번호는 서버 설정에 따라 처리)
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: credentials.email,
+      });
+
+      if (error) {
+        logger.error("이메일 로그인 실패:", error.message);
+        return {
+          success: false,
+          message:
+            error.message ||
+            "이메일 로그인에 실패했습니다. 이메일을 확인해주세요.",
+        };
+      }
+
+      logger.log("이메일 로그인 성공:", {
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+      });
+
+      return {
+        success: true,
+        message: "이메일로 로그인되었습니다.",
+        data: {
+          user: data.user,
+          session: data.session,
+        },
+      };
+    } catch (err) {
+      logger.error("이메일 로그인 처리 중 오류:", err);
+      return {
+        success: false,
+        message:
+          err instanceof Error
+            ? err.message
+            : "이메일 로그인 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
   // 전화번호로 로그인/회원가입 요청 (Twilio OTP 사용)
   signInWithPhone: async (
     credentials: LoginCredentials
@@ -227,7 +275,7 @@ export const authAPI = {
 
         // 기존 사용자가 없으면 프로필 자동 생성
         logger.log("기존 사용자 없음 - 프로필 자동 생성");
-        
+
         // user_id로 프로필 조회 (혹시 모를 경우를 대비)
         const { data: profileByUserId } = await supabase
           .from("user_profiles")

@@ -1,6 +1,7 @@
 export interface User {
   id: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   created_at: string;
   updated_at: string;
   profile?: UserProfile;
@@ -30,6 +31,10 @@ export interface LoginCredentials {
 export interface VerifyCredentials {
   phone: string;
   code: string;
+}
+
+export interface EmailLoginCredentials {
+  email: string;
 }
 
 export interface AuthResponse {

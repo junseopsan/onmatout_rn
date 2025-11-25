@@ -44,10 +44,50 @@ export const getCurrentUser = async () => {
 };
 
 export const getCurrentSession = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session;
+  try {
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+
+    if (error) {
+      // Supabase가 보관 중이던 리프레시 토큰이 유효하지 않을 때 발생
+      if (
+        error.message &&
+        error.message.toLowerCase().includes("invalid refresh token")
+      ) {
+        console.log(
+          "[Auth] 무효한 리프레시 토큰 감지 → 로컬 Supabase 세션 초기화"
+        );
+
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const supabaseKeys = keys.filter((key) =>
+            key.toLowerCase().includes("supabase")
+          );
+          if (supabaseKeys.length > 0) {
+            await AsyncStorage.multiRemove(supabaseKeys);
+            console.log("[Auth] Supabase 관련 키 삭제 완료:", supabaseKeys);
+          }
+        } catch (storageError) {
+          console.log(
+            "[Auth] 무효 토큰 정리 중 AsyncStorage 오류:",
+            storageError
+          );
+        }
+
+        return null;
+      }
+
+      console.log("[Auth] 세션 조회 중 오류:", error.message);
+      return null;
+    }
+
+    return session;
+  } catch (e) {
+    console.log("[Auth] getCurrentSession 호출 중 예외:", e);
+    return null;
+  }
 };
 
 // 세션 확인 및 사용자 ID 가져오기 (API 호출 전 사용)

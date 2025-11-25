@@ -5,6 +5,7 @@ import { userAPI } from "../lib/api/user";
 import { getCurrentSession, getCurrentUser, supabase } from "../lib/supabase";
 import {
   AuthState,
+  EmailLoginCredentials,
   LoginCredentials,
   User,
   VerifyCredentials,
@@ -26,6 +27,7 @@ interface AuthStore extends AuthState {
   clearSession: () => Promise<void>;
   clearUser: () => void;
   signOut: () => Promise<void>;
+  signInWithEmail: (credentials: EmailLoginCredentials) => Promise<boolean>;
   signInWithPhone: (credentials: LoginCredentials) => Promise<boolean>;
   verifyOTP: (credentials: VerifyCredentials) => Promise<boolean>;
   saveUserProfile: (nickname: string) => Promise<boolean>;
@@ -415,6 +417,55 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       error: null,
       phoneNumber: null,
     });
+  },
+
+  signInWithEmail: async (credentials) => {
+    try {
+      console.log("=== signInWithEmail 시작 ===", credentials.email);
+      set({ loading: true, error: null });
+
+      const response = await authAPI.signInWithEmail(credentials);
+      console.log("signInWithEmail API 응답:", response);
+
+      if (response.success) {
+        const apiSession = response.data?.session || response.session || null;
+        const apiUser = response.data?.user || response.user || null;
+
+        set({
+          user: apiUser as any,
+          session: apiSession,
+          loading: false,
+          error: null,
+        });
+
+        try {
+          if (apiUser) {
+            await AsyncStorage.setItem("user", JSON.stringify(apiUser));
+          }
+          if (apiSession) {
+            await AsyncStorage.setItem("session", JSON.stringify(apiSession));
+          }
+        } catch (storageError) {
+          console.log("이메일 로그인 후 로컬 저장 실패:", storageError);
+        }
+
+        return true;
+      } else {
+        set({ error: response.message, loading: false });
+        return false;
+      }
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "이메일 로그인 요청 실패",
+        loading: false,
+      });
+      return false;
+    } finally {
+      set({ loading: false });
+    }
   },
 
   signInWithPhone: async (credentials) => {
