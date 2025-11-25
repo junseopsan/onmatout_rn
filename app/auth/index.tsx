@@ -17,9 +17,12 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
+const EMAIL_DOMAINS = ["gmail.com", "naver.com", "daum.net", "kakao.com"];
+
 export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
 
   const { signInWithEmail, loading, clearError } = useAuthStore();
   const { showSnackbar } = useNotification();
@@ -28,7 +31,26 @@ export default function AuthScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleEmailChange = (text: string) => {
-    setEmail(text.trim());
+    const value = text.trim();
+    setEmail(value);
+    setEmailError("");
+    clearError();
+
+    // 이미 @가 포함되어 있으면 추천 도메인은 숨김
+    if (!value || value.includes("@")) {
+      setEmailSuggestions([]);
+      return;
+    }
+
+    // 로컬 파트만으로 도메인 추천 생성
+    const localPart = value;
+    const suggestions = EMAIL_DOMAINS.map((domain) => `${localPart}@${domain}`);
+    setEmailSuggestions(suggestions);
+  };
+
+  const handleSelectEmailSuggestion = (suggestion: string) => {
+    setEmail(suggestion);
+    setEmailSuggestions([]);
     setEmailError("");
     clearError();
   };
@@ -124,6 +146,20 @@ export default function AuthScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              {emailSuggestions.length > 0 && (
+                <View style={styles.suggestionContainer}>
+                  {emailSuggestions.map((suggestion) => (
+                    <TouchableOpacity
+                      key={suggestion}
+                      style={styles.suggestionItem}
+                      onPress={() => handleSelectEmailSuggestion(suggestion)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.suggestionText}>{suggestion}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
               {emailError ? (
                 <Text style={styles.errorText}>{emailError}</Text>
               ) : null}
@@ -234,6 +270,26 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 32,
+  },
+  suggestionContainer: {
+    marginTop: 8,
+    width: "80%",
+    alignSelf: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    overflow: "hidden",
+  },
+  suggestionItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F2F2F2",
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: "#333333",
   },
   label: {
     fontSize: 16,
