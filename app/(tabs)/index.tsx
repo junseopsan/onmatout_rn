@@ -69,32 +69,6 @@ export default function DashboardScreen() {
     }, [isAuthenticated, refetch])
   );
 
-  // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading || !isAuthenticated) {
-    return (
-      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
-    );
-  }
-
-  const handleRecordPress = (record: any) => {
-    // 기록 상세 보기 로직 (필요시 구현)
-    console.log("기록 선택:", record);
-  };
-
-  const renderFeedItem = ({ item }: { item: any }) => (
-    <FeedItem record={item} asanas={asanas} onPress={handleRecordPress} />
-  );
-
-  const renderSkeletonItem = () => <FeedItemSkeleton />;
-
-  const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        아직 수련 기록이 없어요.{"\n"}첫 번째 수련을 시작해보세요!
-      </Text>
-    </View>
-  );
-
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(
     (event: any) => {
@@ -149,6 +123,32 @@ export default function DashboardScreen() {
     transform: [{ translateY: headerTranslateY }],
     opacity: headerOpacity,
   };
+
+  // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
+  if (loading || !isAuthenticated) {
+    return (
+      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
+    );
+  }
+
+  const handleRecordPress = (record: any) => {
+    // 기록 상세 보기 로직 (필요시 구현)
+    console.log("기록 선택:", record);
+  };
+
+  const renderFeedItem = ({ item }: { item: any }) => (
+    <FeedItem record={item} asanas={asanas} onPress={handleRecordPress} />
+  );
+
+  const renderSkeletonItem = () => <FeedItemSkeleton />;
+
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        아직 수련 기록이 없어요.{"\n"}첫 번째 수련을 시작해보세요!
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>

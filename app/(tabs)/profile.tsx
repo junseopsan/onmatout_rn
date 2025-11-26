@@ -103,6 +103,12 @@ export default function ProfileScreen() {
       // authStore도 초기화
       useAuthStore.getState().clearUser();
       console.log("로그아웃 완료");
+      
+      // 로그인 화면으로 이동
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Auth" }],
+      });
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }

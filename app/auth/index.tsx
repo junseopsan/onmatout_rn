@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -23,8 +23,19 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
+  const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { signInWithEmail, loading, clearError } = useAuthStore();
+  const { signInWithEmail, loading, error, clearError } = useAuthStore();
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
   const { showSnackbar } = useNotification();
 
   const navigation =
@@ -80,18 +91,46 @@ export default function AuthScreen() {
       });
 
       if (success) {
-        showSnackbar("로그인되었습니다.", "success");
-        // Tab에서 Auth로 진입했으므로, 뒤로가기로 이전 탭으로 복귀
-        navigation.goBack();
+        showSnackbar("인증 코드가 이메일로 전송되었습니다.", "success");
+        // OTP 입력 화면으로 이동
+        navigation.navigate("Verify", { email });
       } else {
-        showSnackbar(
-          "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.",
-          "error"
-        );
+        // authStore에서 설정된 에러 메시지 사용
+        const errorMessage = error || "이메일 전송에 실패했습니다. 이메일을 확인해주세요.";
+        
+        // Rate Limiting 에러인지 확인하고 타이머 시작
+        if (error && error.includes("초 후에 다시 시도해주세요")) {
+          const match = error.match(/(\d+)초 후에/);
+          if (match) {
+            const seconds = parseInt(match[1]);
+            setRateLimitSeconds(seconds);
+            
+            // 기존 타이머가 있다면 정리
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+            }
+            
+            // 1초마다 카운트다운
+            timerRef.current = setInterval(() => {
+              setRateLimitSeconds((prev) => {
+                if (prev === null || prev <= 1) {
+                  if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                  }
+                  return null;
+                }
+                return prev - 1;
+              });
+            }, 1000);
+          }
+        }
+        
+        showSnackbar(errorMessage, "error");
       }
     } catch (e) {
       showSnackbar(
-        "로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+        "이메일 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
         "error"
       );
     }
@@ -170,15 +209,20 @@ export default function AuthScreen() {
             <TouchableOpacity
               style={[
                 styles.button,
-                (!email.trim() || loading) && {
+                (!email.trim() || loading || rateLimitSeconds !== null) && {
                   opacity: 0.7,
                 },
               ]}
               onPress={handleSubmit}
-              disabled={loading || !email.trim()}
+              disabled={loading || !email.trim() || rateLimitSeconds !== null}
             >
               <Text style={styles.buttonText}>
-                {loading ? "처리 중..." : "나마스떼(नमस्ते, Namaste)"}
+                {loading 
+                  ? "처리 중..." 
+                  : rateLimitSeconds !== null 
+                    ? `${rateLimitSeconds}초 후 재시도` 
+                    : "나마스떼(नमस्ते, Namaste)"
+                }
               </Text>
             </TouchableOpacity>
 

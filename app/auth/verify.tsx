@@ -1,8 +1,20 @@
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { COLORS } from "../../constants/Colors";
+import { useNotification } from "../../contexts/NotificationContext";
+import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function VerifyScreen() {
@@ -10,15 +22,17 @@ export default function VerifyScreen() {
   const [codeError, setCodeError] = useState("");
   const [timeLeft, setTimeLeft] = useState(180); // 3분
   const [canResend, setCanResend] = useState(false);
-  const {
-    verifyOTP,
-    signInWithPhone,
-    loading,
-    error,
-    clearError,
-    phoneNumber,
-  } = useAuthStore();
-  const router = useRouter();
+
+  const route = useRoute();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { showSnackbar } = useNotification();
+
+  const { verifyOTP, signInWithEmail, loading, error, clearError } =
+    useAuthStore();
+
+  // 라우트 파라미터에서 이메일 가져오기
+  const email = (route.params as any)?.email || "";
 
   // 타이머 효과
   useEffect(() => {
@@ -47,10 +61,8 @@ export default function VerifyScreen() {
   };
 
   const handleVerify = async () => {
-    console.log("=== 인증 코드 확인 시작 ===");
-    console.log("입력된 코드:", code);
-    console.log("코드 길이:", code.length);
-    console.log("전화번호:", phoneNumber);
+    // iOS에서 키보드를 먼저 닫기
+    Keyboard.dismiss();
 
     if (!code.trim()) {
       setCodeError("인증 코드를 입력해주세요.");
@@ -62,46 +74,65 @@ export default function VerifyScreen() {
       return;
     }
 
-    // 저장된 전화번호 사용
-    const phone = phoneNumber || "+821012345678"; // 기본값으로 임시 전화번호
-    console.log("사용할 전화번호:", phone);
-    console.log("전화번호 형식 확인:", phone);
+    if (!email) {
+      showSnackbar("이메일 정보가 없습니다. 다시 로그인해주세요.", "error");
+      navigation.goBack();
+      return;
+    }
 
     try {
-      console.log("verifyOTP 함수 호출 시작");
-      console.log("호출할 함수:", verifyOTP);
-      const success = await verifyOTP({ phone, code });
-      console.log("인증 결과:", success);
+      const success = await verifyOTP({ email, code });
 
       if (success) {
-        console.log("인증 성공! AppContainer에서 자동 리다이렉트 처리됨");
-        // 인증 스토어에서 이미 사용자 정보와 프로필을 확인하고 있으므로
-        // AppContainer에서 자동으로 적절한 화면으로 리다이렉트됨
+        showSnackbar("로그인되었습니다.", "success");
+        // 로그인 성공 시 홈으로 이동
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "TabNavigator" }],
+        });
       } else {
-        console.log("인증 실패");
-        // OTP 만료 에러 처리
-        const error = useAuthStore.getState().error;
-        if (error && error.includes("expired")) {
-          Alert.alert(
-            "인증 코드 만료",
-            "인증 코드가 만료되었습니다. 새로운 인증 코드를 요청해주세요.",
-            [
-              {
-                text: "재전송",
-                onPress: () => {
-                  setTimeLeft(180);
-                  setCanResend(false);
-                  setCode("");
-                  handleResend();
-                },
+        // authStore에서 설정된 에러 메시지 사용
+        const currentError = useAuthStore.getState().error;
+        const errorMessage = currentError || "인증 코드가 올바르지 않습니다.";
+
+        // 에러 메시지에 따른 분류 (더 구체적인 조건을 먼저 체크)
+        if (
+          currentError &&
+          currentError.includes("올바르지 않거나 만료되었습니다")
+        ) {
+          // 잘못된 코드 입력 시 확인 버튼만 표시 (Supabase의 일반적인 invalid token 에러)
+          Alert.alert("인증 코드 오류", errorMessage, [
+            {
+              text: "확인",
+              onPress: () => {
+                setCode(""); // 코드 필드 클리어
               },
-              { text: "취소" },
-            ]
-          );
+            },
+          ]);
+        } else if (
+          currentError &&
+          currentError.includes("새로운 코드를 요청해주세요")
+        ) {
+          // 명확한 만료 메시지인 경우에만 재전송 옵션 제공
+          Alert.alert("인증 코드 만료", errorMessage, [
+            {
+              text: "재전송",
+              onPress: () => {
+                setTimeLeft(180);
+                setCanResend(false);
+                setCode("");
+                handleResend();
+              },
+            },
+            { text: "취소" },
+          ]);
+        } else {
+          // 기타 에러는 스낵바로 표시
+          showSnackbar(errorMessage, "error");
         }
       }
     } catch (error) {
-      Alert.alert("오류", "인증 중 오류가 발생했습니다. 다시 시도해주세요.");
+      showSnackbar("인증 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     }
   };
 
@@ -114,113 +145,122 @@ export default function VerifyScreen() {
   };
 
   const handleResend = async () => {
-    if (!canResend) return;
+    if (!canResend || !email) return;
 
-    // 저장된 전화번호 사용
-    const phone = phoneNumber || "+821012345678"; // 기본값으로 임시 전화번호
+    try {
+      const success = await signInWithEmail({ email });
 
-    const success = await signInWithPhone({ phone });
-
-    if (success) {
-      setTimeLeft(180);
-      setCanResend(false);
-      setCode("");
-      Alert.alert("재전송 완료", "인증 코드가 재전송되었습니다.");
+      if (success) {
+        setTimeLeft(180);
+        setCanResend(false);
+        setCode("");
+        showSnackbar("인증 코드가 재전송되었습니다.", "success");
+      } else {
+        showSnackbar("인증 코드 재전송에 실패했습니다.", "error");
+      }
+    } catch (error) {
+      showSnackbar("재전송 중 오류가 발생했습니다.", "error");
     }
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: COLORS.background }}
-      contentContainerStyle={{ flexGrow: 1, padding: 24 }}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        {/* Header */}
-        <View style={{ marginBottom: 48, alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: "bold",
-              color: COLORS.text,
-              marginBottom: 8,
-            }}
-          >
-            인증 코드 입력
-          </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              color: COLORS.textSecondary,
-              textAlign: "center",
-              marginBottom: 16,
-            }}
-          >
-            {phoneNumber
-              ? `${phoneNumber.replace(/\+82/, "0")} 로 전송된`
-              : "SMS로 전송된"}{" "}
-            {"\n"}6자리 인증 코드를 입력해주세요
-          </Text>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: COLORS.background }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          {/* Header */}
+          <View style={{ marginBottom: 48, alignItems: "center" }}>
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: "bold",
+                color: COLORS.text,
+                marginBottom: 8,
+              }}
+            >
+              인증 코드 입력
+            </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                color: COLORS.textSecondary,
+                textAlign: "center",
+                marginBottom: 16,
+              }}
+            >
+              {email ? `${email} 로 전송된` : "이메일로 전송된"} {"\n"}6자리
+              인증 코드를 입력해주세요
+            </Text>
 
-          {/* 타이머 */}
-          <Text
-            style={{
-              fontSize: 16,
-              color: COLORS.primary,
-              fontWeight: "600",
-              marginTop: 8,
-            }}
-          >
-            남은 시간: {formatTime(timeLeft)}
-          </Text>
+            {/* 타이머 */}
+            <Text
+              style={{
+                fontSize: 16,
+                color: COLORS.primary,
+                fontWeight: "600",
+                marginTop: 8,
+              }}
+            >
+              남은 시간: {formatTime(timeLeft)}
+            </Text>
+          </View>
+
+          {/* Form */}
+          <View style={{ marginBottom: 32 }}>
+            <Input
+              label="인증 코드"
+              placeholder="000000"
+              value={code}
+              onChangeText={handleCodeChange}
+              keyboardType="numeric"
+              error={codeError || error || undefined}
+              style={{ marginBottom: 24 }}
+              inputStyle={{
+                fontSize: 24,
+                textAlign: "center",
+                letterSpacing: 8,
+              }}
+            />
+
+            <Button
+              title="인증하기"
+              onPress={handleVerify}
+              loading={loading}
+              disabled={code.length !== 6 || loading}
+              size="large"
+            />
+          </View>
+
+          {/* 재전송 */}
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: COLORS.textSecondary,
+                marginBottom: 8,
+              }}
+            >
+              인증 코드를 받지 못하셨나요?
+            </Text>
+            <Button
+              title={canResend ? "인증 코드 재전송" : "재전송 대기 중"}
+              onPress={handleResend}
+              variant="outline"
+              size="small"
+              disabled={!canResend}
+              style={{ marginBottom: 16 }}
+            />
+          </View>
         </View>
-
-        {/* Form */}
-        <View style={{ marginBottom: 32 }}>
-          <Input
-            label="인증 코드"
-            placeholder="000000"
-            value={code}
-            onChangeText={handleCodeChange}
-            keyboardType="numeric"
-            error={codeError || error || undefined}
-            style={{ marginBottom: 24 }}
-            inputStyle={{
-              fontSize: 24,
-              textAlign: "center",
-              letterSpacing: 8,
-            }}
-          />
-
-          <Button
-            title="인증하기"
-            onPress={handleVerify}
-            loading={loading}
-            disabled={code.length !== 6 || loading}
-            size="large"
-          />
-        </View>
-
-        {/* 재전송 */}
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 14,
-              color: COLORS.textSecondary,
-              marginBottom: 8,
-            }}
-          >
-            인증 코드를 받지 못하셨나요?
-          </Text>
-          <Button
-            title={canResend ? "인증 코드 재전송" : "재전송 대기 중"}
-            onPress={handleResend}
-            variant="outline"
-            size="small"
-            disabled={!canResend}
-            style={{ marginBottom: 16 }}
-          />
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

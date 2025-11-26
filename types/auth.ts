@@ -29,7 +29,8 @@ export interface LoginCredentials {
 }
 
 export interface VerifyCredentials {
-  phone: string;
+  phone?: string;
+  email?: string;
   code: string;
 }
 
