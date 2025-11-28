@@ -179,11 +179,6 @@ export default function RecordDetailScreen() {
             <View style={styles.asanasSection}>
               <View style={styles.asanasHeader}>
                 <Text style={styles.asanasTitle}>수련한 아사나</Text>
-                <View style={styles.asanaCount}>
-                  <Text style={styles.asanaCountText}>
-                    {record.asanas.length}
-                  </Text>
-                </View>
               </View>
               <View style={styles.asanasGrid}>
                 {record.asanas.map((asana: any, index: number) => {
@@ -352,7 +347,7 @@ export default function RecordDetailScreen() {
                       ]}
                     >
                       <Text style={[styles.stateText, { color: state.color }]}>
-                        {state.emoji} {state.label}
+                        {state.label}
                       </Text>
                     </View>
                   );

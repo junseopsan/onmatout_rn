@@ -103,7 +103,7 @@ export default function ProfileScreen() {
       // authStore도 초기화
       useAuthStore.getState().clearUser();
       console.log("로그아웃 완료");
-      
+
       // 로그인 화면으로 이동
       navigation.reset({
         index: 0,
@@ -246,7 +246,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* 로그아웃 버튼 */}
-        {
+        {/* {
           <View style={styles.logoutSection}>
             <TouchableOpacity
               style={styles.logoutButton}
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
               <Text style={styles.logoutButtonText}>로그아웃</Text>
             </TouchableOpacity>
           </View>
-        }
+        } */}
 
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />

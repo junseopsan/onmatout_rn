@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   FlatList,
   Linking,
   Modal,
@@ -154,6 +155,12 @@ export default function StudiosScreen() {
   const [showRegionModal, setShowRegionModal] = useState(false);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
 
+  // 스크롤 애니메이션을 위한 ref
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<"up" | "down">("up");
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+
   // 검색어가 있을 때만 검색, 없을 때는 전체 데이터 사용
   const hasSearchQuery = searchQuery.trim().length > 0;
   const regionName = selectedRegion ? REGIONS[selectedRegion].name : null;
@@ -274,6 +281,55 @@ export default function StudiosScreen() {
       fetchNextPage();
     }
   };
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = useCallback(
+    (event: any) => {
+      const currentScrollY = event.nativeEvent.contentOffset.y;
+      const scrollDifference = currentScrollY - lastScrollY.current;
+
+      // 스크롤 방향 결정 (10px 이상 움직였을 때만)
+      if (Math.abs(scrollDifference) > 10) {
+        if (scrollDifference > 0 && currentScrollY > 50) {
+          // 아래로 스크롤 - 헤더 숨기기
+          if (scrollDirection.current !== "down") {
+            scrollDirection.current = "down";
+            Animated.parallel([
+              Animated.timing(headerTranslateY, {
+                toValue: -150, // 헤더 + 필터 높이만큼 위로 이동
+                duration: 300,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerOpacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        } else if (scrollDifference < 0) {
+          // 위로 스크롤 - 헤더 보이기
+          if (scrollDirection.current !== "up") {
+            scrollDirection.current = "up";
+            Animated.parallel([
+              Animated.timing(headerTranslateY, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+              Animated.timing(headerOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        }
+        lastScrollY.current = currentScrollY;
+      }
+    },
+    [headerTranslateY, headerOpacity]
+  );
 
   // 지역 리스트 메모이제이션 (모달 렌더링 최적화)
   const regionList = useMemo(() => {
@@ -405,7 +461,15 @@ export default function StudiosScreen() {
   return (
     <View style={styles.container}>
       {/* 검색 및 필터 바 */}
-      <View style={styles.headerContainer}>
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            transform: [{ translateY: headerTranslateY }],
+            opacity: headerOpacity,
+          },
+        ]}
+      >
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <TextInput
@@ -501,7 +565,7 @@ export default function StudiosScreen() {
                 }`}
           </Text>
         </View>
-      </View>
+      </Animated.View>
 
       {/* 에러 상태 */}
       {isError && (
@@ -539,6 +603,8 @@ export default function StudiosScreen() {
         <FlatList
           data={studios}
           keyExtractor={(item) => item.id}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           renderItem={({ item: studio }) => (
             <View style={styles.studioCard}>
               <View style={styles.studioHeader}>
@@ -745,8 +811,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   headerContainer: {
+    position: "absolute",
+    top: 60, // 상태바 높이 + 여백
+    left: 0,
+    right: 0,
     paddingHorizontal: 24,
-    marginBottom: 20,
+    paddingBottom: 12,
+    backgroundColor: COLORS.background,
+    zIndex: 10,
   },
   searchContainer: {
     flex: 1,
@@ -791,6 +863,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   studiosListContent: {
+    paddingTop: 110, // 헤더 + 필터 높이만큼 상단 여백 (헤더가 absolute이므로)
     paddingBottom: 20,
   },
   emptyContainer: {

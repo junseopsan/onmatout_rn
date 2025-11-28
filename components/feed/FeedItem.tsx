@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Dimensions,
   StyleSheet,
@@ -35,11 +35,14 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     return asanas.find((asana) => asana.id === asanaId);
   };
 
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
+  // 이미지 URL 생성 (메모이제이션)
+  const getImageUrl = useMemo(() => {
+    return (imageNumber: string) => {
+      if (!imageNumber) return null;
+      const formattedNumber = imageNumber.padStart(3, "0");
+      return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
+    };
+  }, []);
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -142,17 +145,32 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
           <View style={styles.asanasList}>
             {record.asanas.slice(0, 6).map((asanaId, index) => {
               const asana = getAsanaInfo(asanaId);
-              if (!asana) return null;
+              if (!asana) {
+                console.log(`피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`);
+                return null;
+              }
+
+              const imageUrl = asana.image_number
+                ? getImageUrl(asana.image_number)
+                : null;
 
               return (
                 <View key={asanaId} style={styles.asanaThumbnail}>
-                  {asana.image_number ? (
+                  {imageUrl ? (
                     <Image
-                      source={{ uri: getImageUrl(asana.image_number) }}
+                      source={{ uri: imageUrl }}
                       style={styles.asanaImage}
                       contentFit="contain"
+                      cachePolicy="memory-disk"
+                      transition={0}
                       placeholder="🖼️"
                       placeholderContentFit="contain"
+                      onError={(error) => {
+                        console.log(
+                          `피드 아사나 이미지 로딩 실패: ${asana.image_number}`,
+                          error
+                        );
+                      }}
                     />
                   ) : (
                     <View style={styles.asanaImagePlaceholder}>

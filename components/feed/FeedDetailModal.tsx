@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
 import {
-    Dimensions,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
@@ -123,13 +123,10 @@ export default function FeedDetailModal({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
         >
-
           {/* 아사나 그리드 - 여러 개를 한번에 보여줌 */}
           {record.asanas && record.asanas.length > 0 && (
             <View style={styles.asanasSection}>
-              <Text style={styles.sectionTitle}>
-                수련한 아사나 ({record.asanas.length}개)
-              </Text>
+              <Text style={styles.sectionTitle}>수련한 아사나</Text>
               <View style={styles.asanasGrid}>
                 {record.asanas.map((asanaId) => {
                   const asana = getAsanaInfo(asanaId);
@@ -162,10 +159,7 @@ export default function FeedDetailModal({
                         <Text style={styles.asanaName} numberOfLines={2}>
                           {asana.sanskrit_name_kr}
                         </Text>
-                        <Text
-                          style={styles.asanaNameEn}
-                          numberOfLines={1}
-                        >
+                        <Text style={styles.asanaNameEn} numberOfLines={1}>
                           {asana.sanskrit_name_en}
                         </Text>
                       </View>
@@ -405,4 +399,3 @@ const styles = StyleSheet.create({
     height: 40,
   },
 });
-
