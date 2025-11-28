@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Button, Card, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../constants/Colors";
@@ -17,7 +17,7 @@ interface AsanaCardProps {
   userId?: string; // 사용자 ID 추가
 }
 
-export function AsanaCard({
+export const AsanaCard = React.memo(function AsanaCard({
   asana,
   onPress,
   isFavorite = false,
@@ -74,13 +74,17 @@ export function AsanaCard({
     };
   };
 
-  const getImageUrl = (imageNumber: string) => {
+  const imageUrl = useMemo(() => {
+    if (!asana.image_number) return null;
     // image_number를 3자리 숫자로 포맷팅 (예: 1 -> 001)
-    const formattedNumber = imageNumber.padStart(3, "0");
+    const formattedNumber = asana.image_number.padStart(3, "0");
     return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
+  }, [asana.image_number]);
 
-  const categoryInfo = getCategoryInfo(asana.category_name_en);
+  const categoryInfo = useMemo(
+    () => getCategoryInfo(asana.category_name_en),
+    [asana.category_name_en]
+  );
 
   return (
     <Card
@@ -98,7 +102,7 @@ export function AsanaCard({
     >
       {/* 이미지 영역 */}
       <YStack height={160} backgroundColor="#9A9A9A" position="relative">
-        {asana.image_number ? (
+        {imageUrl ? (
           <YStack
             flex={1}
             justifyContent="center"
@@ -106,7 +110,7 @@ export function AsanaCard({
             backgroundColor="#FFFFFF"
           >
             <Image
-              source={{ uri: getImageUrl(asana.image_number) }}
+              source={{ uri: imageUrl }}
               style={{
                 width: "80%",
                 height: "80%",
@@ -114,6 +118,8 @@ export function AsanaCard({
                 maxHeight: 100,
               }}
               contentFit="contain"
+              cachePolicy="memory-disk"
+              transition={0}
               placeholder="이미지 로딩 중..."
               placeholderContentFit="contain"
               onError={() => {
@@ -249,4 +255,14 @@ export function AsanaCard({
       </YStack>
     </Card>
   );
-}
+}, (prevProps, nextProps) => {
+  // 메모이제이션 비교 함수: 즐겨찾기 상태와 아사나 ID만 비교
+  return (
+    prevProps.asana.id === nextProps.asana.id &&
+    prevProps.isFavorite === nextProps.isFavorite &&
+    prevProps.asana.image_number === nextProps.asana.image_number &&
+    prevProps.asana.category_name_en === nextProps.asana.category_name_en &&
+    prevProps.asana.sanskrit_name_kr === nextProps.asana.sanskrit_name_kr &&
+    prevProps.asana.sanskrit_name_en === nextProps.asana.sanskrit_name_en
+  );
+});

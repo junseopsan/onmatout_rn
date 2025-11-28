@@ -98,8 +98,9 @@ export default function AsanasScreen() {
 
     // 즐겨찾기 모드인 경우 즐겨찾기 ID 목록을 기준으로 필터링
     if (showFavoritesOnly) {
-      // favoriteAsanaIds에 포함된 아사나만 표시 (해제한 아사나는 제외)
-      filtered = favoriteAsanas.filter((asana) =>
+      // allAsanas에서 favoriteAsanaIds에 포함된 아사나만 필터링
+      // 이렇게 하면 새로 추가된 즐겨찾기도 즉시 표시됨
+      filtered = allAsanas.filter((asana) =>
         favoriteAsanaIds.includes(asana.id)
       );
     } else {
@@ -118,7 +119,6 @@ export default function AsanasScreen() {
     return filtered;
   }, [
     allAsanas,
-    favoriteAsanas,
     favoriteAsanaIds,
     selectedCategories,
     showFavoritesOnly,
@@ -326,25 +326,30 @@ export default function AsanasScreen() {
     );
   };
 
-  const renderAsanaCard = ({ item }: { item: any }) => {
-    // 즐겨찾기 상태 확인 (로그인된 사용자만)
-    // ID 목록을 우선 확인 (즉시 반영되도록)
-    const isFavorite = isAuthenticated
-      ? favoriteAsanaIds.includes(item.id)
-      : false;
+  const renderAsanaCard = useCallback(
+    ({ item }: { item: any }) => {
+      // 즐겨찾기 상태 확인 (로그인된 사용자만)
+      // ID 목록을 우선 확인 (즉시 반영되도록)
+      const isFavorite = isAuthenticated
+        ? favoriteAsanaIds.includes(item.id)
+        : false;
 
-    return (
-      <View style={styles.cardContainer}>
-        <AsanaCard
-          asana={item}
-          onPress={handleAsanaPress}
-          isFavorite={isFavorite}
-          onFavoriteToggle={isAuthenticated ? handleFavoriteToggle : undefined}
-          userId={user?.id}
-        />
-      </View>
-    );
-  };
+      return (
+        <View style={styles.cardContainer}>
+          <AsanaCard
+            asana={item}
+            onPress={handleAsanaPress}
+            isFavorite={isFavorite}
+            onFavoriteToggle={
+              isAuthenticated ? handleFavoriteToggle : undefined
+            }
+            userId={user?.id}
+          />
+        </View>
+      );
+    },
+    [isAuthenticated, favoriteAsanaIds, handleAsanaPress, handleFavoriteToggle, user?.id]
+  );
 
   const renderSkeletonItem = () => (
     <View style={styles.cardContainer}>

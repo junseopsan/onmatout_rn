@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -13,9 +14,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
 import { useAddComment, useComments } from "../../hooks/useRecords";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface CommentModalProps {
   visible: boolean;
@@ -37,10 +38,11 @@ export default function CommentModal({
   const { data: comments, isLoading } = useComments(recordId);
   const addCommentMutation = useAddComment();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   const handleAddComment = () => {
     console.log("댓글 등록 시도:", { recordId, content: commentText.trim() });
-    
+
     if (commentText.trim()) {
       addCommentMutation.mutate(
         { recordId, content: commentText.trim() },
@@ -49,10 +51,12 @@ export default function CommentModal({
             console.log("댓글 등록 성공:", data);
             setCommentText("");
             setInputHeight(32); // 입력 후 높이 초기화
-            
+
             // 댓글 목록 즉시 새로고침
             queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
-            queryClient.invalidateQueries({ queryKey: ["recordStats", recordId] });
+            queryClient.invalidateQueries({
+              queryKey: ["recordStats", recordId],
+            });
           },
           onError: (error) => {
             console.log("댓글 등록 실패:", error);
@@ -107,13 +111,14 @@ export default function CommentModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle={Platform.OS === "ios" ? "pageSheet" : "fullScreen"}
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
+        enabled={true}
       >
         {/* 헤더 */}
         <View style={styles.header}>
@@ -127,8 +132,10 @@ export default function CommentModal({
         {/* 댓글 목록 */}
         <ScrollView
           style={styles.commentsList}
+          contentContainerStyle={styles.commentsListContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="interactive"
         >
           {comments && comments.length > 0 ? (
             comments.map((comment: any) => (
@@ -175,7 +182,12 @@ export default function CommentModal({
         </ScrollView>
 
         {/* 댓글 입력 */}
-        <View style={styles.commentInput}>
+        <View
+          style={[
+            styles.commentInput,
+            { paddingBottom: Math.max(insets.bottom, 4) },
+          ]}
+        >
           <View
             style={[styles.inputContainer, { minHeight: inputHeight + 20 }]}
           >
@@ -190,6 +202,8 @@ export default function CommentModal({
               maxLength={200}
               placeholderTextColor={COLORS.textSecondary}
               returnKeyType="default"
+              blurOnSubmit={false}
+              onSubmitEditing={handleAddComment}
             />
             <TouchableOpacity
               style={[
@@ -199,6 +213,8 @@ export default function CommentModal({
               ]}
               onPress={handleAddComment}
               disabled={!commentText.trim() || addCommentMutation.isPending}
+              activeOpacity={0.7}
+              delayPressIn={0}
             >
               <Text
                 style={[
@@ -244,7 +260,10 @@ const styles = StyleSheet.create({
   },
   commentsList: {
     flex: 1,
+  },
+  commentsListContent: {
     paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   commentItem: {
     paddingVertical: 12,
@@ -312,7 +331,7 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.surface,
