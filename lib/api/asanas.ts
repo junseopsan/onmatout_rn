@@ -295,28 +295,44 @@ export const asanasAPI = {
     }
   },
 
-  // 모든 아사나 가져오기 (기존 함수 유지)
+  // 모든 아사나 가져오기 (페이지네이션으로 모든 데이터 조회)
   getAllAsanas: async (): Promise<{
     success: boolean;
     data?: Asana[];
     message?: string;
   }> => {
     try {
-      const { data, error } = await supabase
-        .from("asanas")
-        .select("*")
-        .order("sanskrit_name_kr", { ascending: true });
+      const allAsanas: Asana[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        return {
-          success: false,
-          message: error.message || "아사나 데이터를 가져오는데 실패했습니다.",
-        };
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("asanas")
+          .select("*")
+          .order("sanskrit_name_kr", { ascending: true })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) {
+          return {
+            success: false,
+            message: error.message || "아사나 데이터를 가져오는데 실패했습니다.",
+          };
+        }
+
+        if (data && data.length > 0) {
+          allAsanas.push(...data);
+          hasMore = data.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
       }
 
       return {
         success: true,
-        data: data || [],
+        data: allAsanas,
       };
     } catch (error) {
       return {

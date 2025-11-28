@@ -105,6 +105,25 @@ export const useAsanaDetail = (id: string) => {
   });
 };
 
+// 모든 아사나 데이터 조회 (피드용 - 페이지네이션 없이 전체 데이터)
+export const useAllAsanasForFeed = () => {
+  return useQuery({
+    queryKey: ["allAsanasForFeed"],
+    queryFn: async () => {
+      const result = await asanasAPI.getAllAsanas();
+      if (!result.success || !result.data) {
+        throw new Error(
+          result.message || "아사나 데이터를 불러오는데 실패했습니다."
+        );
+      }
+      return result.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10분
+    gcTime: 30 * 60 * 1000, // 30분
+    retry: 2,
+  });
+};
+
 // 아사나 검색
 export const useAsanaSearch = (query: string) => {
   return useQuery({

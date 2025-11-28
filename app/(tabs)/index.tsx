@@ -11,16 +11,21 @@ import {
   View,
 } from "react-native";
 import FeedItem from "../../components/feed/FeedItem";
+import FeedDetailModal from "../../components/feed/FeedDetailModal";
 import { FeedItemSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
-import { useAsanas } from "../../hooks/useAsanas";
+import { useAllAsanasForFeed } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeedRecords } from "../../hooks/useRecords";
 import { useAuthStore } from "../../stores/authStore";
+import { Record } from "../../types/record";
+import { useState } from "react";
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { user } = useAuthStore();
+  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
 
   // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
@@ -49,9 +54,8 @@ export default function DashboardScreen() {
     user: user?.id,
   });
 
-  // 아사나 데이터 가져오기
-  const { data: asanasData } = useAsanas();
-  const asanas = asanasData?.pages?.flatMap((page: any) => page.data) || [];
+  // 아사나 데이터 가져오기 (피드용 - 전체 데이터)
+  const { data: asanas = [] } = useAllAsanasForFeed();
 
   // 스크롤 애니메이션을 위한 ref
   const lastScrollY = useRef(0);
@@ -132,8 +136,13 @@ export default function DashboardScreen() {
   }
 
   const handleRecordPress = (record: any) => {
-    // 기록 상세 보기 로직 (필요시 구현)
-    console.log("기록 선택:", record);
+    setSelectedRecord(record);
+    setIsDetailModalVisible(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalVisible(false);
+    setSelectedRecord(null);
   };
 
   const renderFeedItem = ({ item }: { item: any }) => (
@@ -231,6 +240,14 @@ export default function DashboardScreen() {
         }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
+      />
+
+      {/* 피드 상세 모달 */}
+      <FeedDetailModal
+        visible={isDetailModalVisible}
+        record={selectedRecord}
+        asanas={asanas}
+        onClose={handleCloseDetailModal}
       />
     </View>
   );
