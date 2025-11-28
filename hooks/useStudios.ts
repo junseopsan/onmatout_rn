@@ -1,7 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Studio, studioAPI } from "../lib/api/studio";
 
-// 모든 요가원 데이터 조회
+// 페이지네이션으로 요가원 데이터 조회 (100개씩)
+export const useStudiosWithPagination = (pageSize: number = 100) => {
+  return useInfiniteQuery({
+    queryKey: ["studios", "pagination", pageSize],
+    queryFn: async ({ pageParam = 1 }) => {
+      const result = await studioAPI.getStudiosWithPagination(pageParam, pageSize);
+      if (!result.success) {
+        throw new Error(
+          result.message || "요가원 데이터를 불러오는데 실패했습니다."
+        );
+      }
+      return {
+        data: result.data || [],
+        hasMore: result.hasMore || false,
+        totalCount: result.totalCount || 0,
+        nextPage: result.hasMore ? pageParam + 1 : undefined,
+      };
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    staleTime: 5 * 60 * 1000, // 5분
+    gcTime: 10 * 60 * 1000, // 10분
+    retry: 2,
+  });
+};
+
+// 모든 요가원 데이터 조회 (검색용 - 전체 개수 확인용)
 export const useAllStudios = () => {
   return useQuery({
     queryKey: ["studios", "all"],
@@ -20,38 +46,59 @@ export const useAllStudios = () => {
   });
 };
 
-// 요가원 검색
+// 요가원 검색 (서버 사이드 - 전체 데이터에서 검색)
 export const useStudioSearch = (query: string) => {
+  const trimmedQuery = query.trim();
+  const hasQuery = trimmedQuery.length > 0;
+
   return useQuery<Studio[], Error>({
-    queryKey: ["studios", "search", query],
+    queryKey: ["studios", "search", trimmedQuery],
     queryFn: async () => {
-      // 전체 요가원 데이터를 가져와서 클라이언트 사이드에서 검색
-      const result = await studioAPI.getAllStudios();
+      if (!hasQuery) {
+        return [];
+      }
+
+      // 서버 사이드에서 전체 데이터 검색
+      const result = await studioAPI.searchStudios(trimmedQuery);
       if (!result.success) {
         throw new Error(
-          result.message || "요가원 데이터를 불러오는데 실패했습니다."
+          result.message || "검색에 실패했습니다."
         );
       }
 
-      if (!query.trim()) {
-        return result.data || [];
-      }
-
-      const searchTerms = query.toLowerCase().trim().split(/\s+/);
-      return (result.data || []).filter((studio) => {
-        const name = studio.name.toLowerCase().trim();
-        const address = studio.address.toLowerCase().trim();
-
-        const nameMatch = searchTerms.every((term) => name.includes(term));
-        const addressMatch = searchTerms.every((term) =>
-          address.includes(term)
-        );
-
-        return nameMatch || addressMatch;
-      });
+      return result.data || [];
     },
     staleTime: 2 * 60 * 1000, // 2분
     gcTime: 5 * 60 * 1000, // 5분
-    enabled: true, // 항상 활성화 (검색어가 없어도 전체 목록 표시)
+    enabled: hasQuery, // 검색어가 있을 때만 활성화
+  });
+};
+
+// 지역별 요가원 필터링 (서버 사이드)
+export const useStudiosByRegion = (regionName: string | null) => {
+  return useQuery<Studio[], Error>({
+    queryKey: ["studios", "region", regionName],
+    queryFn: async () => {
+      if (!regionName) {
+        const result = await studioAPI.getAllStudios();
+        if (!result.success) {
+          throw new Error(
+            result.message || "요가원 데이터를 불러오는데 실패했습니다."
+          );
+        }
+        return result.data || [];
+      }
+
+      const result = await studioAPI.filterStudiosByRegion(regionName);
+      if (!result.success) {
+        throw new Error(
+          result.message || "지역별 필터링에 실패했습니다."
+        );
+      }
+      return result.data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5분
+    gcTime: 10 * 60 * 1000, // 10분
+    enabled: true,
   });
 };

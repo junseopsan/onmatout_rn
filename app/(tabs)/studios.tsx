@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
+  FlatList,
   Linking,
   Modal,
   ScrollView,
@@ -14,8 +15,13 @@ import {
 import { StudioCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { useStudioSearch } from "../../hooks/useStudios";
-import { Studio } from "../../lib/api/studio";
+import {
+  useAllStudios,
+  useStudiosByRegion,
+  useStudioSearch,
+  useStudiosWithPagination,
+} from "../../hooks/useStudios";
+import { matchesDistrict } from "../../lib/utils/address";
 
 // 지역 데이터
 const REGIONS = {
@@ -148,37 +154,134 @@ export default function StudiosScreen() {
   const [showRegionModal, setShowRegionModal] = useState(false);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
 
-  // React Query로 요가원 데이터 가져오기
+  // 검색어가 있을 때만 검색, 없을 때는 전체 데이터 사용
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const regionName = selectedRegion ? REGIONS[selectedRegion].name : null;
+
+  // 페이지네이션으로 요가원 데이터 조회 (100개씩)
   const {
-    data: filteredStudios = [],
-    isLoading: loadingStudios,
-    isError,
-    error,
+    data: paginatedStudiosData,
+    isLoading: isLoadingPaginated,
+    isError: isPaginatedError,
+    error: paginatedError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     refetch,
+  } = useStudiosWithPagination(100);
+
+  // 검색어가 있을 때 (서버 사이드 검색 - 전체 데이터에서 검색)
+  const {
+    data: searchedStudios = [],
+    isLoading: isSearching,
+    isError: isSearchError,
+    error: searchError,
   } = useStudioSearch(searchQuery);
 
-  // 타입 안전성을 위한 변수
-  const allStudios: Studio[] = Array.isArray(filteredStudios)
-    ? filteredStudios
-    : [];
+  // 지역 필터가 선택되었을 때 (서버 사이드 필터링)
+  const {
+    data: regionFilteredStudios = [],
+    isLoading: isLoadingRegion,
+    isError: isRegionError,
+    error: regionError,
+  } = useStudiosByRegion(regionName);
 
-  // 지역 필터링된 요가원
-  const studios = allStudios.filter((studio) => {
-    if (!selectedRegion && !selectedDistrict) return true;
+  // 전체 데이터 개수 확인용 (검색/필터 없을 때만)
+  const { data: allStudiosData = [] } = useAllStudios();
 
-    const address = studio.address || "";
+  // 페이지네이션 데이터를 하나의 배열로 변환
+  const paginatedStudios = useMemo(() => {
+    if (!paginatedStudiosData?.pages) return [];
+    return paginatedStudiosData.pages.flatMap((page) => page.data);
+  }, [paginatedStudiosData]);
 
-    if (selectedDistrict) {
-      return address.includes(selectedDistrict);
+  // 데이터 소스 결정: 검색어 > 지역 필터 > 페이지네이션 데이터
+  const baseStudios = useMemo(() => {
+    if (hasSearchQuery) {
+      return searchedStudios; // 검색 시 서버 사이드 검색 결과 (전체 데이터에서 검색)
     }
-
     if (selectedRegion) {
-      const regionName = REGIONS[selectedRegion].name;
-      return address.includes(regionName);
+      return regionFilteredStudios;
+    }
+    return paginatedStudios; // 페이지네이션 데이터
+  }, [
+    hasSearchQuery,
+    searchedStudios,
+    selectedRegion,
+    regionFilteredStudios,
+    paginatedStudios,
+  ]);
+
+  // 로딩 상태
+  const loadingStudios = useMemo(() => {
+    if (hasSearchQuery) return isSearching;
+    if (selectedRegion) return isLoadingRegion;
+    return isLoadingPaginated;
+  }, [
+    hasSearchQuery,
+    isSearching,
+    selectedRegion,
+    isLoadingRegion,
+    isLoadingPaginated,
+  ]);
+
+  // 에러 상태
+  const isError = useMemo(() => {
+    if (hasSearchQuery) return isSearchError;
+    if (selectedRegion) return isRegionError;
+    return isPaginatedError;
+  }, [
+    hasSearchQuery,
+    isSearchError,
+    selectedRegion,
+    isRegionError,
+    isPaginatedError,
+  ]);
+
+  const error = useMemo(() => {
+    if (hasSearchQuery) return searchError;
+    if (selectedRegion) return regionError;
+    return paginatedError;
+  }, [
+    hasSearchQuery,
+    searchError,
+    selectedRegion,
+    regionError,
+    paginatedError,
+  ]);
+
+  // 구/군 필터링 (클라이언트 사이드, useMemo로 최적화)
+  const studios = useMemo(() => {
+    if (!selectedDistrict) {
+      return baseStudios;
     }
 
-    return true;
-  });
+    return baseStudios.filter((studio) => {
+      const address = studio.address || "";
+      return matchesDistrict(address, selectedDistrict);
+    });
+  }, [baseStudios, selectedDistrict]);
+
+  // 무한 스크롤 핸들러 (검색/필터 없을 때만)
+  const handleLoadMore = () => {
+    if (
+      !hasSearchQuery &&
+      !selectedRegion &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      !loadingStudios
+    ) {
+      fetchNextPage();
+    }
+  };
+
+  // 지역 리스트 메모이제이션 (모달 렌더링 최적화)
+  const regionList = useMemo(() => {
+    return Object.keys(REGIONS).map((regionKey) => ({
+      key: regionKey,
+      name: REGIONS[regionKey as RegionKey].name,
+    }));
+  }, []);
 
   // 검색 기능
   const handleSearch = (query: string) => {
@@ -307,7 +410,7 @@ export default function StudiosScreen() {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="요가원 검색..."
+              placeholder="요가원 검색"
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={handleSearch}
@@ -388,7 +491,15 @@ export default function StudiosScreen() {
             )}
           </View>
 
-          <Text style={styles.countText}>{studios.length}개</Text>
+          <Text style={styles.countText}>
+            {hasSearchQuery || selectedRegion
+              ? `${studios.length}개`
+              : `${studios.length}개${
+                  paginatedStudiosData?.pages[0]?.totalCount
+                    ? ` / ${paginatedStudiosData.pages[0].totalCount}개`
+                    : ""
+                }`}
+          </Text>
         </View>
       </View>
 
@@ -408,26 +519,28 @@ export default function StudiosScreen() {
       )}
 
       {/* 메인 콘텐츠 - 요가원 목록 */}
-      <ScrollView style={styles.studiosList}>
-        {loadingStudios ? (
-          <View style={styles.skeletonContainer}>
-            {Array(5)
-              .fill(null)
-              .map((_, index) => (
-                <StudioCardSkeleton key={`skeleton-${index}`} />
-              ))}
-          </View>
-        ) : studios.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {searchQuery.trim()
-                ? "검색 결과가 없습니다."
-                : "요가원 정보가 없습니다."}
-            </Text>
-          </View>
-        ) : (
-          studios.map((studio: Studio) => (
-            <View key={studio.id} style={styles.studioCard}>
+      {loadingStudios && studios.length === 0 ? (
+        <View style={styles.skeletonContainer}>
+          {Array(5)
+            .fill(null)
+            .map((_, index) => (
+              <StudioCardSkeleton key={`skeleton-${index}`} />
+            ))}
+        </View>
+      ) : studios.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            {searchQuery.trim()
+              ? "검색 결과가 없습니다."
+              : "요가원 정보가 없습니다."}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={studios}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: studio }) => (
+            <View style={styles.studioCard}>
               <View style={styles.studioHeader}>
                 <View style={styles.studioTitleContainer}>
                   <Text style={styles.studioName}>{studio.name}</Text>
@@ -479,15 +592,26 @@ export default function StudiosScreen() {
                 </View>
               </View>
             </View>
-          ))
-        )}
-      </ScrollView>
+          )}
+          style={styles.studiosList}
+          contentContainerStyle={styles.studiosListContent}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.skeletonContainer}>
+                <StudioCardSkeleton />
+              </View>
+            ) : null
+          }
+        />
+      )}
 
       {/* 지역 선택 모달 */}
       <Modal
         visible={showRegionModal}
         transparent={true}
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setShowRegionModal(false)}
       >
         <View style={styles.modalOverlay}>
@@ -501,26 +625,30 @@ export default function StudiosScreen() {
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalScrollView}>
-              {Object.keys(REGIONS).map((regionKey) => (
+            <ScrollView
+              style={styles.modalScrollView}
+              removeClippedSubviews={true}
+            >
+              {regionList.map((region) => (
                 <TouchableOpacity
-                  key={regionKey}
+                  key={region.key}
                   style={[
                     styles.modalItem,
-                    selectedRegion === regionKey && styles.modalItemSelected,
+                    selectedRegion === region.key && styles.modalItemSelected,
                   ]}
-                  onPress={() => handleRegionSelect(regionKey as RegionKey)}
+                  onPress={() => handleRegionSelect(region.key as RegionKey)}
+                  activeOpacity={0.7}
                 >
                   <Text
                     style={[
                       styles.modalItemText,
-                      selectedRegion === regionKey &&
+                      selectedRegion === region.key &&
                         styles.modalItemTextSelected,
                     ]}
                   >
-                    {REGIONS[regionKey as RegionKey].name}
+                    {region.name}
                   </Text>
-                  {selectedRegion === regionKey && (
+                  {selectedRegion === region.key && (
                     <Ionicons
                       name="checkmark"
                       size={20}
@@ -538,7 +666,7 @@ export default function StudiosScreen() {
       <Modal
         visible={showDistrictModal}
         transparent={true}
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setShowDistrictModal(false)}
       >
         <View style={styles.modalOverlay}>
@@ -554,7 +682,10 @@ export default function StudiosScreen() {
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalScrollView}>
+            <ScrollView
+              style={styles.modalScrollView}
+              removeClippedSubviews={true}
+            >
               {selectedRegion &&
                 REGIONS[selectedRegion].districts.map((district) => (
                   <TouchableOpacity
@@ -564,6 +695,7 @@ export default function StudiosScreen() {
                       selectedDistrict === district && styles.modalItemSelected,
                     ]}
                     onPress={() => handleDistrictSelect(district)}
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -627,6 +759,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text,
     height: 44, // 드롭다운 버튼과 동일한 높이
+    letterSpacing: -0.2, // placeholder 텍스트 간격 조정
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -656,6 +789,9 @@ const styles = StyleSheet.create({
   },
   studiosList: {
     flex: 1,
+  },
+  studiosListContent: {
+    paddingBottom: 20,
   },
   emptyContainer: {
     padding: 40,
