@@ -77,47 +77,6 @@ export default function SettingsModal({
     loadUserProfile();
   }, [user, getUserProfile, visible]);
 
-  // 전화번호 포맷팅 함수
-  const formatPhoneNumber = (phone: string): string => {
-    if (!phone) return "전화번호 없음";
-
-    // +82로 시작하는 경우 제거하고 0으로 시작하도록 변경
-    let formatted = phone.replace(/^\+82/, "0");
-
-    // 숫자만 추출
-    const numbers = formatted.replace(/\D/g, "");
-
-    // 12자리인 경우 (821083138230 -> 010-8313-8230)
-    if (numbers.length === 12 && numbers.startsWith("82")) {
-      const koreanNumber = "0" + numbers.slice(2);
-      const result = `${koreanNumber.slice(0, 3)}-${koreanNumber.slice(
-        3,
-        7
-      )}-${koreanNumber.slice(7)}`;
-      return result;
-    }
-
-    // 11자리인 경우 (01012345678 -> 010-1234-5678)
-    if (numbers.length === 11) {
-      const result = `${numbers.slice(0, 3)}-${numbers.slice(
-        3,
-        7
-      )}-${numbers.slice(7)}`;
-      return result;
-    }
-
-    // 10자리인 경우 (0101234567 -> 010-123-4567)
-    if (numbers.length === 10) {
-      const result = `${numbers.slice(0, 3)}-${numbers.slice(
-        3,
-        6
-      )}-${numbers.slice(6)}`;
-      return result;
-    }
-
-    // 그 외의 경우 원본 반환
-    return formatted;
-  };
 
   // 알림 권한 요청
   const requestNotificationPermissions = async () => {
@@ -285,9 +244,9 @@ export default function SettingsModal({
               </TouchableOpacity>
 
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>전화번호</Text>
+                <Text style={styles.infoLabel}>이메일</Text>
                 <Text style={styles.infoValue}>
-                  {formatPhoneNumber(user?.phone || "")}
+                  {user?.email || "이메일 없음"}
                 </Text>
               </View>
             </View>

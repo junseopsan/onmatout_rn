@@ -37,10 +37,28 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Auth helper functions
 export const getCurrentUser = async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    // 리프레시 토큰 관련 에러는 조용히 처리 (비로그인 상태에서 정상)
+    if (error) {
+      const errorMessage = error.message?.toLowerCase() || "";
+      if (
+        errorMessage.includes("invalid refresh token") ||
+        errorMessage.includes("refresh token not found")
+      ) {
+        return null;
+      }
+    }
+
+    return user;
+  } catch (e) {
+    // 예외 발생 시 조용히 null 반환 (비로그인 상태에서 정상적인 동작)
+    return null;
+  }
 };
 
 export const getCurrentSession = async () => {
@@ -52,14 +70,13 @@ export const getCurrentSession = async () => {
 
     if (error) {
       // Supabase가 보관 중이던 리프레시 토큰이 유효하지 않을 때 발생
+      // 또는 비로그인 상태에서 리프레시 토큰을 찾으려고 시도할 때 발생
+      const errorMessage = error.message?.toLowerCase() || "";
       if (
-        error.message &&
-        error.message.toLowerCase().includes("invalid refresh token")
+        errorMessage.includes("invalid refresh token") ||
+        errorMessage.includes("refresh token not found")
       ) {
-        console.log(
-          "[Auth] 무효한 리프레시 토큰 감지 → 로컬 Supabase 세션 초기화"
-        );
-
+        // 비로그인 상태에서 발생하는 정상적인 에러이므로 조용히 처리
         try {
           const keys = await AsyncStorage.getAllKeys();
           const supabaseKeys = keys.filter((key) =>
@@ -67,25 +84,22 @@ export const getCurrentSession = async () => {
           );
           if (supabaseKeys.length > 0) {
             await AsyncStorage.multiRemove(supabaseKeys);
-            console.log("[Auth] Supabase 관련 키 삭제 완료:", supabaseKeys);
           }
         } catch (storageError) {
-          console.log(
-            "[Auth] 무효 토큰 정리 중 AsyncStorage 오류:",
-            storageError
-          );
+          // AsyncStorage 오류는 무시
         }
 
         return null;
       }
 
+      // 다른 종류의 에러는 로그 출력
       console.log("[Auth] 세션 조회 중 오류:", error.message);
       return null;
     }
 
     return session;
   } catch (e) {
-    console.log("[Auth] getCurrentSession 호출 중 예외:", e);
+    // 예외 발생 시 조용히 null 반환 (비로그인 상태에서 정상적인 동작)
     return null;
   }
 };
@@ -99,10 +113,21 @@ export const ensureAuthenticated = async (): Promise<{
     // 먼저 세션 확인
     const {
       data: { session },
+      error: sessionError,
     } = await supabase.auth.getSession();
 
+    // 리프레시 토큰 관련 에러는 조용히 처리 (비로그인 상태에서 정상)
+    if (sessionError) {
+      const errorMessage = sessionError.message?.toLowerCase() || "";
+      if (
+        errorMessage.includes("invalid refresh token") ||
+        errorMessage.includes("refresh token not found")
+      ) {
+        return null;
+      }
+    }
+
     if (!session) {
-      console.log("세션이 없습니다.");
       return null;
     }
 
@@ -113,7 +138,6 @@ export const ensureAuthenticated = async (): Promise<{
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.log("사용자 정보를 가져올 수 없습니다:", userError);
       return null;
     }
 
@@ -122,7 +146,7 @@ export const ensureAuthenticated = async (): Promise<{
       session,
     };
   } catch (error) {
-    console.error("인증 확인 중 오류:", error);
+    // 예외 발생 시 조용히 null 반환
     return null;
   }
 };
