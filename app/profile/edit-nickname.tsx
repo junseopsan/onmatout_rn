@@ -15,6 +15,7 @@ import { COLORS } from "../../constants/Colors";
 import { useNotification } from "../../contexts/NotificationContext";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
+import { userAPI } from "../../lib/api/user";
 
 export default function EditNicknameScreen() {
   const [nickname, setNickname] = useState("");
@@ -70,6 +71,33 @@ export default function EditNicknameScreen() {
     setLoading(true);
 
     try {
+      // 현재 사용자의 기존 닉네임과 동일한지 확인
+      const currentProfile = await getUserProfile();
+      const isSameNickname =
+        currentProfile?.name?.toLowerCase() === nickname.trim().toLowerCase();
+
+      // 닉네임이 변경된 경우에만 중복 확인
+      if (!isSameNickname) {
+        const duplicateCheck = await userAPI.checkNicknameDuplicate(
+          nickname.trim(),
+          user?.id
+        );
+
+        if (!duplicateCheck.success) {
+          setNicknameError(
+            duplicateCheck.message || "닉네임 확인 중 오류가 발생했습니다."
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (duplicateCheck.isDuplicate) {
+          setNicknameError("이미 사용 중인 닉네임입니다.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const result = await saveUserProfile(nickname.trim());
 
       if (result) {

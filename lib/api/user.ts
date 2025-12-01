@@ -1,11 +1,78 @@
 import { UpdateUserProfileRequest, UserProfile } from "../../types/user";
-import {
-  ensureAuthenticated,
-  supabase,
-} from "../supabase";
+import { ensureAuthenticated, supabase } from "../supabase";
 import { logger } from "../utils/logger";
 
 export const userAPI = {
+  // 닉네임 중복 확인
+  checkNicknameDuplicate: async (
+    nickname: string,
+    excludeUserId?: string
+  ): Promise<{
+    success: boolean;
+    isDuplicate: boolean;
+    message?: string;
+  }> => {
+    try {
+      logger.log("닉네임 중복 확인 시작:", { nickname, excludeUserId });
+
+      if (!nickname || !nickname.trim()) {
+        return {
+          success: false,
+          isDuplicate: false,
+          message: "닉네임을 입력해주세요.",
+        };
+      }
+
+      // 닉네임 정규화 (공백 제거, 소문자 변환)
+      const normalizedNickname = nickname.trim().toLowerCase();
+
+      // 모든 프로필 조회 (RLS 정책으로 인해 자신의 프로필만 조회되므로,
+      // 중복 확인을 위해서는 다른 접근이 필요할 수 있음)
+      // 하지만 일반적으로는 모든 사용자의 닉네임을 확인할 수 있어야 함
+      let query = supabase.from("user_profiles").select("id, user_id, name");
+
+      // 특정 사용자 제외 (닉네임 수정 시 자신의 닉네임은 제외)
+      if (excludeUserId) {
+        query = query.neq("user_id", excludeUserId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        logger.error("닉네임 중복 확인 실패:", error);
+        return {
+          success: false,
+          isDuplicate: false,
+          message: error.message,
+        };
+      }
+
+      // 정확히 일치하는 닉네임이 있는지 확인 (대소문자 구분 없이, 공백 제거 후)
+      const isDuplicate =
+        data?.some((profile) => {
+          if (!profile.name) return false;
+          const profileNameNormalized = profile.name.trim().toLowerCase();
+          return profileNameNormalized === normalizedNickname;
+        }) || false;
+
+      logger.log("닉네임 중복 확인 결과:", {
+        isDuplicate,
+        count: data?.length,
+      });
+      return {
+        success: true,
+        isDuplicate,
+      };
+    } catch (error) {
+      logger.error("닉네임 중복 확인 중 오류:", error);
+      return {
+        success: false,
+        isDuplicate: false,
+        message: "닉네임 중복 확인 중 오류가 발생했습니다.",
+      };
+    }
+  },
+
   // 사용자 프로필 조회
   getUserProfile: async (
     userId: string
@@ -165,6 +232,19 @@ export const userAPI = {
 
       if (result.error) {
         logger.error("프로필 저장 실패:", result.error);
+
+        // UNIQUE 제약조건 위반 에러 체크
+        if (
+          result.error.code === "23505" || // PostgreSQL unique violation
+          result.error.message?.toLowerCase().includes("unique") ||
+          result.error.message?.toLowerCase().includes("duplicate")
+        ) {
+          return {
+            success: false,
+            message: "이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.",
+          };
+        }
+
         return {
           success: false,
           message: `프로필 저장 실패: ${result.error.message}`,

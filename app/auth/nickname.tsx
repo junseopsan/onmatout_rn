@@ -38,8 +38,24 @@ export default function NicknameScreen() {
     }
 
     try {
+      // 닉네임 중복 확인
+      const { userAPI } = await import("../../lib/api/user");
+      const duplicateCheck = await userAPI.checkNicknameDuplicate(nickname.trim());
+
+      if (!duplicateCheck.success) {
+        setNicknameError(
+          duplicateCheck.message || "닉네임 확인 중 오류가 발생했습니다."
+        );
+        return;
+      }
+
+      if (duplicateCheck.isDuplicate) {
+        setNicknameError("이미 사용 중인 닉네임입니다.");
+        return;
+      }
+
       // 사용자 프로필 저장
-      const success = await saveUserProfile(nickname);
+      const success = await saveUserProfile(nickname.trim());
 
       if (success) {
         Alert.alert(

@@ -28,8 +28,15 @@ export default function VerifyScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { showSnackbar } = useNotification();
 
-  const { verifyOTP, signInWithEmail, loading, error, clearError } =
-    useAuthStore();
+  const {
+    verifyOTP,
+    signInWithEmail,
+    loading,
+    error,
+    clearError,
+    user,
+    getUserProfile,
+  } = useAuthStore();
 
   // 라우트 파라미터에서 이메일 가져오기
   const email = (route.params as any)?.email || "";
@@ -84,12 +91,39 @@ export default function VerifyScreen() {
       const success = await verifyOTP({ email, code });
 
       if (success) {
-        showSnackbar("로그인되었습니다.", "success");
-        // 로그인 성공 시 홈으로 이동
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "TabNavigator" }],
-        });
+        showSnackbar("인증되었습니다.", "success");
+
+        // 프로필 확인을 위해 getUserProfile 직접 호출
+        try {
+          const userProfile = await getUserProfile();
+
+          // 닉네임이 있는지 확인
+          const hasNickname =
+            userProfile?.name &&
+            userProfile.name.trim() !== "" &&
+            userProfile.name !== "null";
+
+          if (hasNickname) {
+            // 닉네임이 있으면 탭 네비게이터로 이동
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "TabNavigator" }],
+            });
+          } else {
+            // 닉네임이 없으면 닉네임 설정 화면으로 이동
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Nickname" }],
+            });
+          }
+        } catch (error) {
+          console.error("프로필 확인 중 오류:", error);
+          // 에러 발생 시 닉네임 설정 화면으로 이동 (안전한 기본값)
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Nickname" }],
+          });
+        }
       } else {
         // authStore에서 설정된 에러 메시지 사용
         const currentError = useAuthStore.getState().error;
