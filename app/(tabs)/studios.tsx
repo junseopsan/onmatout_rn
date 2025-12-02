@@ -558,11 +558,9 @@ export default function StudiosScreen() {
           <Text style={styles.countText}>
             {hasSearchQuery || selectedRegion
               ? `${studios.length}개`
-              : `${studios.length}개${
-                  paginatedStudiosData?.pages[0]?.totalCount
-                    ? ` / ${paginatedStudiosData.pages[0].totalCount}개`
-                    : ""
-                }`}
+              : paginatedStudiosData?.pages[0]?.totalCount
+              ? `${paginatedStudiosData.pages[0].totalCount}개`
+              : `${studios.length}개`}
           </Text>
         </View>
       </Animated.View>

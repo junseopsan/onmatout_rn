@@ -141,49 +141,71 @@ export default function AsanaDetailScreen() {
     async (imageNumber: string) => {
       setImageLoading(true);
       setShowIndicators(false);
-      const urls: string[] = [];
       const baseNumber = imageNumber.padStart(3, "0");
 
-      // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가
+      // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가 및 표시
       const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
-      urls.push(firstImageUrl);
-      setImageUrls(urls); // 첫 번째 이미지를 즉시 표시
+      setImageUrls([firstImageUrl]); // 첫 번째 이미지를 즉시 표시
+      
+      // 첫 번째 이미지 로딩 시작 (비동기, 블로킹하지 않음)
+      preloadImage(firstImageUrl).then(() => {
+        // 첫 번째 이미지 로딩 완료 후 로딩 상태 해제
+        setImageLoading(false);
+      });
 
-      // 첫 번째 이미지도 미리 로딩
-      await preloadImage(firstImageUrl);
-
-      // 추가 이미지들 확인 (백그라운드에서)
-      const additionalUrls: string[] = [];
-      for (let i = 2; i <= 10; i++) {
-        const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
-          .toString()
-          .padStart(3, "0")}.png`;
-        const exists = await checkImageExists(imageUrl);
-        if (exists) {
-          additionalUrls.push(imageUrl);
-        } else {
-          break; // 연속되지 않는 이미지가 있으면 중단
+      // 추가 이미지들 확인 및 미리 로딩 (백그라운드에서 병렬 처리)
+      // 첫 번째 이미지 표시를 차단하지 않도록 비동기로 실행
+      (async () => {
+        const additionalUrls: string[] = [];
+        
+        // 병렬로 이미지 존재 여부 확인 (최대 9개 동시 확인)
+        const checkPromises: Promise<{ index: number; exists: boolean; url: string }>[] = [];
+        for (let i = 2; i <= 10; i++) {
+          const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
+            .toString()
+            .padStart(3, "0")}.png`;
+          
+          checkPromises.push(
+            checkImageExists(imageUrl).then((exists) => ({
+              index: i,
+              exists,
+              url: imageUrl,
+            }))
+          );
         }
-      }
 
-      // 추가 이미지들이 있으면 전체 URL 배열 업데이트
-      if (additionalUrls.length > 0) {
-        const allUrls = [...urls, ...additionalUrls];
-        setImageUrls(allUrls);
+        // 모든 확인 작업 완료 대기
+        const results = await Promise.all(checkPromises);
+        
+        // 연속된 이미지만 추가 (중간에 없는 이미지가 있으면 중단)
+        for (const result of results) {
+          if (result.exists) {
+            additionalUrls.push(result.url);
+          } else {
+            // 연속되지 않는 이미지가 있으면 중단
+            break;
+          }
+        }
 
-        // 모든 이미지 미리 로딩 완료까지 대기
-        await preloadAllImages(allUrls);
-      } else {
-        // 이미지가 하나만 있는 경우 첫 번째 이미지만 로드
-        // 이미 위에서 await preloadImage(firstImageUrl)로 로드했으므로 추가 작업 없음
-      }
+        // 추가 이미지들이 있으면 전체 URL 배열 업데이트
+        if (additionalUrls.length > 0) {
+          const allUrls = [firstImageUrl, ...additionalUrls];
+          setImageUrls(allUrls);
 
-      // 모든 이미지 로딩 완료 후 상태 업데이트
-      setImageLoading(false);
-      // 인디케이터를 표시 (이미지가 2개 이상인 경우에만)
-      if (urls.length + additionalUrls.length > 1) {
-      setShowIndicators(true);
-      }
+          // 인디케이터 표시 (이미지가 2개 이상인 경우)
+          setShowIndicators(true);
+
+          // 추가 이미지들을 백그라운드에서 병렬로 미리 로딩
+          // 첫 번째 이미지는 이미 로딩 중이므로 제외
+          preloadAllImages(additionalUrls).catch((error) => {
+            console.log("추가 이미지 미리 로딩 중 일부 실패:", error);
+          });
+        }
+      })().catch((error) => {
+        console.log("추가 이미지 확인 중 오류:", error);
+        // 에러가 발생해도 첫 번째 이미지는 이미 표시되었으므로 로딩 상태 해제
+        setImageLoading(false);
+      });
     },
     [preloadImage, preloadAllImages]
   );
