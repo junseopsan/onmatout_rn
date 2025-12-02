@@ -146,7 +146,9 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
             {record.asanas.slice(0, 6).map((asanaId, index) => {
               const asana = getAsanaInfo(asanaId);
               if (!asana) {
-                console.log(`피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`);
+                console.log(
+                  `피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`
+                );
                 return null;
               }
 
@@ -155,7 +157,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                 : null;
 
               return (
-                <View key={asanaId} style={styles.asanaThumbnail}>
+                <View key={`${asanaId}-${index}`} style={styles.asanaThumbnail}>
                   {imageUrl ? (
                     <Image
                       source={{ uri: imageUrl }}

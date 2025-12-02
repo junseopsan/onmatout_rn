@@ -1,7 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { Image } from "expo-image";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   FlatList,
   RefreshControl,
@@ -10,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import FeedItem from "../../components/feed/FeedItem";
 import FeedDetailModal from "../../components/feed/FeedDetailModal";
+import FeedItem from "../../components/feed/FeedItem";
 import { FeedItemSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { useAllAsanasForFeed } from "../../hooks/useAsanas";
@@ -19,7 +20,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { useFeedRecords } from "../../hooks/useRecords";
 import { useAuthStore } from "../../stores/authStore";
 import { Record } from "../../types/record";
-import { useState } from "react";
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
@@ -37,6 +37,7 @@ export default function DashboardScreen() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
+    isRefetching,
   } = useFeedRecords(10); // 페이지당 10개
 
   // 모든 페이지의 데이터를 평면화
@@ -178,13 +179,13 @@ export default function DashboardScreen() {
           { opacity: headerOpacity },
         ]}
       >
-    <View style={styles.logoContainer}>
-      <Image
-        source={require("../../images/onthemat_rm_bg.png")}
-        style={styles.logo}
-        contentFit="contain"
-      />
-    </View>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../../images/onthemat_rm_bg.png")}
+            style={styles.logo}
+            contentFit="contain"
+          />
+        </View>
       </Animated.View>
 
       {/* 에러 상태 */}
@@ -212,10 +213,13 @@ export default function DashboardScreen() {
         ListEmptyComponent={!loadingData ? renderEmptyComponent : null}
         refreshControl={
           <RefreshControl
-            refreshing={false}
-            onRefresh={refetch}
+            refreshing={isRefetching}
+            onRefresh={() => {
+              refetch();
+            }}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
+            progressViewOffset={100} // 로고 영역 높이만큼 오프셋
           />
         }
         onScroll={handleScroll}
@@ -230,9 +234,7 @@ export default function DashboardScreen() {
           if (isFetchingNextPage) {
             return (
               <View style={styles.loadingFooter}>
-                <Text style={styles.loadingText}>
-                  더 많은 기록을 불러오는 중...
-                </Text>
+                <ActivityIndicator size="small" color={COLORS.primary} />
               </View>
             );
           }
@@ -336,9 +338,6 @@ const styles = StyleSheet.create({
   loadingFooter: {
     padding: 20,
     alignItems: "center",
-  },
-  loadingText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    justifyContent: "center",
   },
 });

@@ -19,6 +19,7 @@ import { AsanaCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import {
+  useAllAsanasForFeed,
   useAsanas,
   useAsanaSearch,
   useFavoriteAsanas,
@@ -86,11 +87,22 @@ export default function AsanasScreen() {
   const { data: searchResults = [], isLoading: isSearching } =
     useAsanaSearch(searchQuery);
 
+  // 카테고리 필터가 선택되었을 때는 전체 데이터를 가져오기 위해 useAllAsanasForFeed 사용
+  const { data: allAsanasForCategory = [], isLoading: isLoadingAllAsanas } =
+    useAllAsanasForFeed();
+
   // 모든 아사나 데이터를 하나의 배열로 변환
+  // 카테고리 필터가 선택되었을 때는 전체 데이터 사용, 아니면 페이지네이션 데이터 사용
   const allAsanas = useMemo(() => {
+    // 카테고리 필터가 선택되었을 때는 전체 데이터 사용
+    if (selectedCategories.length > 0) {
+      return allAsanasForCategory;
+    }
+
+    // 카테고리 필터가 없을 때는 페이지네이션 데이터 사용
     if (!asanasData?.pages) return [];
     return asanasData.pages.flatMap((page: any) => page.data);
-  }, [asanasData]);
+  }, [asanasData, allAsanasForCategory, selectedCategories.length]);
 
   // 카테고리별 및 즐겨찾기 필터링된 아사나
   const filteredAsanas = useMemo(() => {
@@ -110,19 +122,37 @@ export default function AsanasScreen() {
     // 카테고리 필터링
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((asana) => {
-        return selectedCategories.some(
-          (category) => asana.category_name_en === category
+        // category_name_en이 null, undefined, 빈 문자열인 경우 제외
+        if (!asana.category_name_en || asana.category_name_en.trim() === "") {
+          return false;
+        }
+        const matches = selectedCategories.some(
+          (category) => asana.category_name_en?.trim() === category
         );
+        return matches;
       });
+
+      // 디버깅: 측굴 카테고리 필터링 시 로그
+      if (selectedCategories.includes("SideBend")) {
+        const sideBendAsanas = allAsanas.filter(
+          (asana) => asana.category_name_en?.trim() === "SideBend"
+        );
+        console.log("측굴 카테고리 필터링:", {
+          selectedCategories,
+          totalAsanas: allAsanas.length,
+          sideBendAsanasCount: sideBendAsanas.length,
+          sideBendAsanas: sideBendAsanas.map((a) => ({
+            id: a.id,
+            name: a.sanskrit_name_kr,
+            category: a.category_name_en,
+          })),
+          filteredCount: filtered.length,
+        });
+      }
     }
 
     return filtered;
-  }, [
-    allAsanas,
-    favoriteAsanaIds,
-    selectedCategories,
-    showFavoritesOnly,
-  ]);
+  }, [allAsanas, favoriteAsanaIds, selectedCategories, showFavoritesOnly]);
 
   // 화면이 포커스될 때마다 데이터 새로고침 (상세 화면에서 돌아온 경우 제외)
   useFocusEffect(
@@ -348,7 +378,13 @@ export default function AsanasScreen() {
         </View>
       );
     },
-    [isAuthenticated, favoriteAsanaIds, handleAsanaPress, handleFavoriteToggle, user?.id]
+    [
+      isAuthenticated,
+      favoriteAsanaIds,
+      handleAsanaPress,
+      handleFavoriteToggle,
+      user?.id,
+    ]
   );
 
   const renderSkeletonItem = () => (
@@ -484,7 +520,8 @@ export default function AsanasScreen() {
       )}
 
       {/* 아사나 카드 리스트 */}
-      {isLoading && allAsanas.length === 0 ? (
+      {(isLoading || (selectedCategories.length > 0 && isLoadingAllAsanas)) &&
+      allAsanas.length === 0 ? (
         <View style={styles.skeletonContainer}>
           <View style={styles.skeletonGrid}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (

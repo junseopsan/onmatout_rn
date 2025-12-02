@@ -831,16 +831,27 @@ export const recordsAPI = {
         };
       });
 
-      // 총 개수 조회
-      const { count: totalCount } = await supabase
-        .from("practice_records")
-        .select("*", { count: "exact", head: true });
+      // 총 개수 조회는 첫 페이지(page === 0)일 때만 수행하여 성능 최적화
+      let totalCount = 0;
+      let hasMore = false;
+
+      if (page === 0) {
+        // 첫 페이지일 때만 총 개수 조회
+        const { count } = await supabase
+          .from("practice_records")
+          .select("*", { count: "exact", head: true });
+        totalCount = count || 0;
+        hasMore = offset + pageSize < totalCount;
+      } else {
+        // 이후 페이지는 데이터 개수로 hasMore 판단
+        hasMore = records.length === pageSize;
+      }
 
       return {
         success: true,
         data: feedRecords,
-        hasMore: offset + pageSize < (totalCount || 0),
-        total: totalCount || 0,
+        hasMore,
+        total: totalCount,
       };
     } catch (error) {
       return {

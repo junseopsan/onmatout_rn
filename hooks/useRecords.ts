@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { recordsAPI } from "../lib/api/records";
-import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
 import { Record, RecordFormData } from "../types/record";
 
@@ -261,7 +260,9 @@ export const useAddComment = () => {
     onSuccess: (data) => {
       // 댓글 추가 성공 시 댓글 목록 새로고침
       queryClient.invalidateQueries({ queryKey: ["comments", data.recordId] });
-      queryClient.invalidateQueries({ queryKey: ["recordStats", data.recordId] });
+      queryClient.invalidateQueries({
+        queryKey: ["recordStats", data.recordId],
+      });
     },
   });
 };

@@ -38,10 +38,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Auth helper functions
 export const getCurrentUser = async () => {
   try {
-    const {
-      data: { user },
+  const {
+    data: { user },
       error,
-    } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser();
 
     // 리프레시 토큰 관련 에러는 조용히 처리 (비로그인 상태에서 정상)
     if (error) {
@@ -54,7 +54,7 @@ export const getCurrentUser = async () => {
       }
     }
 
-    return user;
+  return user;
   } catch (e) {
     // 예외 발생 시 조용히 null 반환 (비로그인 상태에서 정상적인 동작)
     return null;
