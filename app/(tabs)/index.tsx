@@ -1,4 +1,4 @@
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -24,8 +24,11 @@ import { Record } from "../../types/record";
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { user } = useAuthStore();
-  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<
+    (Record & { user_name?: string; user_avatar_url?: string }) | null
+  >(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
@@ -64,7 +67,70 @@ export default function DashboardScreen() {
   const headerTranslateY = useRef(new Animated.Value(0)).current;
   const headerOpacity = useRef(new Animated.Value(1)).current;
 
-  // 화면이 포커스될 때마다 데이터 새로고침
+  // FlatList ref (스크롤 제어용)
+  const flatListRef = useRef<FlatList>(null);
+
+  // 탭 재클릭 처리 함수
+  const handleTabRepeatedPress = useCallback(() => {
+    // 최상단으로 스크롤 이동
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+
+    // 헤더 보이기
+    scrollDirection.current = "up";
+    Animated.parallel([
+      Animated.timing(headerTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // 데이터 새로고침 (새로고침 아이콘 표시)
+    if (isAuthenticated) {
+      console.log("피드: 탭 재클릭 - 최상단 이동 및 새로고침");
+      setIsManualRefreshing(true);
+      refetch().finally(() => {
+        // refetch 완료 후 약간의 지연을 두어 새로고침 아이콘이 보이도록 함
+        setTimeout(() => {
+          setIsManualRefreshing(false);
+        }, 500);
+      });
+    }
+  }, [isAuthenticated, refetch, headerTranslateY, headerOpacity]);
+
+  // Pull-to-refresh 핸들러
+  const handleRefresh = useCallback(() => {
+    if (isAuthenticated) {
+      console.log("피드: Pull-to-refresh");
+      refetch();
+    }
+  }, [isAuthenticated, refetch]);
+
+  // 새로고침 상태 (pull-to-refresh 또는 탭 클릭)
+  const isRefreshing = isRefetching || isManualRefreshing;
+
+  const navigation = useNavigation();
+
+  // 홈 탭 스크롤 함수를 저장할 ref
+  const dashboardScrollToTopRef = useRef<(() => void) | null>(null);
+
+  // TabNavigator에 스크롤 함수 등록
+  React.useEffect(() => {
+    // navigation의 getParent를 통해 TabNavigator에 함수 등록
+    const parent = navigation.getParent();
+    if (parent && (parent as any).setDashboardScrollToTop) {
+      (parent as any).setDashboardScrollToTop(handleTabRepeatedPress);
+    }
+    // 또는 직접 ref에 저장
+    dashboardScrollToTopRef.current = handleTabRepeatedPress;
+  }, [navigation, handleTabRepeatedPress]);
+
+  // 화면이 포커스될 때마다 처리
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
@@ -205,6 +271,7 @@ export default function DashboardScreen() {
 
       {/* 피드 리스트 */}
       <FlatList
+        ref={flatListRef}
         data={loadingData ? Array(5).fill(null) : feedRecords}
         renderItem={loadingData ? renderSkeletonItem : renderFeedItem}
         keyExtractor={(item, index) =>
@@ -213,10 +280,8 @@ export default function DashboardScreen() {
         ListEmptyComponent={!loadingData ? renderEmptyComponent : null}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={() => {
-              refetch();
-            }}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
             progressViewOffset={100} // 로고 영역 높이만큼 오프셋
@@ -247,7 +312,14 @@ export default function DashboardScreen() {
       {/* 피드 상세 모달 */}
       <FeedDetailModal
         visible={isDetailModalVisible}
-        record={selectedRecord}
+        record={
+          selectedRecord
+            ? {
+                ...selectedRecord,
+                user_name: selectedRecord.user_name || "익명",
+              }
+            : null
+        }
         asanas={asanas}
         onClose={handleCloseDetailModal}
       />

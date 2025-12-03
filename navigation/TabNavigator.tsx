@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import React, { useRef } from "react";
 import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
@@ -21,10 +21,26 @@ export default function TabNavigator() {
   const { user } = useAuthStore();
   const navigation = useNavigation();
 
+  // 각 탭의 마지막 클릭 시간 추적 (탭 재클릭 감지용)
+  const lastTabPressTime = useRef<Record<string, number>>({});
+  const currentFocusedTab = useRef<string | null>(null);
+
+  // 홈 탭 스크롤 함수를 저장할 ref (화면에서 설정)
+  const dashboardScrollToTopRef = useRef<(() => void) | null>(null);
+
+  // 홈 탭 스크롤 함수를 설정하는 함수 (화면에서 호출)
+  // navigation에 함수를 등록하여 화면에서 접근 가능하도록 함
+  React.useEffect(() => {
+    (navigation as any).setDashboardScrollToTop = (fn: () => void) => {
+      dashboardScrollToTopRef.current = fn;
+    };
+  }, [navigation]);
+
   // 비회원 사용자가 로그인이 필요한 탭을 클릭했을 때
   const handleTabPress = (routeName: string) => {
     // 아사나 탭은 비회원도 접근 가능
     if (routeName === "Asanas") {
+      currentFocusedTab.current = routeName;
       return true;
     }
 
@@ -37,6 +53,7 @@ export default function TabNavigator() {
       return false; // 탭 전환 방지
     }
 
+    currentFocusedTab.current = routeName;
     return true; // 탭 전환 허용
   };
 
@@ -100,6 +117,29 @@ export default function TabNavigator() {
           name="Dashboard"
           component={DashboardScreen}
           options={{ tabBarLabel: "홈" }}
+          listeners={({ navigation, route }: any) => ({
+            tabPress: (e: any) => {
+              const now = Date.now();
+              const wasFocused = currentFocusedTab.current === "Dashboard";
+
+              lastTabPressTime.current["Dashboard"] = now;
+              currentFocusedTab.current = "Dashboard";
+
+              // 일반 탭 프레스 처리
+              if (!handleTabPress("Dashboard")) {
+                e.preventDefault();
+                return;
+              }
+
+              // 이미 포커스된 탭을 다시 누른 경우 = 탭 재클릭 (한 번만 클릭해도 작동)
+              if (wasFocused) {
+                // 화면의 스크롤 함수 호출
+                if (dashboardScrollToTopRef.current) {
+                  dashboardScrollToTopRef.current();
+                }
+              }
+            },
+          })}
         />
         <Tab.Screen
           name="Asanas"

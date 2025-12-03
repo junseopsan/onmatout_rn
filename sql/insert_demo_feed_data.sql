@@ -14,17 +14,15 @@ DECLARE
   -- 실제 사용자 ID가 없을 경우를 대비한 기본값
   default_user_id UUID := 'c5ce8d5a-f09b-4752-b591-5797721d87df'::UUID;
   
-  asana_ids TEXT[] := ARRAY[
-    '733fb491-478f-47e5-9029-6e216c96019d',
+  -- 실제 존재하는 아사나 ID 조회
+  asana_ids TEXT[];
+  
+  -- 실제 아사나 ID가 없을 경우를 대비한 기본값
+  default_asana_ids TEXT[] := ARRAY[
     '2904baf3-1c54-4125-ad05-7627bd0f7893',
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT,
-    gen_random_uuid()::TEXT
+    '687b2030-d756-451f-b500-6a0a21513a12',
+    '733fb491-478f-47e5-9029-6e216c96019d',
+    'ff9c9660-dd3d-466d-b826-dfdea801b0d8'
   ];
   
   states_array TEXT[] := ARRAY['calm', 'peaceful', 'energized', 'tired', 'focused', 'tense', 'pressured', 'balanced'];
@@ -105,6 +103,20 @@ BEGIN
     RAISE NOTICE '실제 사용자 ID를 찾을 수 없어 기본 사용자 ID만 사용합니다.';
   ELSE
     RAISE NOTICE '총 % 명의 사용자 ID를 찾았습니다.', array_length(user_ids, 1);
+  END IF;
+  
+  -- 실제 존재하는 아사나 ID 조회 (최대 20개)
+  SELECT ARRAY_AGG(id::TEXT) INTO asana_ids
+  FROM asanas
+  WHERE id IS NOT NULL
+  LIMIT 20;
+  
+  -- 아사나 ID가 없으면 기본 아사나 ID만 사용
+  IF asana_ids IS NULL OR array_length(asana_ids, 1) IS NULL THEN
+    asana_ids := default_asana_ids;
+    RAISE NOTICE '실제 아사나 ID를 찾을 수 없어 기본 아사나 ID만 사용합니다.';
+  ELSE
+    RAISE NOTICE '총 % 개의 아사나 ID를 찾았습니다.', array_length(asana_ids, 1);
   END IF;
   
   FOR i IN 1..100 LOOP
