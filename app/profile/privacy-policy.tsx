@@ -102,7 +102,7 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.sectionTitle}>9. 개인정보 보호책임자</Text>
         <Text style={styles.contentText}>
           • 이름: 박준섭{"\n"}• 직책: 개인정보보호책임자{"\n"}• 이메일:
-          dev@onmatout.com{"\n"}• 연락처: 1544-5218
+          service@onmatout.com{"\n"}• 연락처: 1544-5218
         </Text>
 
         <Text style={styles.sectionTitle}>10. 개정 사항 고지</Text>
