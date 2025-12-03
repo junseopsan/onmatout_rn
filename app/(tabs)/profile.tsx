@@ -246,7 +246,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* 로그아웃 버튼 */}
-        {/* {
+        {
           <View style={styles.logoutSection}>
             <TouchableOpacity
               style={styles.logoutButton}
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
               <Text style={styles.logoutButtonText}>로그아웃</Text>
             </TouchableOpacity>
           </View>
-        } */}
+        }
 
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />

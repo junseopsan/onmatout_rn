@@ -108,6 +108,11 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="PhoneLogin"
+        component={pageList.find((p) => p.name === "PhoneLogin")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="Verify"
         component={pageList.find((p) => p.name === "Verify")?.component!}
         options={{ headerShown: false }}

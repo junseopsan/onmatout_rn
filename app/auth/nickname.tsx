@@ -40,7 +40,9 @@ export default function NicknameScreen() {
     try {
       // 닉네임 중복 확인
       const { userAPI } = await import("../../lib/api/user");
-      const duplicateCheck = await userAPI.checkNicknameDuplicate(nickname.trim());
+      const duplicateCheck = await userAPI.checkNicknameDuplicate(
+        nickname.trim()
+      );
 
       if (!duplicateCheck.success) {
         setNicknameError(

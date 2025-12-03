@@ -31,6 +31,7 @@ export default function VerifyScreen() {
   const {
     verifyOTP,
     signInWithEmail,
+    signInWithPhone,
     loading,
     error,
     clearError,
@@ -38,8 +39,9 @@ export default function VerifyScreen() {
     getUserProfile,
   } = useAuthStore();
 
-  // 라우트 파라미터에서 이메일 가져오기
+  // 라우트 파라미터에서 이메일 또는 전화번호 가져오기
   const email = (route.params as any)?.email || "";
+  const phone = (route.params as any)?.phone || "";
 
   // 타이머 효과
   useEffect(() => {
@@ -81,14 +83,14 @@ export default function VerifyScreen() {
       return;
     }
 
-    if (!email) {
-      showSnackbar("이메일 정보가 없습니다. 다시 로그인해주세요.", "error");
+    if (!email && !phone) {
+      showSnackbar("이메일 또는 전화번호 정보가 없습니다. 다시 로그인해주세요.", "error");
       navigation.goBack();
       return;
     }
 
     try {
-      const success = await verifyOTP({ email, code });
+      const success = await verifyOTP({ email, phone, code });
 
       if (success) {
         showSnackbar("인증되었습니다.", "success");
@@ -179,10 +181,15 @@ export default function VerifyScreen() {
   };
 
   const handleResend = async () => {
-    if (!canResend || !email) return;
+    if (!canResend || (!email && !phone)) return;
 
     try {
-      const success = await signInWithEmail({ email });
+      let success = false;
+      if (email) {
+        success = await signInWithEmail({ email });
+      } else if (phone) {
+        success = await signInWithPhone({ phone });
+      }
 
       if (success) {
         setTimeLeft(180);
@@ -230,8 +237,12 @@ export default function VerifyScreen() {
                 marginBottom: 16,
               }}
             >
-              {email ? `${email} 로 전송된` : "이메일로 전송된"} {"\n"}6자리
-              인증 코드를 입력해주세요
+              {email
+                ? `${email} 로 전송된`
+                : phone
+                ? `${phone} 로 전송된`
+                : "전송된"}{" "}
+              {"\n"}6자리 인증 코드를 입력해주세요
             </Text>
 
             {/* 타이머 */}

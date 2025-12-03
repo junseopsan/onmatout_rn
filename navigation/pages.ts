@@ -11,6 +11,7 @@ import StudiosScreen from "../app/(tabs)/studios";
 import AsanaDetailScreen from "../app/asanas/[id]";
 import AuthScreen from "../app/auth/index";
 import NicknameScreen from "../app/auth/nickname";
+import PhoneLoginScreen from "../app/auth/phone-login";
 import VerifyScreen from "../app/auth/verify";
 import EditNicknameScreen from "../app/profile/edit-nickname";
 import PrivacyPolicyScreen from "../app/profile/privacy-policy";
@@ -57,6 +58,13 @@ export const pageList: PageConfig[] = [
   {
     name: "Auth",
     component: AuthScreen,
+    options: {
+      headerShown: false,
+    },
+  },
+  {
+    name: "PhoneLogin",
+    component: PhoneLoginScreen,
     options: {
       headerShown: false,
     },

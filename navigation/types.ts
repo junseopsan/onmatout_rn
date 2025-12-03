@@ -2,7 +2,8 @@ export type RootStackParamList = {
   AppContainer: undefined;
   Splash: undefined;
   Auth: undefined;
-  Verify: undefined;
+  PhoneLogin: undefined;
+  Verify: { email?: string; phone?: string };
   Nickname: undefined;
   TabNavigator: undefined;
   Dashboard: undefined;

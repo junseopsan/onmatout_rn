@@ -203,7 +203,7 @@ export const authAPI = {
         // 테스트 계정 확인 (심사용)
         if (
           normalizedPhone === "01000000000" &&
-          credentials.code === "123456"
+          credentials.code === "000000"
         ) {
           logger.log("테스트 계정 인증번호 검증 (우회)");
 
@@ -248,7 +248,7 @@ export const authAPI = {
           logger.log("테스트 계정 인증번호 불일치");
           return {
             success: false,
-            message: "테스트 계정의 인증번호는 123456입니다.",
+            message: "테스트 계정의 인증번호는 000000입니다.",
           };
         }
 

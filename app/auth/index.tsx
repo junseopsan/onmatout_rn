@@ -17,7 +17,13 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
-const EMAIL_DOMAINS = ["gmail.com", "naver.com", "daum.net", "kakao.com"];
+const EMAIL_DOMAINS = [
+  "gmail.com",
+  "naver.com",
+  "daum.net",
+  "kakao.com",
+  "onmatout.com",
+];
 
 export default function AuthScreen() {
   const [email, setEmail] = useState("");
@@ -96,20 +102,21 @@ export default function AuthScreen() {
         navigation.navigate("Verify", { email });
       } else {
         // authStore에서 설정된 에러 메시지 사용
-        const errorMessage = error || "이메일 전송에 실패했습니다. 이메일을 확인해주세요.";
-        
+        const errorMessage =
+          error || "이메일 전송에 실패했습니다. 이메일을 확인해주세요.";
+
         // Rate Limiting 에러인지 확인하고 타이머 시작
         if (error && error.includes("초 후에 다시 시도해주세요")) {
           const match = error.match(/(\d+)초 후에/);
           if (match) {
             const seconds = parseInt(match[1]);
             setRateLimitSeconds(seconds);
-            
+
             // 기존 타이머가 있다면 정리
             if (timerRef.current) {
               clearInterval(timerRef.current);
             }
-            
+
             // 1초마다 카운트다운
             timerRef.current = setInterval(() => {
               setRateLimitSeconds((prev) => {
@@ -125,7 +132,7 @@ export default function AuthScreen() {
             }, 1000);
           }
         }
-        
+
         showSnackbar(errorMessage, "error");
       }
     } catch (e) {
@@ -217,13 +224,20 @@ export default function AuthScreen() {
               disabled={loading || !email.trim() || rateLimitSeconds !== null}
             >
               <Text style={styles.buttonText}>
-                {loading 
-                  ? "처리 중..." 
-                  : rateLimitSeconds !== null 
-                    ? `${rateLimitSeconds}초 후 재시도` 
-                    : "나마스떼(नमस्ते, Namaste)"
-                }
+                {loading
+                  ? "처리 중..."
+                  : rateLimitSeconds !== null
+                  ? `${rateLimitSeconds}초 후 재시도`
+                  : "나마스떼(नमस्ते, Namaste)"}
               </Text>
+            </TouchableOpacity>
+
+            {/* 전화번호 로그인 링크 */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("PhoneLogin")}
+              style={styles.phoneLoginLink}
+            >
+              <Text style={styles.phoneLoginText}>전화번호 로그인</Text>
             </TouchableOpacity>
 
             {/* 약관 동의 텍스트 */}
@@ -550,5 +564,15 @@ const styles = StyleSheet.create({
   termsContainer: {
     marginTop: 20,
     paddingHorizontal: 10,
+  },
+  phoneLoginLink: {
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  phoneLoginText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textDecorationLine: "underline",
   },
 });
