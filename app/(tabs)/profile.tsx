@@ -261,16 +261,16 @@ export default function ProfileScreen() {
 
         {/* 로그아웃 버튼 */}
         {
-          <View style={styles.logoutSection}>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={showLogoutDialog}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="log-out-outline" size={20} color="white" />
-              <Text style={styles.logoutButtonText}>로그아웃</Text>
-            </TouchableOpacity>
-          </View>
+          // <View style={styles.logoutSection}>
+          //   <TouchableOpacity
+          //     style={styles.logoutButton}
+          //     onPress={showLogoutDialog}
+          //     activeOpacity={0.7}
+          //   >
+          //     <Ionicons name="log-out-outline" size={20} color="white" />
+          //     <Text style={styles.logoutButtonText}>로그아웃</Text>
+          //   </TouchableOpacity>
+          // </View>
         }
 
         {/* 하단 여백 */}
