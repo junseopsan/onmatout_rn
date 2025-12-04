@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { Fragment, useCallback, useState } from "react";
 import {
   Image,
@@ -25,6 +26,7 @@ import { useAuthStore } from "../../stores/authStore";
 export default function ProfileScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -100,6 +102,11 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
+
+      // React Query 캐시 모두 클리어 (이전 사용자 데이터 제거)
+      queryClient.clear();
+      console.log("React Query 캐시 클리어 완료");
+
       // authStore도 초기화
       useAuthStore.getState().clearUser();
       console.log("로그아웃 완료");
@@ -129,11 +136,18 @@ export default function ProfileScreen() {
   // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
   useFocusEffect(
     useCallback(() => {
-      if (isAuthenticated) {
+      if (isAuthenticated && user?.id) {
+        // 사용자 ID가 변경되었을 수 있으므로 관련 캐시 무효화
+        queryClient.invalidateQueries({ queryKey: ["profileStats"] });
+        queryClient.invalidateQueries({ queryKey: ["allRecords"] });
+        queryClient.invalidateQueries({ queryKey: ["todayRecords"] });
+        queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
+
+        // 데이터 새로고침
         refetch();
         refetchRecords();
       }
-    }, [isAuthenticated, refetch, refetchRecords])
+    }, [isAuthenticated, user?.id, refetch, refetchRecords, queryClient])
   );
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
@@ -247,16 +261,16 @@ export default function ProfileScreen() {
 
         {/* 로그아웃 버튼 */}
         {
-          // <View style={styles.logoutSection}>
-          //   <TouchableOpacity
-          //     style={styles.logoutButton}
-          //     onPress={showLogoutDialog}
-          //     activeOpacity={0.7}
-          //   >
-          //     <Ionicons name="log-out-outline" size={20} color="white" />
-          //     <Text style={styles.logoutButtonText}>로그아웃</Text>
-          //   </TouchableOpacity>
-          // </View>
+          <View style={styles.logoutSection}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={showLogoutDialog}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={20} color="white" />
+              <Text style={styles.logoutButtonText}>로그아웃</Text>
+            </TouchableOpacity>
+          </View>
         }
 
         {/* 하단 여백 */}

@@ -21,4 +21,5 @@ export type RootStackParamList = {
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
   EditProfile: undefined;
+  CreateSupportRequest: undefined;
 };

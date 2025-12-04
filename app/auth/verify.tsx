@@ -107,10 +107,10 @@ export default function VerifyScreen() {
 
           if (hasNickname) {
             // 닉네임이 있으면 탭 네비게이터로 이동
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "TabNavigator" }],
-            });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "TabNavigator" }],
+        });
           } else {
             // 닉네임이 없으면 닉네임 설정 화면으로 이동
             navigation.reset({

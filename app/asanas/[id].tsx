@@ -146,7 +146,7 @@ export default function AsanaDetailScreen() {
       // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가 및 표시
       const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
       setImageUrls([firstImageUrl]); // 첫 번째 이미지를 즉시 표시
-      
+
       // 첫 번째 이미지 로딩 시작 (비동기, 블로킹하지 않음)
       preloadImage(firstImageUrl).then(() => {
         // 첫 번째 이미지 로딩 완료 후 로딩 상태 해제
@@ -156,14 +156,14 @@ export default function AsanaDetailScreen() {
       // 추가 이미지들 확인 및 미리 로딩 (백그라운드에서 병렬 처리)
       // 첫 번째 이미지 표시를 차단하지 않도록 비동기로 실행
       (async () => {
-        const additionalUrls: string[] = [];
+      const additionalUrls: string[] = [];
         
         // 병렬로 이미지 존재 여부 확인 (최대 9개 동시 확인)
         const checkPromises: Promise<{ index: number; exists: boolean; url: string }>[] = [];
-        for (let i = 2; i <= 10; i++) {
-          const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
-            .toString()
-            .padStart(3, "0")}.png`;
+      for (let i = 2; i <= 10; i++) {
+        const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
+          .toString()
+          .padStart(3, "0")}.png`;
           
           checkPromises.push(
             checkImageExists(imageUrl).then((exists) => ({
@@ -181,16 +181,16 @@ export default function AsanaDetailScreen() {
         for (const result of results) {
           if (result.exists) {
             additionalUrls.push(result.url);
-          } else {
+        } else {
             // 연속되지 않는 이미지가 있으면 중단
             break;
-          }
         }
+      }
 
-        // 추가 이미지들이 있으면 전체 URL 배열 업데이트
-        if (additionalUrls.length > 0) {
+      // 추가 이미지들이 있으면 전체 URL 배열 업데이트
+      if (additionalUrls.length > 0) {
           const allUrls = [firstImageUrl, ...additionalUrls];
-          setImageUrls(allUrls);
+        setImageUrls(allUrls);
 
           // 인디케이터 표시 (이미지가 2개 이상인 경우)
           setShowIndicators(true);
@@ -204,7 +204,7 @@ export default function AsanaDetailScreen() {
       })().catch((error) => {
         console.log("추가 이미지 확인 중 오류:", error);
         // 에러가 발생해도 첫 번째 이미지는 이미 표시되었으므로 로딩 상태 해제
-        setImageLoading(false);
+      setImageLoading(false);
       });
     },
     [preloadImage, preloadAllImages]

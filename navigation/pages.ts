@@ -23,6 +23,7 @@ import NewRecordScreen from "../app/record/new";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
 import SettingsScreen from "../app/settings";
+import CreateSupportRequestScreen from "../app/support/create-request";
 
 export interface PageConfig {
   name: keyof RootStackParamList;
@@ -219,6 +220,13 @@ export const pageList: PageConfig[] = [
   {
     name: "ProfileInfo",
     component: ProfileInfoScreen,
+    options: {
+      headerShown: false, // 커스텀 헤더 사용
+    },
+  },
+  {
+    name: "CreateSupportRequest",
+    component: CreateSupportRequestScreen,
     options: {
       headerShown: false, // 커스텀 헤더 사용
     },

@@ -174,6 +174,15 @@ export default function AppNavigator() {
         component={pageList.find((p) => p.name === "ProfileInfo")?.component!}
         options={pageList.find((p) => p.name === "ProfileInfo")?.options}
       />
+      <Stack.Screen
+        name="CreateSupportRequest"
+        component={
+          pageList.find((p) => p.name === "CreateSupportRequest")?.component!
+        }
+        options={
+          pageList.find((p) => p.name === "CreateSupportRequest")?.options
+        }
+      />
     </Stack.Navigator>
   );
 }

@@ -17,8 +17,8 @@ import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
-import { RootStackParamList } from "../navigation/types";
 import { userAPI } from "../lib/api/user";
+import { RootStackParamList } from "../navigation/types";
 import { useAuthStore } from "../stores/authStore";
 
 export default function SettingsScreen() {
@@ -268,6 +268,24 @@ export default function SettingsScreen() {
             />
           </View>
 
+          {/* 고객지원 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>고객지원</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => navigation.navigate("CreateSupportRequest")}
+          >
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>건의사항</Text>
+              <Text style={styles.settingDescription}>
+                버그 신고, 기능 제안, 문의사항을 남겨주세요
+              </Text>
+            </View>
+            <Text style={styles.arrowText}>›</Text>
+          </TouchableOpacity>
+
           {/* 약관 및 정책 섹션 */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>약관 및 정책</Text>
@@ -310,7 +328,9 @@ export default function SettingsScreen() {
               <Text style={[styles.settingText, styles.dangerText]}>
                 회원 탈퇴
               </Text>
-              <Text style={[styles.settingDescription, styles.dangerDescription]}>
+              <Text
+                style={[styles.settingDescription, styles.dangerDescription]}
+              >
                 모든 개인 데이터와 수련 기록이 영구 삭제됩니다.
               </Text>
             </View>
