@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  Easing,
   FlatList,
   StyleSheet,
   Text,
@@ -279,21 +280,23 @@ export default function AsanasScreen() {
       const currentScrollY = event.nativeEvent.contentOffset.y;
       const scrollDifference = currentScrollY - lastScrollY.current;
 
-      // 스크롤 방향 결정 (10px 이상 움직였을 때만)
-      if (Math.abs(scrollDifference) > 10) {
-        if (scrollDifference > 0 && currentScrollY > 50) {
+      // 스크롤 방향 결정 (조금 더 많이 스크롤했을 때만 헤더 전환)
+      if (Math.abs(scrollDifference) > 15) {
+        if (scrollDifference > 0 && currentScrollY > 80) {
           // 아래로 스크롤 - 헤더 숨기기
           if (scrollDirection.current !== "down") {
             scrollDirection.current = "down";
             Animated.parallel([
               Animated.timing(headerTranslateY, {
                 toValue: -200, // 헤더 + 필터 높이만큼 위로 이동
-                duration: 500,
+                duration: 600,
+                easing: Easing.out(Easing.quad),
                 useNativeDriver: true,
               }),
               Animated.timing(headerOpacity, {
                 toValue: 0,
-                duration: 500,
+                duration: 600,
+                easing: Easing.out(Easing.quad),
                 useNativeDriver: true,
               }),
             ]).start();
@@ -305,12 +308,14 @@ export default function AsanasScreen() {
             Animated.parallel([
               Animated.timing(headerTranslateY, {
                 toValue: 0,
-                duration: 500,
+                duration: 600,
+                easing: Easing.out(Easing.quad),
                 useNativeDriver: true,
               }),
               Animated.timing(headerOpacity, {
                 toValue: 1,
-                duration: 500,
+                duration: 600,
+                easing: Easing.out(Easing.quad),
                 useNativeDriver: true,
               }),
             ]).start();
@@ -610,6 +615,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    paddingTop: 60, // 상태바 높이 + 여백 (요가원 탭과 동일하게 고정)
   },
   headerBackgroundLayer: {
     position: "absolute",
