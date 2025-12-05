@@ -787,13 +787,24 @@ export const recordsAPI = {
     pageSize: number = 10
   ): Promise<{
     success: boolean;
-    data?: (Record & { user_name: string; user_avatar_url?: string })[];
+    data?: (Record & {
+      user_name: string;
+      user_avatar_url?: string;
+      stats?: {
+        likeCount: number;
+        commentCount: number;
+        shareCount: number;
+        isLiked: boolean;
+      };
+    })[];
     hasMore?: boolean;
     total?: number;
     message?: string;
   }> => {
     try {
       const offset = page * pageSize;
+      const auth = await ensureAuthenticated();
+      const currentUserId = auth?.userId ?? null;
 
       // 먼저 practice_records를 가져오고, 각 기록에 대해 user_profiles를 별도로 조회
       logger.log("getFeedRecords 시작:", { page, pageSize, offset });
@@ -854,6 +865,72 @@ export const recordsAPI = {
         };
       });
 
+      // 소셜 통계(좋아요/댓글/공유)와 현재 사용자 좋아요 상태를 한 번에 조회
+      const recordIds = feedRecords.map((r) => r.id);
+
+      // 좋아요 개수
+      const likeCountsMap = new Map<string, number>();
+      const commentCountsMap = new Map<string, number>();
+      const shareCountsMap = new Map<string, number>();
+
+      // 좋아요 행 전체를 가져와 record_id별로 집계 (페이지당 10개라 부담 낮음)
+      const { data: likeRows } = await supabase
+        .from("feed_likes")
+        .select("record_id")
+        .in("record_id", recordIds);
+      likeRows?.forEach((row: any) => {
+        likeCountsMap.set(
+          row.record_id,
+          (likeCountsMap.get(row.record_id) || 0) + 1
+        );
+      });
+
+      // 댓글 행 집계
+      const { data: commentRows } = await supabase
+        .from("feed_comments")
+        .select("record_id")
+        .in("record_id", recordIds);
+      commentRows?.forEach((row: any) => {
+        commentCountsMap.set(
+          row.record_id,
+          (commentCountsMap.get(row.record_id) || 0) + 1
+        );
+      });
+
+      // 공유 행 집계
+      const { data: shareRows } = await supabase
+        .from("feed_shares")
+        .select("record_id")
+        .in("record_id", recordIds);
+      shareRows?.forEach((row: any) => {
+        shareCountsMap.set(
+          row.record_id,
+          (shareCountsMap.get(row.record_id) || 0) + 1
+        );
+      });
+
+      // 현재 사용자 좋아요 상태
+      let likedIds = new Set<string>();
+      if (currentUserId) {
+        const { data: userLikes } = await supabase
+          .from("feed_likes")
+          .select("record_id")
+          .eq("user_id", currentUserId)
+          .in("record_id", recordIds);
+        likedIds = new Set(userLikes?.map((row: any) => row.record_id) || []);
+      }
+
+      // feedRecords에 stats 병합
+      const feedRecordsWithStats = feedRecords.map((record) => ({
+        ...record,
+        stats: {
+          likeCount: likeCountsMap.get(record.id) || 0,
+          commentCount: commentCountsMap.get(record.id) || 0,
+          shareCount: shareCountsMap.get(record.id) || 0,
+          isLiked: likedIds.has(record.id),
+        },
+      }));
+
       // 총 개수 조회는 첫 페이지(page === 0)일 때만 수행하여 성능 최적화
       let totalCount = 0;
       let hasMore = false;
@@ -872,7 +949,7 @@ export const recordsAPI = {
 
       return {
         success: true,
-        data: feedRecords,
+        data: feedRecordsWithStats,
         hasMore,
         total: totalCount,
       };

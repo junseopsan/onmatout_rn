@@ -118,6 +118,7 @@ export const useUpdateRecord = () => {
 
 // 피드 기록 조회 (무한 스크롤)
 export const useFeedRecords = (pageSize: number = 10) => {
+  const queryClient = useQueryClient();
   return useInfiniteQuery({
     queryKey: ["feedRecords"],
     queryFn: async ({ pageParam = 0 }) => {
@@ -138,6 +139,14 @@ export const useFeedRecords = (pageSize: number = 10) => {
           result.message || "피드 기록을 불러오는데 실패했습니다."
         );
       }
+
+      // 선캐싱: 통계(stats)가 포함되어 있으면 recordStats 쿼리 캐시에 넣어둠
+      (result.data || []).forEach((record: any) => {
+        if (record.stats) {
+          queryClient.setQueryData(["recordStats", record.id], record.stats);
+        }
+      });
+
       return {
         data: result.data || [],
         hasMore: result.hasMore || false,

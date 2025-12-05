@@ -269,43 +269,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             });
           }
         } else {
-          console.log("세션 없음 - 로컬 사용자 정보 확인");
-          // 세션이 없어도 로컬에 저장된 사용자 정보가 있으면 유지
-          const storedUser = await AsyncStorage.getItem("user");
-          if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
-            console.log("로컬 사용자 정보 발견, 유지:", parsedUser.id);
-            set({
-              user: parsedUser as any,
-              session: null,
-              loading: false,
-            });
-            // 세션 갱신 시도 (백그라운드)
-            setTimeout(async () => {
-              try {
-                const {
-                  data: { session: refreshedSession },
-                } = await supabase.auth.refreshSession();
-                if (refreshedSession) {
-                  console.log("[Auth] 초기화 시 세션 갱신 성공");
-                  set({ session: refreshedSession });
-                  await AsyncStorage.setItem(
-                    "session",
-                    JSON.stringify(refreshedSession)
-                  );
-                }
-              } catch (refreshError) {
-                console.log("[Auth] 초기화 시 세션 갱신 실패:", refreshError);
-              }
-            }, 1000);
-          } else {
-            console.log("로컬 사용자 정보도 없음 - 로그인 필요");
-            set({
-              user: null,
-              session: null,
-              loading: false,
-            });
-          }
+          console.log("세션 없음 - 로그인 필요, 강제 로그아웃");
+          await AsyncStorage.removeItem("user");
+          await AsyncStorage.removeItem("session");
+          set({
+            user: null,
+            session: null,
+            loading: false,
+          });
         }
       })();
 
@@ -319,45 +290,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             const nextUser = session?.user ?? null;
             const currentState = get();
 
-            // SIGNED_OUT 이벤트가 발생했을 때도 로컬에 저장된 사용자 정보가 있으면 유지
+            // SIGNED_OUT 또는 세션 없음 → 강제 로그아웃
             if (event === "SIGNED_OUT" || (!session && !nextUser)) {
-              // 로컬에 저장된 사용자 정보 확인
-              const storedUser = await AsyncStorage.getItem("user");
-              if (storedUser) {
-                const parsedUser = JSON.parse(storedUser);
-                console.log(
-                  "[Auth] 세션 만료되었지만 로컬 사용자 정보 유지:",
-                  parsedUser.id
-                );
-                // 사용자 정보는 유지하고 세션만 null로 설정
-                set({ session: null, user: parsedUser });
-                // 세션 갱신 시도
-                try {
-                  const {
-                    data: { session: refreshedSession },
-                  } = await supabase.auth.refreshSession();
-                  if (refreshedSession) {
-                    console.log("[Auth] 세션 갱신 성공");
-                    set({ session: refreshedSession, user: parsedUser });
-                    await AsyncStorage.setItem(
-                      "session",
-                      JSON.stringify(refreshedSession)
-                    );
-                  }
-                } catch (refreshError) {
-                  console.log(
-                    "[Auth] 세션 갱신 실패, 사용자 정보는 유지:",
-                    refreshError
-                  );
-                }
-                return;
-              } else {
-                // 로컬에 사용자 정보도 없으면 완전히 로그아웃
-                set({ session: null, user: null });
-                await AsyncStorage.removeItem("user");
-                await AsyncStorage.removeItem("session");
-                return;
-              }
+              await AsyncStorage.removeItem("user");
+              await AsyncStorage.removeItem("session");
+              set({ session: null, user: null, loading: false });
+              return;
             }
 
             // 사용자가 있으면 최신 프로필 가져오기
@@ -782,9 +720,46 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  // 로그아웃 기능 비활성화 (세션 유지)
+  // 로그아웃
   signOut: async () => {
-    console.log("signOut 호출됨 - 현재 빌드에서는 비활성화됨");
-    set({ loading: false });
+    try {
+      set({ loading: true, error: null });
+
+      // Supabase 세션 로그아웃
+      await supabase.auth.signOut();
+
+      // AsyncStorage에서 사용자/세션 정보 제거
+      await AsyncStorage.removeItem("user");
+      await AsyncStorage.removeItem("session");
+
+      // Supabase 관련 키 정리
+      try {
+        const keys = await AsyncStorage.getAllKeys();
+        const supabaseKeys = keys.filter((key: string) =>
+          key.toLowerCase().includes("supabase")
+        );
+        if (supabaseKeys.length > 0) {
+          await AsyncStorage.multiRemove(supabaseKeys);
+        }
+      } catch (storageError) {
+        console.log("로그아웃 중 Storage 정리 실패:", storageError);
+      }
+
+      // 상태 초기화
+      set({
+        user: null,
+        session: null,
+        loading: false,
+        error: null,
+        phoneNumber: null,
+      });
+    } catch (error) {
+      console.log("로그아웃 실패:", error);
+      set({
+        error:
+          error instanceof Error ? error.message : "로그아웃에 실패했습니다.",
+        loading: false,
+      });
+    }
   },
 }));

@@ -16,16 +16,16 @@ export const useAsanas = (pageSize: number = 20) => {
       }
 
       // 셔플 없이 원본 순서를 유지한 채 클라이언트 페이지네이션
-      const startIndex = pageParam * pageSize;
-      const endIndex = startIndex + pageSize;
+        const startIndex = pageParam * pageSize;
+        const endIndex = startIndex + pageSize;
       const paginatedData = result.data.slice(startIndex, endIndex);
 
-      return {
-        data: paginatedData,
+        return {
+          data: paginatedData,
         nextCursor: endIndex < result.data.length ? pageParam + 1 : undefined,
         hasMore: endIndex < result.data.length,
         total: result.data.length,
-      };
+        };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000, // 5분
