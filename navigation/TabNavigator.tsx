@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
+import { Modal } from "react-native";
 import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
@@ -13,6 +14,7 @@ import DashboardScreen from "../app/(tabs)/index";
 import ProfileScreen from "../app/(tabs)/profile";
 import RecordScreen from "../app/(tabs)/record";
 import StudiosScreen from "../app/(tabs)/studios";
+import NewRecordScreen from "../app/record/new";
 
 const Tab = createBottomTabNavigator();
 
@@ -27,6 +29,9 @@ export default function TabNavigator() {
 
   // 홈 탭 스크롤 함수를 저장할 ref (화면에서 설정)
   const dashboardScrollToTopRef = useRef<(() => void) | null>(null);
+
+  // 기록 작성 모달 표시 여부
+  const [isRecordModalVisible, setIsRecordModalVisible] = useState(false);
 
   // 홈 탭 스크롤 함수를 설정하는 함수 (화면에서 호출)
   // navigation에 함수를 등록하여 화면에서 접근 가능하도록 함
@@ -107,8 +112,8 @@ export default function TabNavigator() {
             tabPress: (e) => {
               const routeName = e.target?.split("-")[0];
 
-              // Dashboard 탭은 개별 listeners에서 처리 (중복 Alert 방지)
-              if (routeName === "Dashboard") {
+              // Dashboard, Record 탭은 개별 listeners에서 처리 (중복 Alert 방지)
+              if (routeName === "Dashboard" || routeName === "Record") {
                 return;
               }
 
@@ -156,6 +161,24 @@ export default function TabNavigator() {
           name="Record"
           component={RecordScreen}
           options={{ tabBarLabel: "기록" }}
+          listeners={{
+            tabPress: (e: any) => {
+              // 기본 탭 전환 막기 (기록 탭은 중앙 액션 버튼처럼 동작)
+              e.preventDefault();
+
+              // 로그인되지 않은 경우 Alert 표시
+              if (!isAuthenticated || !user) {
+                AlertDialog.login(
+                  () => navigation.navigate("Auth" as never),
+                  () => {} // 취소 시 아무것도 하지 않음
+                );
+                return;
+              }
+
+              // 기록 작성 모달 열기
+              setIsRecordModalVisible(true);
+            },
+          }}
         />
         <Tab.Screen
           name="Studios"
@@ -168,6 +191,16 @@ export default function TabNavigator() {
           options={{ tabBarLabel: "프로필" }}
         />
       </Tab.Navigator>
+
+      {/* 기록 작성 모달 */}
+      <Modal
+        visible={isRecordModalVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setIsRecordModalVisible(false)}
+      >
+        <NewRecordScreen onClose={() => setIsRecordModalVisible(false)} />
+      </Modal>
     </>
   );
 }

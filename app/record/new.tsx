@@ -30,7 +30,11 @@ import { RecordFormData } from "../../types/record";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function NewRecordScreen() {
+interface NewRecordScreenProps {
+  onClose?: () => void;
+}
+
+export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated } = useAuth();
   const { user } = useAuthStore();
@@ -67,10 +71,15 @@ export default function NewRecordScreen() {
     });
   };
 
-  // 홈탭으로 이동
+  // 닫기 핸들러
   const handleClose = () => {
-    // TabNavigator로 이동하여 홈탭으로 이동
-    navigation.navigate("TabNavigator");
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    // 스택 화면으로 사용되는 경우 기본 goBack
+    navigation.goBack();
   };
 
   // 기록 저장
@@ -114,12 +123,22 @@ export default function NewRecordScreen() {
       const result = await recordsAPI.createRecord(recordData, user?.id);
 
       if (result.success) {
-        // 성공 시 홈탭으로 이동하고 스낵바 표시
+        // 성공 시 스낵바 표시
         showSnackbar("수련 기록이 저장되었습니다.", "success");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "TabNavigator", params: { screen: "Dashboard" } }],
-        });
+
+        if (onClose) {
+          // 모달로 사용되는 경우: 모달 닫고 대시보드 탭으로 이동
+          onClose();
+          navigation.navigate("Dashboard" as never);
+        } else {
+          // 스택 화면으로 사용되는 경우: 기존 동작 유지
+          navigation.reset({
+            index: 0,
+            routes: [
+              { name: "TabNavigator", params: { screen: "Dashboard" } as any },
+            ],
+          });
+        }
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
