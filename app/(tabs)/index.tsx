@@ -1,4 +1,4 @@
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -130,16 +130,6 @@ export default function DashboardScreen() {
     // 또는 직접 ref에 저장
     dashboardScrollToTopRef.current = handleTabRepeatedPress;
   }, [navigation, handleTabRepeatedPress]);
-
-  // 화면이 포커스될 때마다 처리
-  useFocusEffect(
-    useCallback(() => {
-      if (isAuthenticated) {
-        console.log("피드: 화면 포커스 시 데이터 새로고침");
-        refetch();
-      }
-    }, [isAuthenticated, refetch])
-  );
 
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(
@@ -289,7 +279,7 @@ export default function DashboardScreen() {
             onRefresh={handleRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
-            progressViewOffset={100} // 로고 영역 높이만큼 오프셋
+            progressViewOffset={60} // 기본 간격을 한 번 더 줄여서 상단과 더 가깝게
           />
         }
         onScroll={handleScroll}
@@ -374,7 +364,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   listContainer: {
-    paddingTop: 100, // 로고 영역 높이만큼 상단 여백 (로고가 absolute이므로)
+    paddingTop: 60, // 상단 여백을 더 줄여 로고와 첫 카드 간 기본 간격 축소
     paddingBottom: 20,
   },
   emptyContainer: {
