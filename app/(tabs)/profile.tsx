@@ -35,9 +35,9 @@ export default function ProfileScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
-  // 프로필 통계 데이터 가져오기 (allRecords만)
-  const testUserId = user?.id || "260d9314-3fa8-472f-8250-32ef3a9dc7fc";
-  const { allRecords, refetch } = useProfileStats(testUserId);
+  // 프로필 통계 데이터 가져오기 (allRecords만) - 로그인 사용자 기준
+  const userId = user?.id;
+  const { allRecords, refetch } = useProfileStats(userId);
 
   // 기록 데이터 가져오기
   const { recentRecords, refetch: refetchRecords } = useRecordData();

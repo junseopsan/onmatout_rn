@@ -673,6 +673,15 @@ export const recordsAPI = {
     message?: string;
   }> => {
     try {
+      // 현재 사용자 확인
+      const auth = await ensureAuthenticated();
+      if (!auth) {
+        return {
+          success: false,
+          message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
+        };
+      }
+
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const fromDate = thirtyDaysAgo.toISOString().split("T")[0];
@@ -681,6 +690,7 @@ export const recordsAPI = {
         .from("practice_records")
         .select("*")
         .gte("practice_date", fromDate)
+        .eq("user_id", auth.userId)
         .order("practice_date", { ascending: false });
 
       if (error) {
