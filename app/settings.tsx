@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
@@ -23,16 +24,18 @@ import { useAuthStore } from "../stores/authStore";
 
 export default function SettingsScreen() {
   const { user } = useAuth();
-  const { getUserProfile, clearSession } = useAuthStore();
+  const { getUserProfile, clearSession, signOut } = useAuthStore();
   const { showSnackbar } = useNotification();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const queryClient = useQueryClient();
 
   // 알림 설정 상태
   const [pushNotifications, setPushNotifications] = useState(true);
   const [notificationPermissionStatus, setNotificationPermissionStatus] =
     useState<string>("unknown");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // 알림 권한 상태 확인
   useEffect(() => {
@@ -93,6 +96,36 @@ export default function SettingsScreen() {
     }
 
     return true;
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut();
+      queryClient.clear();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Auth" }],
+      });
+    } catch (error: any) {
+      showSnackbar(
+        error?.message || "로그아웃에 실패했습니다. 다시 시도해주세요.",
+        "error"
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const confirmLogout = () => {
+    AlertDialog.confirm(
+      "로그아웃",
+      "정말로 로그아웃하시겠습니까?",
+      handleLogout,
+      () => {},
+      "로그아웃",
+      "취소"
+    );
   };
 
   // 푸시 알림 토큰 가져오기
@@ -314,6 +347,23 @@ export default function SettingsScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>계정</Text>
           </View>
+
+          <TouchableOpacity
+            style={[
+              styles.settingItem,
+              isLoggingOut && styles.disabledItem,
+            ]}
+            onPress={confirmLogout}
+            disabled={isLoggingOut}
+          >
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>로그아웃</Text>
+              <Text style={styles.settingDescription}>
+                현재 계정에서 로그아웃합니다.
+              </Text>
+            </View>
+            <Text style={styles.arrowText}>{isLoggingOut ? "…" : "›"}</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[

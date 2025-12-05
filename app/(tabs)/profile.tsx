@@ -13,13 +13,11 @@ import {
 } from "react-native";
 import DatePickerModal from "../../components/DatePickerModal";
 import SimpleRecordCard from "../../components/SimpleRecordCard";
-import { AlertDialog } from "../../components/ui/AlertDialog";
 // SettingsModal 제거됨 - 페이지로 변경
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfileStats } from "../../hooks/useDashboard";
 import { useRecordData } from "../../hooks/useRecords";
-import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -96,41 +94,6 @@ export default function ProfileScreen() {
 
   const handleDateTextPress = () => {
     setDatePickerVisible(true);
-  };
-
-  // 로그아웃 함수
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-
-      // React Query 캐시 모두 클리어 (이전 사용자 데이터 제거)
-      queryClient.clear();
-      console.log("React Query 캐시 클리어 완료");
-
-      // authStore도 초기화
-      useAuthStore.getState().clearUser();
-      console.log("로그아웃 완료");
-
-      // 로그인 화면으로 이동
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Auth" }],
-      });
-    } catch (error) {
-      console.error("로그아웃 실패:", error);
-    }
-  };
-
-  // 로그아웃 확인 다이얼로그
-  const showLogoutDialog = () => {
-    AlertDialog.confirm(
-      "로그아웃",
-      "정말로 로그아웃하시겠습니까?",
-      handleLogout,
-      () => {}, // 취소 시 아무것도 하지 않음
-      "로그아웃",
-      "취소"
-    );
   };
 
   // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
@@ -258,20 +221,6 @@ export default function ProfileScreen() {
             </View>
           )}
         </View>
-
-        {/* 로그아웃 버튼 */}
-        {
-          <View style={styles.logoutSection}>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={showLogoutDialog}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="log-out-outline" size={20} color="white" />
-              <Text style={styles.logoutButtonText}>로그아웃</Text>
-            </TouchableOpacity>
-          </View>
-        }
 
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />
