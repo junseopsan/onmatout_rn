@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
 
 export const useAuth = () => {
@@ -65,6 +66,74 @@ export const useAuth = () => {
       isMounted = false;
     };
   }, []); // 빈 의존성 배열로 한 번만 실행
+
+  // 주기적으로 세션 확인 및 갱신 (사용자가 로그인되어 있을 때만)
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshSession = async () => {
+      try {
+        const {
+          data: { session: currentSession },
+        } = await supabase.auth.getSession();
+
+        if (currentSession) {
+          // 세션이 있으면 만료 시간 확인
+          if (currentSession.expires_at) {
+            const expiresAt = currentSession.expires_at * 1000;
+            const now = Date.now();
+            const timeUntilExpiry = expiresAt - now;
+
+            // 만료 30분 전이면 갱신 시도
+            if (timeUntilExpiry < 30 * 60 * 1000 && timeUntilExpiry > 0) {
+              console.log("[Auth] 세션 만료 임박, 주기적 갱신 시도");
+              const {
+                data: { session: refreshedSession },
+                error: refreshError,
+              } = await supabase.auth.refreshSession();
+
+              if (refreshedSession && !refreshError) {
+                console.log("[Auth] 주기적 세션 갱신 성공");
+                setSession(refreshedSession);
+              } else if (refreshError) {
+                console.log("[Auth] 주기적 세션 갱신 실패:", refreshError);
+                // 갱신 실패해도 사용자 정보는 유지
+              }
+            }
+          }
+        } else {
+          // 세션이 없으면 갱신 시도
+          console.log("[Auth] 세션 없음, 갱신 시도");
+          try {
+            const {
+              data: { session: refreshedSession },
+            } = await supabase.auth.refreshSession();
+            if (refreshedSession) {
+              console.log("[Auth] 세션 갱신 성공");
+              setSession(refreshedSession);
+            }
+          } catch (refreshError) {
+            console.log(
+              "[Auth] 세션 갱신 실패, 사용자 정보는 유지:",
+              refreshError
+            );
+          }
+        }
+      } catch (error) {
+        console.log("[Auth] 세션 확인 중 오류:", error);
+      }
+    };
+
+    // 초기 확인
+    refreshSession();
+
+    // 10분마다 세션 확인 및 갱신
+    const interval = setInterval(refreshSession, 10 * 60 * 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [user, setSession]);
 
   // 사용자 정보가 있으면 인증된 것으로 판단 (세션 없이도 허용)
   const isAuthenticated = !!user;

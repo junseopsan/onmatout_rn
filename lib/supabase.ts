@@ -38,10 +38,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Auth helper functions
 export const getCurrentUser = async () => {
   try {
-  const {
-    data: { user },
+    const {
+      data: { user },
       error,
-  } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser();
 
     // 리프레시 토큰 관련 에러는 조용히 처리 (비로그인 상태에서 정상)
     if (error) {
@@ -54,7 +54,7 @@ export const getCurrentUser = async () => {
       }
     }
 
-  return user;
+    return user;
   } catch (e) {
     // 예외 발생 시 조용히 null 반환 (비로그인 상태에서 정상적인 동작)
     return null;
@@ -76,25 +76,57 @@ export const getCurrentSession = async () => {
         errorMessage.includes("invalid refresh token") ||
         errorMessage.includes("refresh token not found")
       ) {
-        // 비로그인 상태에서 발생하는 정상적인 에러이므로 조용히 처리
+        // 리프레시 토큰이 만료되었을 때, 로컬에 저장된 사용자 정보가 있으면 세션 갱신 시도
         try {
-          const keys = await AsyncStorage.getAllKeys();
-          const supabaseKeys = keys.filter((key) =>
-            key.toLowerCase().includes("supabase")
-          );
-          if (supabaseKeys.length > 0) {
-            await AsyncStorage.multiRemove(supabaseKeys);
+          const storedUser = await AsyncStorage.getItem("user");
+          if (storedUser) {
+            // 로컬에 사용자 정보가 있으면 세션 갱신 시도
+            console.log("[Auth] 리프레시 토큰 만료, 세션 갱신 시도");
+            // 세션을 강제로 갱신하려고 시도 (Supabase가 자동으로 처리)
+            const {
+              data: { session: refreshedSession },
+            } = await supabase.auth.refreshSession();
+            if (refreshedSession) {
+              console.log("[Auth] 세션 갱신 성공");
+              return refreshedSession;
+            }
           }
-        } catch (storageError) {
-          // AsyncStorage 오류는 무시
+        } catch (refreshError) {
+          console.log("[Auth] 세션 갱신 실패:", refreshError);
         }
 
+        // 세션 갱신 실패 시에도 로컬 사용자 정보가 있으면 null 반환하지 않음
+        // (사용자 정보는 유지하고 세션만 null로 처리)
         return null;
       }
 
       // 다른 종류의 에러는 로그 출력
       console.log("[Auth] 세션 조회 중 오류:", error.message);
       return null;
+    }
+
+    // 세션이 있지만 만료되었는지 확인
+    if (session && session.expires_at) {
+      const expiresAt = session.expires_at * 1000; // 초를 밀리초로 변환
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+
+      // 만료 5분 전이면 자동 갱신 시도
+      if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
+        console.log("[Auth] 세션 만료 임박, 자동 갱신 시도");
+        try {
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession();
+          if (refreshedSession && !refreshError) {
+            console.log("[Auth] 세션 자동 갱신 성공");
+            return refreshedSession;
+          }
+        } catch (refreshError) {
+          console.log("[Auth] 세션 자동 갱신 실패:", refreshError);
+        }
+      }
     }
 
     return session;

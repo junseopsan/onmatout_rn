@@ -196,7 +196,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                   });
                 }
               } catch (profileError) {
-                console.log("프로필 조회 실패, 로컬 데이터 사용:", profileError);
+                console.log(
+                  "프로필 조회 실패, 로컬 데이터 사용:",
+                  profileError
+                );
                 set({
                   user: user as any,
                   session: session,
@@ -266,12 +269,43 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             });
           }
         } else {
-          console.log("세션 없음 - 로그인 필요");
-          set({
-            user: null,
-            session: null,
-            loading: false,
-          });
+          console.log("세션 없음 - 로컬 사용자 정보 확인");
+          // 세션이 없어도 로컬에 저장된 사용자 정보가 있으면 유지
+          const storedUser = await AsyncStorage.getItem("user");
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            console.log("로컬 사용자 정보 발견, 유지:", parsedUser.id);
+            set({
+              user: parsedUser as any,
+              session: null,
+              loading: false,
+            });
+            // 세션 갱신 시도 (백그라운드)
+            setTimeout(async () => {
+              try {
+                const {
+                  data: { session: refreshedSession },
+                } = await supabase.auth.refreshSession();
+                if (refreshedSession) {
+                  console.log("[Auth] 초기화 시 세션 갱신 성공");
+                  set({ session: refreshedSession });
+                  await AsyncStorage.setItem(
+                    "session",
+                    JSON.stringify(refreshedSession)
+                  );
+                }
+              } catch (refreshError) {
+                console.log("[Auth] 초기화 시 세션 갱신 실패:", refreshError);
+              }
+            }, 1000);
+          } else {
+            console.log("로컬 사용자 정보도 없음 - 로그인 필요");
+            set({
+              user: null,
+              session: null,
+              loading: false,
+            });
+          }
         }
       })();
 
@@ -280,10 +314,52 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       // 인증 상태 구독으로 세션/유저 자동 동기화 (앱 생명주기 동안 1회 설정)
       const { data } = supabase.auth.onAuthStateChange(
-        async (_event, session) => {
+        async (event, session) => {
           try {
             const nextUser = session?.user ?? null;
-            
+            const currentState = get();
+
+            // SIGNED_OUT 이벤트가 발생했을 때도 로컬에 저장된 사용자 정보가 있으면 유지
+            if (event === "SIGNED_OUT" || (!session && !nextUser)) {
+              // 로컬에 저장된 사용자 정보 확인
+              const storedUser = await AsyncStorage.getItem("user");
+              if (storedUser) {
+                const parsedUser = JSON.parse(storedUser);
+                console.log(
+                  "[Auth] 세션 만료되었지만 로컬 사용자 정보 유지:",
+                  parsedUser.id
+                );
+                // 사용자 정보는 유지하고 세션만 null로 설정
+                set({ session: null, user: parsedUser });
+                // 세션 갱신 시도
+                try {
+                  const {
+                    data: { session: refreshedSession },
+                  } = await supabase.auth.refreshSession();
+                  if (refreshedSession) {
+                    console.log("[Auth] 세션 갱신 성공");
+                    set({ session: refreshedSession, user: parsedUser });
+                    await AsyncStorage.setItem(
+                      "session",
+                      JSON.stringify(refreshedSession)
+                    );
+                  }
+                } catch (refreshError) {
+                  console.log(
+                    "[Auth] 세션 갱신 실패, 사용자 정보는 유지:",
+                    refreshError
+                  );
+                }
+                return;
+              } else {
+                // 로컬에 사용자 정보도 없으면 완전히 로그아웃
+                set({ session: null, user: null });
+                await AsyncStorage.removeItem("user");
+                await AsyncStorage.removeItem("session");
+                return;
+              }
+            }
+
             // 사용자가 있으면 최신 프로필 가져오기
             if (nextUser?.id) {
               try {
@@ -295,22 +371,37 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                   userProfile.data.name.trim() !== "" &&
                   userProfile.data.name !== "null"
                 ) {
-                  const userWithProfile = { ...nextUser, profile: userProfile.data } as any;
+                  const userWithProfile = {
+                    ...nextUser,
+                    profile: userProfile.data,
+                  } as any;
                   set({ session: session ?? null, user: userWithProfile });
-                  
+
                   // 로컬에도 보존
-                  await AsyncStorage.setItem("user", JSON.stringify(userWithProfile));
+                  await AsyncStorage.setItem(
+                    "user",
+                    JSON.stringify(userWithProfile)
+                  );
                 } else {
-                  set({ session: session ?? null, user: (nextUser as any) ?? null });
+                  set({
+                    session: session ?? null,
+                    user: (nextUser as any) ?? null,
+                  });
                   if (nextUser) {
-                    await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+                    await AsyncStorage.setItem(
+                      "user",
+                      JSON.stringify(nextUser)
+                    );
                   } else {
                     await AsyncStorage.removeItem("user");
                   }
                 }
               } catch (profileError) {
                 console.log("프로필 조회 실패:", profileError);
-                set({ session: session ?? null, user: (nextUser as any) ?? null });
+                set({
+                  session: session ?? null,
+                  user: (nextUser as any) ?? null,
+                });
                 if (nextUser) {
                   await AsyncStorage.setItem("user", JSON.stringify(nextUser));
                 } else {
@@ -318,17 +409,32 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 }
               }
             } else {
-              set({ session: session ?? null, user: (nextUser as any) ?? null });
-              if (nextUser) {
-                await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+              // 세션이 없어도 로컬에 사용자 정보가 있으면 유지
+              const storedUser = await AsyncStorage.getItem("user");
+              if (storedUser) {
+                const parsedUser = JSON.parse(storedUser);
+                console.log(
+                  "[Auth] 세션 없지만 로컬 사용자 정보 유지:",
+                  parsedUser.id
+                );
+                set({ session: session ?? null, user: parsedUser });
               } else {
-                await AsyncStorage.removeItem("user");
+                set({
+                  session: session ?? null,
+                  user: (nextUser as any) ?? null,
+                });
+                if (nextUser) {
+                  await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+                } else {
+                  await AsyncStorage.removeItem("user");
+                }
               }
             }
 
             if (session) {
               await AsyncStorage.setItem("session", JSON.stringify(session));
             } else {
+              // 세션이 없어도 사용자 정보는 유지하므로 세션만 삭제
               await AsyncStorage.removeItem("session");
             }
           } catch (e) {
@@ -457,9 +563,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (error) {
       set({
         error:
-          error instanceof Error
-            ? error.message
-            : "이메일 로그인 요청 실패",
+          error instanceof Error ? error.message : "이메일 로그인 요청 실패",
         loading: false,
       });
       return false;
