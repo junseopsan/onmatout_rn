@@ -895,19 +895,30 @@ export const recordsAPI = {
     try {
       const auth = await ensureAuthenticated();
       if (!auth) {
+        console.error("[toggleLike] 인증 실패");
         return {
           success: false,
           message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
         };
       }
 
+      console.log("[toggleLike] 시작:", { recordId, userId: auth.userId });
+
       // 현재 좋아요 상태 확인
-      const { data: existingLike } = await supabase
+      const { data: existingLike, error: selectError } = await supabase
         .from("feed_likes")
         .select("id")
         .eq("user_id", auth.userId)
         .eq("record_id", recordId)
-        .single();
+        .maybeSingle();
+
+      if (selectError && selectError.code !== "PGRST116") {
+        // PGRST116은 "no rows returned" 에러이므로 정상
+        console.error("[toggleLike] 좋아요 상태 확인 실패:", selectError);
+        throw selectError;
+      }
+
+      console.log("[toggleLike] 기존 좋아요 상태:", !!existingLike);
 
       if (existingLike) {
         // 좋아요 제거
@@ -918,8 +929,10 @@ export const recordsAPI = {
           .eq("record_id", recordId);
 
         if (deleteError) {
+          console.error("[toggleLike] 좋아요 제거 실패:", deleteError);
           throw deleteError;
         }
+        console.log("[toggleLike] 좋아요 제거 성공");
       } else {
         // 좋아요 추가
         const { error: insertError } = await supabase
@@ -930,27 +943,38 @@ export const recordsAPI = {
           });
 
         if (insertError) {
+          console.error("[toggleLike] 좋아요 추가 실패:", insertError);
           throw insertError;
         }
+        console.log("[toggleLike] 좋아요 추가 성공");
       }
 
       // 좋아요 개수 조회
-      const { count: likeCount } = await supabase
+      const { count: likeCount, error: countError } = await supabase
         .from("feed_likes")
         .select("*", { count: "exact", head: true })
         .eq("record_id", recordId);
 
-      return {
+      if (countError) {
+        console.error("[toggleLike] 좋아요 개수 조회 실패:", countError);
+        throw countError;
+      }
+
+      const result = {
         success: true,
         data: {
           isLiked: !existingLike,
           likeCount: likeCount || 0,
         },
       };
-    } catch (error) {
+
+      console.log("[toggleLike] 성공:", result);
+      return result;
+    } catch (error: any) {
+      console.error("[toggleLike] 에러:", error);
       return {
         success: false,
-        message: "좋아요 처리에 실패했습니다.",
+        message: error?.message || "좋아요 처리에 실패했습니다.",
       };
     }
   },
@@ -1046,7 +1070,7 @@ export const recordsAPI = {
         .from("feed_comments")
         .select("*")
         .eq("record_id", recordId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false }); // 최신순으로 정렬
 
       if (error) {
         throw error;

@@ -3,13 +3,14 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
@@ -135,7 +136,7 @@ export default function AuthScreen() {
 
         showSnackbar(errorMessage, "error");
       }
-    } catch (e) {
+    } catch {
       showSnackbar(
         "이메일 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
         "error"
@@ -149,118 +150,123 @@ export default function AuthScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      {/* 배경 레이어 - 요가 이미지 전체화면 */}
-      <View style={styles.backgroundLayer}>
-        <Image
-          source={require("../../images/asanas/asana_bg.png")}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        />
-      </View>
-
-      {/* UI 레이어 - 슬로건, 입력, 버튼 */}
-      <ScrollView
-        style={styles.uiLayer}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.content}>
-          {/* 중앙 슬로건 */}
-          <View style={styles.sloganContainer}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          {/* 배경 레이어 - 요가 이미지 전체화면 */}
+          <View style={styles.backgroundLayer}>
             <Image
-              source={require("../../images/onthemat_rm_bg.png")}
-              style={styles.logo}
-              resizeMode="contain"
+              source={require("../../images/asanas/asana_bg.png")}
+              style={styles.backgroundImage}
+              resizeMode="cover"
             />
           </View>
 
-          {/* 하단 입력 섹션 */}
-          <View style={styles.bottomSection}>
-            <Text style={styles.menuText}>
-              아사나 탐색 | 수련 기록 | 요가원 검색
-            </Text>
+          {/* UI 레이어 - 슬로건, 입력, 버튼 */}
+          <View style={styles.uiLayer}>
+            <View style={styles.content}>
+              {/* 중앙 슬로건 */}
+              <View style={styles.sloganContainer}>
+                <Image
+                  source={require("../../images/onthemat_rm_bg.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={handleEmailChange}
-                placeholder="example@yoga.com"
-                placeholderTextColor="#999999"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {emailSuggestions.length > 0 && (
-                <View style={styles.suggestionContainer}>
-                  {emailSuggestions.map((suggestion) => (
-                    <TouchableOpacity
-                      key={suggestion}
-                      style={styles.suggestionItem}
-                      onPress={() => handleSelectEmailSuggestion(suggestion)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.suggestionText}>{suggestion}</Text>
-                    </TouchableOpacity>
-                  ))}
+              {/* 하단 입력 섹션 */}
+              <View style={styles.bottomSection}>
+                <Text style={styles.menuText}>
+                  아사나 탐색 | 수련 기록 | 요가원 검색
+                </Text>
+
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={handleEmailChange}
+                    placeholder="example@yoga.com"
+                    placeholderTextColor="#999999"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  {emailSuggestions.length > 0 && (
+                    <View style={styles.suggestionContainer}>
+                      {emailSuggestions.map((suggestion) => (
+                        <TouchableOpacity
+                          key={suggestion}
+                          style={styles.suggestionItem}
+                          onPress={() =>
+                            handleSelectEmailSuggestion(suggestion)
+                          }
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.suggestionText}>
+                            {suggestion}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                  {emailError ? (
+                    <Text style={styles.errorText}>{emailError}</Text>
+                  ) : null}
                 </View>
-              )}
-              {emailError ? (
-                <Text style={styles.errorText}>{emailError}</Text>
-              ) : null}
-            </View>
 
-            {/* 비밀번호 입력은 사용하지 않으므로 제거 */}
+                {/* 비밀번호 입력은 사용하지 않으므로 제거 */}
 
-            <TouchableOpacity
-              style={[
-                styles.button,
-                (!email.trim() || loading || rateLimitSeconds !== null) && {
-                  opacity: 0.7,
-                },
-              ]}
-              onPress={handleSubmit}
-              disabled={loading || !email.trim() || rateLimitSeconds !== null}
-            >
-              <Text style={styles.buttonText}>
-                {loading
-                  ? "처리 중..."
-                  : rateLimitSeconds !== null
-                  ? `${rateLimitSeconds}초 후 재시도`
-                  : "나마스떼(नमस्ते, Namaste)"}
-              </Text>
-            </TouchableOpacity>
-
-            {/* 전화번호 로그인 링크 */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("PhoneLogin")}
-              style={styles.phoneLoginLink}
-            >
-              <Text style={styles.phoneLoginText}>전화번호 로그인</Text>
-            </TouchableOpacity>
-
-            {/* 약관 동의 텍스트 */}
-            <View style={styles.termsContainer}>
-              <Text style={styles.termsText}>
-                로그인 / 회원가입을 진행하면{" "}
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("TermsOfService")}
+                  style={[
+                    styles.button,
+                    (!email.trim() || loading || rateLimitSeconds !== null) && {
+                      opacity: 0.7,
+                    },
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={
+                    loading || !email.trim() || rateLimitSeconds !== null
+                  }
                 >
-                  <Text style={styles.termsLink}>이용약관</Text>
-                </TouchableOpacity>{" "}
-                및{" "}
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("PrivacyPolicy")}
-                >
-                  <Text style={styles.termsLink}>개인정보처리방침에</Text>
+                  <Text style={styles.buttonText}>
+                    {loading
+                      ? "..."
+                      : rateLimitSeconds !== null
+                      ? `${rateLimitSeconds}초 후 재시도`
+                      : "나마스떼(नमस्ते, Namaste)"}
+                  </Text>
                 </TouchableOpacity>
-                {"\n"}동의하게 됩니다.
-              </Text>
+
+                {/* 전화번호 로그인 링크 */}
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("PhoneLogin")}
+                  style={styles.phoneLoginLink}
+                >
+                  <Text style={styles.phoneLoginText}>전화번호 로그인</Text>
+                </TouchableOpacity>
+
+                {/* 약관 동의 텍스트 */}
+                <View style={styles.termsContainer}>
+                  <Text style={styles.termsText}>
+                    로그인 / 회원가입을 진행하면{" "}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("TermsOfService")}
+                    >
+                      <Text style={styles.termsLink}>이용약관</Text>
+                    </TouchableOpacity>{" "}
+                    및{" "}
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("PrivacyPolicy")}
+                    >
+                      <Text style={styles.termsLink}>개인정보처리방침에</Text>
+                    </TouchableOpacity>
+                    {"\n"}동의하게 됩니다.
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
-      </ScrollView>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
@@ -282,9 +288,6 @@ const styles = StyleSheet.create({
   uiLayer: {
     flex: 1,
     zIndex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
   },
   backgroundImage: {
     opacity: 0.4,

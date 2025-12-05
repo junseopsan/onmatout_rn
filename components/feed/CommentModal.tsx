@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -35,37 +35,80 @@ export default function CommentModal({
 }: CommentModalProps) {
   const [commentText, setCommentText] = useState("");
   const [inputHeight, setInputHeight] = useState(32);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { data: comments, isLoading } = useComments(recordId);
   const addCommentMutation = useAddComment();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const isSubmittingRef = useRef(false);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   const handleAddComment = () => {
-    console.log("댓글 등록 시도:", { recordId, content: commentText.trim() });
-
-    if (commentText.trim()) {
-      addCommentMutation.mutate(
-        { recordId, content: commentText.trim() },
-        {
-          onSuccess: (data) => {
-            console.log("댓글 등록 성공:", data);
-            setCommentText("");
-            setInputHeight(32); // 입력 후 높이 초기화
-
-            // 댓글 목록 즉시 새로고침
-            queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
-            queryClient.invalidateQueries({
-              queryKey: ["recordStats", recordId],
-            });
-          },
-          onError: (error) => {
-            console.log("댓글 등록 실패:", error);
-          },
-        }
-      );
-    } else {
-      console.log("댓글 텍스트가 비어있음");
+    // 중복 실행 방지
+    if (isSubmittingRef.current) {
+      console.log("이미 등록 중...");
+      return;
     }
+
+    const trimmedText = commentText.trim();
+    console.log("댓글 등록 시도:", { recordId, content: trimmedText });
+
+    if (!trimmedText) {
+      console.log("댓글 텍스트가 비어있음");
+      return;
+    }
+
+    if (addCommentMutation.isPending) {
+      console.log("댓글 등록 중...");
+      return;
+    }
+
+    // 등록 시작 플래그 설정
+    isSubmittingRef.current = true;
+
+    // 키보드를 닫지 않고 바로 등록
+    addCommentMutation.mutate(
+      { recordId, content: trimmedText },
+      {
+        onSuccess: (data) => {
+          console.log("댓글 등록 성공:", data);
+          setCommentText("");
+          setInputHeight(32); // 입력 후 높이 초기화
+          isSubmittingRef.current = false; // 플래그 해제
+
+          // 댓글 목록 즉시 새로고침
+          queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
+          queryClient.invalidateQueries({
+            queryKey: ["recordStats", recordId],
+          });
+        },
+        onError: (error: any) => {
+          console.error("댓글 등록 실패:", error);
+          console.error("에러 상세:", error?.message || error);
+          isSubmittingRef.current = false; // 플래그 해제
+        },
+      }
+    );
   };
 
   const handleTextChange = (text: string) => {
@@ -114,12 +157,7 @@ export default function CommentModal({
       presentationStyle={Platform.OS === "ios" ? "pageSheet" : "fullScreen"}
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
-        enabled={true}
-      >
+      <View style={styles.container}>
         {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -132,10 +170,15 @@ export default function CommentModal({
         {/* 댓글 목록 */}
         <ScrollView
           style={styles.commentsList}
-          contentContainerStyle={styles.commentsListContent}
+          contentContainerStyle={[
+            styles.commentsListContent,
+            {
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight + 80 : 100,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="always" // 키보드 유지
+          keyboardDismissMode="none" // 스크롤/터치로 키보드 닫힘 방지
         >
           {comments && comments.length > 0 ? (
             comments.map((comment: any) => (
@@ -185,8 +228,16 @@ export default function CommentModal({
         <View
           style={[
             styles.commentInput,
-            { paddingBottom: Math.max(insets.bottom, 4) },
+            {
+              paddingBottom:
+                keyboardHeight > 0
+                  ? Math.max(insets.bottom, 4)
+                  : Math.max(insets.bottom, 8),
+              bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+            },
           ]}
+          // 입력 영역 터치 시 키보드 닫힘 방지
+          onStartShouldSetResponder={() => true}
         >
           <View
             style={[styles.inputContainer, { minHeight: inputHeight + 20 }]}
@@ -205,30 +256,47 @@ export default function CommentModal({
               blurOnSubmit={false}
               onSubmitEditing={handleAddComment}
             />
-            <TouchableOpacity
-              style={[
-                styles.commentSubmitButton,
-                (!commentText.trim() || addCommentMutation.isPending) &&
-                  styles.commentSubmitButtonDisabled,
-              ]}
-              onPress={handleAddComment}
-              disabled={!commentText.trim() || addCommentMutation.isPending}
-              activeOpacity={0.7}
-              delayPressIn={0}
-            >
-              <Text
+            <View style={styles.buttonWrapper} collapsable={false}>
+              <TouchableOpacity
                 style={[
-                  styles.commentSubmitText,
-                  (!commentText.trim() || addCommentMutation.isPending) &&
-                    styles.commentSubmitTextDisabled,
+                  styles.commentSubmitButton,
+                  (!commentText.trim() ||
+                    addCommentMutation.isPending ||
+                    isSubmittingRef.current) &&
+                    styles.commentSubmitButtonDisabled,
                 ]}
+                onPress={() => {
+                  if (
+                    !commentText.trim() ||
+                    addCommentMutation.isPending ||
+                    isSubmittingRef.current
+                  ) {
+                    return;
+                  }
+                  handleAddComment(); // 키보드 닫지 않고 바로 등록
+                }}
+                disabled={
+                  !commentText.trim() ||
+                  addCommentMutation.isPending ||
+                  isSubmittingRef.current
+                }
+                activeOpacity={0.8}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
               >
-                {addCommentMutation.isPending ? "등록중..." : "등록"}
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.commentSubmitText,
+                    (!commentText.trim() || addCommentMutation.isPending) &&
+                      styles.commentSubmitTextDisabled,
+                  ]}
+                >
+                  {addCommentMutation.isPending ? "등록중..." : "등록"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -335,10 +403,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.surface,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   inputContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 20,
@@ -357,11 +429,20 @@ const styles = StyleSheet.create({
     maxHeight: 64,
     paddingVertical: 8,
   },
+  buttonWrapper: {
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 60,
+    minHeight: 36,
+  },
   commentSubmitButton: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
+    minHeight: 36,
+    justifyContent: "center",
+    alignItems: "center",
   },
   commentSubmitButtonDisabled: {
     backgroundColor: COLORS.textSecondary,

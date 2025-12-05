@@ -15,43 +15,17 @@ export const useAsanas = (pageSize: number = 20) => {
         );
       }
 
-      // 첫 번째 페이지에서만 랜덤 셔플 적용
-      if (pageParam === 0) {
-        // Fisher-Yates 셔플 알고리즘
-        const shuffledData = [...result.data];
-        for (let i = shuffledData.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffledData[i], shuffledData[j]] = [shuffledData[j], shuffledData[i]];
-        }
-        
-        // 클라이언트 사이드에서 페이지네이션 처리
-        const startIndex = pageParam * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedData = shuffledData.slice(startIndex, endIndex);
+      // 셔플 없이 원본 순서를 유지한 채 클라이언트 페이지네이션
+      const startIndex = pageParam * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedData = result.data.slice(startIndex, endIndex);
 
-        return {
-          data: paginatedData,
-          nextCursor: endIndex < shuffledData.length ? pageParam + 1 : undefined,
-          hasMore: endIndex < shuffledData.length,
-          total: shuffledData.length,
-          shuffledData, // 셔플된 데이터를 저장
-        };
-      } else {
-        // 두 번째 페이지부터는 이전에 셔플된 데이터 사용
-        const previousPage = await queryClient.getQueryData(["asanas"]);
-        const shuffledData = previousPage?.pages?.[0]?.shuffledData || result.data;
-        
-        const startIndex = pageParam * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedData = shuffledData.slice(startIndex, endIndex);
-
-        return {
-          data: paginatedData,
-          nextCursor: endIndex < shuffledData.length ? pageParam + 1 : undefined,
-          hasMore: endIndex < shuffledData.length,
-          total: shuffledData.length,
-        };
-      }
+      return {
+        data: paginatedData,
+        nextCursor: endIndex < result.data.length ? pageParam + 1 : undefined,
+        hasMore: endIndex < result.data.length,
+        total: result.data.length,
+      };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000, // 5분

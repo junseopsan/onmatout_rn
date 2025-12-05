@@ -100,7 +100,7 @@ export default function Snackbar({
             {
               translateY: animation.interpolate({
                 inputRange: [0, 1],
-                outputRange: [100, 0],
+                outputRange: [-100, 0],
               }),
             },
           ],
@@ -143,7 +143,7 @@ export default function Snackbar({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 100, // 탭바 위에 표시
+    top: 60, // 상단에 표시 (상태바 아래)
     left: 16,
     right: 16,
     zIndex: 1000,

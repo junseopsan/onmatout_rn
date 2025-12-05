@@ -105,7 +105,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Auth"
         component={pageList.find((p) => p.name === "Auth")?.component!}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: false,
+          presentation: "modal",
+          animation: "slide_from_bottom",
+        }}
       />
       <Stack.Screen
         name="PhoneLogin"

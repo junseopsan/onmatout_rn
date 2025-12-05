@@ -25,6 +25,7 @@ const { width } = Dimensions.get("window");
 
 export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   // 소셜 기능 훅들
   const { data: stats } = useRecordStats(record.id);
@@ -101,7 +102,16 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
 
   // 소셜 기능 핸들러들
   const handleLike = () => {
-    toggleLikeMutation.mutate(record.id);
+    if (isLiking || toggleLikeMutation.isPending) {
+      return;
+    }
+    console.log("좋아요 버튼 클릭:", record.id);
+    setIsLiking(true);
+    toggleLikeMutation.mutate(record.id, {
+      onSettled: () => {
+        setIsLiking(false);
+      },
+    });
   };
 
   const handleComment = () => {
@@ -109,102 +119,109 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   };
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={() => onPress?.(record)}
-      activeOpacity={0.8}
-    >
-      {/* 사용자 정보 헤더 */}
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          {record.user_avatar_url ? (
-            <Image
-              source={{ uri: record.user_avatar_url }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>
-                {record.user_name.charAt(0)}
-              </Text>
-            </View>
-          )}
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{record.user_name}</Text>
-            <Text style={styles.timeText}>
-              {formatDate(record.practice_date || record.date)}
-              {record.practice_time && ` ${formatTime(record.practice_time)}`}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* 아사나 정보 */}
-      {record.asanas && record.asanas.length > 0 && (
-        <View style={styles.asanasContainer}>
-          <View style={styles.asanasList}>
-            {record.asanas.slice(0, 6).map((asanaId, index) => {
-              const asana = getAsanaInfo(asanaId);
-              if (!asana) {
-                console.log(
-                  `피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`
-                );
-                return null;
-              }
-
-              const imageUrl = asana.image_number
-                ? getImageUrl(asana.image_number)
-                : null;
-
-              return (
-                <View key={`${asanaId}-${index}`} style={styles.asanaThumbnail}>
-                  {imageUrl ? (
-                    <Image
-                      source={{ uri: imageUrl }}
-                      style={styles.asanaImage}
-                      contentFit="contain"
-                      cachePolicy="memory-disk"
-                      transition={0}
-                      placeholder="🖼️"
-                      placeholderContentFit="contain"
-                      onError={(error) => {
-                        console.log(
-                          `피드 아사나 이미지 로딩 실패: ${asana.image_number}`,
-                          error
-                        );
-                      }}
-                    />
-                  ) : (
-                    <View style={styles.asanaImagePlaceholder}>
-                      <Text style={styles.asanaImagePlaceholderText}>📝</Text>
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-            {record.asanas.length > 6 && (
-              <View style={styles.moreAsanasOverlay}>
-                <Text style={styles.moreAsanasText}>
-                  +{String(record.asanas.length - 6)}
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.content}
+        onPress={() => onPress?.(record)}
+        activeOpacity={0.8}
+      >
+        {/* 사용자 정보 헤더 */}
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            {record.user_avatar_url ? (
+              <Image
+                source={{ uri: record.user_avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
+                  {record.user_name.charAt(0)}
                 </Text>
               </View>
             )}
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{record.user_name}</Text>
+              <Text style={styles.timeText}>
+                {formatDate(record.practice_date || record.date)}
+                {record.practice_time && ` ${formatTime(record.practice_time)}`}
+              </Text>
+            </View>
           </View>
         </View>
-      )}
 
-      {/* 메모 - 아이콘 위쪽 */}
-      {record.memo && <Text style={styles.memo}>{record.memo}</Text>}
+        {/* 아사나 정보 */}
+        {record.asanas && record.asanas.length > 0 && (
+          <View style={styles.asanasContainer}>
+            <View style={styles.asanasList}>
+              {record.asanas.slice(0, 6).map((asanaId, index) => {
+                const asana = getAsanaInfo(asanaId);
+                if (!asana) {
+                  console.log(
+                    `피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`
+                  );
+                  return null;
+                }
 
-      {/* 액션 버튼들 - 메모 아래쪽 */}
+                const imageUrl = asana.image_number
+                  ? getImageUrl(asana.image_number)
+                  : null;
+
+                return (
+                  <View
+                    key={`${asanaId}-${index}`}
+                    style={styles.asanaThumbnail}
+                  >
+                    {imageUrl ? (
+                      <Image
+                        source={{ uri: imageUrl }}
+                        style={styles.asanaImage}
+                        contentFit="contain"
+                        cachePolicy="memory-disk"
+                        transition={0}
+                        placeholder="🖼️"
+                        placeholderContentFit="contain"
+                        onError={(error) => {
+                          console.log(
+                            `피드 아사나 이미지 로딩 실패: ${asana.image_number}`,
+                            error
+                          );
+                        }}
+                      />
+                    ) : (
+                      <View style={styles.asanaImagePlaceholder}>
+                        <Text style={styles.asanaImagePlaceholderText}>📝</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+              {record.asanas.length > 6 && (
+                <View style={styles.moreAsanasOverlay}>
+                  <Text style={styles.moreAsanasText}>
+                    +{String(record.asanas.length - 6)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* 메모 - 아이콘 위쪽 */}
+        {record.memo && <Text style={styles.memo}>{record.memo}</Text>}
+      </TouchableOpacity>
+
+      {/* 액션 버튼들 - 메모 아래쪽 (부모 터치 이벤트와 분리) */}
       <View style={styles.actionsContainer}>
         <TouchableOpacity
           style={[
             styles.actionButton,
-            toggleLikeMutation.isPending && styles.actionButtonDisabled,
+            (toggleLikeMutation.isPending || isLiking) &&
+              styles.actionButtonDisabled,
           ]}
           onPress={handleLike}
-          disabled={toggleLikeMutation.isPending}
+          disabled={toggleLikeMutation.isPending || isLiking}
+          activeOpacity={0.7}
         >
           <Ionicons
             name={stats?.isLiked ? "heart" : "heart-outline"}
@@ -215,7 +232,11 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
             <Text style={styles.actionCount}>{String(stats.likeCount)}</Text>
           ) : null}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleComment}
+          activeOpacity={0.7}
+        >
           <Ionicons
             name="chatbubble-outline"
             size={16}
@@ -234,7 +255,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         recordId={record.id}
         recordTitle={record.title}
       />
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -253,6 +274,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  content: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",

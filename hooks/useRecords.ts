@@ -220,7 +220,22 @@ export const useToggleLike = () => {
       // 롤백을 위한 이전 데이터 반환
       return { previousStats };
     },
+    onSuccess: (data, recordId) => {
+      console.log("[useToggleLike] 성공:", { recordId, data });
+      // 서버 응답 데이터로 업데이트
+      if (data) {
+        queryClient.setQueryData(["recordStats", recordId], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            isLiked: data.isLiked,
+            likeCount: data.likeCount,
+          };
+        });
+      }
+    },
     onError: (err, recordId, context) => {
+      console.error("[useToggleLike] 에러:", { recordId, error: err, context });
       // 에러 시 이전 데이터로 롤백
       if (context?.previousStats) {
         queryClient.setQueryData(
@@ -228,12 +243,6 @@ export const useToggleLike = () => {
           context.previousStats
         );
       }
-    },
-    onSettled: (data) => {
-      // 성공/실패 관계없이 최종 데이터 동기화
-      queryClient.invalidateQueries({
-        queryKey: ["recordStats", data?.recordId],
-      });
     },
   });
 };
