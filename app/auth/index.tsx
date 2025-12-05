@@ -27,13 +27,18 @@ const EMAIL_DOMAINS = [
 ];
 
 export default function AuthScreen() {
+  const [isPhoneMode, setIsPhoneMode] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
   const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { signInWithEmail, loading, error, clearError } = useAuthStore();
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const { signInWithEmail, signInWithPhone, loading, error, clearError } =
+    useAuthStore();
 
   // 컴포넌트 언마운트 시 타이머 정리
   useEffect(() => {
@@ -47,6 +52,22 @@ export default function AuthScreen() {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const resetErrorsAndTimer = () => {
+    setEmailError("");
+    setPhoneError("");
+    setRateLimitSeconds(null);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    clearError();
+  };
+
+  const handleToggleLoginMode = () => {
+    setIsPhoneMode((prev) => !prev);
+    resetErrorsAndTimer();
+  };
 
   const handleEmailChange = (text: string) => {
     const value = text.trim();
@@ -64,6 +85,14 @@ export default function AuthScreen() {
     const localPart = value;
     const suggestions = EMAIL_DOMAINS.map((domain) => `${localPart}@${domain}`);
     setEmailSuggestions(suggestions);
+  };
+
+  const handlePhoneChange = (text: string) => {
+    // 숫자만 입력 가능
+    const numbers = text.replace(/[^0-9]/g, "");
+    setPhone(numbers);
+    setPhoneError("");
+    clearError();
   };
 
   const handleSelectEmailSuggestion = (suggestion: string) => {
@@ -86,7 +115,50 @@ export default function AuthScreen() {
     return true;
   };
 
-  const handleSubmit = async () => {
+  const validatePhone = (value: string) => {
+    if (!value) {
+      setPhoneError("전화번호를 입력해주세요.");
+      return false;
+    }
+    // 전화번호 형식 검증 (010으로 시작하는 11자리 또는 10자리)
+    const phoneRegex = /^010\d{7,8}$/;
+    if (!phoneRegex.test(value)) {
+      setPhoneError("올바른 전화번호 형식을 입력해주세요. (010-0000-0000)");
+      return false;
+    }
+    return true;
+  };
+
+  const startRateLimitTimerIfNeeded = () => {
+    if (error && error.includes("초 후에 다시 시도해주세요")) {
+      const match = error.match(/(\d+)초 후에/);
+      if (match) {
+        const seconds = parseInt(match[1]);
+        setRateLimitSeconds(seconds);
+
+        // 기존 타이머가 있다면 정리
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+
+        // 1초마다 카운트다운
+        timerRef.current = setInterval(() => {
+          setRateLimitSeconds((prev) => {
+            if (prev === null || prev <= 1) {
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
+              return null;
+            }
+            return (prev || 0) - 1;
+          });
+        }, 1000);
+      }
+    }
+  };
+
+  const handleEmailSubmit = async () => {
     const isEmailValid = validateEmail(email);
     if (!isEmailValid) {
       return;
@@ -102,38 +174,9 @@ export default function AuthScreen() {
         // OTP 입력 화면으로 이동
         navigation.navigate("Verify", { email });
       } else {
-        // authStore에서 설정된 에러 메시지 사용
         const errorMessage =
           error || "이메일 전송에 실패했습니다. 이메일을 확인해주세요.";
-
-        // Rate Limiting 에러인지 확인하고 타이머 시작
-        if (error && error.includes("초 후에 다시 시도해주세요")) {
-          const match = error.match(/(\d+)초 후에/);
-          if (match) {
-            const seconds = parseInt(match[1]);
-            setRateLimitSeconds(seconds);
-
-            // 기존 타이머가 있다면 정리
-            if (timerRef.current) {
-              clearInterval(timerRef.current);
-            }
-
-            // 1초마다 카운트다운
-            timerRef.current = setInterval(() => {
-              setRateLimitSeconds((prev) => {
-                if (prev === null || prev <= 1) {
-                  if (timerRef.current) {
-                    clearInterval(timerRef.current);
-                    timerRef.current = null;
-                  }
-                  return null;
-                }
-                return prev - 1;
-              });
-            }, 1000);
-          }
-        }
-
+        startRateLimitTimerIfNeeded();
         showSnackbar(errorMessage, "error");
       }
     } catch {
@@ -141,6 +184,48 @@ export default function AuthScreen() {
         "이메일 전송 중 오류가 발생했습니다. 다시 시도해주세요.",
         "error"
       );
+    }
+  };
+
+  const handlePhoneSubmit = async () => {
+    const isPhoneValid = validatePhone(phone);
+    if (!isPhoneValid) {
+      return;
+    }
+
+    try {
+      // 전화번호 정규화 (하이픈 제거)
+      const normalizedPhone = phone.replace(/[^0-9]/g, "");
+      // 국제 형식으로 변환 (+82)
+      const internationalPhone = `+82${normalizedPhone.slice(1)}`;
+
+      const success = await signInWithPhone({
+        phone: internationalPhone,
+      });
+
+      if (success) {
+        showSnackbar("인증 코드가 전화번호로 전송되었습니다.", "success");
+        // OTP 입력 화면으로 이동
+        navigation.navigate("Verify", { phone: internationalPhone });
+      } else {
+        const errorMessage =
+          error || "인증번호 발송에 실패했습니다. 전화번호를 확인해주세요.";
+        startRateLimitTimerIfNeeded();
+        showSnackbar(errorMessage, "error");
+      }
+    } catch {
+      showSnackbar(
+        "인증번호 발송 중 오류가 발생했습니다. 다시 시도해주세요.",
+        "error"
+      );
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (isPhoneMode) {
+      await handlePhoneSubmit();
+    } else {
+      await handleEmailSubmit();
     }
   };
 
@@ -179,52 +264,73 @@ export default function AuthScreen() {
                   아사나 탐색 | 수련 기록 | 요가원 검색
                 </Text>
 
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={handleEmailChange}
-                    placeholder="example@yoga.com"
-                    placeholderTextColor="#999999"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  {emailSuggestions.length > 0 && (
-                    <View style={styles.suggestionContainer}>
-                      {emailSuggestions.map((suggestion) => (
-                        <TouchableOpacity
-                          key={suggestion}
-                          style={styles.suggestionItem}
-                          onPress={() =>
-                            handleSelectEmailSuggestion(suggestion)
-                          }
-                          activeOpacity={0.7}
-                        >
-                          <Text style={styles.suggestionText}>
-                            {suggestion}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                  {emailError ? (
-                    <Text style={styles.errorText}>{emailError}</Text>
-                  ) : null}
-                </View>
+                {isPhoneMode ? (
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={phone}
+                      onChangeText={handlePhoneChange}
+                      placeholder="010-0000-0000"
+                      placeholderTextColor="#999999"
+                      keyboardType="phone-pad"
+                      maxLength={13}
+                    />
+                    {phoneError ? (
+                      <Text style={styles.errorText}>{phoneError}</Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={email}
+                      onChangeText={handleEmailChange}
+                      placeholder="example@yoga.com"
+                      placeholderTextColor="#999999"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    {emailSuggestions.length > 0 && (
+                      <View style={styles.suggestionContainer}>
+                        {emailSuggestions.map((suggestion) => (
+                          <TouchableOpacity
+                            key={suggestion}
+                            style={styles.suggestionItem}
+                            onPress={() =>
+                              handleSelectEmailSuggestion(suggestion)
+                            }
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.suggestionText}>
+                              {suggestion}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                    {emailError ? (
+                      <Text style={styles.errorText}>{emailError}</Text>
+                    ) : null}
+                  </View>
+                )}
 
                 {/* 비밀번호 입력은 사용하지 않으므로 제거 */}
 
                 <TouchableOpacity
                   style={[
                     styles.button,
-                    (!email.trim() || loading || rateLimitSeconds !== null) && {
+                    ((isPhoneMode ? !phone.trim() : !email.trim()) ||
+                      loading ||
+                      rateLimitSeconds !== null) && {
                       opacity: 0.7,
                     },
                   ]}
                   onPress={handleSubmit}
                   disabled={
-                    loading || !email.trim() || rateLimitSeconds !== null
+                    loading ||
+                    (isPhoneMode ? !phone.trim() : !email.trim()) ||
+                    rateLimitSeconds !== null
                   }
                 >
                   <Text style={styles.buttonText}>
@@ -236,12 +342,14 @@ export default function AuthScreen() {
                   </Text>
                 </TouchableOpacity>
 
-                {/* 전화번호 로그인 링크 */}
+                {/* 이메일 / 전화번호 로그인 토글 링크 */}
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("PhoneLogin")}
+                  onPress={handleToggleLoginMode}
                   style={styles.phoneLoginLink}
                 >
-                  <Text style={styles.phoneLoginText}>전화번호 로그인</Text>
+                  <Text style={styles.phoneLoginText}>
+                    {isPhoneMode ? "이메일 로그인" : "전화번호 로그인"}
+                  </Text>
                 </TouchableOpacity>
 
                 {/* 약관 동의 텍스트 */}

@@ -106,6 +106,12 @@ export default function TabNavigator() {
           {
             tabPress: (e) => {
               const routeName = e.target?.split("-")[0];
+
+              // Dashboard 탭은 개별 listeners에서 처리 (중복 Alert 방지)
+              if (routeName === "Dashboard") {
+                return;
+              }
+
               if (routeName && !handleTabPress(routeName)) {
                 e.preventDefault();
               }
