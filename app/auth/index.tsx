@@ -130,32 +130,32 @@ export default function AuthScreen() {
   };
 
   const startRateLimitTimerIfNeeded = () => {
-    if (error && error.includes("초 후에 다시 시도해주세요")) {
-      const match = error.match(/(\d+)초 후에/);
-      if (match) {
-        const seconds = parseInt(match[1]);
-        setRateLimitSeconds(seconds);
+        if (error && error.includes("초 후에 다시 시도해주세요")) {
+          const match = error.match(/(\d+)초 후에/);
+          if (match) {
+            const seconds = parseInt(match[1]);
+            setRateLimitSeconds(seconds);
 
-        // 기존 타이머가 있다면 정리
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-
-        // 1초마다 카운트다운
-        timerRef.current = setInterval(() => {
-          setRateLimitSeconds((prev) => {
-            if (prev === null || prev <= 1) {
-              if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-              }
-              return null;
+            // 기존 타이머가 있다면 정리
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
             }
+
+            // 1초마다 카운트다운
+            timerRef.current = setInterval(() => {
+              setRateLimitSeconds((prev) => {
+                if (prev === null || prev <= 1) {
+                  if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                  }
+                  return null;
+                }
             return (prev || 0) - 1;
-          });
-        }, 1000);
-      }
-    }
+              });
+            }, 1000);
+          }
+        }
   };
 
   const handleEmailSubmit = async () => {
@@ -280,39 +280,39 @@ export default function AuthScreen() {
                     ) : null}
                   </View>
                 ) : (
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      style={styles.input}
-                      value={email}
-                      onChangeText={handleEmailChange}
-                      placeholder="example@yoga.com"
-                      placeholderTextColor="#999999"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                    {emailSuggestions.length > 0 && (
-                      <View style={styles.suggestionContainer}>
-                        {emailSuggestions.map((suggestion) => (
-                          <TouchableOpacity
-                            key={suggestion}
-                            style={styles.suggestionItem}
-                            onPress={() =>
-                              handleSelectEmailSuggestion(suggestion)
-                            }
-                            activeOpacity={0.7}
-                          >
-                            <Text style={styles.suggestionText}>
-                              {suggestion}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-                    {emailError ? (
-                      <Text style={styles.errorText}>{emailError}</Text>
-                    ) : null}
-                  </View>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={handleEmailChange}
+                    placeholder="example@yoga.com"
+                    placeholderTextColor="#999999"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  {emailSuggestions.length > 0 && (
+                    <View style={styles.suggestionContainer}>
+                      {emailSuggestions.map((suggestion) => (
+                        <TouchableOpacity
+                          key={suggestion}
+                          style={styles.suggestionItem}
+                          onPress={() =>
+                            handleSelectEmailSuggestion(suggestion)
+                          }
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.suggestionText}>
+                            {suggestion}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                  {emailError ? (
+                    <Text style={styles.errorText}>{emailError}</Text>
+                  ) : null}
+                </View>
                 )}
 
                 {/* 비밀번호 입력은 사용하지 않으므로 제거 */}

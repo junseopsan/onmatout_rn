@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16, // 좌우 여백 추가
-    paddingTop: 200, // 헤더 + 필터 높이만큼 상단 여백 (헤더가 absolute이므로)
+    paddingTop: 120, // 헤더 + 필터 높이만큼 상단 여백 (헤더가 absolute이므로)
     paddingBottom: 200, // 탭바 높이 + 여백 증가 (마지막 카드가 잘리지 않도록 충분한 여백)
   },
   row: {

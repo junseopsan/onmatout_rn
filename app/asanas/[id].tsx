@@ -5,11 +5,11 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  ScrollView as RNScrollView,
   TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, ScrollView, Text, XStack, YStack } from "tamagui";
 import { COLORS } from "../../constants/Colors";
@@ -83,13 +83,7 @@ export default function AsanaDetailScreen() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
   const [showIndicators, setShowIndicators] = useState(false);
-  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(
-    new Set()
-  );
-
-  // 스와이프 애니메이션을 위한 ref
-  const gestureX = useRef(new Animated.Value(0)).current;
-  const screenWidthValue = useRef(new Animated.Value(screenWidth)).current;
+  const scrollRef = useRef<RNScrollView | null>(null);
 
   // React Query로 아사나 상세 데이터 가져오기
   const {
@@ -101,26 +95,23 @@ export default function AsanaDetailScreen() {
 
   useEffect(() => {
     if (asana?.image_number) {
-      loadValidImages(asana.image_number);
+      // Supabase에 저장된 image_count(이미지 개수)를 사용해
+      // 불필요한 HEAD 요청 없이 바로 URL 리스트를 생성
+      const count =
+        typeof (asana as any).image_count === "number" &&
+        (asana as any).image_count! > 0
+          ? (asana as any).image_count!
+          : 1;
+      loadValidImages(asana.image_number, count);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asana]);
-
-  const checkImageExists = async (url: string) => {
-    try {
-      const response = await fetch(url, { method: "HEAD" });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  };
 
   // 이미지 미리 로딩 함수
   const preloadImage = useCallback(async (url: string) => {
     try {
       // expo-image의 캐시를 활용한 미리 로딩
       await Image.prefetch(url);
-      setPreloadedImages((prev) => new Set([...prev, url]));
       return true;
     } catch (error) {
       console.log("이미지 미리 로딩 실패:", url, error);
@@ -138,74 +129,26 @@ export default function AsanaDetailScreen() {
   );
 
   const loadValidImages = useCallback(
-    async (imageNumber: string) => {
+    async (imageNumber: string, imageCount: number) => {
       setImageLoading(true);
       setShowIndicators(false);
+
       const baseNumber = imageNumber.padStart(3, "0");
+      const safeCount = Math.max(1, imageCount || 1);
 
-      // 첫 번째 이미지는 항상 존재한다고 가정하고 즉시 추가 및 표시
-      const firstImageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_001.png`;
-      setImageUrls([firstImageUrl]); // 첫 번째 이미지를 즉시 표시
-
-      // 첫 번째 이미지 로딩 시작 (비동기, 블로킹하지 않음)
-      preloadImage(firstImageUrl).then(() => {
-        // 첫 번째 이미지 로딩 완료 후 로딩 상태 해제
-        setImageLoading(false);
+      // image_count 만큼의 URL을 한 번에 생성 (HEAD 요청 없이)
+      const urls: string[] = Array.from({ length: safeCount }, (_, idx) => {
+        const suffix = (idx + 1).toString().padStart(3, "0");
+        return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${suffix}.png`;
       });
 
-      // 추가 이미지들 확인 및 미리 로딩 (백그라운드에서 병렬 처리)
-      // 첫 번째 이미지 표시를 차단하지 않도록 비동기로 실행
-      (async () => {
-      const additionalUrls: string[] = [];
-        
-        // 병렬로 이미지 존재 여부 확인 (최대 9개 동시 확인)
-        const checkPromises: Promise<{ index: number; exists: boolean; url: string }>[] = [];
-      for (let i = 2; i <= 10; i++) {
-        const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${i
-          .toString()
-          .padStart(3, "0")}.png`;
-          
-          checkPromises.push(
-            checkImageExists(imageUrl).then((exists) => ({
-              index: i,
-              exists,
-              url: imageUrl,
-            }))
-          );
-        }
+      // 모든 이미지를 미리 로딩한 뒤 한 번에 표시하여
+      // 슬라이드 전환 시 깜빡임을 최소화
+      await preloadAllImages(urls);
 
-        // 모든 확인 작업 완료 대기
-        const results = await Promise.all(checkPromises);
-        
-        // 연속된 이미지만 추가 (중간에 없는 이미지가 있으면 중단)
-        for (const result of results) {
-          if (result.exists) {
-            additionalUrls.push(result.url);
-        } else {
-            // 연속되지 않는 이미지가 있으면 중단
-            break;
-        }
-      }
-
-      // 추가 이미지들이 있으면 전체 URL 배열 업데이트
-      if (additionalUrls.length > 0) {
-          const allUrls = [firstImageUrl, ...additionalUrls];
-        setImageUrls(allUrls);
-
-          // 인디케이터 표시 (이미지가 2개 이상인 경우)
-          setShowIndicators(true);
-
-          // 추가 이미지들을 백그라운드에서 병렬로 미리 로딩
-          // 첫 번째 이미지는 이미 로딩 중이므로 제외
-          preloadAllImages(additionalUrls).catch((error) => {
-            console.log("추가 이미지 미리 로딩 중 일부 실패:", error);
-          });
-        }
-      })().catch((error) => {
-        console.log("추가 이미지 확인 중 오류:", error);
-        // 에러가 발생해도 첫 번째 이미지는 이미 표시되었으므로 로딩 상태 해제
+      setImageUrls(urls);
+      setShowIndicators(urls.length > 1);
       setImageLoading(false);
-      });
     },
     [preloadImage, preloadAllImages]
   );
@@ -239,161 +182,17 @@ export default function AsanaDetailScreen() {
   const getCategoryLabel = (categoryNameEn: string) => {
     // categories.ts의 CATEGORIES에서 매칭되는 카테고리 찾기
     const category = CATEGORIES[categoryNameEn as keyof typeof CATEGORIES];
-
-    console.log("카테고리 디버깅:", {
-      original: categoryNameEn,
-      found: category?.label || categoryNameEn,
-    });
-
     return category?.label || categoryNameEn;
   };
 
-  const nextImage = useCallback(() => {
-    if (imageUrls.length > 1) {
-      const newIndex =
-        currentImageIndex < imageUrls.length - 1 ? currentImageIndex + 1 : 0;
-
-      // 다음 이미지가 미리 로딩되었는지 확인
-      const nextImageUrl = imageUrls[newIndex];
-      if (preloadedImages.has(nextImageUrl)) {
-        // 인덱스만 변경 (gestureX 리셋은 호출하는 쪽에서 처리)
-        setCurrentImageIndex(newIndex);
-      } else {
-        // 미리 로딩되지 않은 경우 즉시 로딩
-        preloadImage(nextImageUrl).then(() => {
-          setCurrentImageIndex(newIndex);
-        });
-      }
-    }
-  }, [imageUrls, currentImageIndex, preloadedImages, preloadImage]);
-
-  const prevImage = useCallback(() => {
-    if (imageUrls.length > 1) {
-      const newIndex =
-        currentImageIndex > 0 ? currentImageIndex - 1 : imageUrls.length - 1;
-
-      // 이전 이미지가 미리 로딩되었는지 확인
-      const prevImageUrl = imageUrls[newIndex];
-      if (preloadedImages.has(prevImageUrl)) {
-        // 인덱스만 변경 (gestureX 리셋은 호출하는 쪽에서 처리)
-        setCurrentImageIndex(newIndex);
-      } else {
-        // 미리 로딩되지 않은 경우 즉시 로딩
-        preloadImage(prevImageUrl).then(() => {
-          setCurrentImageIndex(newIndex);
-        });
-      }
-    }
-  }, [imageUrls, currentImageIndex, preloadedImages, preloadImage]);
-
   const goToImage = useCallback(
     (index: number) => {
-    if (index >= 0 && index < imageUrls.length) {
-      const targetImageUrl = imageUrls[index];
-      if (preloadedImages.has(targetImageUrl)) {
-          gestureX.setValue(0);
+      if (index >= 0 && index < imageUrls.length && scrollRef.current) {
+        scrollRef.current.scrollTo({ x: index * screenWidth, animated: true });
         setCurrentImageIndex(index);
-      } else {
-        // 미리 로딩되지 않은 경우 즉시 로딩
-        preloadImage(targetImageUrl).then(() => {
-            gestureX.setValue(0);
-          setCurrentImageIndex(index);
-        });
-      }
-    }
-    },
-    [imageUrls, preloadedImages, preloadImage, gestureX]
-  );
-
-  // 다음/이전 이미지 인덱스 계산
-  const nextIndex =
-    imageUrls.length > 1 && currentImageIndex < imageUrls.length - 1
-      ? currentImageIndex + 1
-      : currentImageIndex;
-  const prevIndex =
-    imageUrls.length > 1 && currentImageIndex > 0
-      ? currentImageIndex - 1
-      : currentImageIndex;
-
-  // 다음 이미지 위치 계산 (왼쪽으로 스와이프할 때 오른쪽에서 나타남)
-  const nextImageTranslateX = Animated.add(gestureX, screenWidthValue);
-
-  // 이전 이미지 위치 계산 (오른쪽으로 스와이프할 때 왼쪽에서 나타남)
-  const negativeScreenWidth = useRef(new Animated.Value(-screenWidth)).current;
-  const prevImageTranslateX = Animated.add(gestureX, negativeScreenWidth);
-
-  // 스와이프 제스처 핸들러 - 실시간 업데이트
-  const onGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: gestureX } }],
-    { useNativeDriver: true }
-  );
-
-  // 스와이프 종료 핸들러
-  const onHandlerStateChange = useCallback(
-    (event: any) => {
-    const { translationX, state } = event.nativeEvent;
-
-      if (state === State.BEGAN) {
-        // 제스처 시작 시 gestureX를 리셋하여 깜빡임 방지
-        gestureX.setValue(0);
-      }
-    
-    if (state === State.END) {
-      const threshold = 50; // 스와이프 임계값
-      
-        if (translationX > threshold && currentImageIndex > 0) {
-        // 오른쪽으로 스와이프 - 이전 이미지
-          Animated.timing(gestureX, {
-            toValue: screenWidth,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            // 인덱스 변경과 동시에 gestureX를 리셋하되, 이미지가 보이지 않도록 처리
-            const newIndex =
-              currentImageIndex > 0
-                ? currentImageIndex - 1
-                : imageUrls.length - 1;
-            // 인덱스를 먼저 변경
-            setCurrentImageIndex(newIndex);
-            // 다음 프레임에서 gestureX 리셋 (인덱스 변경 후 리셋하여 깜빡임 방지)
-            setTimeout(() => {
-              gestureX.setValue(0);
-            }, 0);
-          });
-        } else if (
-          translationX < -threshold &&
-          currentImageIndex < imageUrls.length - 1
-        ) {
-        // 왼쪽으로 스와이프 - 다음 이미지
-          Animated.timing(gestureX, {
-            toValue: -screenWidth,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            // 인덱스 변경과 동시에 gestureX를 리셋하되, 이미지가 보이지 않도록 처리
-            const newIndex =
-              currentImageIndex < imageUrls.length - 1
-                ? currentImageIndex + 1
-                : 0;
-            // 인덱스를 먼저 변경
-            setCurrentImageIndex(newIndex);
-            // 다음 프레임에서 gestureX 리셋 (인덱스 변경 후 리셋하여 깜빡임 방지)
-            setTimeout(() => {
-              gestureX.setValue(0);
-            }, 0);
-          });
-        } else {
-          // 임계값 미만이면 원래 위치로 복귀
-          Animated.spring(gestureX, {
-            toValue: 0,
-            useNativeDriver: true,
-            tension: 50,
-            friction: 7,
-          }).start();
-        }
       }
     },
-    [currentImageIndex, imageUrls.length, gestureX]
+    [imageUrls, scrollRef]
   );
 
   if (loading) {
@@ -453,192 +252,102 @@ export default function AsanaDetailScreen() {
         <YStack height={imageHeight} backgroundColor="white" marginTop={0}>
           {imageUrls.length > 0 ? (
             <YStack flex={1} position="relative">
-              <YStack
-                flex={1}
-                justifyContent="center"
-                alignItems="center"
-                backgroundColor="white"
+              <RNScrollView
+                ref={scrollRef}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const offsetX = event.nativeEvent.contentOffset.x;
+                  const index = Math.round(offsetX / screenWidth);
+                  setCurrentImageIndex(index);
+                }}
               >
-                <PanGestureHandler
-                  onGestureEvent={onGestureEvent}
-                  onHandlerStateChange={onHandlerStateChange}
-                  minPointers={1}
-                  maxPointers={1}
-                  activeOffsetX={[-10, 10]}
-                >
-                  <Animated.View
-                    style={{
-                      flex: 1,
-                      width: "100%",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {/* 이전 이미지 (오른쪽으로 스와이프할 때) */}
-                    {imageUrls.length > 1 && currentImageIndex > 0 && (
-                      <Animated.View
-                        style={{
-                          position: "absolute",
-                          width: "85%",
-                          height: "85%",
-                          maxWidth: 280,
-                          maxHeight: 220,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          transform: [{ translateX: prevImageTranslateX }],
-                        }}
+                {imageUrls.map((url, index) => (
+                  <YStack
+                    key={url}
+                    width={screenWidth}
+                    height={imageHeight}
+                    justifyContent="center"
+                    alignItems="center"
+                    backgroundColor="white"
                   >
                     <Image
-                          source={{ uri: imageUrls[prevIndex] }}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                          }}
-                          contentFit="contain"
-                          placeholder="🖼️"
-                          placeholderContentFit="contain"
-                          priority="normal"
-                          cachePolicy="memory-disk"
-                          allowDownscaling={true}
-                        />
-                      </Animated.View>
-                    )}
-
-                    {/* 현재 이미지 */}
-                    <Animated.View
+                      source={{ uri: url }}
                       style={{
                         width: "85%",
                         height: "85%",
                         maxWidth: 280,
                         maxHeight: 220,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        transform: [{ translateX: gestureX }],
-                      }}
-                    >
-                      <TouchableOpacity
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                        onPress={nextImage}
-                        activeOpacity={0.9}
-                      >
-                        <Image
-                          source={{ uri: imageUrls[currentImageIndex] }}
-                          style={{
-                            width: "100%",
-                            height: "100%",
                       }}
                       contentFit="contain"
                       placeholder="🖼️"
                       placeholderContentFit="contain"
-                      onError={() => {
-                        console.log(
-                          `이미지 로딩 실패: ${imageUrls[currentImageIndex]}`
-                        );
-                      }}
-                      priority="high"
                       cachePolicy="memory-disk"
-                          transition={0}
-                      allowDownscaling={true}
-                          recyclingKey={imageUrls[currentImageIndex]}
-                    />
-                  </TouchableOpacity>
-                    </Animated.View>
-
-                    {/* 다음 이미지 (왼쪽으로 스와이프할 때) */}
-                    {imageUrls.length > 1 &&
-                      currentImageIndex < imageUrls.length - 1 && (
-                        <Animated.View
-                          style={{
-                            position: "absolute",
-                            width: "85%",
-                            height: "85%",
-                            maxWidth: 280,
-                            maxHeight: 220,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            transform: [{ translateX: nextImageTranslateX }],
-                          }}
-                        >
-                          <Image
-                            source={{ uri: imageUrls[nextIndex] }}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                            }}
-                            contentFit="contain"
-                            placeholder="🖼️"
-                            placeholderContentFit="contain"
-                            priority="normal"
-                            cachePolicy="memory-disk"
-                            allowDownscaling={true}
-                          />
-                        </Animated.View>
-                      )}
-                  </Animated.View>
-                </PanGestureHandler>
-
-                {/* 스켈레톤 로딩 */}
-                {imageLoading && (
-                  <YStack
-                    position="absolute"
-                    top={0}
-                    left={0}
-                    right={0}
-                    bottom={0}
-                    justifyContent="center"
-                    alignItems="center"
-                    backgroundColor="white"
-                    zIndex={1}
-                  >
-                    <ShimmerSkeleton
-                      style={{
-                        width: "100%",
-                        height: "100%",
+                      transition={0}
+                      onError={() => {
+                        console.log(`이미지 로딩 실패: ${url}`);
                       }}
                     />
                   </YStack>
-                )}
+                ))}
+              </RNScrollView>
 
-                {/* 슬라이드 인디케이터 */}
-                {imageUrls.length > 1 && showIndicators && (
-                  <XStack
-                    position="absolute"
-                    bottom={20}
-                    left={0}
-                    right={0}
-                    justifyContent="center"
-                    alignItems="center"
-                    paddingHorizontal="$5"
-                  >
-                    <XStack gap="$2">
-                      {imageUrls.map((_: any, index: number) => (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => goToImage(index)}
-                          activeOpacity={0.7}
-                        >
-                          <YStack
-                            width={10}
-                            height={10}
-                            borderRadius="$10"
-                            backgroundColor={
-                              currentImageIndex === index
-                                ? COLORS.primary
-                                : "rgba(0,0,0,0.3)"
-                            }
-                          />
-                        </TouchableOpacity>
-                      ))}
-                    </XStack>
+              {/* 스켈레톤 로딩 */}
+              {imageLoading && (
+                <YStack
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  right={0}
+                  bottom={0}
+                  justifyContent="center"
+                  alignItems="center"
+                  backgroundColor="white"
+                  zIndex={1}
+                >
+                  <ShimmerSkeleton
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  />
+                </YStack>
+              )}
+
+              {/* 슬라이드 인디케이터 */}
+              {imageUrls.length > 1 && showIndicators && (
+                <XStack
+                  position="absolute"
+                  bottom={20}
+                  left={0}
+                  right={0}
+                  justifyContent="center"
+                  alignItems="center"
+                  paddingHorizontal="$5"
+                >
+                  <XStack gap="$2">
+                    {imageUrls.map((_, index: number) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => goToImage(index)}
+                        activeOpacity={0.7}
+                      >
+                        <YStack
+                          width={10}
+                          height={10}
+                          borderRadius="$10"
+                          backgroundColor={
+                            currentImageIndex === index
+                              ? COLORS.primary
+                              : "rgba(0,0,0,0.3)"
+                          }
+                        />
+                      </TouchableOpacity>
+                    ))}
                   </XStack>
-                )}
-              </YStack>
+                </XStack>
+              )}
             </YStack>
           ) : (
             <YStack

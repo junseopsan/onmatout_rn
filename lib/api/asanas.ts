@@ -12,6 +12,7 @@ export interface Asana {
   category_name_en: string;
   image_number: string;
   asana_meaning: string;
+  image_count?: number | null;
 }
 
 export interface PaginatedResponse<T> {

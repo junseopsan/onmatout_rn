@@ -53,24 +53,18 @@ export const useFavoriteAsanas = () => {
   });
 };
 
-// 아사나 상세 조회
+// 아사나 상세 조회 (ID 단건 조회로 최적화)
 export const useAsanaDetail = (id: string) => {
   return useQuery({
     queryKey: ["asanaDetail", id],
     queryFn: async () => {
-      const result = await asanasAPI.getAllAsanas();
+      const result = await asanasAPI.getAsanaById(id);
       if (!result.success || !result.data) {
         throw new Error(
           result.message || "아사나 데이터를 불러오는데 실패했습니다."
         );
       }
-
-      const asana = result.data.find((a) => a.id === id);
-      if (!asana) {
-        throw new Error("아사나를 찾을 수 없습니다.");
-      }
-
-      return asana;
+      return result.data;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10분

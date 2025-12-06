@@ -146,11 +146,6 @@ export const AsanaCard = React.memo(function AsanaCard({
             position: "absolute",
             top: 0,
             left: 0,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4,
-            elevation: 5,
           }}
         >
           <Button

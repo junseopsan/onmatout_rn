@@ -127,9 +127,12 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         showSnackbar("수련 기록이 저장되었습니다.", "success");
 
         if (onClose) {
-          // 모달로 사용되는 경우: 모달 닫고 대시보드 탭으로 이동
+          // 모달로 사용되는 경우: 모달 닫고 탭 네비게이터의 홈 탭으로 이동
           onClose();
-          navigation.navigate("Dashboard" as never);
+          navigation.navigate(
+            "TabNavigator" as never,
+            { screen: "Dashboard" } as never
+          );
         } else {
           // 스택 화면으로 사용되는 경우: 기존 동작 유지
           navigation.reset({
