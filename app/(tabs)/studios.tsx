@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Dimensions,
   Easing,
   FlatList,
   Linking,
@@ -19,7 +20,7 @@ import { StudioCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import {
-  useAllStudios,
+  useStudioPromotions,
   useStudiosByRegion,
   useStudioSearch,
   useStudiosWithPagination,
@@ -164,6 +165,12 @@ export default function StudiosScreen() {
   const [showRegionModal, setShowRegionModal] = useState(false);
   const [showDistrictModal, setShowDistrictModal] = useState(false);
 
+  // 화면 너비 기반으로 카드 폭 계산 (요가원 카드와 프로모션 카드 폭을 동일하게)
+  const screenWidth = Dimensions.get("window").width;
+  const cardHorizontalMargin = 24 * 2; // 좌우 24px씩
+  const promoCardWidth = screenWidth - cardHorizontalMargin;
+  const [promoIndex, setPromoIndex] = useState(0);
+
   // 스크롤 애니메이션을 위한 ref
   const lastScrollY = useRef(0);
   const scrollDirection = useRef<"up" | "down">("up");
@@ -202,8 +209,9 @@ export default function StudiosScreen() {
     error: regionError,
   } = useStudiosByRegion(regionName);
 
-  // 전체 데이터 개수 확인용 (검색/필터 없을 때만)
-  const { data: allStudiosData = [] } = useAllStudios();
+  // 요가원 일일 클래스 / 프로모션 데이터
+  const { data: studioPromotions = [], isLoading: isLoadingPromotions } =
+    useStudioPromotions();
 
   // 페이지네이션 데이터를 하나의 배열로 변환
   const paginatedStudios = useMemo(() => {
@@ -681,6 +689,116 @@ export default function StudiosScreen() {
           contentContainerStyle={styles.studiosListContent}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
+          ListHeaderComponent={
+            studioPromotions.length > 0 ? (
+              <View style={styles.promoContainer}>
+                <View style={styles.promoHeaderRow}>
+                  {isLoadingPromotions && (
+                    <Text style={styles.promoSubtitle}>불러오는 중...</Text>
+                  )}
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  pagingEnabled
+                  contentContainerStyle={styles.promoScrollContent}
+                  snapToAlignment="center"
+                  decelerationRate="fast"
+                  onMomentumScrollEnd={(event) => {
+                    const offsetX = event.nativeEvent.contentOffset.x;
+                    const index = Math.round(offsetX / screenWidth);
+                    setPromoIndex(index);
+                  }}
+                >
+                  {studioPromotions.map((promo, index) => {
+                    const studio = promo.studio;
+                    if (!studio) return null;
+
+                    const date = new Date(promo.class_date);
+                    const formattedDate = `${
+                      date.getMonth() + 1
+                    }월 ${date.getDate()}일`;
+                    const priceLabel =
+                      promo.price !== null && promo.price !== undefined
+                        ? `${promo.price.toLocaleString("ko-KR")}원`
+                        : "문의 가격";
+
+                    return (
+                      <View
+                        key={promo.id}
+                        style={[styles.promoCard, { width: promoCardWidth }]}
+                      >
+                        <View style={styles.promoBadgeRow}>
+                          <View style={styles.promoBadge}>
+                            <Text style={styles.promoBadgeText}>
+                              {studio.name}
+                            </Text>
+                          </View>
+                          <Text style={styles.promoDateText}>
+                            {formattedDate}
+                          </Text>
+                        </View>
+
+                        <Text style={styles.promoClassTitle} numberOfLines={2}>
+                          {promo.title}
+                        </Text>
+
+                        {promo.description && (
+                          <Text
+                            style={styles.promoDescription}
+                            numberOfLines={3}
+                          >
+                            {promo.description}
+                          </Text>
+                        )}
+
+                        <View style={styles.promoFooterRow}>
+                          <View style={styles.promoPriceChip}>
+                            <Ionicons
+                              name="card-outline"
+                              size={14}
+                              color="#fff"
+                            />
+                            <Text style={styles.promoPriceText}>
+                              {priceLabel}
+                            </Text>
+                          </View>
+
+                          {promo.link && (
+                            <TouchableOpacity
+                              style={styles.promoLinkIconButton}
+                              onPress={() => Linking.openURL(promo.link!)}
+                              activeOpacity={0.85}
+                            >
+                              <Ionicons
+                                name="link-outline"
+                                size={18}
+                                color="#fff"
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+                {studioPromotions.length > 1 && (
+                  <View style={styles.promoIndicatorRow}>
+                    {studioPromotions.map((_, index) => (
+                      <View
+                        key={`promo-indicator-${index}`}
+                        style={[
+                          styles.promoIndicatorDot,
+                          index === promoIndex &&
+                            styles.promoIndicatorDotActive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : null
+          }
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.skeletonContainer}>
@@ -881,7 +999,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   studiosListContent: {
-    paddingTop: 110, // 헤더 + 필터 높이만큼 상단 여백 (헤더가 absolute이므로)
+    paddingTop: 85, // 헤더 + 필터 아래 간격을 조금 줄여 일일 클래스와 더 가깝게
     paddingBottom: 20,
   },
   emptyContainer: {
@@ -935,12 +1053,13 @@ const styles = StyleSheet.create({
   },
   mapButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 10, // 프로모션 링크 아이콘과 동일한 둥근 사각형
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 48,
-    minHeight: 48,
+    // 프로모션 링크 아이콘과 가로 위치를 맞추기 위해 살짝 오른쪽으로 이동
+    marginRight: -4,
   },
   studioContent: {
     paddingHorizontal: 20,
@@ -1121,5 +1240,124 @@ const styles = StyleSheet.create({
   modalItemTextSelected: {
     fontWeight: "600",
     color: COLORS.primary,
+  },
+  // 일일 클래스 / 프로모션 슬라이더
+  promoContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+  },
+  promoHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  promoTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  promoSubtitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  promoScrollContent: {
+    paddingVertical: 4,
+  },
+  promoCard: {
+    marginRight: 0, // pagingEnabled와 카드 폭을 맞추기 위해 오른쪽 마진 제거
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: COLORS.surfaceDark, // 요가원 카드보다 한 톤 진하게 (살짝만 강조)
+    // 그림자 제거 (플랫한 톤 유지)
+    shadowColor: "transparent",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  promoBadgeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  promoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: COLORS.primaryLight,
+  },
+  promoBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#fff",
+    letterSpacing: 0.4,
+  },
+  promoDateText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  promoClassTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 4,
+    lineHeight: 22,
+  },
+  promoStudioName: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  promoDescription: {
+    fontSize: 13,
+    color: COLORS.text,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  promoFooterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  promoPriceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.background,
+  },
+  promoPriceText: {
+    fontSize: 13,
+    color: COLORS.text,
+    fontWeight: "600",
+  },
+  promoIndicatorRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 6,
+    gap: 4,
+  },
+  promoIndicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+  },
+  promoIndicatorDotActive: {
+    backgroundColor: COLORS.primaryLight,
+  },
+  promoLinkIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

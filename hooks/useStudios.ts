@@ -1,5 +1,9 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Studio, studioAPI } from "../lib/api/studio";
+import {
+  Studio,
+  StudioPromotionWithStudio,
+  studioAPI,
+} from "../lib/api/studio";
 
 // 페이지네이션으로 요가원 데이터 조회 (100개씩)
 export const useStudiosWithPagination = (pageSize: number = 100) => {
@@ -102,3 +106,23 @@ export const useStudiosByRegion = (regionName: string | null) => {
     enabled: true,
   });
 };
+
+// 요가원 일일 클래스 / 프로모션 목록 조회
+export const useStudioPromotions = () => {
+  return useQuery<StudioPromotionWithStudio[], Error>({
+    queryKey: ["studios", "promotions"],
+    queryFn: async () => {
+      const result = await studioAPI.getActiveStudioPromotions();
+      if (!result.success) {
+        throw new Error(
+          result.message || "요가원 일일 클래스 정보를 불러오는데 실패했습니다."
+        );
+      }
+      return result.data || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5분
+    gcTime: 10 * 60 * 1000, // 10분
+    retry: 1,
+  });
+};
+
