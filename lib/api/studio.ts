@@ -61,7 +61,7 @@ export const studioAPI = {
       const { data, error, count } = await supabase
         .from("studios")
         .select("*", { count: "exact" })
-        .order("priority", { ascending: true, nullsLast: true })
+        .order("priority", { ascending: true })
         .order("created_at", { ascending: false })
         .range(from, to);
 
@@ -107,7 +107,7 @@ export const studioAPI = {
         const { data, error } = await supabase
           .from("studios")
           .select("*")
-          .order("priority", { ascending: true, nullsLast: true })
+          .order("priority", { ascending: true })
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -161,7 +161,7 @@ export const studioAPI = {
           .from("studios")
           .select("*")
           .or(`name.ilike.%${query}%,address.ilike.%${query}%`)
-          .order("priority", { ascending: true, nullsLast: true })
+          .order("priority", { ascending: true })
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -206,7 +206,7 @@ export const studioAPI = {
           .from("studios")
           .select("*")
           .ilike("address", `%${location}%`)
-          .order("priority", { ascending: true, nullsLast: true })
+          .order("priority", { ascending: true })
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -238,7 +238,7 @@ export const studioAPI = {
         .from("studios")
         .select("*")
         .ilike("name", `%${name}%`)
-        .order("priority", { ascending: true, nullsLast: true })
+        .order("priority", { ascending: true })
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -294,7 +294,7 @@ export const studioAPI = {
             .from("studios")
             .select("*")
             .ilike("address", `%${searchTerms[0]}%`)
-            .order("priority", { ascending: true, nullsLast: true })
+            .order("priority", { ascending: true })
             .order("created_at", { ascending: false })
             .range(from, from + pageSize - 1);
 
@@ -325,7 +325,7 @@ export const studioAPI = {
           const { data, error } = await supabase
             .from("studios")
             .select("*")
-            .order("priority", { ascending: true, nullsLast: true })
+            .order("priority", { ascending: true })
             .order("created_at", { ascending: false })
             .range(from, from + pageSize - 1);
 
@@ -399,9 +399,25 @@ export const studioAPI = {
         };
       }
 
+      // Supabase 조인 결과에서 studio 필드가 배열 형태로 올 수 있으므로
+      // 첫 번째 요소만 사용하여 단일 스튜디오 객체로 매핑
+      const mapped =
+        (data as any[] | null)?.map((item) => {
+          const studioField = (item as any).studio;
+          const studio =
+            Array.isArray(studioField) && studioField.length > 0
+              ? studioField[0]
+              : studioField ?? null;
+
+          return {
+            ...(item as any),
+            studio,
+          } as StudioPromotionWithStudio;
+        }) ?? [];
+
       return {
         success: true,
-        data: (data as StudioPromotionWithStudio[]) || [],
+        data: mapped,
       };
     } catch (error) {
       return {
