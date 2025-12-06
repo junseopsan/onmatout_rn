@@ -9,9 +9,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:ios": "eas build --platform ios --profile production",
+    "build:ios": "npx eas build --platform ios --profile production",
     "build:ios-preview": "eas build --platform ios --profile preview",
-    "submit:ios": "eas submit --platform ios --profile production",
+    "submit:ios": "npx eas submit --platform ios --latest",
     "build:ios-dev": "eas build --platform ios --profile production-dev",
     "build:ios-dev-preview": "eas build --platform ios --profile preview-dev",
     "submit:ios-dev": "eas submit --platform ios --profile production-dev"
