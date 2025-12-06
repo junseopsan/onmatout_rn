@@ -210,8 +210,11 @@ export default function StudiosScreen() {
   } = useStudiosByRegion(regionName);
 
   // 요가원 일일 클래스 / 프로모션 데이터
-  const { data: studioPromotions = [], isLoading: isLoadingPromotions } =
-    useStudioPromotions();
+  const {
+    data: studioPromotions = [],
+    isLoading: isLoadingPromotions,
+    refetch: refetchPromotions,
+  } = useStudioPromotions();
 
   // 페이지네이션 데이터를 하나의 배열로 변환
   const paginatedStudios = useMemo(() => {
@@ -303,7 +306,8 @@ export default function StudiosScreen() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+      refetchPromotions();
+    }, [refetch, refetchPromotions])
   );
 
   // 스크롤 이벤트 핸들러
@@ -720,10 +724,32 @@ export default function StudiosScreen() {
                     const studio = promo.studio;
                     if (!studio) return null;
 
+                    const promotionType = promo.promotion_type || "one_time";
+                    const isRecurring = promotionType === "recurring";
+
                     const date = new Date(promo.class_date);
                     const formattedDate = `${
                       date.getMonth() + 1
                     }월 ${date.getDate()}일`;
+
+                    // 일일 클래스일 때만 D-day 계산 (오늘 기준)
+                    let ddayLabel: string | null = null;
+                    if (!isRecurring) {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const classDate = new Date(promo.class_date);
+                      classDate.setHours(0, 0, 0, 0);
+                      const diffMs = classDate.getTime() - today.getTime();
+                      const diffDays = Math.round(
+                        diffMs / (1000 * 60 * 60 * 24)
+                      );
+
+                      if (diffDays === 0) {
+                        ddayLabel = "D-day";
+                      } else if (diffDays > 0) {
+                        ddayLabel = `D-${diffDays}`;
+                      }
+                    }
                     const priceLabel =
                       promo.price !== null && promo.price !== undefined
                         ? `${promo.price.toLocaleString("ko-KR")}원`
@@ -740,9 +766,20 @@ export default function StudiosScreen() {
                               {studio.name}
                             </Text>
                           </View>
-                          <Text style={styles.promoDateText}>
-                            {formattedDate}
-                          </Text>
+                          <View style={styles.promoDateRow}>
+                            <Text style={styles.promoDateText}>
+                              {isRecurring
+                                ? promo.schedule_text || formattedDate
+                                : formattedDate}
+                            </Text>
+                            {!isRecurring && ddayLabel && (
+                              <View style={styles.promoDdayBadge}>
+                                <Text style={styles.promoDdayText}>
+                                  {ddayLabel}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
 
                         <Text style={styles.promoClassTitle} numberOfLines={2}>
@@ -1304,6 +1341,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
   },
+  promoDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   promoClassTitle: {
     fontSize: 17,
     fontWeight: "700",
@@ -1341,6 +1383,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.text,
     fontWeight: "600",
+  },
+  promoDdayBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+  },
+  promoDdayText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#fff",
   },
   promoIndicatorRow: {
     flexDirection: "row",

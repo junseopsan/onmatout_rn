@@ -24,6 +24,10 @@ export interface StudioPromotion {
   price: number | null;
   description?: string | null;
   link?: string | null;
+  // one_time: 일일 클래스 / recuring: 정규 수업 등
+  promotion_type?: "one_time" | "recurring" | null;
+  // 정규 수업일 때 노출할 스케줄 텍스트 (예: "월수금 7:30pm / 9pm (70분)")
+  schedule_text?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -68,7 +72,9 @@ export const studioAPI = {
         };
       }
 
-      const hasMore = data ? data.length === limit && (count || 0) > to + 1 : false;
+      const hasMore = data
+        ? data.length === limit && (count || 0) > to + 1
+        : false;
 
       return {
         success: true,
@@ -337,9 +343,7 @@ export const studioAPI = {
         }
 
         const filtered = allData.filter((studio) =>
-          searchTerms.some((term) =>
-            (studio.address || "").includes(term)
-          )
+          searchTerms.some((term) => (studio.address || "").includes(term))
         );
 
         return { success: true, data: filtered };
@@ -371,6 +375,8 @@ export const studioAPI = {
           price,
           description,
           link,
+          promotion_type,
+          schedule_text,
           is_active,
           created_at,
           studio:studios (
@@ -405,4 +411,3 @@ export const studioAPI = {
     }
   },
 };
-
