@@ -12,6 +12,7 @@ export interface Studio {
   longitude: number;
   created_at: string;
   updated_at: string;
+  priority?: number | null; // 우선순위 (숫자가 작을수록 상단)
 }
 
 export const studioAPI = {
@@ -33,6 +34,7 @@ export const studioAPI = {
       const { data, error, count } = await supabase
         .from("studios")
         .select("*", { count: "exact" })
+        .order("priority", { ascending: true, nullsLast: true })
         .order("created_at", { ascending: false })
         .range(from, to);
 
@@ -76,6 +78,7 @@ export const studioAPI = {
         const { data, error } = await supabase
           .from("studios")
           .select("*")
+          .order("priority", { ascending: true, nullsLast: true })
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -129,6 +132,7 @@ export const studioAPI = {
           .from("studios")
           .select("*")
           .or(`name.ilike.%${query}%,address.ilike.%${query}%`)
+          .order("priority", { ascending: true, nullsLast: true })
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -173,6 +177,7 @@ export const studioAPI = {
           .from("studios")
           .select("*")
           .ilike("address", `%${location}%`)
+          .order("priority", { ascending: true, nullsLast: true })
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -204,6 +209,7 @@ export const studioAPI = {
         .from("studios")
         .select("*")
         .ilike("name", `%${name}%`)
+        .order("priority", { ascending: true, nullsLast: true })
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -259,6 +265,7 @@ export const studioAPI = {
             .from("studios")
             .select("*")
             .ilike("address", `%${searchTerms[0]}%`)
+            .order("priority", { ascending: true, nullsLast: true })
             .order("created_at", { ascending: false })
             .range(from, from + pageSize - 1);
 
@@ -289,6 +296,7 @@ export const studioAPI = {
           const { data, error } = await supabase
             .from("studios")
             .select("*")
+            .order("priority", { ascending: true, nullsLast: true })
             .order("created_at", { ascending: false })
             .range(from, from + pageSize - 1);
 

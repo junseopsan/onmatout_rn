@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -289,6 +290,13 @@ export default function StudiosScreen() {
       fetchNextPage();
     }
   };
+
+  // 요가원 탭에 다시 포커스될 때마다 최신 데이터로 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(
