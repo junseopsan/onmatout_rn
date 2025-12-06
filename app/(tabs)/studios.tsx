@@ -686,7 +686,13 @@ export default function StudiosScreen() {
             </View>
           )}
           style={styles.studiosList}
-          contentContainerStyle={styles.studiosListContent}
+          contentContainerStyle={[
+            styles.studiosListContent,
+            // 검색어나 지역/구 필터가 있을 때는 상단 여백을 조금 더 주어 여유 공간 확보
+            (hasSearchQuery || selectedRegion || selectedDistrict) && {
+              paddingTop: 105,
+            },
+          ]}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListHeaderComponent={
