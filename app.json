@@ -2,7 +2,7 @@
   "expo": {
     "name": "OnMatOut",
     "slug": "onmatout_rn",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onmatout.app",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "privacyPolicyUrl": "https://www.onmatout.com/privacy-policy",
       "infoPlist": {
         "NSAppTransportSecurity": {
