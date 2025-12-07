@@ -7,37 +7,82 @@ import {
 import { supabase } from "../supabase";
 import { logger } from "../utils/logger";
 
+// 이메일/전화번호 정규화 유틸 함수
+const normalizeEmail = (email: string) =>
+  email.normalize("NFKC").trim().toLowerCase();
+
+const toE164 = (rawPhone: string) => {
+  const digits = rawPhone.replace(/[^\d]/g, "");
+
+  // 한국 0으로 시작하는 번호 → +82로 변환 (예: 01012345678 → +821012345678)
+  if (digits.startsWith("0")) return "+82" + digits.slice(1);
+
+  // 이미 국가코드 82로 시작하면 +82… 로
+  if (digits.startsWith("82")) return "+" + digits;
+
+  // 특수 케이스(1, 2 등으로 시작)도 한국 번호로 간주
+  if (digits.startsWith("1") || digits.startsWith("2")) return "+82" + digits;
+
+  // 그 외는 최후의 수단으로 그냥 + 붙이기
+  return "+" + digits;
+};
+
+// 레이트 리밋 에러 여부 확인
+const isRateLimitError = (error: any): boolean => {
+  if (!error) return false;
+  const message = (error.message || "").toLowerCase();
+  const status = (error as any).status;
+
+  return (
+    status === 429 ||
+    message.includes("rate limit") ||
+    message.includes("over_email_send_rate_limit") ||
+    message.includes("you can only request this after")
+  );
+};
+
+// 레이트 리밋 안내 메시지 생성
+const getRateLimitMessage = (error: any): string => {
+  const rawMessage = error?.message || "";
+  const match = rawMessage.match(/after (\d+) seconds/i);
+  const seconds = match ? match[1] : "60";
+
+  return `요청이 너무 자주 발생하고 있습니다. 약 ${seconds}초 후에 다시 시도해주세요.`;
+};
+
 export const authAPI = {
   // 이메일/비밀번호 로그인 (필요 시 자동 회원가입 시도)
   signInWithEmail: async (
     credentials: EmailLoginCredentials
   ): Promise<AuthResponse> => {
     try {
-      logger.log("이메일 로그인 시도:", credentials.email);
+      const email = normalizeEmail(credentials.email);
+      logger.log("이메일 로그인 시도:", email);
 
       // 비밀번호 없이 이메일만으로 로그인 (비밀번호는 서버 설정에 따라 처리)
       const { data, error } = await supabase.auth.signInWithOtp({
-        email: credentials.email,
+        email,
+        options: {
+          // 신규 유저도 허용 (필요 시 Supabase 설정과 맞게 조정)
+          shouldCreateUser: true,
+        },
       });
 
       if (error) {
         logger.error("이메일 로그인 실패:", error.message);
 
-        // Rate Limiting 에러 처리
-        if (error.message.includes("you can only request this after")) {
-          const match = error.message.match(/after (\d+) seconds/);
-          const seconds = match ? match[1] : "잠시";
+        // 레이트 리밋 에러는 남은 대기 시간만 사용자에게 안내
+        if (isRateLimitError(error)) {
           return {
             success: false,
-            message: `보안을 위해 ${seconds}초 후에 다시 시도해주세요.`,
+            message: getRateLimitMessage(error),
           };
         }
 
         return {
           success: false,
-          message:
-            error.message ||
-            "이메일 로그인에 실패했습니다. 이메일을 확인해주세요.",
+          // 구체적인 에러 메시지는 노출하지 않고 일반 안내만 표시
+          message: "이메일 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
         };
       }
 
@@ -95,15 +140,28 @@ export const authAPI = {
       }
 
       // Supabase Twilio OTP로 인증번호 발송
+      const phoneE164 = toE164(credentials.phone);
+      logger.log("E.164 형식 전화번호(발송):", phoneE164);
+
       const { data, error } = await supabase.auth.signInWithOtp({
-        phone: credentials.phone,
+        phone: phoneE164,
       });
 
       if (error) {
         logger.log("OTP 인증번호 발송 실패:", error.message);
+
+        // 레이트 리밋 에러는 남은 대기 시간만 사용자에게 안내
+        if (isRateLimitError(error)) {
+          return {
+            success: false,
+            message: getRateLimitMessage(error),
+          };
+        }
+
         return {
           success: false,
-          message: error.message || "인증번호 발송에 실패했습니다.",
+          // 구체적인 에러 메시지는 노출하지 않고 일반 안내만 표시
+          message: "인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
         };
       }
 
@@ -253,8 +311,11 @@ export const authAPI = {
         }
 
         // Supabase Twilio OTP 인증번호 검증
+        const phoneE164 = toE164(credentials.phone);
+        logger.log("E.164 형식 전화번호(검증):", phoneE164);
+
         const { data, error } = await supabase.auth.verifyOtp({
-          phone: credentials.phone,
+          phone: phoneE164,
           token: credentials.code,
           type: "sms",
         });

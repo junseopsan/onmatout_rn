@@ -70,7 +70,28 @@ export const FeedItemSkeleton: React.FC = () => (
     </View>
 
     <View style={styles.feedItemContent}>
-      <SkeletonLoader width="100%" height={200} borderRadius={12} />
+      {/* 아사나 썸네일 영역과 비슷하게 60x60 박스 3개 */}
+      <View style={styles.feedItemThumbnailsRow}>
+        <SkeletonLoader width={60} height={60} borderRadius={12} />
+        <SkeletonLoader
+          width={60}
+          height={60}
+          borderRadius={12}
+          style={{ marginLeft: 8 }}
+        />
+        <SkeletonLoader
+          width={60}
+          height={60}
+          borderRadius={12}
+          style={{ marginLeft: 8 }}
+        />
+      </View>
+      {/* 메모 텍스트 한 줄 정도의 높이 */}
+      <SkeletonLoader
+        width="80%"
+        height={16}
+        style={{ marginTop: 12, borderRadius: 8 }}
+      />
     </View>
 
     <View style={styles.feedItemFooter}>
@@ -118,7 +139,8 @@ const styles = StyleSheet.create({
   feedItemSkeleton: {
     backgroundColor: COLORS.surface,
     borderRadius: 12,
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
     padding: 16,
   },
   feedItemHeader: {
@@ -132,6 +154,10 @@ const styles = StyleSheet.create({
   },
   feedItemContent: {
     marginBottom: 12,
+  },
+  feedItemThumbnailsRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   feedItemFooter: {
     flexDirection: "row",

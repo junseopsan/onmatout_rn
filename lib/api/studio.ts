@@ -28,6 +28,8 @@ export interface StudioPromotion {
   promotion_type?: "one_time" | "recurring" | null;
   // 정규 수업일 때 노출할 스케줄 텍스트 (예: "월수금 7:30pm / 9pm (70분)")
   schedule_text?: string | null;
+  // 프로모션 우선순위 (숫자가 작을수록 상단)
+  priority?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -377,6 +379,7 @@ export const studioAPI = {
           link,
           promotion_type,
           schedule_text,
+          priority,
           is_active,
           created_at,
           studio:studios (
@@ -389,6 +392,7 @@ export const studioAPI = {
         )
         .eq("is_active", true)
         .gte("class_date", todayStr)
+        .order("priority", { ascending: true })
         .order("class_date", { ascending: true })
         .order("created_at", { ascending: false });
 
