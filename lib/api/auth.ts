@@ -424,14 +424,14 @@ export const authAPI = {
             logger.log("user_id로 프로필 발견:", profileByUserId);
             userProfile = profileByUserId;
           } else {
-            // 프로필이 없으면 자동 생성 (name은 빈 문자열로 설정하여 닉네임 설정 화면으로 리다이렉트)
+            // 프로필이 없으면 자동 생성 (닉네임은 나중에 설정하므로 name은 설정하지 않음)
             logger.log("프로필 자동 생성 시작");
             const { data: newProfile, error: createError } = await supabase
               .from("user_profiles")
               .insert({
                 user_id: currentUser.id,
                 phone: normalizedPhone,
-                name: "", // 닉네임 설정 화면으로 리다이렉트하기 위해 빈 문자열로 설정 (NOT NULL 제약조건 만족)
+                // name은 null(기본값)로 두고, 닉네임 설정 화면에서만 설정
                 push_notifications: true,
                 email_notifications: false,
                 practice_reminders: true,
