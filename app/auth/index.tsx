@@ -123,7 +123,7 @@ export default function AuthScreen() {
     // 전화번호 형식 검증 (010으로 시작하는 11자리 또는 10자리)
     const phoneRegex = /^010\d{7,8}$/;
     if (!phoneRegex.test(value)) {
-      setPhoneError("올바른 전화번호 형식을 입력해주세요. (010-0000-0000)");
+      setPhoneError("올바른 전화번호 형식을 입력해주세요. (010 0000 0000)");
       return false;
     }
     return true;
@@ -270,7 +270,7 @@ export default function AuthScreen() {
                       style={styles.input}
                       value={phone}
                       onChangeText={handlePhoneChange}
-                      placeholder="010-0000-0000"
+                      placeholder="010 0000 0000"
                       placeholderTextColor="#999999"
                       keyboardType="phone-pad"
                       maxLength={13}

@@ -70,7 +70,10 @@ export default function PhoneLoginScreen() {
     } else if (numbers.length <= 7) {
       return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
     } else {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
+        7,
+        11
+      )}`;
     }
   };
 
@@ -355,4 +358,3 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
-

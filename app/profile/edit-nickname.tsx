@@ -13,9 +13,9 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { COLORS } from "../../constants/Colors";
 import { useNotification } from "../../contexts/NotificationContext";
+import { userAPI } from "../../lib/api/user";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
-import { userAPI } from "../../lib/api/user";
 
 export default function EditNicknameScreen() {
   const [nickname, setNickname] = useState("");
@@ -138,8 +138,10 @@ export default function EditNicknameScreen() {
               <Input
                 value={nickname}
                 onChangeText={handleNicknameChange}
-                placeholder="닉네임을 입력해주세요"
+                placeholder="닉네임을 입력해주세요."
                 error={nicknameError}
+                // 닉네임 입력창은 placeholder/텍스트 간격을 기본값(0)에 가깝게 유지
+                inputStyle={{ letterSpacing: 0 }}
               />
             ) : (
               <View style={styles.loadingInput}>

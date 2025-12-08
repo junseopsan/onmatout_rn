@@ -84,7 +84,10 @@ export default function VerifyScreen() {
     }
 
     if (!email && !phone) {
-      showSnackbar("이메일 또는 전화번호 정보가 없습니다. 다시 로그인해주세요.", "error");
+      showSnackbar(
+        "이메일 또는 전화번호 정보가 없습니다. 다시 로그인해주세요.",
+        "error"
+      );
       navigation.goBack();
       return;
     }
@@ -107,10 +110,10 @@ export default function VerifyScreen() {
 
           if (hasNickname) {
             // 닉네임이 있으면 탭 네비게이터로 이동
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "TabNavigator" }],
-        });
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "TabNavigator" }],
+            });
           } else {
             // 닉네임이 없으면 닉네임 설정 화면으로 이동
             navigation.reset({
@@ -271,7 +274,9 @@ export default function VerifyScreen() {
               inputStyle={{
                 fontSize: 24,
                 textAlign: "center",
-                letterSpacing: 8,
+                // 입력된 숫자는 약간만 간격을 주고,
+                // placeholder 가 지나치게 벌어져 보이지 않도록 작은 값 사용
+                letterSpacing: 2,
               }}
             />
 

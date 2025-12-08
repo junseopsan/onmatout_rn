@@ -29,6 +29,28 @@ export default function ProfileInfoScreen() {
   // authStore의 프로필 사용 (로컬 state 제거)
   const userProfile = user?.profile;
 
+  // 휴대폰 번호 포맷터 (숫자만 보관되어 있을 가능성이 높으므로 가독성 있게 변환)
+  const formatPhoneNumber = (raw?: string | null): string | null => {
+    if (!raw) return null;
+    const digits = raw.replace(/[^\d]/g, "");
+    if (!digits) return null;
+
+    // 국제형식(82...) → 국내 0으로 시작하도록 변환
+    let local = digits;
+    if (digits.startsWith("82") && digits.length >= 11) {
+      local = "0" + digits.slice(2);
+    }
+
+    // 010-0000-0000 형태로 포맷
+    if (local.length === 11) {
+      return `${local.slice(0, 3)}-${local.slice(3, 7)}-${local.slice(7)}`;
+    }
+
+    // 그 외 길이는 그대로 반환
+    return local;
+  };
+
+  const formattedPhone = formatPhoneNumber(userProfile?.phone);
 
   // 프로필 사진 변경 함수
   const handleChangeAvatar = () => {
@@ -252,9 +274,9 @@ export default function ProfileInfoScreen() {
             </TouchableOpacity>
 
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>이메일</Text>
+              <Text style={styles.infoLabel}>휴대폰 번호</Text>
               <Text style={styles.infoValue}>
-                {user?.email || "이메일 없음"}
+                {formattedPhone || "전화번호 없음"}
               </Text>
             </View>
           </View>

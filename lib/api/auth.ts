@@ -422,7 +422,36 @@ export const authAPI = {
 
           if (profileByUserId) {
             logger.log("user_id로 프로필 발견:", profileByUserId);
-            userProfile = profileByUserId;
+
+            // 기존 프로필이 있지만 phone 이 비어 있거나 다른 값이면 업데이트
+            if (profileByUserId.phone !== normalizedPhone) {
+              logger.log("기존 프로필 phone 업데이트 시작:", {
+                before: profileByUserId.phone,
+                after: normalizedPhone,
+              });
+
+              const { data: updatedProfile, error: updateError } =
+                await supabase
+                  .from("user_profiles")
+                  .update({ phone: normalizedPhone })
+                  .eq("user_id", currentUser.id)
+                  .select()
+                  .maybeSingle();
+
+              if (updateError) {
+                logger.error("프로필 phone 업데이트 실패:", updateError);
+                // 업데이트 실패해도 로그인 자체는 계속 진행
+                userProfile = profileByUserId;
+              } else if (updatedProfile) {
+                logger.log("프로필 phone 업데이트 성공:", updatedProfile);
+                userProfile = updatedProfile;
+              } else {
+                userProfile = profileByUserId;
+              }
+            } else {
+              // 이미 올바른 phone 이 저장되어 있으면 그대로 사용
+              userProfile = profileByUserId;
+            }
           } else {
             // 프로필이 없으면 자동 생성 (닉네임은 나중에 설정하므로 name은 설정하지 않음)
             logger.log("프로필 자동 생성 시작");
