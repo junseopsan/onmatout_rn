@@ -67,7 +67,12 @@ export default function NicknameScreen() {
             {
               text: "시작하기",
               onPress: () => {
-                navigation.navigate("TabNavigator");
+                // 회원가입 완료 후에는 닉네임/인증 화면으로 되돌아갈 수 없도록
+                // 네비게이션 스택을 탭 네비게이터만 남기도록 초기화
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "TabNavigator" }],
+                });
               },
             },
           ]
