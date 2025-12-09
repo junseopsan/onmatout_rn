@@ -16,8 +16,17 @@ export default function NicknameScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleNicknameChange = (text: string) => {
-    setNickname(text);
-    setNicknameError("");
+    // 허용 문자: 한글, 영문, 숫자, 공백
+    const sanitized = text.replace(/[^가-힣a-zA-Z0-9\s]/g, "");
+
+    if (sanitized !== text) {
+      // 이모지/특수문자 제거 시 안내
+      setNicknameError("닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.");
+    } else {
+      setNicknameError("");
+    }
+
+    setNickname(sanitized);
     clearError();
   };
 
@@ -34,6 +43,12 @@ export default function NicknameScreen() {
 
     if (nickname.length > 20) {
       setNicknameError("닉네임은 20자 이하로 입력해주세요.");
+      return;
+    }
+
+    // 최종 유효성 검사 (한글, 영문, 숫자, 공백만 허용)
+    if (!/^[가-힣a-zA-Z0-9\s]+$/.test(nickname.trim())) {
+      setNicknameError("닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.");
       return;
     }
 

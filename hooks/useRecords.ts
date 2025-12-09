@@ -265,11 +265,18 @@ export const useAddComment = () => {
     mutationFn: async ({
       recordId,
       content,
+      parentId,
     }: {
       recordId: string;
       content: string;
+      parentId?: string;
     }) => {
-      const result = await recordsAPI.addComment(recordId, content, user?.id);
+      const result = await recordsAPI.addComment(
+        recordId,
+        content,
+        user?.id,
+        parentId
+      );
       if (!result.success) {
         throw new Error(result.message || "댓글 추가에 실패했습니다.");
       }

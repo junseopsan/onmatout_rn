@@ -30,6 +30,7 @@ export default function DashboardScreen() {
   >(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
 
   // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
@@ -108,12 +109,21 @@ export default function DashboardScreen() {
   const handleRefresh = useCallback(() => {
     if (isAuthenticated) {
       console.log("피드: Pull-to-refresh");
-      refetch();
+      setIsPullRefreshing(true);
+      refetch()
+        .catch((err) => {
+          console.log("피드: Pull-to-refresh 중 오류:", err);
+        })
+        .finally(() => {
+          // React Query 내부 상태와 상관없이 최대 1회 풀-리프레시 사이클만 유지
+          setIsPullRefreshing(false);
+        });
     }
   }, [isAuthenticated, refetch]);
 
   // 새로고침 상태 (pull-to-refresh 또는 탭 클릭)
-  const isRefreshing = isRefetching || isManualRefreshing;
+  // React Query의 isRefetching에만 의존하지 않고, 로컬 상태로 안전하게 제어
+  const isRefreshing = isPullRefreshing || isManualRefreshing;
 
   const navigation = useNavigation();
 

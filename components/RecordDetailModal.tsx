@@ -412,7 +412,7 @@ export default function RecordDetailModal({
 
           {/* 상태 섹션 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>수련 후 상태</Text>
+            <Text style={styles.sectionTitle}>수련 상태</Text>
 
             {isEditMode ? (
               // 수정 모드: 기록 추가 화면과 동일한 UI

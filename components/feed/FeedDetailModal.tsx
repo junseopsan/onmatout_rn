@@ -173,7 +173,7 @@ export default function FeedDetailModal({
           {/* 상태 */}
           {record.states && record.states.length > 0 && (
             <View style={styles.statesSection}>
-              <Text style={styles.sectionTitle}>수련 후 상태</Text>
+              <Text style={styles.sectionTitle}>수련 상태</Text>
               <View style={styles.statesContainer}>
                 {record.states.map((stateId) => {
                   const state = getStateInfo(stateId);

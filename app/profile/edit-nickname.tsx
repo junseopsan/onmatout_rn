@@ -45,15 +45,17 @@ export default function EditNicknameScreen() {
   }, [getUserProfile]);
 
   const handleNicknameChange = (text: string) => {
-    setNickname(text);
+    // 허용 문자: 한글, 영문, 숫자, 공백
+    const sanitized = text.replace(/[^가-힣a-zA-Z0-9\s]/g, "");
+    setNickname(sanitized);
     setNicknameError("");
 
     // 닉네임 유효성 검사
-    if (text.length < 2) {
+    if (sanitized.length < 2) {
       setNicknameError("닉네임은 2자 이상이어야 합니다.");
-    } else if (text.length > 15) {
+    } else if (sanitized.length > 15) {
       setNicknameError("닉네임은 15자 이하여야 합니다.");
-    } else if (!/^[가-힣a-zA-Z0-9\s]*$/.test(text)) {
+    } else if (!/^[가-힣a-zA-Z0-9\s]*$/.test(sanitized)) {
       setNicknameError("닉네임은 한글, 영문, 숫자만 사용 가능합니다.");
     }
   };

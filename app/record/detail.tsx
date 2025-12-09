@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActionSheetIOS,
   Alert,
@@ -14,11 +14,16 @@ import {
   View,
 } from "react-native";
 import { Button, Card, YStack } from "tamagui";
+import CommentModal from "../../components/feed/CommentModal";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
-import { useDeleteRecord } from "../../hooks/useRecords";
+import {
+  useDeleteRecord,
+  useRecordStats,
+  useToggleLike,
+} from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
 import { AsanaCategory } from "../../types/asana";
 
@@ -32,6 +37,10 @@ export default function RecordDetailScreen() {
 
   const deleteRecordMutation = useDeleteRecord();
   const { showSnackbar } = useNotification();
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const { data: stats } = useRecordStats(record.id);
+  const toggleLikeMutation = useToggleLike();
+  const [isLiking, setIsLiking] = useState(false);
 
   // 메뉴 표시
   const showMenu = () => {
@@ -135,6 +144,19 @@ export default function RecordDetailScreen() {
         },
       },
     ]);
+  };
+
+  // 좋아요 토글
+  const handleLike = () => {
+    if (isLiking || toggleLikeMutation.isPending) {
+      return;
+    }
+    setIsLiking(true);
+    toggleLikeMutation.mutate(record.id, {
+      onSettled: () => {
+        setIsLiking(false);
+      },
+    });
   };
 
   return (
@@ -328,7 +350,7 @@ export default function RecordDetailScreen() {
           {record.states && record.states.length > 0 && (
             <View style={styles.statesSection}>
               <View style={styles.statesHeader}>
-                <Text style={styles.statesTitle}>수련 후 상태</Text>
+                <Text style={styles.statesTitle}>수련 상태</Text>
               </View>
               <View style={styles.statesContainer}>
                 {record.states.map((stateId: string) => {
@@ -356,25 +378,69 @@ export default function RecordDetailScreen() {
             </View>
           )}
 
-          {/* 메모 카드 */}
+          {/* 메모 섹션 */}
           {record.memo && (
             <View style={styles.memoCard}>
               <View style={styles.memoHeader}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
                 <Text style={styles.memoTitle}>메모</Text>
               </View>
               <Text style={styles.memoContent}>{record.memo}</Text>
             </View>
           )}
+
+          {/* 소셜 액션 - 메모 바로 아래 (좋아요 / 댓글) */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                (toggleLikeMutation.isPending || isLiking) &&
+                  styles.actionButtonDisabled,
+              ]}
+              onPress={handleLike}
+              disabled={toggleLikeMutation.isPending || isLiking}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={stats?.isLiked ? "heart" : "heart-outline"}
+                size={16}
+                color={stats?.isLiked ? COLORS.primary : COLORS.textSecondary}
+              />
+              {stats?.likeCount && stats.likeCount > 0 ? (
+                <Text style={styles.actionCount}>
+                  {String(stats.likeCount)}
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => setShowCommentModal(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="chatbubble-outline"
+                size={16}
+                color={COLORS.textSecondary}
+              />
+              {stats?.commentCount && stats.commentCount > 0 ? (
+                <Text style={styles.actionCount}>
+                  {String(stats.commentCount)}
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* 하단 여백 */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* 댓글 모달 */}
+      <CommentModal
+        visible={showCommentModal}
+        onClose={() => setShowCommentModal(false)}
+        recordId={record.id}
+        recordTitle={record.title}
+      />
     </View>
   );
 }
@@ -482,7 +548,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statesSection: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   statesHeader: {
     flexDirection: "row",
@@ -511,17 +577,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   memoCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    marginTop: 12,
   },
   memoHeader: {
     flexDirection: "row",
@@ -530,16 +586,39 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   memoTitle: {
-    fontSize: 16,
+    // 수련한 아사나 / 수련 상태 섹션 타이틀과 동일한 스타일
+    fontSize: 18,
     fontWeight: "600",
     color: COLORS.text,
   },
   memoContent: {
     fontSize: 15,
-    color: "#000000",
+    color: COLORS.text,
     lineHeight: 22,
   },
   bottomSpacer: {
     height: 40,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 12,
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
+  },
+  actionCount: {
+    marginLeft: 2,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
   },
 });

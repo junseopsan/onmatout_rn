@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
@@ -38,6 +39,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated } = useAuth();
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
@@ -125,6 +127,12 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
       if (result.success) {
         // 성공 시 스낵바 표시
         showSnackbar("수련 기록이 저장되었습니다.", "success");
+
+        // React Query 캐시 무효화: 홈 탭/프로필/기록 관련 데이터 새로고침
+        queryClient.invalidateQueries({ queryKey: ["feedRecords"] });
+        queryClient.invalidateQueries({ queryKey: ["todayRecords"] });
+        queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
+        queryClient.invalidateQueries({ queryKey: ["allRecords"] });
 
         if (onClose) {
           // 모달로 사용되는 경우: 모달 닫고 탭 네비게이터의 홈 탭으로 이동

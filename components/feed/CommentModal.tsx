@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -41,6 +41,7 @@ export default function CommentModal({
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const isSubmittingRef = useRef(false);
+  const [replyTo, setReplyTo] = useState<any | null>(null);
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -88,12 +89,17 @@ export default function CommentModal({
 
     // 키보드를 닫지 않고 바로 등록
     addCommentMutation.mutate(
-      { recordId, content: trimmedText },
+      {
+        recordId,
+        content: trimmedText,
+        parentId: replyTo?.id,
+      },
       {
         onSuccess: (data) => {
           console.log("댓글 등록 성공:", data);
           setCommentText("");
           setInputHeight(32); // 입력 후 높이 초기화
+          setReplyTo(null); // 답글 대상 초기화
           isSubmittingRef.current = false; // 플래그 해제
 
           // 댓글 목록 즉시 새로고침
@@ -110,6 +116,30 @@ export default function CommentModal({
       }
     );
   };
+  const startReply = (comment: any) => {
+    setReplyTo(comment);
+  };
+
+  const cancelReply = () => {
+    setReplyTo(null);
+  };
+
+  const topLevelComments = useMemo(
+    () => (comments || []).filter((c: any) => !c.parent_id),
+    [comments]
+  );
+
+  const repliesByParentId = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (comments || []).forEach((c: any) => {
+      if (c.parent_id) {
+        const list = map.get(c.parent_id) || [];
+        list.push(c);
+        map.set(c.parent_id, list);
+      }
+    });
+    return map;
+  }, [comments]);
 
   const handleTextChange = (text: string) => {
     setCommentText(text);
@@ -180,36 +210,82 @@ export default function CommentModal({
           keyboardShouldPersistTaps="always" // 키보드 유지
           keyboardDismissMode="none" // 스크롤/터치로 키보드 닫힘 방지
         >
-          {comments && comments.length > 0 ? (
-            comments.map((comment: any) => (
-              <View key={comment.id} style={styles.commentItem}>
-                <View style={styles.commentHeader}>
-                  <View style={styles.commentUser}>
-                    {comment.user_profiles?.avatar_url ? (
-                      <Image
-                        source={{ uri: comment.user_profiles.avatar_url }}
-                        style={styles.commentAvatar}
-                      />
-                    ) : (
-                      <View style={styles.commentAvatarPlaceholder}>
-                        <Text style={styles.commentAvatarText}>
-                          {comment.user_profiles?.name?.charAt(0) || "?"}
+          {topLevelComments && topLevelComments.length > 0 ? (
+            topLevelComments.map((comment: any) => {
+              const replies = repliesByParentId.get(comment.id) || [];
+              return (
+                <View key={comment.id} style={styles.commentItem}>
+                  <View style={styles.commentHeader}>
+                    <View style={styles.commentUser}>
+                      {comment.user_profiles?.avatar_url ? (
+                        <Image
+                          source={{ uri: comment.user_profiles.avatar_url }}
+                          style={styles.commentAvatar}
+                        />
+                      ) : (
+                        <View style={styles.commentAvatarPlaceholder}>
+                          <Text style={styles.commentAvatarText}>
+                            {comment.user_profiles?.name?.charAt(0) || "?"}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.commentUserInfo}>
+                        <Text style={styles.commentAuthor}>
+                          {comment.user_profiles?.name || "익명"}
+                        </Text>
+                        <Text style={styles.commentTime}>
+                          {formatTime(comment.created_at)}
                         </Text>
                       </View>
-                    )}
-                    <View style={styles.commentUserInfo}>
-                      <Text style={styles.commentAuthor}>
-                        {comment.user_profiles?.name || "익명"}
-                      </Text>
-                      <Text style={styles.commentTime}>
-                        {formatTime(comment.created_at)}
-                      </Text>
                     </View>
                   </View>
+                  <Text style={styles.commentContent}>{comment.content}</Text>
+                  <TouchableOpacity
+                    style={styles.replyButton}
+                    onPress={() => startReply(comment)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.replyButtonText}>답글 달기</Text>
+                  </TouchableOpacity>
+
+                  {replies.length > 0 && (
+                    <View style={styles.repliesContainer}>
+                      {replies.map((reply: any) => (
+                        <View key={reply.id} style={styles.replyItem}>
+                          <View style={styles.replyHeader}>
+                            {reply.user_profiles?.avatar_url ? (
+                              <Image
+                                source={{
+                                  uri: reply.user_profiles.avatar_url,
+                                }}
+                                style={styles.replyAvatar}
+                              />
+                            ) : (
+                              <View style={styles.replyAvatarPlaceholder}>
+                                <Text style={styles.replyAvatarText}>
+                                  {reply.user_profiles?.name?.charAt(0) || "?"}
+                                </Text>
+                              </View>
+                            )}
+                            <View style={styles.replyUserInfo}>
+                              <Text style={styles.replyAuthor}>
+                                {reply.user_profiles?.name || "익명"}
+                              </Text>
+                              <Text style={styles.replyTime}>
+                                {formatTime(reply.created_at)}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={styles.replyContent}>
+                            {reply.content}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
-                <Text style={styles.commentContent}>{comment.content}</Text>
-              </View>
-            ))
+              );
+            })
           ) : (
             <View style={styles.emptyComments}>
               <Ionicons
@@ -239,12 +315,31 @@ export default function CommentModal({
           // 입력 영역 터치 시 키보드 닫힘 방지
           onStartShouldSetResponder={() => true}
         >
+          {replyTo && (
+            <View style={styles.replyInfoBar}>
+              <Text style={styles.replyInfoText}>
+                {replyTo.user_profiles?.name || "익명"}님께 답글 쓰는 중
+              </Text>
+              <TouchableOpacity
+                onPress={cancelReply}
+                style={styles.replyCancelButton}
+              >
+                <Ionicons name="close" size={16} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          )}
           <View
             style={[styles.inputContainer, { minHeight: inputHeight + 20 }]}
           >
             <TextInput
               style={styles.commentTextInput}
-              placeholder="댓글을 입력하세요..."
+              placeholder={
+                replyTo
+                  ? `${
+                      replyTo.user_profiles?.name || "익명"
+                    }님께 답글을 입력하세요...`
+                  : "댓글을 입력하세요..."
+              }
               value={commentText}
               onChangeText={handleTextChange}
               onContentSizeChange={handleContentSizeChange}
@@ -283,15 +378,17 @@ export default function CommentModal({
                 activeOpacity={0.8}
                 hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
               >
-                <Text
-                  style={[
-                    styles.commentSubmitText,
-                    (!commentText.trim() || addCommentMutation.isPending) &&
-                      styles.commentSubmitTextDisabled,
-                  ]}
-                >
-                  {addCommentMutation.isPending ? "등록중..." : "등록"}
-                </Text>
+                <Ionicons
+                  name="arrow-up"
+                  size={18}
+                  color={
+                    !commentText.trim() ||
+                    addCommentMutation.isPending ||
+                    isSubmittingRef.current
+                      ? COLORS.background
+                      : "white"
+                  }
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -384,6 +481,66 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginLeft: 40,
   },
+  replyButton: {
+    marginLeft: 40,
+    marginTop: 4,
+  },
+  replyButtonText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  repliesContainer: {
+    marginLeft: 40,
+    marginTop: 8,
+    gap: 8,
+  },
+  replyItem: {
+    paddingVertical: 4,
+  },
+  replyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  replyAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  replyAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 6,
+  },
+  replyAvatarText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  replyUserInfo: {
+    flex: 1,
+  },
+  replyAuthor: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.text,
+  },
+  replyTime: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  replyContent: {
+    fontSize: 13,
+    color: COLORS.text,
+    lineHeight: 18,
+    marginLeft: 30,
+    marginTop: 2,
+  },
   emptyComments: {
     flex: 1,
     justifyContent: "center",
@@ -454,5 +611,20 @@ const styles = StyleSheet.create({
   },
   commentSubmitTextDisabled: {
     color: COLORS.background,
+  },
+  replyInfoBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  replyInfoText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  replyCancelButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
 });

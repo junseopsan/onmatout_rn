@@ -1070,7 +1070,8 @@ export const recordsAPI = {
   addComment: async (
     recordId: string,
     content: string,
-    userId?: string
+    userId?: string,
+    parentId?: string
   ): Promise<{
     success: boolean;
     data?: any;
@@ -1098,13 +1099,19 @@ export const recordsAPI = {
         logger.log("제공된 사용자 ID 사용:", user_id);
       }
 
-      logger.log("댓글 삽입 시도:", { user_id, record_id: recordId, content });
+      logger.log("댓글 삽입 시도:", {
+        user_id,
+        record_id: recordId,
+        content,
+        parent_id: parentId,
+      });
       const { data, error } = await supabase
         .from("feed_comments")
         .insert({
           user_id: user_id,
           record_id: recordId,
           content,
+          parent_id: parentId || null,
         })
         .select("*")
         .single();
