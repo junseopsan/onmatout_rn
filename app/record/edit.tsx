@@ -2,11 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,6 +38,8 @@ export default function EditRecordScreen() {
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const [memoSectionY, setMemoSectionY] = useState(0);
   const { showSnackbar } = useNotification();
   const updateRecordMutation = useUpdateRecord();
 
@@ -209,8 +213,16 @@ export default function EditRecordScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* X 버튼 */}
         <View style={styles.closeButtonContainer}>
           <TouchableOpacity
@@ -291,7 +303,12 @@ export default function EditRecordScreen() {
         </View>
 
         {/* 메모 작성 */}
-        <View style={styles.section}>
+        <View
+          style={styles.section}
+          onLayout={(e) => {
+            setMemoSectionY(e.nativeEvent.layout.y);
+          }}
+        >
           <TextInput
             style={styles.memoInput}
             placeholder="오늘 수련에서 느낀 점을 자유롭게 기록해보세요..."
@@ -300,6 +317,18 @@ export default function EditRecordScreen() {
             multiline
             maxLength={500}
             textAlignVertical="top"
+            onFocus={() => {
+              // 메모를 탭했을 때 자동으로 아래로 스크롤하여
+              // 메모와 완료 버튼이 모두 보이도록 처리 (부드러운 애니메이션)
+              setTimeout(() => {
+                if (scrollViewRef.current) {
+                  scrollViewRef.current.scrollTo({
+                    y: Math.max(memoSectionY - 40, 0),
+                    animated: true,
+                  });
+                }
+              }, 200);
+            }}
           />
           <Text style={styles.characterCount}>{memo.length}/500</Text>
         </View>
@@ -352,7 +381,7 @@ export default function EditRecordScreen() {
         onSelect={handleAsanaSelect}
         selectedAsanas={selectedAsanas}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

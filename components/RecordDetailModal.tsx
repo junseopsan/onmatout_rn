@@ -1,8 +1,10 @@
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Keyboard,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -47,6 +49,27 @@ export default function RecordDetailModal({
     memo: "",
   });
   const [asanaSearchVisible, setAsanaSearchVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // 키보드 높이 추적 (Modal 안에서도 버튼을 키보드 위로 올리기 위해)
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   if (!record) return null;
 
@@ -219,12 +242,7 @@ export default function RecordDetailModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
         {/* 헤더 */}
         <View style={styles.header}>
@@ -237,7 +255,11 @@ export default function RecordDetailModal({
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* 날짜 표시 */}
           <View style={styles.dateDisplay}>
             <Text style={styles.dateText}>{formatDate(record.date)}</Text>
@@ -523,12 +545,17 @@ export default function RecordDetailModal({
             )}
           </View>
 
-          {/* 하단 여백 */}
+          {/* 하단 여백 (스크롤용) */}
           <View style={styles.bottomSpacing} />
         </ScrollView>
 
-        {/* 하단 고정 액션 버튼 */}
-        <View style={styles.bottomActions}>
+        {/* 하단 액션 버튼 - 키보드 높이만큼 위로 올림 */}
+        <View
+          style={[
+            styles.bottomActions,
+            keyboardHeight > 0 && { marginBottom: keyboardHeight },
+          ]}
+        >
           {isEditMode ? (
             <>
               <TouchableOpacity
@@ -834,6 +861,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
+  },
+  contentContainer: {
+    paddingBottom: 160,
   },
   dateDisplay: {
     alignItems: "flex-start",
