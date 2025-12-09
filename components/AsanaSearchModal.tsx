@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -14,6 +13,7 @@ import { COLORS } from "../constants/Colors";
 import { CATEGORIES } from "../constants/categories";
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { AsanaCategory } from "../types/asana";
+import { AsanaCard } from "./AsanaCard";
 import { TamaguiInputComponent } from "./ui/TamaguiInput";
 
 interface AsanaSearchModalProps {
@@ -289,69 +289,25 @@ export default function AsanaSearchModal({
     );
   };
 
-  // 아사나 카드 렌더링
+  // 아사나 카드 렌더링 - 아사나 탭과 동일한 카드 디자인 사용
   const renderAsanaCard = ({ item }: { item: Asana }) => {
     const isSelected = tempSelectedAsanas.find((asana) => asana.id === item.id);
-    const categoryInfo = getCategoryInfo(item.category_name_en);
 
     return (
-      <TouchableOpacity
-        style={[
-          styles.asanaCard,
-          {
-            borderColor: isSelected ? COLORS.primary : "transparent",
-            borderWidth: isSelected ? 2 : 0,
-            backgroundColor: COLORS.surface, // 항상 동일한 배경색 유지
-          },
-        ]}
-        onPress={() => toggleAsanaSelection(item)}
-      >
-        <View
-          style={[
-            styles.asanaImageContainer,
-            {
-              backgroundColor: isSelected ? "#FFFFFF" : "white", // 이미지 영역만 선택 시 배경색 변경
-            },
-          ]}
-        >
-          {item.image_number ? (
-            <Image
-              source={{ uri: getImageUrl(item.image_number) }}
-              style={styles.asanaImage}
-              contentFit="contain"
-              placeholder="🖼️"
-              placeholderContentFit="contain"
-            />
-          ) : (
-            <View style={styles.asanaImagePlaceholder}>
-              <Text style={styles.asanaImagePlaceholderText}>📝</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.asanaInfo}>
-          <View style={styles.asanaHeader}>
-            <Text style={styles.asanaName} numberOfLines={1}>
-              {item.sanskrit_name_kr}
-            </Text>
-            <View
-              style={[
-                styles.categoryBadge,
-                { backgroundColor: categoryInfo.color },
-              ]}
-            >
-              <Text style={styles.categoryBadgeText}>{categoryInfo.label}</Text>
-            </View>
-          </View>
-          <Text style={styles.asanaNameEn} numberOfLines={1}>
-            {item.sanskrit_name_en}
-          </Text>
-        </View>
+      <View style={styles.asanaCardWrapper}>
+        <AsanaCard
+          asana={item}
+          // 모달에서는 상세로 이동하지 않고 선택 토글만 수행
+          onPress={(asana) => toggleAsanaSelection(asana)}
+          // 즐겨찾기 UI는 숨김
+          showFavoriteIndicator={false}
+        />
         {isSelected && (
           <View style={styles.asanaCheckmark}>
             <Text style={styles.asanaCheckmarkText}>✓</Text>
           </View>
         )}
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -549,81 +505,17 @@ const styles = StyleSheet.create({
   },
   asanaList: {
     paddingVertical: 24,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
   },
   asanaRow: {
     flexDirection: "row",
-    justifyContent: "flex-start",
-    marginBottom: 16,
-    gap: 6,
-  },
-  asanaCard: {
-    width: cardWidth,
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    position: "relative",
-    marginHorizontal: 4,
-  },
-  asanaImageContainer: {
-    width: "100%",
-    height: 80,
-    borderRadius: 6,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    overflow: "hidden",
-    paddingVertical: 8,
-  },
-  asanaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  asanaImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 6,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  asanaImagePlaceholderText: {
-    fontSize: 16,
-  },
-  asanaInfo: {
-    width: "100%",
-  },
-  asanaHeader: {
-    flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 10,
+    gap: 12, // 카드 사이 간격
   },
-  asanaName: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.text,
-    flex: 1,
-    marginRight: 4,
-  },
-  categoryBadge: {
-    backgroundColor: "#EF4444",
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  categoryBadgeText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "white",
-  },
-  asanaNameEn: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-    fontStyle: "italic",
+  asanaCardWrapper: {
+    width: cardWidth,
+    marginBottom: 10,
   },
   asanaCheckmark: {
     position: "absolute",
