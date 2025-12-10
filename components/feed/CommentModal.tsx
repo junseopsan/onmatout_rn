@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Image,
   Keyboard,
@@ -16,7 +17,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../../constants/Colors";
-import { useAddComment, useComments } from "../../hooks/useRecords";
+import {
+  useAddComment,
+  useComments,
+  useDeleteComment,
+  useUpdateComment,
+} from "../../hooks/useRecords";
+import { useAuthStore } from "../../stores/authStore";
 
 interface CommentModalProps {
   visible: boolean;
@@ -38,10 +45,14 @@ export default function CommentModal({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { data: comments, isLoading } = useComments(recordId);
   const addCommentMutation = useAddComment();
+  const updateCommentMutation = useUpdateComment();
+  const deleteCommentMutation = useDeleteComment();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const isSubmittingRef = useRef(false);
   const [replyTo, setReplyTo] = useState<any | null>(null);
+  const [editingComment, setEditingComment] = useState<any | null>(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -64,7 +75,7 @@ export default function CommentModal({
     };
   }, []);
 
-  const handleAddComment = () => {
+  const handleSubmit = () => {
     // 중복 실행 방지
     if (isSubmittingRef.current) {
       console.log("이미 등록 중...");
@@ -79,49 +90,110 @@ export default function CommentModal({
       return;
     }
 
-    if (addCommentMutation.isPending) {
-      console.log("댓글 등록 중...");
-      return;
-    }
-
-    // 등록 시작 플래그 설정
-    isSubmittingRef.current = true;
-
-    // 키보드를 닫지 않고 바로 등록
-    addCommentMutation.mutate(
-      {
-        recordId,
-        content: trimmedText,
-        parentId: replyTo?.id,
-      },
-      {
-        onSuccess: (data) => {
-          console.log("댓글 등록 성공:", data);
-          setCommentText("");
-          setInputHeight(32); // 입력 후 높이 초기화
-          setReplyTo(null); // 답글 대상 초기화
-          isSubmittingRef.current = false; // 플래그 해제
-
-          // 댓글 목록 즉시 새로고침
-          queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
-          queryClient.invalidateQueries({
-            queryKey: ["recordStats", recordId],
-          });
-        },
-        onError: (error: any) => {
-          console.error("댓글 등록 실패:", error);
-          console.error("에러 상세:", error?.message || error);
-          isSubmittingRef.current = false; // 플래그 해제
-        },
+    // 수정 모드인지 여부에 따라 분기
+    if (editingComment) {
+      if (updateCommentMutation.isPending) {
+        console.log("댓글 수정 중...");
+        return;
       }
-    );
+
+      isSubmittingRef.current = true;
+
+      updateCommentMutation.mutate(
+        { commentId: editingComment.id, content: trimmedText },
+        {
+          onSuccess: (data) => {
+            console.log("댓글 수정 성공:", data);
+            setCommentText("");
+            setInputHeight(32);
+            setEditingComment(null);
+            setReplyTo(null);
+            isSubmittingRef.current = false;
+          },
+          onError: (error: any) => {
+            console.error("댓글 수정 실패:", error);
+            console.error("에러 상세:", error?.message || error);
+            isSubmittingRef.current = false;
+          },
+        }
+      );
+    } else {
+      if (addCommentMutation.isPending) {
+        console.log("댓글 등록 중...");
+        return;
+      }
+
+      // 등록 시작 플래그 설정
+      isSubmittingRef.current = true;
+
+      // 키보드를 닫지 않고 바로 등록
+      addCommentMutation.mutate(
+        {
+          recordId,
+          content: trimmedText,
+          parentId: replyTo?.id,
+        },
+        {
+          onSuccess: (data) => {
+            console.log("댓글 등록 성공:", data);
+            setCommentText("");
+            setInputHeight(32); // 입력 후 높이 초기화
+            setReplyTo(null); // 답글 대상 초기화
+            isSubmittingRef.current = false; // 플래그 해제
+
+            // 댓글 목록 즉시 새로고침
+            queryClient.invalidateQueries({ queryKey: ["comments", recordId] });
+            queryClient.invalidateQueries({
+              queryKey: ["recordStats", recordId],
+            });
+          },
+          onError: (error: any) => {
+            console.error("댓글 등록 실패:", error);
+            console.error("에러 상세:", error?.message || error);
+            isSubmittingRef.current = false; // 플래그 해제
+          },
+        }
+      );
+    }
   };
   const startReply = (comment: any) => {
+    setEditingComment(null); // 답글 시작 시 수정 모드 해제
     setReplyTo(comment);
   };
 
   const cancelReply = () => {
     setReplyTo(null);
+  };
+
+  const startEdit = (comment: any) => {
+    setEditingComment(comment);
+    setReplyTo(null);
+    setCommentText(comment.content || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingComment(null);
+    setCommentText("");
+  };
+
+  const confirmDelete = (comment: any) => {
+    Alert.alert("댓글 삭제", "이 댓글을 삭제하시겠습니까?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => {
+          deleteCommentMutation.mutate({ commentId: comment.id });
+          if (editingComment?.id === comment.id) {
+            setEditingComment(null);
+            setCommentText("");
+          }
+          if (replyTo?.id === comment.id) {
+            setReplyTo(null);
+          }
+        },
+      },
+    ]);
   };
 
   const topLevelComments = useMemo(
@@ -240,13 +312,40 @@ export default function CommentModal({
                     </View>
                   </View>
                   <Text style={styles.commentContent}>{comment.content}</Text>
-                  <TouchableOpacity
-                    style={styles.replyButton}
-                    onPress={() => startReply(comment)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.replyButtonText}>답글 달기</Text>
-                  </TouchableOpacity>
+
+                  <View style={styles.commentActionsRow}>
+                    <TouchableOpacity
+                      style={styles.replyButton}
+                      onPress={() => startReply(comment)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.replyButtonText}>답글 달기</Text>
+                    </TouchableOpacity>
+                    {comment.user_id === user?.id && (
+                      <View style={styles.ownerActions}>
+                        <TouchableOpacity
+                          onPress={() => startEdit(comment)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons
+                            name="create-outline"
+                            size={18}
+                            color={COLORS.textSecondary}
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => confirmDelete(comment)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons
+                            name="trash-outline"
+                            size={18}
+                            color={COLORS.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
 
                   {replies.length > 0 && (
                     <View style={styles.repliesContainer}>
@@ -279,6 +378,31 @@ export default function CommentModal({
                           <Text style={styles.replyContent}>
                             {reply.content}
                           </Text>
+
+                          {reply.user_id === user?.id && (
+                            <View style={styles.ownerActionsReply}>
+                              <TouchableOpacity
+                                onPress={() => startEdit(reply)}
+                                activeOpacity={0.7}
+                              >
+                                <Ionicons
+                                  name="create-outline"
+                                  size={16}
+                                  color={COLORS.textSecondary}
+                                />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => confirmDelete(reply)}
+                                activeOpacity={0.7}
+                              >
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={16}
+                                  color={COLORS.textSecondary}
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          )}
                         </View>
                       ))}
                     </View>
@@ -315,13 +439,18 @@ export default function CommentModal({
           // 입력 영역 터치 시 키보드 닫힘 방지
           onStartShouldSetResponder={() => true}
         >
-          {replyTo && (
+          {(replyTo || editingComment) && (
             <View style={styles.replyInfoBar}>
-              <Text style={styles.replyInfoText}>
-                {replyTo.user_profiles?.name || "익명"}님께 답글 쓰는 중
-              </Text>
+              {replyTo && (
+                <Text style={styles.replyInfoText}>
+                  {replyTo.user_profiles?.name || "익명"}님께 답글 쓰는 중
+                </Text>
+              )}
+              {editingComment && !replyTo && (
+                <Text style={styles.replyInfoText}>댓글을 수정하는 중</Text>
+              )}
               <TouchableOpacity
-                onPress={cancelReply}
+                onPress={replyTo ? cancelReply : cancelEdit}
                 style={styles.replyCancelButton}
               >
                 <Ionicons name="close" size={16} color={COLORS.textSecondary} />
@@ -338,6 +467,8 @@ export default function CommentModal({
                   ? `${
                       replyTo.user_profiles?.name || "익명"
                     }님께 답글을 입력하세요...`
+                  : editingComment
+                  ? "댓글을 수정하세요..."
                   : "댓글을 입력하세요..."
               }
               value={commentText}
@@ -349,7 +480,7 @@ export default function CommentModal({
               placeholderTextColor={COLORS.textSecondary}
               returnKeyType="default"
               blurOnSubmit={false}
-              onSubmitEditing={handleAddComment}
+              onSubmitEditing={handleSubmit}
             />
             <View style={styles.buttonWrapper} collapsable={false}>
               <TouchableOpacity
@@ -368,7 +499,7 @@ export default function CommentModal({
                   ) {
                     return;
                   }
-                  handleAddComment(); // 키보드 닫지 않고 바로 등록
+                  handleSubmit(); // 키보드 닫지 않고 바로 등록/수정
                 }}
                 disabled={
                   !commentText.trim() ||
@@ -626,5 +757,24 @@ const styles = StyleSheet.create({
   replyCancelButton: {
     paddingHorizontal: 4,
     paddingVertical: 2,
+  },
+  commentActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginLeft: 40,
+    marginTop: 4,
+  },
+  ownerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  ownerActionsReply: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-end",
+    marginTop: 4,
+    gap: 8,
   },
 });

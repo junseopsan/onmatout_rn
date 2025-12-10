@@ -37,10 +37,14 @@ export default function ProfileScreen() {
 
   // 프로필 통계 데이터 가져오기 (allRecords만) - 로그인 사용자 기준
   const userId = user?.id;
-  const { allRecords, refetch } = useProfileStats(userId);
+  const { allRecords, isLoading, refetch } = useProfileStats(userId);
 
-  // 기록 데이터 가져오기
-  const { recentRecords, refetch: refetchRecords } = useRecordData();
+  // 기록 데이터 가져오기 (월별 리스트는 recentRecords 기준)
+  const {
+    recentRecords,
+    refetch: refetchRecords,
+    isLoading: isRecordDataLoading,
+  } = useRecordData();
 
   // 선택한 년월에 따른 필터링된 기록
   const filteredRecords = recentRecords.filter((record) => {
@@ -202,7 +206,14 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {filteredRecords.length === 0 ? (
+          {/** 기록 데이터 로딩 중일 때는 스켈레톤/로딩 상태 표시 */}
+          {isRecordDataLoading ? (
+            <View style={styles.emptyRecordsContainer}>
+              <Text style={styles.emptyRecordsText}>
+                수련 기록을 불러오는 중...
+              </Text>
+            </View>
+          ) : filteredRecords.length === 0 ? (
             <View style={styles.emptyRecordsContainer}>
               <Text style={styles.emptyRecordsText}>
                 {selectedYear}년 {selectedMonth}월에는 수련 기록이 없습니다.

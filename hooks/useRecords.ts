@@ -292,6 +292,61 @@ export const useAddComment = () => {
   });
 };
 
+// 댓글 수정 mutation
+export const useUpdateComment = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async ({
+      commentId,
+      content,
+    }: {
+      commentId: string;
+      content: string;
+    }) => {
+      const result = await recordsAPI.updateComment(
+        commentId,
+        content,
+        user?.id
+      );
+      if (!result.success || !result.data) {
+        throw new Error(result.message || "댓글 수정에 실패했습니다.");
+      }
+      return result.data as { id: string; record_id: string };
+    },
+    onSuccess: (data) => {
+      // 댓글 수정 성공 시 댓글 목록 및 통계 새로고침
+      queryClient.invalidateQueries({ queryKey: ["comments", data.record_id] });
+      queryClient.invalidateQueries({
+        queryKey: ["recordStats", data.record_id],
+      });
+    },
+  });
+};
+
+// 댓글 삭제 mutation
+export const useDeleteComment = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async ({ commentId }: { commentId: string }) => {
+      const result = await recordsAPI.deleteComment(commentId, user?.id);
+      if (!result.success || !result.data) {
+        throw new Error(result.message || "댓글 삭제에 실패했습니다.");
+      }
+      return result.data; // { record_id }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", data.record_id] });
+      queryClient.invalidateQueries({
+        queryKey: ["recordStats", data.record_id],
+      });
+    },
+  });
+};
+
 // 공유 추가 mutation
 export const useAddShare = () => {
   const queryClient = useQueryClient();

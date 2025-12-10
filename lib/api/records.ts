@@ -1211,6 +1211,128 @@ export const recordsAPI = {
     }
   },
 
+  // 댓글 수정
+  updateComment: async (
+    commentId: string,
+    content: string,
+    userId?: string
+  ): Promise<{
+    success: boolean;
+    data?: any;
+    message?: string;
+  }> => {
+    try {
+      logger.log("=== 댓글 수정 시작 ===");
+      logger.log("입력 파라미터:", { commentId, content, userId });
+
+      let user_id = userId;
+      if (!user_id) {
+        logger.log("userId가 제공되지 않음, auth에서 조회 시도");
+        const auth = await ensureAuthenticated();
+        if (!auth) {
+          logger.log("사용자 인증 실패");
+          return {
+            success: false,
+            message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
+          };
+        }
+        user_id = auth.userId;
+        logger.log("auth에서 사용자 ID 조회:", user_id);
+      } else {
+        logger.log("제공된 사용자 ID 사용:", user_id);
+      }
+
+      logger.log("댓글 업데이트 시도:", { commentId, user_id, content });
+      const { data, error } = await supabase
+        .from("feed_comments")
+        .update({
+          content,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", commentId)
+        .eq("user_id", user_id)
+        .select("id, record_id, content, user_id, created_at, updated_at")
+        .single();
+
+      if (error) {
+        logger.log("댓글 업데이트 실패:", error);
+        throw error;
+      }
+
+      logger.log("댓글 업데이트 성공:", data);
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      logger.log("댓글 수정 오류:", error);
+      return {
+        success: false,
+        message: "댓글 수정에 실패했습니다.",
+      };
+    }
+  },
+
+  // 댓글 삭제
+  deleteComment: async (
+    commentId: string,
+    userId?: string
+  ): Promise<{
+    success: boolean;
+    data?: { record_id: string };
+    message?: string;
+  }> => {
+    try {
+      logger.log("=== 댓글 삭제 시작 ===");
+      logger.log("입력 파라미터:", { commentId, userId });
+
+      let user_id = userId;
+      if (!user_id) {
+        logger.log("userId가 제공되지 않음, auth에서 조회 시도");
+        const auth = await ensureAuthenticated();
+        if (!auth) {
+          logger.log("사용자 인증 실패");
+          return {
+            success: false,
+            message: "사용자 인증이 필요합니다. 다시 로그인해주세요.",
+          };
+        }
+        user_id = auth.userId;
+        logger.log("auth에서 사용자 ID 조회:", user_id);
+      } else {
+        logger.log("제공된 사용자 ID 사용:", user_id);
+      }
+
+      // 삭제하면서 record_id를 함께 반환
+      const { data, error } = await supabase
+        .from("feed_comments")
+        .delete()
+        .eq("id", commentId)
+        .eq("user_id", user_id)
+        .select("record_id")
+        .single();
+
+      if (error) {
+        logger.log("댓글 삭제 실패:", error);
+        throw error;
+      }
+
+      logger.log("댓글 삭제 성공:", data);
+
+      return {
+        success: true,
+        data: data as { record_id: string },
+      };
+    } catch (error) {
+      logger.log("댓글 삭제 오류:", error);
+      return {
+        success: false,
+        message: "댓글 삭제에 실패했습니다.",
+      };
+    }
+  },
+
   // 공유 추가
   addShare: async (
     recordId: string

@@ -6,6 +6,7 @@ import { Modal } from "react-native";
 import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
+import { useAllRecords } from "../hooks/useDashboard";
 import { useAuthStore } from "../stores/authStore";
 
 // Screens
@@ -32,6 +33,10 @@ export default function TabNavigator() {
 
   // 기록 작성 모달 표시 여부
   const [isRecordModalVisible, setIsRecordModalVisible] = useState(false);
+
+  // 프로필 탭 진입 전에 전체 기록(allRecords)을 백그라운드에서 미리 불러와서
+  // 프로필 통계가 첫 로딩 때도 빠르게 보이도록 prefetch
+  useAllRecords(user?.id);
 
   // 홈 탭 스크롤 함수를 설정하는 함수 (화면에서 호출)
   // navigation에 함수를 등록하여 화면에서 접근 가능하도록 함

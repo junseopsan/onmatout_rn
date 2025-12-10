@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
@@ -219,7 +218,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         {/* X 버튼 */}
         <View style={styles.closeButtonContainer}>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Ionicons name="close" size={24} color={COLORS.text} />
+            <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
         </View>
 
@@ -365,14 +364,21 @@ const styles = StyleSheet.create({
   },
   closeButtonContainer: {
     alignItems: "flex-end",
-    marginBottom: 0,
+    marginBottom: 8,
     marginTop: -16,
   },
   closeButton: {
     width: 32,
     height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
     justifyContent: "center",
     alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: COLORS.textSecondary,
+    fontWeight: "300",
   },
   header: {
     paddingTop: 60,

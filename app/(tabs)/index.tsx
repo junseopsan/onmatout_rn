@@ -31,6 +31,8 @@ export default function DashboardScreen() {
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const [feedMode, setFeedMode] = useState<"latest" | "explore">("latest");
+  const [exploreOffset, setExploreOffset] = useState(0);
 
   // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
@@ -47,6 +49,52 @@ export default function DashboardScreen() {
 
   // 모든 페이지의 데이터를 평면화
   const feedRecords = feedData?.pages?.flatMap((page: any) => page.data) || [];
+
+  // 표시용 피드 데이터 (탭 재클릭 시 탐색 모드 정렬)
+  const displayRecords = React.useMemo(() => {
+    if (!feedRecords || feedRecords.length === 0) return [];
+
+    // 기본 모드는 최신순 (서버 정렬 그대로)
+    if (feedMode === "latest") {
+      return feedRecords;
+    }
+
+    // 탐색 모드: 신선도 + 소셜 신호 기반 점수로 정렬한 뒤, offset 만큼 회전
+    const now = Date.now();
+    const scored = feedRecords.map((item: any) => {
+      const stats = item.stats || {};
+      const likeCount = stats.likeCount ?? 0;
+      const commentCount = stats.commentCount ?? 0;
+      const shareCount = stats.shareCount ?? 0;
+
+      const createdAt = new Date(
+        item.created_at || item.practice_date || item.date
+      );
+      const ageHours = Math.max(
+        0,
+        (now - createdAt.getTime()) / (1000 * 60 * 60)
+      );
+
+      // 0시간 → 1, 72시간(3일) 이상 → 0 으로 선형 감소
+      const freshScore = Math.max(0, 1 - ageHours / 72);
+
+      // 좋아요/댓글/공유 가중합 후 log 스케일
+      const socialRaw = likeCount + 2 * commentCount + 3 * shareCount;
+      const socialScore = Math.log1p(socialRaw); // 0 ~
+
+      const score = 0.6 * freshScore + 0.4 * socialScore;
+      return { item, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const ordered = scored.map((s) => s.item);
+
+    if (ordered.length === 0) return ordered;
+
+    const len = ordered.length;
+    const offset = ((exploreOffset % len) + len) % len;
+    return [...ordered.slice(offset), ...ordered.slice(0, offset)];
+  }, [feedRecords, feedMode, exploreOffset]);
 
   // 데이터 로딩 상태 로깅
   console.log("홈 탭 데이터 상태:", {
@@ -92,6 +140,10 @@ export default function DashboardScreen() {
       }),
     ]).start();
 
+    // 탐색 모드로 전환 + 오프셋 변경 (다른 조합을 위로 올리기)
+    setFeedMode("explore");
+    setExploreOffset((prev) => prev + 5);
+
     // 데이터 새로고침 (새로고침 아이콘 표시)
     if (isAuthenticated) {
       console.log("피드: 탭 재클릭 - 최상단 이동 및 새로고침");
@@ -109,6 +161,9 @@ export default function DashboardScreen() {
   const handleRefresh = useCallback(() => {
     if (isAuthenticated) {
       console.log("피드: Pull-to-refresh");
+      // 아래로 끌어당겨 새로고침하면 다시 최신 모드로 전환
+      setFeedMode("latest");
+      setExploreOffset(0);
       setIsPullRefreshing(true);
       refetch()
         .catch((err) => {
@@ -277,7 +332,7 @@ export default function DashboardScreen() {
       {/* 피드 리스트 */}
       <FlatList
         ref={flatListRef}
-        data={loadingData ? Array(5).fill(null) : feedRecords}
+        data={loadingData ? Array(5).fill(null) : displayRecords}
         renderItem={loadingData ? renderSkeletonItem : renderFeedItem}
         keyExtractor={(item, index) =>
           loadingData ? `skeleton-${index}` : item.id
