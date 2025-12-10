@@ -1,6 +1,12 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -16,6 +22,7 @@ import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { useAsanaDetail } from "../../hooks/useAsanas";
 import { RootStackParamList } from "../../navigation/types";
+import { ASANA_DETAIL_IMAGES } from "./detailImages";
 
 const { width: screenWidth } = Dimensions.get("window");
 const imageHeight = screenWidth * 0.85; // 화면 너비의 85% 높이로 증가
@@ -80,9 +87,6 @@ export default function AsanaDetailScreen() {
   const navigation = useNavigation();
   const { id } = route.params;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [imageLoading, setImageLoading] = useState(true);
-  const [showIndicators, setShowIndicators] = useState(false);
   const scrollRef = useRef<RNScrollView | null>(null);
 
   // React Query로 아사나 상세 데이터 가져오기
@@ -93,64 +97,26 @@ export default function AsanaDetailScreen() {
     error,
   } = useAsanaDetail(id);
 
-  useEffect(() => {
-    if (asana?.image_number) {
-      // Supabase에 저장된 image_count(이미지 개수)를 사용해
-      // 불필요한 HEAD 요청 없이 바로 URL 리스트를 생성
-      const count =
-        typeof (asana as any).image_count === "number" &&
-        (asana as any).image_count! > 0
-          ? (asana as any).image_count!
-          : 1;
-      loadValidImages(asana.image_number, count);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asana]);
+  // 로컬 상세 이미지 배열 (예: 006_001, 006_002, 006_003 ...)
+  const imageSources = useMemo(() => {
+    if (!asana?.image_number) return [];
+    const key = asana.image_number.padStart(3, "0");
+    return ASANA_DETAIL_IMAGES[key] || [];
+  }, [asana?.image_number]);
 
-  // 이미지 미리 로딩 함수
-  const preloadImage = useCallback(async (url: string) => {
-    try {
-      // expo-image의 캐시를 활용한 미리 로딩
-      await Image.prefetch(url);
-      return true;
-    } catch (error) {
-      console.log("이미지 미리 로딩 실패:", url, error);
-      return false;
-    }
-  }, []);
+  const hasImages = imageSources.length > 0;
 
-  // 모든 이미지 미리 로딩
-  const preloadAllImages = useCallback(
-    async (urls: string[]) => {
-      const preloadPromises = urls.map((url) => preloadImage(url));
-      await Promise.allSettled(preloadPromises);
+  const goToImage = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < imageSources.length && scrollRef.current) {
+        scrollRef.current.scrollTo({
+          x: index * screenWidth,
+          animated: true,
+        });
+        setCurrentImageIndex(index);
+      }
     },
-    [preloadImage]
-  );
-
-  const loadValidImages = useCallback(
-    async (imageNumber: string, imageCount: number) => {
-      setImageLoading(true);
-      setShowIndicators(false);
-
-      const baseNumber = imageNumber.padStart(3, "0");
-      const safeCount = Math.max(1, imageCount || 1);
-
-      // image_count 만큼의 URL을 한 번에 생성 (HEAD 요청 없이)
-      const urls: string[] = Array.from({ length: safeCount }, (_, idx) => {
-        const suffix = (idx + 1).toString().padStart(3, "0");
-        return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${baseNumber}_${suffix}.png`;
-      });
-
-      // 모든 이미지를 미리 로딩한 뒤 한 번에 표시하여
-      // 슬라이드 전환 시 깜빡임을 최소화
-      await preloadAllImages(urls);
-
-      setImageUrls(urls);
-      setShowIndicators(urls.length > 1);
-      setImageLoading(false);
-    },
-    [preloadImage, preloadAllImages]
+    [imageSources.length]
   );
 
   const getLevelColor = (level: string) => {
@@ -184,16 +150,6 @@ export default function AsanaDetailScreen() {
     const category = CATEGORIES[categoryNameEn as keyof typeof CATEGORIES];
     return category?.label || categoryNameEn;
   };
-
-  const goToImage = useCallback(
-    (index: number) => {
-      if (index >= 0 && index < imageUrls.length && scrollRef.current) {
-        scrollRef.current.scrollTo({ x: index * screenWidth, animated: true });
-        setCurrentImageIndex(index);
-      }
-    },
-    [imageUrls, scrollRef]
-  );
 
   if (loading) {
     return (
@@ -248,9 +204,9 @@ export default function AsanaDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 0 }}
       >
-        {/* 이미지 슬라이드 영역 */}
+        {/* 이미지 슬라이드 영역: 로컬 상세 이미지 여러 장 또는 스켈레톤 */}
         <YStack height={imageHeight} backgroundColor="white" marginTop={0}>
-          {imageUrls.length > 0 ? (
+          {hasImages ? (
             <YStack flex={1} position="relative">
               <RNScrollView
                 ref={scrollRef}
@@ -263,9 +219,9 @@ export default function AsanaDetailScreen() {
                   setCurrentImageIndex(index);
                 }}
               >
-                {imageUrls.map((url, index) => (
+                {imageSources.map((source, index) => (
                   <YStack
-                    key={url}
+                    key={index}
                     width={screenWidth}
                     height={imageHeight}
                     justifyContent="center"
@@ -273,7 +229,7 @@ export default function AsanaDetailScreen() {
                     backgroundColor="white"
                   >
                     <Image
-                      source={{ uri: url }}
+                      source={source}
                       style={{
                         width: "85%",
                         height: "85%",
@@ -281,42 +237,15 @@ export default function AsanaDetailScreen() {
                         maxHeight: 220,
                       }}
                       contentFit="contain"
-                      placeholder="🖼️"
-                      placeholderContentFit="contain"
                       cachePolicy="memory-disk"
                       transition={0}
-                      onError={() => {
-                        console.log(`이미지 로딩 실패: ${url}`);
-                      }}
                     />
                   </YStack>
                 ))}
               </RNScrollView>
 
-              {/* 스켈레톤 로딩 */}
-              {imageLoading && (
-                <YStack
-                  position="absolute"
-                  top={0}
-                  left={0}
-                  right={0}
-                  bottom={0}
-                  justifyContent="center"
-                  alignItems="center"
-                  backgroundColor="white"
-                  zIndex={1}
-                >
-                  <ShimmerSkeleton
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                    }}
-                  />
-                </YStack>
-              )}
-
               {/* 슬라이드 인디케이터 */}
-              {imageUrls.length > 1 && showIndicators && (
+              {imageSources.length > 1 && (
                 <XStack
                   position="absolute"
                   bottom={20}
@@ -327,7 +256,7 @@ export default function AsanaDetailScreen() {
                   paddingHorizontal="$5"
                 >
                   <XStack gap="$2">
-                    {imageUrls.map((_, index: number) => (
+                    {imageSources.map((_, index: number) => (
                       <TouchableOpacity
                         key={index}
                         onPress={() => goToImage(index)}
@@ -477,7 +406,7 @@ export default function AsanaDetailScreen() {
             </YStack>
           )}
 
-          {/* 하단 여백 */}
+          {/* 하단 여백 (너무 넓지 않게 적당히만 추가) */}
           <YStack height={60} />
         </YStack>
       </ScrollView>

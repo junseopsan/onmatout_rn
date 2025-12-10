@@ -23,7 +23,7 @@ export default function NicknameScreen() {
       // 이모지/특수문자 제거 시 안내
       setNicknameError("닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.");
     } else {
-      setNicknameError("");
+    setNicknameError("");
     }
 
     setNickname(sanitized);
