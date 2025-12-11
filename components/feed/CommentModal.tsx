@@ -478,9 +478,10 @@ export default function CommentModal({
               scrollEnabled={inputHeight >= 64}
               maxLength={200}
               placeholderTextColor={COLORS.textSecondary}
-              returnKeyType="default"
-              blurOnSubmit={false}
-              onSubmitEditing={handleSubmit}
+              returnKeyType="send"
+              // multiline에서도 엔터로 바로 전송되도록 blurOnSubmit 활성화
+              blurOnSubmit
+              onSubmitEditing={() => handleSubmit()}
             />
             <View style={styles.buttonWrapper} collapsable={false}>
               <TouchableOpacity
@@ -499,7 +500,8 @@ export default function CommentModal({
                   ) {
                     return;
                   }
-                  handleSubmit(); // 키보드 닫지 않고 바로 등록/수정
+                  // 포커스를 유지한 채 바로 전송
+                  handleSubmit();
                 }}
                 disabled={
                   !commentText.trim() ||

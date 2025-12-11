@@ -44,32 +44,24 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
       return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
     };
   }, []);
-  const formatDate = (dateString: string) => {
+  const formatRelativeTime = (dateString?: string) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
 
-    if (diffDays === 0) {
-      return "오늘";
-    } else if (diffDays === 1) {
-      return "어제";
-    } else if (diffDays < 7) {
-      return `${diffDays}일 전`;
-    } else {
-      return date.toLocaleDateString("ko-KR", {
-        month: "short",
-        day: "numeric",
-      });
-    }
-  };
+    if (diffSec < 60) return "방금";
+    if (diffMin < 60) return `${diffMin}분 전`;
+    if (diffHour < 24) return `${diffHour}시간 전`;
+    if (diffDay < 7) return `${diffDay}일 전`;
 
-  const formatTime = (timeString: string) => {
-    const time = new Date(timeString);
-    return time.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
+    return date.toLocaleDateString("ko-KR", {
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -143,8 +135,12 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{record.user_name}</Text>
               <Text style={styles.timeText}>
-                {formatDate(record.practice_date || record.date)}
-                {record.practice_time && ` ${formatTime(record.practice_time)}`}
+                {formatRelativeTime(
+                  record.practice_time ||
+                    record.created_at ||
+                    record.practice_date ||
+                    record.date
+                )}
               </Text>
             </View>
           </View>

@@ -42,6 +42,16 @@ export default function VerifyScreen() {
   // 라우트 파라미터에서 이메일 또는 전화번호 가져오기
   const email = (route.params as any)?.email || "";
   const phone = (route.params as any)?.phone || "";
+  const toastMessage = (route.params as any)?.toastMessage as
+    | string
+    | undefined;
+  const toastType = (route.params as any)?.toastType as
+    | "success"
+    | "error"
+    | "info"
+    | "warning"
+    | undefined;
+  const [initialToastShown, setInitialToastShown] = useState(false);
 
   // 타이머 효과
   useEffect(() => {
@@ -174,6 +184,16 @@ export default function VerifyScreen() {
       showSnackbar("인증 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     }
   };
+
+  // 전화번호 입력 화면에서 전달된 스낵바 메시지를 최초 진입 시 한 번만 표시
+  useEffect(() => {
+    if (!initialToastShown && toastMessage) {
+      setInitialToastShown(true);
+      setTimeout(() => {
+        showSnackbar(toastMessage, toastType || "success");
+      }, 60);
+    }
+  }, [initialToastShown, toastMessage, toastType, showSnackbar]);
 
   // 신규 회원 판단 함수 (24시간 이내 생성된 계정)
   const isRecentlyCreated = (createdAt: string): boolean => {

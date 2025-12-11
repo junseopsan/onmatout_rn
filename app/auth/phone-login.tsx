@@ -94,9 +94,12 @@ export default function PhoneLoginScreen() {
       });
 
       if (success) {
-        showSnackbar("인증 코드가 전화번호로 전송되었습니다.", "success");
-        // OTP 입력 화면으로 이동
-        navigation.navigate("Verify", { phone: internationalPhone });
+        // 다음 화면에서 스낵바를 띄우도록 메시지를 함께 전달
+        navigation.navigate("Verify", {
+          phone: internationalPhone,
+          toastMessage: "인증 코드가 전화번호로 전송되었습니다.",
+          toastType: "success",
+        });
       } else {
         // authStore에서 설정된 에러 메시지 사용
         const errorMessage =

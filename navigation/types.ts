@@ -3,7 +3,12 @@ export type RootStackParamList = {
   Splash: undefined;
   Auth: undefined;
   PhoneLogin: undefined;
-  Verify: { email?: string; phone?: string };
+  Verify: {
+    email?: string;
+    phone?: string;
+    toastMessage?: string;
+    toastType?: "success" | "error" | "info" | "warning";
+  };
   Nickname: undefined;
   TabNavigator: undefined;
   Dashboard: undefined;
