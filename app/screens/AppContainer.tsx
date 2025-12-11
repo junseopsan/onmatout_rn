@@ -74,13 +74,19 @@ export default function AppContainer() {
   useEffect(() => {
     const checkAppVersion = async () => {
       try {
-        const currentVersion = Application.nativeApplicationVersion || "0.0.0";
+        const currentVersion =
+          Application.nativeApplicationVersion ||
+          Application.nativeBuildVersion ||
+          "0.0.0";
         const platform = Platform.OS === "ios" ? "ios" : "android";
 
+        // platform 값 대소문자/공백 차이에 대응 (ilike)
         const { data, error } = await supabase
           .from("app_versions")
           .select("min_version, store_url")
-          .eq("platform", platform)
+          .ilike("platform", platform)
+          .order("min_version", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (!error && data?.min_version && data?.store_url) {
@@ -88,15 +94,27 @@ export default function AppContainer() {
             currentVersion,
             data.min_version
           );
+          console.log("[VersionCheck]", {
+            currentVersion,
+            minVersion: data.min_version,
+            needsForceUpdate,
+          });
           if (needsForceUpdate) {
             setForceUpdateInfo({
               minVersion: data.min_version,
               storeUrl: data.store_url,
             });
           }
+        } else {
+          console.log("[VersionCheck] no version row", {
+            platform,
+            error,
+            data,
+          });
         }
       } catch (e) {
         // 버전 체크 실패 시에는 조용히 무시 (앱 사용 가능)
+        console.log("[VersionCheck] failed", e);
       } finally {
         setVersionChecked(true);
       }

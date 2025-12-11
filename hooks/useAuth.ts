@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
 
@@ -66,6 +67,42 @@ export const useAuth = () => {
       isMounted = false;
     };
   }, []); // 빈 의존성 배열로 한 번만 실행
+
+  // 앱이 포그라운드로 돌아올 때 세션 재검증/갱신
+  useEffect(() => {
+    if (!user) return;
+
+    const handleAppStateChange = async (nextState: string) => {
+      if (nextState !== "active") return;
+      try {
+        const {
+          data: { session: latestSession },
+        } = await supabase.auth.getSession();
+
+        if (latestSession) {
+          setSession(latestSession);
+          return;
+        }
+
+        // 세션이 없으면 갱신 시도
+        const {
+          data: { session: refreshedSession },
+        } = await supabase.auth.refreshSession();
+
+        if (refreshedSession) {
+          setSession(refreshedSession);
+        }
+      } catch (error) {
+        console.log("[Auth] 포그라운드 세션 갱신 실패:", error);
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+    return () => subscription.remove();
+  }, [user, setSession]);
 
   // 주기적으로 세션 확인 및 갱신 (사용자가 로그인되어 있을 때만)
   useEffect(() => {

@@ -29,9 +29,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
-    // 세션 갱신은 앱에서 직접 관리하므로 자동 갱신 비활성화
-    // (간헐적으로 발생하는 "Invalid Refresh Token" 콘솔 에러 방지)
-    autoRefreshToken: false,
+    // 백그라운드 후 복귀 시 토큰이 만료된 채로 남지 않도록 자동 갱신 활성화
+    autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
   },
