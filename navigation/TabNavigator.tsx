@@ -49,7 +49,7 @@ export default function TabNavigator() {
   // 비회원 사용자가 로그인이 필요한 탭을 클릭했을 때
   const handleTabPress = (routeName: string) => {
     // 아사나 탭은 비회원도 접근 가능
-    if (routeName === "Asanas") {
+    if (routeName === "Asanas" || routeName === "Studios") {
       currentFocusedTab.current = routeName;
       return true;
     }

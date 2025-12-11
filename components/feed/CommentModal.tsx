@@ -217,6 +217,14 @@ export default function CommentModal({
     setCommentText(text);
   };
 
+  const isSubmitDisabled = useMemo(
+    () =>
+      !commentText.trim() ||
+      addCommentMutation.isPending ||
+      isSubmittingRef.current,
+    [commentText, addCommentMutation.isPending]
+  );
+
   const handleContentSizeChange = (event: any) => {
     const contentHeight = event.nativeEvent.contentSize.height;
     console.log("Content height:", contentHeight); // 디버깅용
@@ -479,35 +487,25 @@ export default function CommentModal({
               maxLength={200}
               placeholderTextColor={COLORS.textSecondary}
               returnKeyType="send"
-              // multiline에서도 엔터로 바로 전송되도록 blurOnSubmit 활성화
-              blurOnSubmit
-              onSubmitEditing={() => handleSubmit()}
+              // 키보드를 유지한 채 엔터로 바로 전송
+              blurOnSubmit={false}
+              onSubmitEditing={handleSubmit}
             />
             <View style={styles.buttonWrapper} collapsable={false}>
               <TouchableOpacity
                 style={[
                   styles.commentSubmitButton,
-                  (!commentText.trim() ||
-                    addCommentMutation.isPending ||
-                    isSubmittingRef.current) &&
-                    styles.commentSubmitButtonDisabled,
+                  isSubmitDisabled && styles.commentSubmitButtonDisabled,
                 ]}
-                onPress={() => {
-                  if (
-                    !commentText.trim() ||
-                    addCommentMutation.isPending ||
-                    isSubmittingRef.current
-                  ) {
-                    return;
-                  }
-                  // 포커스를 유지한 채 바로 전송
+                onPressIn={() => {
+                  if (isSubmitDisabled) return;
                   handleSubmit();
                 }}
-                disabled={
-                  !commentText.trim() ||
-                  addCommentMutation.isPending ||
-                  isSubmittingRef.current
-                }
+                onPress={() => {
+                  if (isSubmitDisabled) return;
+                  handleSubmit();
+                }}
+                disabled={isSubmitDisabled}
                 activeOpacity={0.8}
                 hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
               >

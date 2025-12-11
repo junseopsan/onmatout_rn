@@ -483,11 +483,9 @@ export default function StudiosScreen() {
     return tags;
   };
 
-  // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
-  if (loading || !isAuthenticated) {
-    return (
-      <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>
-    );
+  // 초기 로딩 중일 때만 빈 화면 유지 (비로그인도 접근 가능)
+  if (loading) {
+    return <View style={styles.container} />;
   }
 
   return (
