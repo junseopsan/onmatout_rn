@@ -24,7 +24,8 @@ interface AsanaSearchModalProps {
 }
 
 const { width: screenWidth } = Dimensions.get("window");
-const cardWidth = (screenWidth - 80) / 2; // 더 작은 카드 너비로 왼쪽 정렬 강화
+// 컨테이너 패딩(24*2)과 카드 간격(12) 감안한 카드 너비
+const cardWidth = (screenWidth - 50 - 12) / 2;
 
 export default function AsanaSearchModal({
   visible,
@@ -43,70 +44,132 @@ export default function AsanaSearchModal({
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 검색 실행
-  const searchAsanas = async (
-    query: string,
-    categories: AsanaCategory[],
-    page: number = 1,
-    append: boolean = false
-  ) => {
-    if (!query.trim() && categories.length === 0) {
-      // 검색어와 카테고리가 모두 없으면 모든 아사나 로드
-      loadAllAsanas(page, append);
-      return;
-    }
-
-    try {
-      if (page === 1) {
-        setSearching(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      let result;
-
-      if (query.trim()) {
-        // 검색어가 있는 경우
-        result = await asanasAPI.searchAsanas(query);
-      } else {
-        // 카테고리만 선택된 경우
-        result = await asanasAPI.getAsanasWithPagination(page, 20, categories);
-      }
-
-      if (result.success && result.data) {
-        // 이미 선택된 아사나는 제외
-        const filteredResults = result.data.filter(
-          (asana) =>
-            !selectedAsanas.find((selected) => selected.id === asana.id)
-        );
-
-        if (append) {
-          setSearchResults((prev) => {
-            const combined = [...prev, ...filteredResults];
-            return removeDuplicates(combined);
-          });
+  // 모든 아사나 로드
+  const loadAllAsanas = React.useCallback(
+    async (page: number = 1, append: boolean = false) => {
+      try {
+        if (page === 1) {
+          setSearching(true);
         } else {
-          setSearchResults(removeDuplicates(filteredResults));
+          setLoadingMore(true);
         }
 
-        // 더 로드할 데이터가 있는지 확인
-        setHasMore(filteredResults.length === 20);
-      } else {
+        // 초기 로딩 시에는 더 많은 데이터를 가져옴
+        const limit = page === 1 ? 50 : 20;
+        const result = await asanasAPI.getAsanasWithPagination(page, limit);
+
+        if (result.success && result.data) {
+          // 이미 선택된 아사나는 제외
+          const filteredResults = result.data.filter(
+            (asana) =>
+              !selectedAsanas.find((selected) => selected.id === asana.id)
+          );
+
+          if (append) {
+            setSearchResults((prev) => {
+              const combined = [...prev, ...filteredResults];
+              return sortAsanasByName(removeDuplicates(combined));
+            });
+          } else {
+            setSearchResults(
+              sortAsanasByName(removeDuplicates(filteredResults))
+            );
+          }
+
+          // 더 로드할 데이터가 있는지 확인
+          setHasMore(filteredResults.length === limit);
+        } else {
+          if (!append) {
+            setSearchResults([]);
+          }
+          setHasMore(false);
+        }
+      } catch {
         if (!append) {
           setSearchResults([]);
         }
         setHasMore(false);
+      } finally {
+        setSearching(false);
+        setLoadingMore(false);
       }
-    } catch (error) {
-      if (!append) {
-        setSearchResults([]);
+    },
+    [selectedAsanas]
+  );
+
+  // 검색 실행
+  const searchAsanas = React.useCallback(
+    async (
+      query: string,
+      categories: AsanaCategory[],
+      page: number = 1,
+      append: boolean = false
+    ) => {
+      if (!query.trim() && categories.length === 0) {
+        // 검색어와 카테고리가 모두 없으면 모든 아사나 로드
+        loadAllAsanas(page, append);
+        return;
       }
-      setHasMore(false);
-    } finally {
-      setSearching(false);
-      setLoadingMore(false);
-    }
-  };
+
+      try {
+        if (page === 1) {
+          setSearching(true);
+        } else {
+          setLoadingMore(true);
+        }
+
+        let result;
+
+        if (query.trim()) {
+          // 검색어가 있는 경우
+          result = await asanasAPI.searchAsanas(query);
+        } else {
+          // 카테고리만 선택된 경우
+          result = await asanasAPI.getAsanasWithPagination(
+            page,
+            20,
+            categories
+          );
+        }
+
+        if (result.success && result.data) {
+          // 이미 선택된 아사나는 제외
+          const filteredResults = result.data.filter(
+            (asana) =>
+              !selectedAsanas.find((selected) => selected.id === asana.id)
+          );
+
+          if (append) {
+            setSearchResults((prev) => {
+              const combined = [...prev, ...filteredResults];
+              return sortAsanasByName(removeDuplicates(combined));
+            });
+          } else {
+            setSearchResults(
+              sortAsanasByName(removeDuplicates(filteredResults))
+            );
+          }
+
+          // 더 로드할 데이터가 있는지 확인
+          setHasMore(filteredResults.length === 20);
+        } else {
+          if (!append) {
+            setSearchResults([]);
+          }
+          setHasMore(false);
+        }
+      } catch {
+        if (!append) {
+          setSearchResults([]);
+        }
+        setHasMore(false);
+      } finally {
+        setSearching(false);
+        setLoadingMore(false);
+      }
+    },
+    [loadAllAsanas, selectedAsanas]
+  );
 
   // 모달이 열릴 때 모든 아사나 로드
   useEffect(() => {
@@ -115,7 +178,7 @@ export default function AsanaSearchModal({
       setHasMore(true);
       loadAllAsanas(1, false);
     }
-  }, [visible]);
+  }, [visible, loadAllAsanas]);
 
   // 검색어 변경 시 검색 실행
   useEffect(() => {
@@ -126,55 +189,7 @@ export default function AsanaSearchModal({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, selectedCategories]);
-
-  // 모든 아사나 로드
-  const loadAllAsanas = async (page: number = 1, append: boolean = false) => {
-    try {
-      if (page === 1) {
-        setSearching(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      // 초기 로딩 시에는 더 많은 데이터를 가져옴
-      const limit = page === 1 ? 50 : 20;
-      const result = await asanasAPI.getAsanasWithPagination(page, limit);
-
-      if (result.success && result.data) {
-        // 이미 선택된 아사나는 제외
-        const filteredResults = result.data.filter(
-          (asana) =>
-            !selectedAsanas.find((selected) => selected.id === asana.id)
-        );
-
-        if (append) {
-          setSearchResults((prev) => {
-            const combined = [...prev, ...filteredResults];
-            return removeDuplicates(combined);
-          });
-        } else {
-          setSearchResults(removeDuplicates(filteredResults));
-        }
-
-        // 더 로드할 데이터가 있는지 확인
-        setHasMore(filteredResults.length === limit);
-      } else {
-        if (!append) {
-          setSearchResults([]);
-        }
-        setHasMore(false);
-      }
-    } catch (error) {
-      if (!append) {
-        setSearchResults([]);
-      }
-      setHasMore(false);
-    } finally {
-      setSearching(false);
-      setLoadingMore(false);
-    }
-  };
+  }, [searchQuery, selectedCategories, searchAsanas]);
 
   // 카테고리 토글
   const toggleCategory = (category: AsanaCategory) => {
@@ -224,6 +239,19 @@ export default function AsanaSearchModal({
     });
   };
 
+  // 가나다(한글 우선) 정렬
+  const sortAsanasByName = (asanas: Asana[]) => {
+    return [...asanas].sort((a, b) => {
+      const aKr = (a?.sanskrit_name_kr || "").trim();
+      const bKr = (b?.sanskrit_name_kr || "").trim();
+      const primary = aKr.localeCompare(bKr, "ko", { sensitivity: "base" });
+      if (primary !== 0) return primary;
+      const aEn = (a?.sanskrit_name_en || "").trim();
+      const bEn = (b?.sanskrit_name_en || "").trim();
+      return aEn.localeCompare(bEn, "en", { sensitivity: "base" });
+    });
+  };
+
   // 선택 완료
   const handleComplete = () => {
     onSelect(tempSelectedAsanas);
@@ -232,27 +260,6 @@ export default function AsanaSearchModal({
     setSelectedCategories([]);
     setSearchResults([]);
     onClose();
-  };
-
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
-
-  // 카테고리 정보 가져오기
-  const getCategoryInfo = (categoryName: string) => {
-    const category = CATEGORIES[categoryName as AsanaCategory];
-    if (category) {
-      return {
-        label: category.label,
-        color: category.color,
-      };
-    }
-    return {
-      label: "기타",
-      color: COLORS.textSecondary,
-    };
   };
 
   // 카테고리 버튼 렌더링
@@ -505,11 +512,11 @@ const styles = StyleSheet.create({
   },
   asanaList: {
     paddingVertical: 24,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   },
   asanaRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     marginBottom: 10,
     gap: 12, // 카드 사이 간격
   },

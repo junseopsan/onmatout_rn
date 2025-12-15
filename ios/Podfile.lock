@@ -89,6 +89,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - ExpoSplashScreen (0.30.10):
+    - ExpoModulesCore
   - ExpoSymbols (0.4.5):
     - ExpoModulesCore
   - ExpoSystemUI (5.0.11):
@@ -1968,10 +1970,10 @@ PODS:
     - Yoga
   - RNSVG (15.11.2):
     - React-Core
-  - SDWebImage (5.21.2):
-    - SDWebImage/Core (= 5.21.2)
-  - SDWebImage/Core (5.21.2)
-  - SDWebImageAVIFCoder (0.11.0):
+  - SDWebImage (5.21.5):
+    - SDWebImage/Core (= 5.21.5)
+  - SDWebImage/Core (5.21.5)
+  - SDWebImageAVIFCoder (0.11.1):
     - libavif/core (>= 0.11.0)
     - SDWebImage (~> 5.10)
   - SDWebImageSVGCoder (1.7.0):
@@ -2002,6 +2004,7 @@ DEPENDENCIES:
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
   - ExpoLocation (from `../node_modules/expo-location/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
+  - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - ExpoWebBrowser (from `../node_modules/expo-web-browser/ios`)
@@ -2133,6 +2136,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-location/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
+  ExpoSplashScreen:
+    :path: "../node_modules/expo-splash-screen/ios"
   ExpoSymbols:
     :path: "../node_modules/expo-symbols/ios"
   ExpoSystemUI:
@@ -2311,6 +2316,7 @@ SPEC CHECKSUMS:
   ExpoLinking: d5c183998ca6ada66ff45e407e0f965b398a8902
   ExpoLocation: a43df2ff15f2fae9504b23a77060e7cd16b3e326
   ExpoModulesCore: f55e7872391bae03ee5547c83152c81750d89508
+  ExpoSplashScreen: 1c22c5d37647106e42d4ae1582bb6d0dda3b2385
   ExpoSymbols: c5612a90fb9179cdaebcd19bea9d8c69e5d3b859
   ExpoSystemUI: 433a971503b99020318518ed30a58204288bab2d
   ExpoWebBrowser: dc39a88485f007e61a3dff05d6a75f22ab4a2e92
@@ -2391,13 +2397,13 @@ SPEC CHECKSUMS:
   RNReanimated: efe63b33e23e1b5b06e5e087779eceeee742452b
   RNScreens: 62fdbbc4c984150b34c36f095c6ba2510ca9b6a5
   RNSVG: ab84f2de7dd4f2c86d01825b8a65e0ef712fc36b
-  SDWebImage: 9f177d83116802728e122410fb25ad88f5c7608a
-  SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
+  SDWebImage: e9c98383c7572d713c1a0d7dd2783b10599b9838
+  SDWebImageAVIFCoder: afe194a084e851f70228e4be35ef651df0fc5c57
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: adb397651e1c00672c12e9495babca70777e411e
 
-PODFILE CHECKSUM: 9f3586ae7dc7e25b0b0468d68f3790a3bdb871dc
+PODFILE CHECKSUM: ac059880b0d9fa7892ab062b1715ef373275cc9d
 
 COCOAPODS: 1.16.2

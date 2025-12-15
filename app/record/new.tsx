@@ -1,12 +1,10 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
-import { Image } from "expo-image";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,6 +15,7 @@ import {
   View,
 } from "react-native";
 import AsanaSearchModal from "../../components/AsanaSearchModal";
+import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
 import { AlertDialog } from "../../components/ui/AlertDialog";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
@@ -136,10 +135,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         if (onClose) {
           // 모달로 사용되는 경우: 모달 닫고 탭 네비게이터의 홈 탭으로 이동
           onClose();
-          navigation.navigate(
-            "TabNavigator" as never,
-            { screen: "Dashboard" } as never
-          );
+          navigation.navigate("TabNavigator");
         } else {
           // 스택 화면으로 사용되는 경우: 기존 동작 유지
           navigation.reset({
@@ -152,60 +148,11 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
-    } catch (error) {
+    } catch {
       Alert.alert("오류", "기록 저장 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
-  };
-
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
-
-  // 선택된 아사나 카드 렌더링
-  const renderSelectedAsanaCard = ({
-    item,
-    index,
-  }: {
-    item: Asana;
-    index: number;
-  }) => {
-    return (
-      <View style={styles.selectedAsanaCard}>
-        <View style={styles.selectedAsanaImageContainer}>
-          {item.image_number ? (
-            <Image
-              source={{ uri: getImageUrl(item.image_number) }}
-              style={styles.selectedAsanaImage}
-              contentFit="contain"
-              placeholder="🖼️"
-              placeholderContentFit="contain"
-            />
-          ) : (
-            <View style={styles.selectedAsanaImagePlaceholder}>
-              <Text style={styles.selectedAsanaImagePlaceholderText}>📝</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.selectedAsanaInfo}>
-          <Text style={styles.selectedAsanaName} numberOfLines={1}>
-            {item.sanskrit_name_kr}
-          </Text>
-          <Text style={styles.selectedAsanaNameEn} numberOfLines={1}>
-            {item.sanskrit_name_en}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => handleAsanaRemove(item.id)}
-        >
-          <Text style={styles.removeButtonText}>×</Text>
-        </TouchableOpacity>
-      </View>
-    );
   };
 
   return (
@@ -240,14 +187,9 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           {selectedAsanas.length > 0 && (
             <View style={styles.selectedAsanas}>
               <Text style={styles.selectedAsanasTitle}>수련한 아사나</Text>
-              <FlatList
-                data={selectedAsanas}
-                renderItem={renderSelectedAsanaCard}
-                keyExtractor={(item) => item.id}
-                numColumns={2}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.selectedAsanaRow}
-                contentContainerStyle={styles.selectedAsanaList}
+              <SelectedAsanaList
+                asanas={selectedAsanas}
+                onRemove={handleAsanaRemove}
               />
             </View>
           )}
@@ -468,89 +410,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.text,
     marginBottom: 12,
-  },
-  selectedAsanaList: {
-    paddingBottom: 8,
-  },
-  selectedAsanaRow: {
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  selectedAsanaCard: {
-    width: "48%",
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    alignItems: "center",
-    position: "relative",
-    overflow: "hidden",
-  },
-  selectedAsanaImageContainer: {
-    width: "100%",
-    height: 60,
-    borderRadius: 6,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    overflow: "hidden",
-    paddingVertical: 8,
-  },
-  selectedAsanaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  selectedAsanaImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 6,
-    backgroundColor: "#8A8A8A",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  selectedAsanaImagePlaceholderText: {
-    fontSize: 20,
-  },
-  selectedAsanaInfo: {
-    alignItems: "center",
-    width: "100%",
-  },
-  selectedAsanaNumber: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 2,
-  },
-  selectedAsanaName: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 2,
-  },
-  selectedAsanaNameEn: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-  removeButton: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.error,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  removeButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "bold",
   },
   memoInput: {
     backgroundColor: COLORS.background,

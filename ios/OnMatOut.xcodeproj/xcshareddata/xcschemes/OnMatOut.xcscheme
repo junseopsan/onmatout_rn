@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
                BuildableName = "OnMatOut.app"
-               BlueprintName = "onmatoutrn"
-               ReferencedContainer = "container:onmatoutrn.xcodeproj">
+               BlueprintName = "OnMatOut"
+               ReferencedContainer = "container:OnMatOut.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "onmatoutrnTests.xctest"
-               BlueprintName = "onmatoutrnTests"
-               ReferencedContainer = "container:onmatoutrn.xcodeproj">
+               BuildableName = "OnMatOutTests.xctest"
+               BlueprintName = "OnMatOutTests"
+               ReferencedContainer = "container:OnMatOut.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -56,17 +56,10 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
             BuildableName = "OnMatOut.app"
-            BlueprintName = "onmatoutrn"
-            ReferencedContainer = "container:onmatoutrn.xcodeproj">
+            BlueprintName = "OnMatOut"
+            ReferencedContainer = "container:OnMatOut.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "RCT_METRO_PORT"
-            value = "8081"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -80,8 +73,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
             BuildableName = "OnMatOut.app"
-            BlueprintName = "onmatoutrn"
-            ReferencedContainer = "container:onmatoutrn.xcodeproj">
+            BlueprintName = "OnMatOut"
+            ReferencedContainer = "container:OnMatOut.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

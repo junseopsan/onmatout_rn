@@ -85,8 +85,24 @@ export default function AsanasScreen() {
     favoriteAsanasLength: favoriteAsanas.length,
   });
 
+  const sortAsanasByName = useCallback((list: any[]) => {
+    return [...(list || [])].sort((a, b) => {
+      const aName = (a?.sanskrit_name_kr || "").trim();
+      const bName = (b?.sanskrit_name_kr || "").trim();
+      const primary = aName.localeCompare(bName, "ko", { sensitivity: "base" });
+      if (primary !== 0) return primary;
+      const aEn = (a?.sanskrit_name_en || "").trim();
+      const bEn = (b?.sanskrit_name_en || "").trim();
+      return aEn.localeCompare(bEn, "en", { sensitivity: "base" });
+    });
+  }, []);
+
   const { data: searchResults = [], isLoading: isSearching } =
     useAsanaSearch(searchQuery);
+  const sortedSearchResults = useMemo(
+    () => sortAsanasByName(searchResults),
+    [searchResults, sortAsanasByName]
+  );
 
   // 카테고리 필터가 선택되었을 때는 전체 데이터를 가져오기 위해 useAllAsanasForFeed 사용
   const { data: allAsanasForCategory = [], isLoading: isLoadingAllAsanas } =
@@ -97,13 +113,14 @@ export default function AsanasScreen() {
   const allAsanas = useMemo(() => {
     // 카테고리 필터가 선택되었을 때는 전체 데이터 사용
     if (selectedCategories.length > 0) {
-      return allAsanasForCategory;
+      return sortAsanasByName(allAsanasForCategory);
     }
 
     // 카테고리 필터가 없을 때는 페이지네이션 데이터 사용
     if (!asanasData?.pages) return [];
-    return asanasData.pages.flatMap((page: any) => page.data);
-  }, [asanasData, allAsanasForCategory, selectedCategories.length]);
+    const flat = asanasData.pages.flatMap((page: any) => page.data);
+    return sortAsanasByName(flat);
+  }, [asanasData, allAsanasForCategory, selectedCategories.length, sortAsanasByName]);
 
   // 카테고리별 및 즐겨찾기 필터링된 아사나
   const filteredAsanas = useMemo(() => {
@@ -152,8 +169,14 @@ export default function AsanasScreen() {
       }
     }
 
-    return filtered;
-  }, [allAsanas, favoriteAsanaIds, selectedCategories, showFavoritesOnly]);
+    return sortAsanasByName(filtered);
+  }, [
+    allAsanas,
+    favoriteAsanaIds,
+    selectedCategories,
+    showFavoritesOnly,
+    sortAsanasByName,
+  ]);
 
   // 화면이 포커스될 때마다 데이터 새로고침 (상세 화면에서 돌아온 경우 제외)
   useFocusEffect(
@@ -237,7 +260,7 @@ export default function AsanasScreen() {
   // 표시할 아사나 데이터 결정
   const getDisplayAsanas = () => {
     if (searchQuery.trim() !== "") {
-      return searchResults;
+      return sortedSearchResults;
     }
     return filteredAsanas;
   };

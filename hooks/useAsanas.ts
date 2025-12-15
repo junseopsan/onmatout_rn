@@ -93,6 +93,13 @@ export const useAllAsanasForFeed = () => {
 };
 
 // 아사나 검색
+const normalizeText = (text: string | undefined | null) =>
+  (text ?? "")
+    .toString()
+    .normalize("NFC")
+    .toLowerCase()
+    .trim();
+
 export const useAsanaSearch = (query: string) => {
   return useQuery({
     queryKey: ["asanaSearch", query],
@@ -104,14 +111,16 @@ export const useAsanaSearch = (query: string) => {
         );
       }
 
-      if (!query.trim()) {
+      // 한글 조합형/분해형 혼용을 대비해 NFC로 정규화한 후 비교
+      const normalizedQuery = normalizeText(query);
+      if (!normalizedQuery) {
         return [];
       }
 
-      const searchTerms = query.toLowerCase().trim().split(/\s+/);
+      const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean);
       return result.data.filter((asana) => {
-        const krName = asana.sanskrit_name_kr.toLowerCase().trim();
-        const enName = asana.sanskrit_name_en.toLowerCase().trim();
+        const krName = normalizeText(asana.sanskrit_name_kr);
+        const enName = normalizeText(asana.sanskrit_name_en);
 
         const krMatch = searchTerms.every((term) => krName.includes(term));
         const enMatch = searchTerms.every((term) => enName.includes(term));

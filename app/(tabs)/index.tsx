@@ -33,6 +33,7 @@ export default function DashboardScreen() {
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [feedMode, setFeedMode] = useState<"latest" | "explore">("latest");
   const [exploreOffset, setExploreOffset] = useState(0);
+  const tabRefreshInProgress = useRef(false);
 
   // React Query로 피드 데이터 가져오기 (무한 스크롤)
   const {
@@ -145,17 +146,41 @@ export default function DashboardScreen() {
     setExploreOffset((prev) => prev + 5);
 
     // 데이터 새로고침 (새로고침 아이콘 표시)
-    if (isAuthenticated) {
-      console.log("피드: 탭 재클릭 - 최상단 이동 및 새로고침");
-      setIsManualRefreshing(true);
-      refetch().finally(() => {
-        // refetch 완료 후 약간의 지연을 두어 새로고침 아이콘이 보이도록 함
+    if (!isAuthenticated) {
+      return;
+    }
+
+    // 이미 새로고침 중이면 중복 실행 방지
+    if (
+      tabRefreshInProgress.current ||
+      isRefetching ||
+      isManualRefreshing ||
+      isPullRefreshing
+    ) {
+      return;
+    }
+
+    console.log("피드: 탭 재클릭 - 최상단 이동 및 새로고침");
+    tabRefreshInProgress.current = true;
+    setIsManualRefreshing(true);
+
+    refetch()
+      .catch(() => {})
+      .finally(() => {
+        tabRefreshInProgress.current = false;
         setTimeout(() => {
           setIsManualRefreshing(false);
         }, 500);
       });
-    }
-  }, [isAuthenticated, refetch, headerTranslateY, headerOpacity]);
+  }, [
+    isAuthenticated,
+    refetch,
+    headerTranslateY,
+    headerOpacity,
+    isRefetching,
+    isManualRefreshing,
+    isPullRefreshing,
+  ]);
 
   // Pull-to-refresh 핸들러
   const handleRefresh = useCallback(() => {
