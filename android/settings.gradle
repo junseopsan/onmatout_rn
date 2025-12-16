@@ -7,9 +7,16 @@ pluginManagement {
       if (line.startsWith("NODE_BINARY=")) {
         def nodePath = line.substring("NODE_BINARY=".length()).trim()
         if (nodePath) {
-          nodeExecutable = nodePath
-          // 환경 변수로 설정 (플러그인에서도 사용할 수 있도록)
-          System.setProperty("NODE_BINARY", nodePath)
+          // 경로가 존재하는지 확인 (EAS Build 환경에서는 경로가 다를 수 있음)
+          def nodeFile = new File(nodePath)
+          if (nodeFile.exists() && nodeFile.canExecute()) {
+            nodeExecutable = nodePath
+            // 환경 변수로 설정 (플러그인에서도 사용할 수 있도록)
+            System.setProperty("NODE_BINARY", nodePath)
+          } else {
+            // 경로가 존재하지 않으면 기본값 "node" 사용 (PATH에서 찾음)
+            nodeExecutable = "node"
+          }
         }
       }
     }
