@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Dimensions,
@@ -14,6 +14,7 @@ import { CATEGORIES } from "../constants/categories";
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { AsanaCategory } from "../types/asana";
 import { AsanaCard } from "./AsanaCard";
+import { filterAsanasByQuery, sortAsanasByName } from "../hooks/useAsanas";
 import { TamaguiInputComponent } from "./ui/TamaguiInput";
 
 interface AsanaSearchModalProps {
@@ -34,6 +35,7 @@ export default function AsanaSearchModal({
   selectedAsanas,
 }: AsanaSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [allAsanas, setAllAsanas] = useState<Asana[]>([]);
   const [searchResults, setSearchResults] = useState<Asana[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<AsanaCategory[]>(
     []
@@ -41,152 +43,74 @@ export default function AsanaSearchModal({
   const [tempSelectedAsanas, setTempSelectedAsanas] = useState<Asana[]>([]);
   const [searching, setSearching] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 모든 아사나 로드
-  const loadAllAsanas = React.useCallback(
-    async (page: number = 1, append: boolean = false) => {
-      try {
-        if (page === 1) {
-          setSearching(true);
-        } else {
-          setLoadingMore(true);
-        }
-
-        // 초기 로딩 시에는 더 많은 데이터를 가져옴
-        const limit = page === 1 ? 50 : 20;
-        const result = await asanasAPI.getAsanasWithPagination(page, limit);
-
-        if (result.success && result.data) {
-          // 이미 선택된 아사나는 제외
-          const filteredResults = result.data.filter(
-            (asana) =>
-              !selectedAsanas.find((selected) => selected.id === asana.id)
-          );
-
-          if (append) {
-            setSearchResults((prev) => {
-              const combined = [...prev, ...filteredResults];
-              return sortAsanasByName(removeDuplicates(combined));
-            });
-          } else {
-            setSearchResults(
-              sortAsanasByName(removeDuplicates(filteredResults))
-            );
-          }
-
-          // 더 로드할 데이터가 있는지 확인
-          setHasMore(filteredResults.length === limit);
-        } else {
-          if (!append) {
-            setSearchResults([]);
-          }
-          setHasMore(false);
-        }
-      } catch {
-        if (!append) {
-          setSearchResults([]);
-        }
+  // 모든 아사나를 한 번 로드해 로컬 검색(아사나 탭과 동일 정규화)으로 사용
+  const loadAllAsanas = React.useCallback(async () => {
+    try {
+      setSearching(true);
+      const result = await asanasAPI.getAllAsanas();
+      if (result.success && result.data) {
+        const unique = removeDuplicates(result.data);
+        setAllAsanas(unique);
+        const initial = unique.filter(
+          (asana) => !selectedAsanas.find((selected) => selected.id === asana.id)
+        );
+        setSearchResults(sortAsanasByName(initial));
         setHasMore(false);
-      } finally {
-        setSearching(false);
-        setLoadingMore(false);
+      } else {
+        setSearchResults([]);
+        setHasMore(false);
       }
-    },
-    [selectedAsanas]
-  );
+    } catch {
+      setSearchResults([]);
+      setHasMore(false);
+    } finally {
+      setSearching(false);
+      setLoadingMore(false);
+    }
+  }, [selectedAsanas]);
 
   // 검색 실행
+  // 검색 실행 (로컬 전체 데이터 기반)
   const searchAsanas = React.useCallback(
-    async (
-      query: string,
-      categories: AsanaCategory[],
-      page: number = 1,
-      append: boolean = false
-    ) => {
-      if (!query.trim() && categories.length === 0) {
-        // 검색어와 카테고리가 모두 없으면 모든 아사나 로드
-        loadAllAsanas(page, append);
-        return;
-      }
+    async (query: string, categories: AsanaCategory[]) => {
+      const base =
+        categories.length > 0
+          ? allAsanas.filter((asana) =>
+              categories.includes(asana.category_name_en as AsanaCategory)
+            )
+          : allAsanas;
 
-      try {
-        if (page === 1) {
-          setSearching(true);
-        } else {
-          setLoadingMore(true);
-        }
+      const filteredByQuery = query.trim()
+        ? filterAsanasByQuery(base, query)
+        : base;
 
-        let result;
+      const withoutSelected = filteredByQuery.filter(
+        (asana) => !selectedAsanas.find((s) => s.id === asana.id)
+      );
 
-        if (query.trim()) {
-          // 검색어가 있는 경우
-          result = await asanasAPI.searchAsanas(query);
-        } else {
-          // 카테고리만 선택된 경우
-          result = await asanasAPI.getAsanasWithPagination(
-            page,
-            20,
-            categories
-          );
-        }
-
-        if (result.success && result.data) {
-          // 이미 선택된 아사나는 제외
-          const filteredResults = result.data.filter(
-            (asana) =>
-              !selectedAsanas.find((selected) => selected.id === asana.id)
-          );
-
-          if (append) {
-            setSearchResults((prev) => {
-              const combined = [...prev, ...filteredResults];
-              return sortAsanasByName(removeDuplicates(combined));
-            });
-          } else {
-            setSearchResults(
-              sortAsanasByName(removeDuplicates(filteredResults))
-            );
-          }
-
-          // 더 로드할 데이터가 있는지 확인
-          setHasMore(filteredResults.length === 20);
-        } else {
-          if (!append) {
-            setSearchResults([]);
-          }
-          setHasMore(false);
-        }
-      } catch {
-        if (!append) {
-          setSearchResults([]);
-        }
-        setHasMore(false);
-      } finally {
-        setSearching(false);
-        setLoadingMore(false);
-      }
+      setSearchResults(sortAsanasByName(removeDuplicates(withoutSelected)));
+      setHasMore(false);
     },
-    [loadAllAsanas, selectedAsanas]
+    [allAsanas, selectedAsanas]
   );
 
   // 모달이 열릴 때 모든 아사나 로드
   useEffect(() => {
     if (visible) {
       setCurrentPage(1);
-      setHasMore(true);
-      loadAllAsanas(1, false);
+      setHasMore(false);
+      loadAllAsanas();
     }
   }, [visible, loadAllAsanas]);
 
   // 검색어 변경 시 검색 실행
   useEffect(() => {
-    setCurrentPage(1);
-    setHasMore(true);
     const timeoutId = setTimeout(() => {
-      searchAsanas(searchQuery, selectedCategories, 1, false);
-    }, 300);
+      searchAsanas(searchQuery, selectedCategories);
+    }, 200);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, selectedCategories, searchAsanas]);
@@ -220,14 +144,8 @@ export default function AsanaSearchModal({
     });
   };
 
-  // 무한스크롤을 위한 추가 데이터 로드
-  const loadMoreAsanas = () => {
-    if (!loadingMore && hasMore) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      searchAsanas(searchQuery, selectedCategories, nextPage, true);
-    }
-  };
+  // 무한스크롤을 위한 추가 데이터 로드 (로컬 검색이므로 없음)
+  const loadMoreAsanas = () => {};
 
   // 중복 제거 함수
   const removeDuplicates = (asanas: Asana[]) => {

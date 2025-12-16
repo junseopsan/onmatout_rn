@@ -440,7 +440,7 @@ export default function RecordDetailModal({
               // 수정 모드: 기록 추가 화면과 동일한 UI
               <>
                 <Text style={styles.sectionSubtitle}>
-                  수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
+                  수련 중느낀 상태를 선택해주세요 (다중 선택 가능)
                 </Text>
                 <View style={styles.statesContainer}>
                   {STATES.map((state) => (

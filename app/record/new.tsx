@@ -229,7 +229,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
             ))}
           </View>
           <Text style={styles.stateSubtitleText}>
-            수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
+            수련 중느낀 상태를 선택해주세요 (다중 선택 가능)
           </Text>
         </View>
 

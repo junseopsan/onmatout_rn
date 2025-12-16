@@ -93,12 +93,40 @@ export const useAllAsanasForFeed = () => {
 };
 
 // 아사나 검색
-const normalizeText = (text: string | undefined | null) =>
+export const normalizeText = (text: string | undefined | null) =>
   (text ?? "")
     .toString()
     .normalize("NFC")
     .toLowerCase()
     .trim();
+
+export const sortAsanasByName = (list: any[]) => {
+  return [...(list || [])].sort((a, b) => {
+    const aKr = normalizeText(a?.sanskrit_name_kr);
+    const bKr = normalizeText(b?.sanskrit_name_kr);
+    const primary = aKr.localeCompare(bKr, "ko", { sensitivity: "base" });
+    if (primary !== 0) return primary;
+    const aEn = normalizeText(a?.sanskrit_name_en);
+    const bEn = normalizeText(b?.sanskrit_name_en);
+    return aEn.localeCompare(bEn, "en", { sensitivity: "base" });
+  });
+};
+
+export const filterAsanasByQuery = (list: any[], query: string) => {
+  const normalizedQuery = normalizeText(query);
+  if (!normalizedQuery) return list ?? [];
+
+  const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean);
+  return (list ?? []).filter((asana) => {
+    const krName = normalizeText(asana.sanskrit_name_kr);
+    const enName = normalizeText(asana.sanskrit_name_en);
+
+    const krMatch = searchTerms.every((term) => krName.includes(term));
+    const enMatch = searchTerms.every((term) => enName.includes(term));
+
+    return krMatch || enMatch;
+  });
+};
 
 export const useAsanaSearch = (query: string) => {
   return useQuery({

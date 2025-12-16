@@ -1,6 +1,5 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -249,7 +248,7 @@ export default function EditRecordScreen() {
             ))}
           </View>
           <Text style={styles.stateSubtitleText}>
-            수련 후 느낀 상태를 선택해주세요 (다중 선택 가능)
+            수련 중느낀 상태를 선택해주세요 (다중 선택 가능)
           </Text>
         </View>
 

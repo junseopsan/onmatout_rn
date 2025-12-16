@@ -9,6 +9,7 @@ import React, { useEffect } from "react";
 import { AppState } from "react-native";
 import AppNavigator from "../navigation";
 import { AppThemeProvider } from "./_layout";
+import * as Network from "expo-network";
 
 // QueryClient 설정
 const queryClient = new QueryClient({
@@ -40,6 +41,24 @@ const useReactQueryFocusManager = () => {
 export default function App() {
   console.log("=== App 컴포넌트 렌더링 ===");
   useReactQueryFocusManager();
+
+  // 네트워크 재연결 시 포커스 이벤트를 강제로 발생시켜 refetch 유도
+  useEffect(() => {
+    let subscription: Network.Subscription | null = null;
+    const setup = async () => {
+      subscription = await Network.addNetworkStateListener((state) => {
+        if (state.isConnected && state.isInternetReachable !== false) {
+          focusManager.setFocused(true);
+        }
+      });
+    };
+    setup();
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

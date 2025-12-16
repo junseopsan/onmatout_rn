@@ -18,11 +18,14 @@
         },
         "NSUserNotificationUsageDescription": "요가 수련 리마인더와 중요 알림을 받기 위해 알림 권한이 필요합니다.",
         "NSLocationWhenInUseUsageDescription": "주변 요가원을 찾기 위해 위치 정보가 필요합니다.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "config": {
         "googleMapsApiKey": "AIzaSyD2BOFCuW4iHtfQGd2CWdcHVNt8Hi1dLVM"
-      }
+      },
+      "appleTeamId": "C4BKFBL34U"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +36,10 @@
       "package": "com.onmatout.app",
       "versionCode": 1,
       "privacyPolicyUrl": "https://www.onmatout.com/privacy-policy",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "config": {
         "googleMapsApiKey": "AIzaSyD2BOFCuW4iHtfQGd2CWdcHVNt8Hi1dLVM"
       }
@@ -45,9 +51,7 @@
     "extra": {
       "eas": {
         "projectId": "6b14beae-4cd3-4575-bfbd-403081113b72"
-      },
-      "supabaseUrl": "your_supabase_url_here",
-      "supabaseAnonKey": "your_supabase_anon_key_here"
+      }
     },
     "expo": {
       "developmentClient": {
