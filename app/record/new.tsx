@@ -132,19 +132,16 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
         queryClient.invalidateQueries({ queryKey: ["allRecords"] });
 
+        // 저장 후 홈 탭(Dashboard)으로 이동 (모달/스택 공통)
         if (onClose) {
-          // 모달로 사용되는 경우: 모달 닫고 탭 네비게이터의 홈 탭으로 이동
           onClose();
-          navigation.navigate("TabNavigator");
-        } else {
-          // 스택 화면으로 사용되는 경우: 기존 동작 유지
-          navigation.reset({
-            index: 0,
-            routes: [
-              { name: "TabNavigator", params: { screen: "Dashboard" } as any },
-            ],
-          });
         }
+        navigation.reset({
+          index: 0,
+          routes: [
+            { name: "TabNavigator", params: { screen: "Dashboard" } as any },
+          ],
+        });
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
