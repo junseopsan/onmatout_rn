@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Application from "expo-application";
+import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
 import { Linking, Platform, Text, TouchableOpacity, View } from "react-native";
@@ -38,6 +39,12 @@ export default function AppContainer() {
 
   // 알림 권한 요청 함수
   const requestNotificationPermissions = async () => {
+    // Expo Go에서는 알림 기능 사용 불가 (SDK 53+)
+    if (Constants.executionEnvironment === "storeClient") {
+      console.log("Expo Go에서는 알림 기능을 사용할 수 없습니다.");
+      return;
+    }
+
     try {
       // Android 채널 설정
       if (Platform.OS === "android") {
@@ -62,7 +69,9 @@ export default function AppContainer() {
         }
       } else {
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log("알림 권한 요청 실패:", error);
+    }
   };
 
   // 앱 시작 시 알림 권한 요청

@@ -48,8 +48,30 @@ export default function DashboardScreen() {
     isRefetching,
   } = useFeedRecords(10); // 페이지당 10개
 
-  // 모든 페이지의 데이터를 평면화
-  const feedRecords = feedData?.pages?.flatMap((page: any) => page.data) || [];
+  React.useEffect(() => {
+    // API 호출 결과 로깅 (성공/실패)
+    if (feedData) {
+      const total =
+        feedData.pages?.reduce(
+          (acc: number, page: any) => acc + (page?.data?.length || 0),
+          0
+        ) || 0;
+      console.log("[홈탭] feedRecords 로드 완료", {
+        pages: feedData.pages?.length || 0,
+        totalItems: total,
+        hasNextPage,
+      });
+    }
+    if (isError && error) {
+      console.log("[홈탭] feedRecords 에러", error.message);
+    }
+  }, [feedData, hasNextPage, isError, error]);
+
+  // 모든 페이지의 데이터를 평면화 (useMemo로 dependency warning 해소)
+  const feedRecords = React.useMemo(
+    () => feedData?.pages?.flatMap((page: any) => page.data) || [],
+    [feedData]
+  );
 
   // 표시용 피드 데이터 (탭 재클릭 시 탐색 모드 정렬)
   const displayRecords = React.useMemo(() => {
@@ -204,6 +226,26 @@ export default function DashboardScreen() {
   // 새로고침 상태 (pull-to-refresh 또는 탭 클릭)
   // React Query의 isRefetching에만 의존하지 않고, 로컬 상태로 안전하게 제어
   const isRefreshing = isPullRefreshing || isManualRefreshing;
+
+  // refetch 종료 감지 시 로컬 새로고침 상태 정리 + 안전 타임아웃
+  React.useEffect(() => {
+    // isRefetching이 false로 내려오면 즉시 로컬 플래그 해제
+    if (!isRefetching && (isPullRefreshing || isManualRefreshing)) {
+      setIsPullRefreshing(false);
+      setIsManualRefreshing(false);
+      tabRefreshInProgress.current = false;
+    }
+
+    // 혹시 네트워크/포그라운드 이슈로 resolve가 지연될 때 10초 후 강제 해제
+    if (isPullRefreshing || isManualRefreshing) {
+      const timer = setTimeout(() => {
+        setIsPullRefreshing(false);
+        setIsManualRefreshing(false);
+        tabRefreshInProgress.current = false;
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isRefetching, isPullRefreshing, isManualRefreshing]);
 
   const navigation = useNavigation();
 

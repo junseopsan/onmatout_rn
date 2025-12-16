@@ -24,7 +24,18 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   if (!loaded) {
-    return null;
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: COLORS.background,
+        }}
+      >
+        <Text style={{ color: COLORS.text, fontSize: 16 }}>앱 로딩 중...</Text>
+      </View>
+    );
   }
 
   return (

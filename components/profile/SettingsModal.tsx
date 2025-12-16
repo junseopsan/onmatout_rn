@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
@@ -42,6 +43,12 @@ export default function SettingsModal({
   // 알림 권한 상태 확인
   useEffect(() => {
     const checkNotificationPermission = async () => {
+      // Expo Go에서는 알림 기능 사용 불가 (SDK 53+)
+      if (Constants.executionEnvironment === "storeClient") {
+        setNotificationPermissionStatus("denied");
+        return;
+      }
+
       try {
         const { status } = await Notifications.getPermissionsAsync();
         setNotificationPermissionStatus(status);
@@ -77,37 +84,50 @@ export default function SettingsModal({
     loadUserProfile();
   }, [user, getUserProfile, visible]);
 
-
   // 알림 권한 요청
   const requestNotificationPermissions = async () => {
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#FF231F7C",
-      });
-    }
-
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== "granted") {
+    // Expo Go에서는 알림 기능 사용 불가 (SDK 53+)
+    if (Constants.executionEnvironment === "storeClient") {
       Alert.alert(
-        "알림 권한 필요",
-        "알림을 받으려면 알림 권한을 허용해주세요.",
-        [{ text: "설정으로 이동", onPress: () => {} }]
+        "알림 기능 사용 불가",
+        "Expo Go에서는 알림 기능을 사용할 수 없습니다. 개발 빌드를 사용해주세요."
       );
       return false;
     }
 
-    return true;
+    try {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+      }
+
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
+        Alert.alert(
+          "알림 권한 필요",
+          "알림을 받으려면 알림 권한을 허용해주세요.",
+          [{ text: "설정으로 이동", onPress: () => {} }]
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.log("알림 권한 요청 실패:", error);
+      return false;
+    }
   };
 
   // 푸시 알림 토큰 가져오기
