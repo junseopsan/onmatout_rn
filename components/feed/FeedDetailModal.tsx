@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
 import {
-  Dimensions,
   Modal,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,7 @@ import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { Asana } from "../../lib/api/asanas";
 import { Record } from "../../types/record";
+import AsanaDisplayCard from "../AsanaDisplayCard";
 
 interface FeedDetailModalProps {
   visible: boolean;
@@ -21,8 +21,6 @@ interface FeedDetailModalProps {
   asanas: Asana[];
   onClose: () => void;
 }
-
-const { width } = Dimensions.get("window");
 
 export default function FeedDetailModal({
   visible,
@@ -35,13 +33,6 @@ export default function FeedDetailModal({
   // 아사나 정보 가져오기
   const getAsanaInfo = (asanaId: string) => {
     return asanas.find((asana) => asana.id === asanaId);
-  };
-
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    if (!imageNumber) return null;
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
   };
 
   // 날짜 포맷팅
@@ -132,39 +123,7 @@ export default function FeedDetailModal({
                   const asana = getAsanaInfo(asanaId);
                   if (!asana) return null;
 
-                  const imageUrl = asana.image_number
-                    ? getImageUrl(asana.image_number)
-                    : null;
-
-                  return (
-                    <View key={asanaId} style={styles.asanaCard}>
-                      <View style={styles.asanaImageContainer}>
-                        {imageUrl ? (
-                          <Image
-                            source={{ uri: imageUrl }}
-                            style={styles.asanaImage}
-                            contentFit="contain"
-                            cachePolicy="memory-disk"
-                            transition={0}
-                          />
-                        ) : (
-                          <View style={styles.asanaImagePlaceholder}>
-                            <Text style={styles.asanaImagePlaceholderText}>
-                              📝
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.asanaInfo}>
-                        <Text style={styles.asanaName} numberOfLines={2}>
-                          {asana.sanskrit_name_kr}
-                        </Text>
-                        <Text style={styles.asanaNameEn} numberOfLines={1}>
-                          {asana.sanskrit_name_en}
-                        </Text>
-                      </View>
-                    </View>
-                  );
+                  return <AsanaDisplayCard key={asanaId} asana={asana} />;
                 })}
               </View>
             </View>
@@ -309,58 +268,8 @@ const styles = StyleSheet.create({
   asanasGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: 12,
-  },
-  asanaCard: {
-    width: (width - 52) / 2, // 화면 너비 - 패딩(40) - gap(12) / 2
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-  },
-  asanaImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-    overflow: "hidden",
-    padding: 8,
-  },
-  asanaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  asanaImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  asanaImagePlaceholderText: {
-    fontSize: 32,
-  },
-  asanaInfo: {
-    alignItems: "center",
-    width: "100%",
-  },
-  asanaName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  asanaNameEn: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    fontStyle: "italic",
-    fontWeight: "500",
   },
   statesSection: {
     marginBottom: 32,
