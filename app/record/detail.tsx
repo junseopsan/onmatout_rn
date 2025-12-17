@@ -24,6 +24,7 @@ import {
   useRecordStats,
   useToggleLike,
 } from "../../hooks/useRecords";
+import { formatDate } from "../../lib/utils/dateFormatter";
 import { RootStackParamList } from "../../navigation/types";
 import { AsanaCategory } from "../../types/asana";
 
@@ -72,27 +73,6 @@ export default function RecordDetailScreen() {
   // 수정 처리
   const handleEdit = () => {
     navigation.navigate("EditRecord", { record });
-  };
-
-  // 날짜 포맷팅
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-    const weekday = weekdays[date.getDay()];
-
-    return `${year}년 ${month}월 ${day}일 (${weekday})`;
-  };
-
-  // 시간 포맷팅
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-
-    return `${hours}:${minutes}`;
   };
 
   // 아사나 이미지 URL 생성

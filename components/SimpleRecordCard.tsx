@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/Colors";
+import { formatDate } from "../lib/utils/dateFormatter";
 import { Record } from "../types/record";
 
 interface SimpleRecordCardProps {
@@ -14,18 +15,6 @@ export default function SimpleRecordCard({
   record,
   onPress,
 }: SimpleRecordCardProps) {
-  // 날짜 포맷팅
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-    const weekday = weekdays[date.getDay()];
-
-    return `${year}년 ${month}월 ${day}일 (${weekday})`;
-  };
-
   // 첫 번째 아사나 이미지 URL 생성 (아사나 객체에서 image_number 사용)
   const getFirstAsanaImageUrl = () => {
     if (record.asanas && record.asanas.length > 0) {
@@ -91,7 +80,9 @@ export default function SimpleRecordCard({
           )}
           <View style={styles.textSection}>
             <Text style={styles.dateText}>
-              {formatDate(record.practice_date || "")}
+              {formatDate(
+                record.practice_date || record.date || record.created_at
+              )}
             </Text>
             <Text style={styles.memoText} numberOfLines={2}>
               {record.memo || "메모 없음"}
