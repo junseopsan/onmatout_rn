@@ -134,14 +134,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
             )}
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{record.user_name}</Text>
-              <Text style={styles.timeText}>
-                {formatRelativeTime(
-                  record.practice_time ||
-                    record.created_at ||
-                    record.practice_date ||
-                    record.date
-                )}
-              </Text>
             </View>
           </View>
         </View>
@@ -244,6 +236,16 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         </TouchableOpacity>
       </View>
 
+      {/* 시간 정보 */}
+      <Text style={styles.timeText}>
+        {formatRelativeTime(
+          record.practice_time ||
+            record.created_at ||
+            record.practice_date ||
+            record.date
+        )}
+      </Text>
+
       {/* 댓글 모달 */}
       <CommentModal
         visible={showCommentModal}
@@ -315,8 +317,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
+    marginBottom: 0,
   },
   moreButton: {
     padding: 4,
@@ -437,7 +440,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   actionButton: {
     flexDirection: "row",
