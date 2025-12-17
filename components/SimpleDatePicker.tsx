@@ -55,11 +55,40 @@ export default function SimpleDatePicker({
   const goToNextMonth = () => {
     const newDate = new Date(currentMonth);
     newDate.setMonth(currentMonth.getMonth() + 1);
+
+    // 다음 달이 미래가 아닌 경우에만 이동
+    const today = new Date();
+    if (
+      newDate.getFullYear() > today.getFullYear() ||
+      (newDate.getFullYear() === today.getFullYear() &&
+        newDate.getMonth() > today.getMonth())
+    ) {
+      return; // 미래 달로는 이동 불가
+    }
+
     setCurrentMonth(newDate);
+  };
+
+  // 다음 달 버튼 비활성화 여부
+  const isNextMonthDisabled = () => {
+    const today = new Date();
+    const nextMonth = new Date(currentMonth);
+    nextMonth.setMonth(currentMonth.getMonth() + 1);
+
+    return (
+      nextMonth.getFullYear() > today.getFullYear() ||
+      (nextMonth.getFullYear() === today.getFullYear() &&
+        nextMonth.getMonth() > today.getMonth())
+    );
   };
 
   // 날짜 선택
   const handleDateSelect = (day: number) => {
+    // 미래 날짜는 선택 불가
+    if (isFutureDate(day)) {
+      return;
+    }
+
     const newDate = new Date(currentMonth);
     newDate.setDate(day);
     onDateChange(newDate);
@@ -94,6 +123,18 @@ export default function SimpleDatePicker({
       today.getMonth() === currentMonth.getMonth() &&
       today.getDate() === day
     );
+  };
+
+  // 미래 날짜인지 확인 (오늘 이후)
+  const isFutureDate = (day: number) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 시간 제거하여 날짜만 비교
+
+    const targetDate = new Date(currentMonth);
+    targetDate.setDate(day);
+    targetDate.setHours(0, 0, 0, 0);
+
+    return targetDate > today;
   };
 
   const days = getDaysInMonth(currentMonth);
@@ -136,8 +177,16 @@ export default function SimpleDatePicker({
             <TouchableOpacity
               onPress={goToNextMonth}
               style={styles.arrowButton}
+              disabled={isNextMonthDisabled()}
             >
-              <Text style={styles.arrowText}>›</Text>
+              <Text
+                style={[
+                  styles.arrowText,
+                  isNextMonthDisabled() && styles.disabledArrowText,
+                ]}
+              >
+                ›
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -167,20 +216,30 @@ export default function SimpleDatePicker({
 
               const selected = isSelectedDate(day);
               const today = isToday(day);
+              const isFuture = isFutureDate(day);
 
               return (
                 <TouchableOpacity
                   key={`day-${day}`}
                   style={[styles.dayCell, selected && styles.selectedDayCell]}
                   onPress={() => handleDateSelect(day)}
+                  disabled={isFuture}
+                  activeOpacity={isFuture ? 1 : 0.2}
                 >
                   <Text
                     style={[
                       styles.dayText,
                       selected && styles.selectedDayText,
                       today && !selected && styles.todayText,
-                      index % 7 === 0 && !selected && styles.sundayText,
-                      index % 7 === 6 && !selected && styles.saturdayText,
+                      index % 7 === 0 &&
+                        !selected &&
+                        !isFuture &&
+                        styles.sundayText,
+                      index % 7 === 6 &&
+                        !selected &&
+                        !isFuture &&
+                        styles.saturdayText,
+                      isFuture && styles.disabledDayText,
                     ]}
                   >
                     {day}
@@ -296,5 +355,13 @@ const styles = StyleSheet.create({
   todayText: {
     fontWeight: "700",
     color: COLORS.primary,
+  },
+  disabledDayText: {
+    color: COLORS.border,
+    opacity: 0.4,
+  },
+  disabledArrowText: {
+    color: COLORS.border,
+    opacity: 0.3,
   },
 });
