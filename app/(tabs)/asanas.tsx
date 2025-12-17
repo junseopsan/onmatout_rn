@@ -18,7 +18,7 @@ import {
 import { AsanaCard } from "../../components/AsanaCard";
 import { AsanaCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
-import { CATEGORIES } from "../../constants/categories";
+import { CATEGORIES, CATEGORY_ORDER } from "../../constants/categories";
 import {
   useAllAsanasForFeed,
   useAsanas,
@@ -120,7 +120,12 @@ export default function AsanasScreen() {
     if (!asanasData?.pages) return [];
     const flat = asanasData.pages.flatMap((page: any) => page.data);
     return sortAsanasByName(flat);
-  }, [asanasData, allAsanasForCategory, selectedCategories.length, sortAsanasByName]);
+  }, [
+    asanasData,
+    allAsanasForCategory,
+    selectedCategories.length,
+    sortAsanasByName,
+  ]);
 
   // 카테고리별 및 즐겨찾기 필터링된 아사나
   const filteredAsanas = useMemo(() => {
@@ -509,20 +514,7 @@ export default function AsanasScreen() {
         {/* 카테고리 필터 */}
         <View style={styles.categoryContainer}>
           <FlatList
-            data={
-              [
-                "Basic",
-                "SideBend",
-                "BackBend",
-                "ForwardBend",
-                "Twist",
-                "Inversion",
-                "Standing",
-                "Armbalance",
-                "Core",
-                "Rest",
-              ] as AsanaCategory[]
-            }
+            data={CATEGORY_ORDER}
             renderItem={({ item }) => renderCategoryButton(item)}
             keyExtractor={(item) => item}
             horizontal

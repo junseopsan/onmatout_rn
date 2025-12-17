@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Dimensions,
@@ -10,11 +10,11 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../constants/Colors";
-import { CATEGORIES } from "../constants/categories";
+import { CATEGORIES, CATEGORY_ORDER } from "../constants/categories";
+import { filterAsanasByQuery } from "../hooks/useAsanas";
 import { Asana, asanasAPI } from "../lib/api/asanas";
 import { AsanaCategory } from "../types/asana";
 import { AsanaCard } from "./AsanaCard";
-import { filterAsanasByQuery, sortAsanasByName } from "../hooks/useAsanas";
 import { TamaguiInputComponent } from "./ui/TamaguiInput";
 
 interface AsanaSearchModalProps {
@@ -55,7 +55,8 @@ export default function AsanaSearchModal({
         const unique = removeDuplicates(result.data);
         setAllAsanas(unique);
         const initial = unique.filter(
-          (asana) => !selectedAsanas.find((selected) => selected.id === asana.id)
+          (asana) =>
+            !selectedAsanas.find((selected) => selected.id === asana.id)
         );
         setSearchResults(sortAsanasByName(initial));
         setHasMore(false);
@@ -275,20 +276,7 @@ export default function AsanaSearchModal({
         {/* 카테고리 필터 */}
         <View style={styles.categoryContainer}>
           <FlatList
-            data={
-              [
-                "Basic",
-                "SideBend",
-                "BackBend",
-                "ForwardBend",
-                "Twist",
-                "Inversion",
-                "Standing",
-                "Armbalance",
-                "Core",
-                "Rest",
-              ] as AsanaCategory[]
-            }
+            data={CATEGORY_ORDER}
             renderItem={({ item }) => renderCategoryButton(item)}
             keyExtractor={(item) => item}
             horizontal

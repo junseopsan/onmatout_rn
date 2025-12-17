@@ -56,9 +56,21 @@ export const CATEGORIES: Record<
   },
 };
 
-export const CATEGORY_OPTIONS = Object.entries(CATEGORIES).map(
-  ([key, value]) => ({
-    value: key as AsanaCategory,
-    ...value,
-  })
-);
+// 카테고리 표시 순서 (아사나 탭, 검색 모달 등에서 공통 사용)
+export const CATEGORY_ORDER: AsanaCategory[] = [
+  "Basic",
+  "BackBend",
+  "ForwardBend",
+  "Twist",
+  "Inversion",
+  "SideBend",
+  "Standing",
+  "Armbalance",
+  "Core",
+  "Rest",
+];
+
+export const CATEGORY_OPTIONS = CATEGORY_ORDER.map((key) => ({
+  value: key,
+  ...CATEGORIES[key],
+}));
