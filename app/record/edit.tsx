@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import AsanaSearchModal from "../../components/AsanaSearchModal";
 import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
+import SimpleDatePicker from "../../components/SimpleDatePicker";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -32,6 +33,9 @@ export default function EditRecordScreen() {
   const { record } = route.params;
 
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date(record.practice_date || record.date || record.created_at)
+  );
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
@@ -46,9 +50,13 @@ export default function EditRecordScreen() {
     if (record) {
       setMemo(record.memo || "");
       setSelectedStates(record.states || []);
+      // 수련 날짜 설정
+      const dateStr = record.practice_date || record.date || record.created_at;
+      setSelectedDate(new Date(dateStr));
       // 아사나 데이터는 별도로 로드해야 함
       loadAsanaData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record]);
 
   // 아사나 데이터 로드
@@ -127,7 +135,7 @@ export default function EditRecordScreen() {
         memo: memo.trim(),
         states: selectedStates,
         photos: [], // TODO: 사진 첨부 기능 추가
-        date: record.created_at.split("T")[0], // 기존 날짜 유지
+        date: selectedDate.toISOString().split("T")[0], // 선택한 날짜
       };
 
       const result = await updateRecordMutation.mutateAsync({
@@ -136,14 +144,10 @@ export default function EditRecordScreen() {
       });
       showSnackbar("수련 기록이 수정되었습니다.", "success");
 
-      // 수정된 데이터로 RecordDetail 화면으로 이동
+      // API에서 반환된 실제 업데이트된 데이터 사용
       const updatedRecord = {
-        ...record,
-        title: recordData.title,
-        memo: recordData.memo,
-        states: recordData.states,
-        asanas: selectedAsanas,
-        updated_at: new Date().toISOString(),
+        ...(result.data || record),
+        asanas: selectedAsanas, // Asana 객체 배열 유지
       };
 
       // 스택을 초기화하여 RecordDetail로 이동 (뒤로가기 시 마이페이지로 이동)
@@ -154,17 +158,12 @@ export default function EditRecordScreen() {
           { name: "RecordDetail", params: { record: updatedRecord } },
         ],
       });
-    } catch (error) {
+    } catch (err) {
+      console.error("기록 수정 오류:", err);
       Alert.alert("오류", "기록 수정 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
-  };
-
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
   };
 
   return (
@@ -186,6 +185,15 @@ export default function EditRecordScreen() {
           >
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* 수련 날짜 선택 */}
+        <View style={styles.section}>
+          <SimpleDatePicker
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+          />
+          <Text style={styles.stateSubtitleText}>수련 날짜를 선택해주세요</Text>
         </View>
 
         {/* 아사나 선택 */}

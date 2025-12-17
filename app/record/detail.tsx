@@ -167,7 +167,9 @@ export default function RecordDetailScreen() {
                 color={COLORS.primary}
               />
               <Text style={styles.dateText}>
-                {formatDate(record.created_at)}
+                {formatDate(
+                  record.practice_date || record.date || record.created_at
+                )}
               </Text>
             </View>
           </View>

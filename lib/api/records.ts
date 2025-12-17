@@ -495,6 +495,7 @@ export const recordsAPI = {
           states: formData.states,
           memo: formData.memo,
           photos: formData.photos || [],
+          practice_date: formData.date, // 수련 날짜 업데이트
           updated_at: new Date().toISOString(),
         })
         .eq("id", recordId)
@@ -550,6 +551,8 @@ export const recordsAPI = {
         id: data.id,
         user_id: data.user_id,
         date: data.practice_date,
+        practice_date: data.practice_date,
+        practice_time: data.practice_time,
         title: data.title || `수련 기록 - ${data.practice_date}`,
         asanas: asanas,
         states: states,

@@ -30,17 +30,17 @@ export default function SimpleDatePicker({
     const startDayOfWeek = firstDay.getDay();
 
     const days: (number | null)[] = [];
-    
+
     // 빈 칸 추가 (월 시작 전)
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
     }
-    
+
     // 날짜 추가
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(i);
     }
-    
+
     return days;
   };
 
@@ -73,7 +73,7 @@ export default function SimpleDatePicker({
     const day = date.getDate();
     const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
     const weekDay = weekDays[date.getDay()];
-    
+
     return `${year}년 ${month}월 ${day}일 (${weekDay})`;
   };
 
@@ -113,9 +113,7 @@ export default function SimpleDatePicker({
             editable={false}
             pointerEvents="none"
           />
-          <Text style={styles.inputIcon}>
-            {isCalendarVisible ? "▲" : "▼"}
-          </Text>
+          <Text style={styles.inputIcon}>{isCalendarVisible ? "▲" : "▼"}</Text>
         </View>
       </TouchableOpacity>
 
@@ -124,70 +122,73 @@ export default function SimpleDatePicker({
         <View style={styles.calendarContainer}>
           {/* 헤더: 년/월 선택 */}
           <View style={styles.header}>
-        <TouchableOpacity onPress={goToPreviousMonth} style={styles.arrowButton}>
-          <Text style={styles.arrowText}>‹</Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.headerText}>
-          {currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월
-        </Text>
-        
-        <TouchableOpacity onPress={goToNextMonth} style={styles.arrowButton}>
-          <Text style={styles.arrowText}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 요일 헤더 */}
-      <View style={styles.weekDaysRow}>
-        {weekDays.map((day, index) => (
-          <View key={day} style={styles.weekDayCell}>
-            <Text
-              style={[
-                styles.weekDayText,
-                (index === 0) && styles.sundayText,
-                (index === 6) && styles.saturdayText,
-              ]}
-            >
-              {day}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {/* 날짜 그리드 */}
-      <View style={styles.daysGrid}>
-        {days.map((day, index) => {
-          if (day === null) {
-            return <View key={`empty-${index}`} style={styles.dayCell} />;
-          }
-
-          const selected = isSelectedDate(day);
-          const today = isToday(day);
-
-          return (
             <TouchableOpacity
-              key={`day-${day}`}
-              style={[
-                styles.dayCell,
-                selected && styles.selectedDayCell,
-              ]}
-              onPress={() => handleDateSelect(day)}
+              onPress={goToPreviousMonth}
+              style={styles.arrowButton}
             >
-              <Text
-                style={[
-                  styles.dayText,
-                  selected && styles.selectedDayText,
-                  today && !selected && styles.todayText,
-                  index % 7 === 0 && !selected && styles.sundayText,
-                  index % 7 === 6 && !selected && styles.saturdayText,
-                ]}
-              >
-                {day}
-              </Text>
+              <Text style={styles.arrowText}>‹</Text>
             </TouchableOpacity>
-          );
-        })}
-      </View>
+
+            <Text style={styles.headerText}>
+              {currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월
+            </Text>
+
+            <TouchableOpacity
+              onPress={goToNextMonth}
+              style={styles.arrowButton}
+            >
+              <Text style={styles.arrowText}>›</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 요일 헤더 */}
+          <View style={styles.weekDaysRow}>
+            {weekDays.map((day, index) => (
+              <View key={day} style={styles.weekDayCell}>
+                <Text
+                  style={[
+                    styles.weekDayText,
+                    index === 0 && styles.sundayText,
+                    index === 6 && styles.saturdayText,
+                  ]}
+                >
+                  {day}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* 날짜 그리드 */}
+          <View style={styles.daysGrid}>
+            {days.map((day, index) => {
+              if (day === null) {
+                return <View key={`empty-${index}`} style={styles.dayCell} />;
+              }
+
+              const selected = isSelectedDate(day);
+              const today = isToday(day);
+
+              return (
+                <TouchableOpacity
+                  key={`day-${day}`}
+                  style={[styles.dayCell, selected && styles.selectedDayCell]}
+                  onPress={() => handleDateSelect(day)}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      selected && styles.selectedDayText,
+                      today && !selected && styles.todayText,
+                      index % 7 === 0 && !selected && styles.sundayText,
+                      index % 7 === 6 && !selected && styles.saturdayText,
+                    ]}
+                  >
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       )}
     </View>
@@ -297,4 +298,3 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 });
-
