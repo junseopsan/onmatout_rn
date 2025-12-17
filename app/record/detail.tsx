@@ -189,10 +189,6 @@ export default function RecordDetailScreen() {
               <Text style={styles.dateText}>
                 {formatDate(record.created_at)}
               </Text>
-              <Ionicons name="time-outline" size={16} color={COLORS.primary} />
-              <Text style={styles.timeText}>
-                {formatTime(record.created_at)}
-              </Text>
             </View>
           </View>
 

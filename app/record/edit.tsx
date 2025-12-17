@@ -248,7 +248,7 @@ export default function EditRecordScreen() {
             ))}
           </View>
           <Text style={styles.stateSubtitleText}>
-            수련 중느낀 상태를 선택해주세요 (다중 선택 가능)
+            수련 중 느낀 상태를 선택해주세요 (다중 선택 가능)
           </Text>
         </View>
 

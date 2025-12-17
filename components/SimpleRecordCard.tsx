@@ -17,12 +17,13 @@ export default function SimpleRecordCard({
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
     const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
     const weekday = weekdays[date.getDay()];
 
-    return `${month}월 ${day}일 (${weekday})`;
+    return `${year}년 ${month}월 ${day}일 (${weekday})`;
   };
 
   // 첫 번째 아사나 이미지 URL 생성 (아사나 객체에서 image_number 사용)
@@ -89,7 +90,9 @@ export default function SimpleRecordCard({
             </View>
           )}
           <View style={styles.textSection}>
-            <Text style={styles.dateText}>{formatDate(record.created_at)}</Text>
+            <Text style={styles.dateText}>
+              {formatDate(record.practice_date || "")}
+            </Text>
             <Text style={styles.memoText} numberOfLines={2}>
               {record.memo || "메모 없음"}
             </Text>

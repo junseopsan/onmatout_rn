@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import AsanaSearchModal from "../../components/AsanaSearchModal";
 import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
+import SimpleDatePicker from "../../components/SimpleDatePicker";
 import { AlertDialog } from "../../components/ui/AlertDialog";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
@@ -39,6 +40,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
@@ -117,7 +119,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         memo: memo.trim(),
         states: selectedStates,
         photos: [], // TODO: 사진 첨부 기능 추가
-        date: new Date().toISOString().split("T")[0], // 오늘 날짜
+        date: selectedDate.toISOString().split("T")[0], // 선택한 날짜
       };
 
       const result = await recordsAPI.createRecord(recordData, user?.id);
@@ -164,6 +166,15 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* 수련 날짜 선택 */}
+        <View style={styles.section}>
+          <SimpleDatePicker
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+          />
+          <Text style={styles.stateSubtitleText}>수련 날짜를 선택해주세요</Text>
         </View>
 
         {/* 아사나 선택 */}
@@ -226,7 +237,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
             ))}
           </View>
           <Text style={styles.stateSubtitleText}>
-            수련 중느낀 상태를 선택해주세요 (다중 선택 가능)
+            수련 중 느낀 상태를 선택해주세요 (다중 선택 가능)
           </Text>
         </View>
 
@@ -356,6 +367,12 @@ const styles = StyleSheet.create({
   sectionHeader: {
     alignItems: "center",
     marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 18,

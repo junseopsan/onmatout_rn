@@ -35,36 +35,25 @@ export default function FeedDetailModal({
     return asanas.find((asana) => asana.id === asanaId);
   };
 
-  // 날짜 포맷팅
+  // 날짜 포맷팅 (YYYY년 MM월 DD일 (요일))
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekday = weekdays[date.getDay()];
 
-    if (diffDays === 0) {
-      return "오늘";
-    } else if (diffDays === 1) {
-      return "어제";
-    } else if (diffDays < 7) {
-      return `${diffDays}일 전`;
-    } else {
-      return date.toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    }
+    return `${year}년 ${month}월 ${day}일 (${weekday})`;
   };
 
-  // 시간 포맷팅
-  const formatTime = (timeString: string) => {
-    const time = new Date(timeString);
-    return time.toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+  // 시간 포맷팅 (HH:MM)
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+
+    return `${hours}:${minutes}`;
   };
 
   // 상태 정보 가져오기
@@ -97,11 +86,6 @@ export default function FeedDetailModal({
             )}
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{record.user_name}</Text>
-              <Text style={styles.timeText}>
-                {formatDate(record.practice_date || record.date)}
-                {record.practice_time &&
-                  ` · ${formatTime(record.practice_time)}`}
-              </Text>
             </View>
           </View>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -114,6 +98,18 @@ export default function FeedDetailModal({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
         >
+          {/* 날짜와 시간 표시 */}
+          <View style={styles.dateTimeContainer}>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color={COLORS.primary}
+            />
+            <Text style={styles.dateText}>
+              {formatDate(record.practice_date || "")}
+            </Text>
+          </View>
+
           {/* 아사나 그리드 - 여러 개를 한번에 보여줌 */}
           {record.asanas && record.asanas.length > 0 && (
             <View style={styles.asanasSection}>
@@ -206,6 +202,22 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 20,
   },
+  dateTimeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 20,
+  },
+  dateText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  timeText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -242,10 +254,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.text,
     marginBottom: 4,
-  },
-  timeText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
   },
   titleSection: {
     marginBottom: 24,

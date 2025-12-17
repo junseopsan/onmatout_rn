@@ -73,15 +73,37 @@ export default function RecordDetailModal({
 
   if (!record) return null;
 
-  // 날짜 포맷팅
-  const formatDate = (dateString: string) => {
+  // 수련 날짜 포맷팅 (YYYY년 MM월 DD일 (요일))
+  const formatPracticeDate = (dateString: string) => {
     const date = new Date(dateString);
+    const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-    const weekday = weekdays[date.getDay()];
+    const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekDay = weekDays[date.getDay()];
 
-    return `${month}월 ${day}일 (${weekday})`;
+    return `${year}년 ${month}월 ${day}일 (${weekDay})`;
+  };
+
+  // 상대 시간 포맷팅 (15시간 전, 1일 전 등)
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffSec < 60) return "방금";
+    if (diffMin < 60) return `${diffMin}분 전`;
+    if (diffHour < 24) return `${diffHour}시간 전`;
+    if (diffDay < 7) return `${diffDay}일 전`;
+
+    return date.toLocaleDateString("ko-KR", {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   // 아사나 정보 가져오기
@@ -260,11 +282,6 @@ export default function RecordDetailModal({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 날짜 표시 */}
-          <View style={styles.dateDisplay}>
-            <Text style={styles.dateText}>{formatDate(record.date)}</Text>
-          </View>
-
           {/* 제목 섹션 */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>기록 제목</Text>
@@ -284,6 +301,13 @@ export default function RecordDetailModal({
                 {editData.title.length}/50
               </Text>
             )}
+          </View>
+
+          {/* 수련 날짜 표시 */}
+          <View style={styles.dateSection}>
+            <Text style={styles.dateText}>
+              {formatPracticeDate(record.practice_date || record.date)}
+            </Text>
           </View>
 
           {/* 아사나 섹션 */}
@@ -440,7 +464,7 @@ export default function RecordDetailModal({
               // 수정 모드: 기록 추가 화면과 동일한 UI
               <>
                 <Text style={styles.sectionSubtitle}>
-                  수련 중느낀 상태를 선택해주세요 (다중 선택 가능)
+                  수련 중 느낀 상태를 선택해주세요 (다중 선택 가능)
                 </Text>
                 <View style={styles.statesContainer}>
                   {STATES.map((state) => (
@@ -548,6 +572,15 @@ export default function RecordDetailModal({
           {/* 하단 여백 (스크롤용) */}
           <View style={styles.bottomSpacing} />
         </ScrollView>
+
+        {/* 생성 시간 표시 */}
+        {!isEditMode && (
+          <View style={styles.createdAtContainer}>
+            <Text style={styles.createdAtText}>
+              {formatRelativeTime(record.created_at)}
+            </Text>
+          </View>
+        )}
 
         {/* 하단 액션 버튼 - 키보드 높이만큼 위로 올림 */}
         <View
@@ -865,20 +898,33 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 160,
   },
-  dateDisplay: {
-    alignItems: "flex-start",
+  dateSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     marginBottom: 16,
   },
   dateText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.textSecondary,
-    marginBottom: 4,
+    color: COLORS.primary,
+    textAlign: "center",
   },
   timeText: {
     fontSize: 14,
     color: COLORS.textSecondary,
     fontWeight: "500",
+  },
+  createdAtContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.surfaceDark,
+  },
+  createdAtText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: "center",
   },
   titleInput: {
     backgroundColor: COLORS.surface,
