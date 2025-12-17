@@ -4,11 +4,11 @@ import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
-import { Linking, Platform, Text, TouchableOpacity, View } from "react-native";
-import { COLORS } from "../../constants/Colors";
+import { Platform } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
+import ForceUpdateScreen from "./ForceUpdateScreen";
 import SplashScreen from "./SplashScreen";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -207,83 +207,10 @@ export default function AppContainer() {
   // 필수 업데이트 안내 화면
   if (versionChecked && forceUpdateInfo) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: COLORS.background,
-          paddingHorizontal: 24,
-        }}
-      >
-        <Text
-          style={{
-            color: COLORS.text,
-            fontSize: 20,
-            fontWeight: "700",
-            marginBottom: 16,
-            textAlign: "center",
-          }}
-        >
-          새로운 버전이 필요합니다
-        </Text>
-        <Text
-          style={{
-            color: COLORS.textSecondary,
-            fontSize: 14,
-            textAlign: "center",
-            marginBottom: 24,
-            lineHeight: 22,
-          }}
-        >
-          온매트아웃의 새로운 기능과 개선사항이 추가되었습니다.{"\n"}
-          App Store에서 최신 버전으로 업데이트하고 이용을 계속해 주세요.
-        </Text>
-        <TouchableOpacity
-          style={{
-            backgroundColor: COLORS.primary,
-            paddingHorizontal: 24,
-            paddingVertical: 12,
-            borderRadius: 8,
-          }}
-          onPress={() => {
-            if (forceUpdateInfo?.storeUrl) {
-              Linking.openURL(forceUpdateInfo.storeUrl);
-            }
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 16,
-              fontWeight: "600",
-            }}
-          >
-            App Store에서 업데이트
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <ForceUpdateScreen
+        storeUrl={forceUpdateInfo.storeUrl}
+        minVersion={forceUpdateInfo.minVersion}
+      />
     );
   }
-
-  // 리다이렉트가 완료된 경우 아무것도 렌더링하지 않음
-  if (hasRedirected) {
-    return null;
-  }
-
-  // 리다이렉트 대기 중 (매우 짧은 시간)
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: COLORS.background,
-      }}
-    >
-      <Text style={{ color: COLORS.text, fontSize: 16 }}>
-        앱을 시작하는 중...
-      </Text>
-    </View>
-  );
 }
