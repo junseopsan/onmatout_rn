@@ -111,15 +111,36 @@ export default function AsanasScreen() {
   // 모든 아사나 데이터를 하나의 배열로 변환
   // 카테고리 필터가 선택되었을 때는 전체 데이터 사용, 아니면 페이지네이션 데이터 사용
   const allAsanas = useMemo(() => {
+    let result: any[] = [];
+
     // 카테고리 필터가 선택되었을 때는 전체 데이터 사용
     if (selectedCategories.length > 0) {
-      return sortAsanasByName(allAsanasForCategory);
+      result = sortAsanasByName(allAsanasForCategory);
+    } else {
+      // 카테고리 필터가 없을 때는 페이지네이션 데이터 사용
+      if (!asanasData?.pages) return [];
+      const flat = asanasData.pages.flatMap((page: any) => page.data);
+      result = sortAsanasByName(flat);
     }
 
-    // 카테고리 필터가 없을 때는 페이지네이션 데이터 사용
-    if (!asanasData?.pages) return [];
-    const flat = asanasData.pages.flatMap((page: any) => page.data);
-    return sortAsanasByName(flat);
+    // 디버깅: 카테고리별 개수 로그
+    const basicCount = result.filter(
+      (a) => a.category_name_en?.trim() === "Basic"
+    ).length;
+    const countsByCategory: Record<string, number> = {};
+    result.forEach((a) => {
+      const key = (a.category_name_en || "").trim() || "(empty)";
+      countsByCategory[key] = (countsByCategory[key] || 0) + 1;
+    });
+
+    console.log("[Asanas] allAsanas 계산 결과", {
+      total: result.length,
+      basicCount,
+      selectedCategories,
+      countsByCategory,
+    });
+
+    return result;
   }, [
     asanasData,
     allAsanasForCategory,
@@ -173,6 +194,22 @@ export default function AsanasScreen() {
         });
       }
     }
+
+    // 디버깅: 필터 적용 후 상태 로그
+    const countsByCategory: Record<string, number> = {};
+    (filtered || []).forEach((a: any) => {
+      const key = (a.category_name_en || "").trim() || "(empty)";
+      countsByCategory[key] = (countsByCategory[key] || 0) + 1;
+    });
+
+    console.log("[Asanas] filteredAsanas 상태", {
+      totalAll: allAsanas.length,
+      totalFiltered: filtered.length,
+      selectedCategories,
+      showFavoritesOnly,
+      favoriteCount: favoriteAsanaIds.length,
+      countsByCategory,
+    });
 
     return sortAsanasByName(filtered);
   }, [

@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import React, { useRef, useState } from "react";
-import { Modal } from "react-native";
+import { Modal, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
@@ -23,6 +24,8 @@ export default function TabNavigator() {
   const { isAuthenticated } = useAuth();
   const { user } = useAuthStore();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const bottomInsetForTab = Platform.OS === "android" ? insets.bottom : 0;
 
   // 각 탭의 마지막 클릭 시간 추적 (탭 재클릭 감지용)
   const lastTabPressTime = useRef<Record<string, number>>({});
@@ -96,12 +99,14 @@ export default function TabNavigator() {
           tabBarInactiveTintColor: COLORS.textSecondary,
           tabBarStyle: {
             backgroundColor: COLORS.surfaceDark,
-            height: 70,
-            paddingBottom: 12,
+            // 안전 영역을 고려해 높이/패딩 조정 (제스처 네비게이션 기기 대응)
+            height: 70 + bottomInsetForTab,
+            paddingBottom: 12 + bottomInsetForTab,
             paddingTop: 8,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            marginBottom: 10,
+            // 이미 안전 영역으로 띄워지므로 여백은 최소화
+            marginBottom: bottomInsetForTab > 0 ? 0 : 10,
             borderWidth: 1,
             borderColor: COLORS.border,
             borderBottomWidth: 0,

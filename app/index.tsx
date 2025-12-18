@@ -7,6 +7,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { AppState } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppNavigator from "../navigation";
 import { AppThemeProvider } from "./_layout";
 import * as Network from "expo-network";
@@ -62,12 +63,14 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppThemeProvider>
-        <NavigationContainer>
-          <StatusBar style="light" />
-          <AppNavigator />
-        </NavigationContainer>
-      </AppThemeProvider>
+      <SafeAreaProvider>
+        <AppThemeProvider>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <AppNavigator />
+          </NavigationContainer>
+        </AppThemeProvider>
+      </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
