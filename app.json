@@ -6,12 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onmatout.app",
       "buildNumber": "1",
-      "privacyPolicyUrl": "https://www.onmatout.com/privacy-policy",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -33,11 +32,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.onmatout.app",
       "versionCode": 3,
-      "privacyPolicyUrl": "https://www.onmatout.com/privacy-policy",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
-      "config": {
-        "googleMapsApiKey": "AIzaSyD2BOFCuW4iHtfQGd2CWdcHVNt8Hi1dLVM"
-      }
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {
       "bundler": "metro",
@@ -48,12 +43,7 @@
         "projectId": "6b14beae-4cd3-4575-bfbd-403081113b72"
       }
     },
-    "expo": {
-      "developmentClient": {
-        "silenceWarnings": true
-      }
-    },
     "owner": "jujoland",
-    "plugins": []
+    "plugins": ["expo-font", "expo-web-browser"]
   }
 }
