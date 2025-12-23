@@ -150,6 +150,20 @@ export default function AppContainer() {
 
   // 인증 상태 로딩이 완료되고 스플래시도 완료된 후에 리다이렉트
   useEffect(() => {
+    console.log("[AppContainer] 리다이렉트 조건 체크:", {
+      isLoading,
+      authLoading,
+      versionChecked,
+      forceUpdateInfo: !!forceUpdateInfo,
+      hasRedirected,
+      canNavigate:
+        !isLoading &&
+        !authLoading &&
+        versionChecked &&
+        !forceUpdateInfo &&
+        !hasRedirected,
+    });
+
     if (
       !isLoading &&
       !authLoading &&
@@ -164,48 +178,80 @@ export default function AppContainer() {
       // 중복 리다이렉트 방지
       setHasRedirected(true);
 
-      // 약간의 지연을 두어 네비게이션 안정성 확보
+      console.log("[AppContainer] 리다이렉트 시작:", targetRoute);
+
+      // 약간의 지연을 두어 네비게이션 안정성 확보 (안드로이드에서 더 긴 지연 필요)
+      const delay = Platform.OS === "android" ? 500 : 200;
       setTimeout(() => {
         try {
+          console.log("[AppContainer] navigation.reset 시도");
           navigation.reset({
             index: 0,
             routes: [{ name: targetRoute }],
           });
+          console.log("[AppContainer] navigation.reset 성공");
         } catch (error) {
+          console.log("[AppContainer] navigation.reset 실패:", error);
           // 실패 시 강제로 TabNavigator로 이동
           try {
+            console.log("[AppContainer] navigation.navigate 시도");
             navigation.navigate("TabNavigator" as any);
+            console.log("[AppContainer] navigation.navigate 성공");
           } catch (fallbackError) {
-            // Fallback 네비게이션도 실패
+            console.log(
+              "[AppContainer] navigation.navigate 실패:",
+              fallbackError
+            );
+            // Fallback 네비게이션도 실패하면 hasRedirected를 false로 되돌려서 재시도 가능하게
+            setHasRedirected(false);
           }
         }
-      }, 200);
+      }, delay);
     }
-  }, [isLoading, authLoading, isAuthenticated, navigation, hasRedirected]);
+  }, [
+    isLoading,
+    authLoading,
+    versionChecked,
+    forceUpdateInfo,
+    hasRedirected,
+    navigation,
+    isAuthenticated,
+  ]);
 
   // 안전장치: 5초 후에도 리다이렉트가 안되면 강제로 TabNavigator로 이동
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
-      if (isLoading || authLoading) {
+      if ((isLoading || authLoading || !versionChecked) && !hasRedirected) {
+        console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도");
         try {
+          setHasRedirected(true);
           navigation.reset({
             index: 0,
             routes: [{ name: "TabNavigator" }],
           });
-        } catch (error) {}
+          console.log("[AppContainer] 안전장치: 리다이렉트 성공");
+        } catch (error) {
+          console.log("[AppContainer] 안전장치: 리다이렉트 실패:", error);
+        }
       }
     }, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [isLoading, authLoading, navigation]);
+  }, [isLoading, authLoading, versionChecked, hasRedirected, navigation]);
 
   // 스플래시 화면 표시 중이거나 인증 상태 로딩 중, 또는 버전 체크 중
   if (isLoading || authLoading || !versionChecked) {
+    console.log("[AppContainer] SplashScreen 표시:", {
+      isLoading,
+      authLoading,
+      versionChecked,
+    });
     return <SplashScreen />;
   }
 
   // 필수 업데이트 안내 화면
   if (forceUpdateInfo) {
+    console.log("[AppContainer] ForceUpdateScreen 표시");
     return (
       <ForceUpdateScreen
         storeUrl={forceUpdateInfo.storeUrl}
@@ -215,6 +261,13 @@ export default function AppContainer() {
   }
 
   // 버전 체크 완료 후에도 리다이렉트가 안된 경우를 위한 안전장치
-  // 이 경우는 실제로 발생하지 않아야 하지만, 혹시 모를 경우를 대비
-  return <SplashScreen />;
+  // 리다이렉트가 진행 중이면 SplashScreen을 계속 표시
+  if (!hasRedirected) {
+    console.log("[AppContainer] 리다이렉트 대기 중 - SplashScreen 표시");
+    return <SplashScreen />;
+  }
+
+  // 리다이렉트 완료 후에도 여기 도달하면 null 반환 (네비게이션이 처리해야 함)
+  console.log("[AppContainer] 리다이렉트 완료 - null 반환");
+  return null;
 }

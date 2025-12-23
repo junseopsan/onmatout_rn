@@ -411,7 +411,7 @@ export default function DashboardScreen() {
             onRefresh={handleRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
-            progressViewOffset={60} // 기본 간격을 한 번 더 줄여서 상단과 더 가깝게
+            progressViewOffset={65} // 로고 영역(상태바 60 + 로고 40) 아래에 표시되도록 조정
           />
         }
         onScroll={handleScroll}
