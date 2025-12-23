@@ -3,8 +3,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
-import React, { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { AppState, Platform } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
@@ -36,6 +36,10 @@ export default function AppContainer() {
   } | null>(null);
   const navigation = useNavigation<NavigationProp>();
   const { isAuthenticated, loading: authLoadingState } = useAuth();
+
+  // 이미 초기화되었는지 추적 (포그라운드 복귀 시 재초기화 방지)
+  const hasInitializedRef = useRef(false);
+  const appStateRef = useRef(AppState.currentState);
 
   // 알림 권한 요청 함수
   const requestNotificationPermissions = async () => {
@@ -74,13 +78,71 @@ export default function AppContainer() {
     }
   };
 
-  // 앱 시작 시 알림 권한 요청
+  // 앱 시작 시 알림 권한 요청 및 세션 갱신
   useEffect(() => {
     requestNotificationPermissions();
+
+    // 앱 시작 시 세션이 만료되었거나 만료 직전이면 즉시 갱신 시도
+    const refreshSessionOnStart = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.log(
+            "[AppContainer] 앱 시작 시 세션 조회 에러:",
+            error.message
+          );
+          return;
+        }
+
+        if (!session) {
+          console.log("[AppContainer] 앱 시작 시 세션 없음");
+          return;
+        }
+
+        if (session.expires_at) {
+          const expiresAt = session.expires_at * 1000;
+          const now = Date.now();
+          const timeUntilExpiry = expiresAt - now;
+
+          // 세션이 만료되었거나 만료 직전(30초 이내)이면 즉시 갱신
+          if (timeUntilExpiry < 30 * 1000) {
+            console.log("[AppContainer] 앱 시작 시 세션 만료 임박, 갱신 시도", {
+              timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
+            });
+            const {
+              data: { session: refreshedSession },
+              error: refreshError,
+            } = await supabase.auth.refreshSession();
+
+            if (refreshError) {
+              console.log(
+                "[AppContainer] 앱 시작 시 세션 갱신 실패:",
+                refreshError.message
+              );
+            } else if (refreshedSession) {
+              console.log("[AppContainer] 앱 시작 시 세션 갱신 성공");
+            }
+          }
+        }
+      } catch (error) {
+        console.log("[AppContainer] 앱 시작 시 세션 확인 중 오류:", error);
+      }
+    };
+
+    refreshSessionOnStart();
   }, []);
 
   // 앱 버전 체크 (필수 업데이트 여부)
   useEffect(() => {
+    // 이미 초기화된 경우 버전 체크 건너뛰기 (포그라운드 복귀 시)
+    if (hasInitializedRef.current && versionChecked) {
+      return;
+    }
+
     const checkAppVersion = async () => {
       try {
         const currentVersion =
@@ -130,7 +192,7 @@ export default function AppContainer() {
     };
 
     checkAppVersion();
-  }, []);
+  }, [versionChecked]);
 
   useEffect(() => {
     // 인증 상태 로딩이 완료되면 authLoading을 false로 설정
@@ -139,7 +201,37 @@ export default function AppContainer() {
     }
   }, [authLoadingState]);
 
+  // 포그라운드 복귀 시 처리 (이미 초기화된 경우 빠르게 처리)
   useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        console.log("[AppContainer] 포그라운드 복귀 감지");
+
+        // 이미 초기화된 경우, 빠르게 처리 (스플래시 스크린 건너뛰기)
+        if (hasInitializedRef.current && hasRedirected) {
+          console.log("[AppContainer] 이미 초기화됨 - 빠른 처리");
+          setIsLoading(false);
+          setAuthLoading(false);
+          setVersionChecked(true);
+          return;
+        }
+      }
+      appStateRef.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, [hasRedirected]);
+
+  useEffect(() => {
+    // 이미 초기화된 경우 빠르게 처리
+    if (hasInitializedRef.current) {
+      setIsLoading(false);
+      return;
+    }
+
     // 스플래시 화면을 최소 1.5초는 보여주고, 인증 상태 로딩도 완료된 후에 리다이렉트
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -190,6 +282,8 @@ export default function AppContainer() {
             routes: [{ name: targetRoute }],
           });
           console.log("[AppContainer] navigation.reset 성공");
+          // 초기화 완료 표시
+          hasInitializedRef.current = true;
         } catch (error) {
           console.log("[AppContainer] navigation.reset 실패:", error);
           // 실패 시 강제로 TabNavigator로 이동
@@ -197,6 +291,8 @@ export default function AppContainer() {
             console.log("[AppContainer] navigation.navigate 시도");
             navigation.navigate("TabNavigator" as any);
             console.log("[AppContainer] navigation.navigate 성공");
+            // 초기화 완료 표시
+            hasInitializedRef.current = true;
           } catch (fallbackError) {
             console.log(
               "[AppContainer] navigation.navigate 실패:",

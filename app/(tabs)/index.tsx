@@ -4,8 +4,10 @@ import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  AppState,
   Easing,
   FlatList,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -252,6 +254,37 @@ export default function DashboardScreen() {
   // 홈 탭 스크롤 함수를 저장할 ref
   const dashboardScrollToTopRef = useRef<(() => void) | null>(null);
 
+  // 포그라운드 복귀 시 데이터 리프레시
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (
+        AppState.currentState.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        console.log("[홈탭] 포그라운드 복귀 - 데이터 리프레시");
+        // 포그라운드 복귀 시 데이터 강제 리프레시
+        if (
+          isAuthenticated &&
+          !isRefetching &&
+          !isPullRefreshing &&
+          !isManualRefreshing
+        ) {
+          refetch().catch((err) => {
+            console.log("[홈탭] 포그라운드 복귀 리프레시 실패:", err);
+          });
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, [
+    isAuthenticated,
+    isRefetching,
+    isPullRefreshing,
+    isManualRefreshing,
+    refetch,
+  ]);
+
   // TabNavigator에 스크롤 함수 등록
   React.useEffect(() => {
     // navigation의 getParent를 통해 TabNavigator에 함수 등록
@@ -411,9 +444,14 @@ export default function DashboardScreen() {
             onRefresh={handleRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
-            progressViewOffset={65} // 로고 영역(상태바 60 + 로고 40) 아래에 표시되도록 조정
+            // iOS에서만 progressViewOffset 사용
+            // 헤더 높이(100) + Safe Area 고려하여 조정
+            {...(Platform.OS === "ios" && { progressViewOffset: 65 })}
           />
         }
+        {...(Platform.OS === "ios" && {
+          contentInsetAdjustmentBehavior: "automatic",
+        })}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         onEndReached={() => {

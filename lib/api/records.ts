@@ -827,12 +827,6 @@ export const recordsAPI = {
         .order("created_at", { ascending: false })
         .range(offset, offset + pageSize - 1);
 
-      logger.log("practice_records 조회 결과:", {
-        recordsLength: records?.length || 0,
-        recordsError: recordsError?.message,
-        records: records?.slice(0, 2), // 처음 2개만 로깅
-      });
-
       if (recordsError) {
         return {
           success: false,

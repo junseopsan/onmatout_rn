@@ -112,9 +112,12 @@ export const getCurrentSession = async () => {
       const now = Date.now();
       const timeUntilExpiry = expiresAt - now;
 
-      // 만료 5분 전이면 자동 갱신 시도
-      if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
-        console.log("[Auth] 세션 만료 임박, 자동 갱신 시도");
+      // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신 시도
+      // 세션 시간이 1시간이므로 5분 전에 갱신하는 것이 적절
+      if (timeUntilExpiry < 5 * 60 * 1000) {
+        console.log("[Auth] 세션 만료 임박 또는 만료됨, 즉시 갱신 시도", {
+          timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
+        });
         try {
           const {
             data: { session: refreshedSession },
@@ -123,9 +126,19 @@ export const getCurrentSession = async () => {
           if (refreshedSession && !refreshError) {
             console.log("[Auth] 세션 자동 갱신 성공");
             return refreshedSession;
+          } else if (refreshError) {
+            console.log("[Auth] 세션 자동 갱신 실패:", refreshError.message);
+            // 갱신 실패 시 만료된 세션은 null 반환
+            if (timeUntilExpiry <= 0) {
+              return null;
+            }
           }
         } catch (refreshError) {
           console.log("[Auth] 세션 자동 갱신 실패:", refreshError);
+          // 갱신 실패 시 만료된 세션은 null 반환
+          if (timeUntilExpiry <= 0) {
+            return null;
+          }
         }
       }
     }
@@ -156,21 +169,79 @@ export const ensureAuthenticated = async (): Promise<{
         errorMessage.includes("invalid refresh token") ||
         errorMessage.includes("refresh token not found")
       ) {
+        console.log("[Auth] ensureAuthenticated: 리프레시 토큰 만료 또는 없음");
         return null;
       }
+      // 다른 종류의 세션 에러도 로그 출력
+      console.log("[Auth] ensureAuthenticated: 세션 조회 에러:", sessionError.message);
     }
 
     if (!session) {
+      console.log("[Auth] ensureAuthenticated: 세션 없음");
       return null;
     }
 
-    // 세션이 있으면 사용자 정보 가져오기
+    // 세션이 만료되었거나 만료 직전이면 자동 갱신 시도
+    if (session.expires_at) {
+      const expiresAt = session.expires_at * 1000;
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+
+      // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신
+      // 세션 시간이 1시간이므로 5분 전에 갱신하는 것이 적절
+      if (timeUntilExpiry < 5 * 60 * 1000) {
+        console.log("[Auth] ensureAuthenticated: 세션 만료 임박, 갱신 시도", {
+          timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
+        });
+        try {
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession();
+
+          if (refreshError) {
+            console.log("[Auth] ensureAuthenticated: 세션 갱신 실패:", refreshError.message);
+            // 갱신 실패 시 만료된 세션이면 null 반환
+            if (timeUntilExpiry <= 0) {
+              return null;
+            }
+            // 만료 직전이지만 갱신 실패한 경우 기존 세션 사용 시도
+          } else if (refreshedSession) {
+            console.log("[Auth] ensureAuthenticated: 세션 갱신 성공");
+            // 갱신된 세션으로 사용자 정보 가져오기
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
+
+            if (userError || !user) {
+              console.log("[Auth] ensureAuthenticated: 사용자 정보 조회 실패:", userError?.message);
+              return null;
+            }
+
+            return {
+              userId: user.id,
+              session: refreshedSession,
+            };
+          }
+        } catch (refreshError) {
+          console.log("[Auth] ensureAuthenticated: 세션 갱신 중 예외:", refreshError);
+          // 갱신 실패 시 만료된 세션이면 null 반환
+          if (timeUntilExpiry <= 0) {
+            return null;
+          }
+        }
+      }
+    }
+
+    // 세션이 유효하면 사용자 정보 가져오기
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
+      console.log("[Auth] ensureAuthenticated: 사용자 정보 조회 실패:", userError?.message);
       return null;
     }
 
@@ -179,7 +250,8 @@ export const ensureAuthenticated = async (): Promise<{
       session,
     };
   } catch (error) {
-    // 예외 발생 시 조용히 null 반환
+    // 예외 발생 시 로그 출력 후 null 반환
+    console.log("[Auth] ensureAuthenticated: 예외 발생:", error);
     return null;
   }
 };

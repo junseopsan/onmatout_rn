@@ -121,9 +121,12 @@ export const useAuth = () => {
             const now = Date.now();
             const timeUntilExpiry = expiresAt - now;
 
-            // 만료 30분 전이면 갱신 시도
-            if (timeUntilExpiry < 30 * 60 * 1000 && timeUntilExpiry > 0) {
-              console.log("[Auth] 세션 만료 임박, 주기적 갱신 시도");
+            // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신 시도
+            // 세션 시간이 1시간이므로 5분 전에 갱신하는 것이 적절
+            if (timeUntilExpiry < 5 * 60 * 1000) {
+              console.log("[Auth] 세션 만료 임박 또는 만료됨, 주기적 갱신 시도", {
+                timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
+              });
               const {
                 data: { session: refreshedSession },
                 error: refreshError,
@@ -164,8 +167,8 @@ export const useAuth = () => {
     // 초기 확인
     refreshSession();
 
-    // 10분마다 세션 확인 및 갱신
-    const interval = setInterval(refreshSession, 10 * 60 * 1000);
+    // 세션 시간이 1시간이므로 5분마다 세션 확인 및 갱신 (적절한 간격)
+    const interval = setInterval(refreshSession, 5 * 60 * 1000);
 
     return () => {
       clearInterval(interval);
