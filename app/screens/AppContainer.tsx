@@ -199,13 +199,13 @@ export default function AppContainer() {
     return () => clearTimeout(safetyTimer);
   }, [isLoading, authLoading, navigation]);
 
-  // 스플래시 화면 표시 중이거나 인증 상태 로딩 중
-  if (isLoading || authLoading) {
+  // 스플래시 화면 표시 중이거나 인증 상태 로딩 중, 또는 버전 체크 중
+  if (isLoading || authLoading || !versionChecked) {
     return <SplashScreen />;
   }
 
   // 필수 업데이트 안내 화면
-  if (versionChecked && forceUpdateInfo) {
+  if (forceUpdateInfo) {
     return (
       <ForceUpdateScreen
         storeUrl={forceUpdateInfo.storeUrl}
@@ -213,4 +213,8 @@ export default function AppContainer() {
       />
     );
   }
+
+  // 버전 체크 완료 후에도 리다이렉트가 안된 경우를 위한 안전장치
+  // 이 경우는 실제로 발생하지 않아야 하지만, 혹시 모를 경우를 대비
+  return <SplashScreen />;
 }
