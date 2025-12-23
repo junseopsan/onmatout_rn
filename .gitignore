@@ -98,6 +98,11 @@ jspm_packages/
 
 # Yarn Integrity file
 .yarn-integrity
+# Yarn PnP
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
+yarn.lock
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -177,6 +182,8 @@ ios/Pods/
 *.aab
 *.ap_
 *.dex
+android/app/src/debugOptimized/
+android/app/src/releaseOptimized/
 
 # CocoaPods
 /ios/Pods/
@@ -206,5 +213,6 @@ fastlane/test_output
 
 # Local env files
 .env*.local
+credentials.json
 
 app-example
