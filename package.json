@@ -14,7 +14,18 @@
     "submit:ios": "npx eas submit --platform ios --latest",
     "build:ios-dev": "eas build --platform ios --profile production-dev",
     "build:ios-dev-preview": "eas build --platform ios --profile preview-dev",
-    "submit:ios-dev": "eas submit --platform ios --profile production-dev"
+    "submit:ios-dev": "eas submit --platform ios --profile production-dev",
+    "build:android": "npx eas build --platform android --profile production",
+    "build:android-preview": "npx eas build --platform android --profile preview",
+    "submit:android": "npx eas submit --platform android --latest",
+    "build:android-dev": "npx eas build --platform android --profile production-dev",
+    "build:android-dev-preview": "npx eas build --platform android --profile preview-dev",
+    "submit:android-dev": "npx eas submit --platform android --profile production-dev",
+    "build:android:local": "cd android && ./gradlew assembleRelease && cd ..",
+    "build:android:bundle": "cd android && ./gradlew bundleRelease && cd ..",
+    "android:install:release": "cd android && ./gradlew assembleRelease && cd .. && adb install -r android/app/build/outputs/apk/release/app-release.apk",
+    "build:android:dev": "npx eas build --platform android --profile development",
+    "build:android:dev-dev": "npx eas build --platform android --profile development-dev"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

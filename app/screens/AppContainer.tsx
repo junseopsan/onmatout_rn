@@ -8,7 +8,6 @@ import { AppState, Platform } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
-import ForceUpdateScreen from "./ForceUpdateScreen";
 import SplashScreen from "./SplashScreen";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -80,15 +79,30 @@ export default function AppContainer() {
 
   // 앱 시작 시 알림 권한 요청 및 세션 갱신
   useEffect(() => {
-    requestNotificationPermissions();
+    // 알림 권한 요청은 에러가 발생해도 앱 진행에 영향 없도록
+    requestNotificationPermissions().catch((error) => {
+      console.log("[AppContainer] 알림 권한 요청 실패 (무시):", error);
+    });
 
     // 앱 시작 시 세션이 만료되었거나 만료 직전이면 즉시 갱신 시도
     const refreshSessionOnStart = async () => {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        // 타임아웃 추가 (5초)
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{
+          data: { session: null };
+          error: { message: string };
+        }>((resolve) => {
+          setTimeout(() => {
+            resolve({
+              data: { session: null },
+              error: { message: "Session timeout" },
+            });
+          }, 5000);
+        });
+
+        const result = await Promise.race([sessionPromise, timeoutPromise]);
+        const { data, error } = result;
 
         if (error) {
           console.log(
@@ -98,38 +112,59 @@ export default function AppContainer() {
           return;
         }
 
-        if (!session) {
+        if (!data?.session) {
           console.log("[AppContainer] 앱 시작 시 세션 없음");
           return;
         }
 
+        const session = data.session;
         if (session.expires_at) {
           const expiresAt = session.expires_at * 1000;
           const now = Date.now();
           const timeUntilExpiry = expiresAt - now;
 
-          // 세션이 만료되었거나 만료 직전(30초 이내)이면 즉시 갱신
-          if (timeUntilExpiry < 30 * 1000) {
+          // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신
+          if (timeUntilExpiry < 5 * 60 * 1000) {
             console.log("[AppContainer] 앱 시작 시 세션 만료 임박, 갱신 시도", {
               timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
             });
-            const {
-              data: { session: refreshedSession },
-              error: refreshError,
-            } = await supabase.auth.refreshSession();
+
+            // 갱신에도 타임아웃 추가
+            const refreshPromise = supabase.auth.refreshSession();
+            const refreshTimeoutPromise = new Promise<{
+              data: { session: null };
+              error: { message: string };
+            }>((resolve) => {
+              setTimeout(() => {
+                resolve({
+                  data: { session: null },
+                  error: { message: "Refresh timeout" },
+                });
+              }, 5000);
+            });
+
+            const refreshResult = await Promise.race([
+              refreshPromise,
+              refreshTimeoutPromise,
+            ]);
+            const { data: refreshData, error: refreshError } = refreshResult;
 
             if (refreshError) {
               console.log(
                 "[AppContainer] 앱 시작 시 세션 갱신 실패:",
                 refreshError.message
               );
-            } else if (refreshedSession) {
+            } else if (refreshData?.session) {
               console.log("[AppContainer] 앱 시작 시 세션 갱신 성공");
             }
           }
         }
       } catch (error) {
-        console.log("[AppContainer] 앱 시작 시 세션 확인 중 오류:", error);
+        // 세션 확인 실패는 앱 진행에 영향 없도록
+        console.log(
+          "[AppContainer] 앱 시작 시 세션 확인 중 오류 (무시):",
+          error
+        );
       }
     };
 
@@ -186,12 +221,22 @@ export default function AppContainer() {
       } catch (e) {
         // 버전 체크 실패 시에는 조용히 무시 (앱 사용 가능)
         console.log("[VersionCheck] failed", e);
+        // 에러가 발생해도 버전 체크는 완료로 표시하여 앱이 진행되도록 함
       } finally {
+        // 에러가 발생해도 버전 체크는 완료로 표시
         setVersionChecked(true);
       }
     };
 
-    checkAppVersion();
+    // 버전 체크에 타임아웃 추가 (10초)
+    const timeoutId = setTimeout(() => {
+      console.log("[VersionCheck] 타임아웃 - 버전 체크 건너뛰기");
+      setVersionChecked(true);
+    }, 10000);
+
+    checkAppVersion().finally(() => {
+      clearTimeout(timeoutId);
+    });
   }, [versionChecked]);
 
   useEffect(() => {
@@ -346,15 +391,15 @@ export default function AppContainer() {
   }
 
   // 필수 업데이트 안내 화면
-  if (forceUpdateInfo) {
-    console.log("[AppContainer] ForceUpdateScreen 표시");
-    return (
-      <ForceUpdateScreen
-        storeUrl={forceUpdateInfo.storeUrl}
-        minVersion={forceUpdateInfo.minVersion}
-      />
-    );
-  }
+  // if (forceUpdateInfo) {
+  //   console.log("[AppContainer] ForceUpdateScreen 표시");
+  //   return (
+  //     <ForceUpdateScreen
+  //       storeUrl={forceUpdateInfo.storeUrl}
+  //       minVersion={forceUpdateInfo.minVersion}
+  //     />
+  //   );
+  // }
 
   // 버전 체크 완료 후에도 리다이렉트가 안된 경우를 위한 안전장치
   // 리다이렉트가 진행 중이면 SplashScreen을 계속 표시

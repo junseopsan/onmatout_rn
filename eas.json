@@ -19,7 +19,8 @@
         "resourceClass": "m-medium"
       },
       "android": {
-        "resourceClass": "medium"
+        "resourceClass": "medium",
+        "gradleCommand": ":app:assembleRelease"
       }
     },
     "production": {
@@ -27,7 +28,12 @@
         "resourceClass": "m-medium"
       },
       "android": {
-        "resourceClass": "medium"
+        "resourceClass": "medium",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "NODE_ENV": "production",
+        "EXPO_USE_HERMES": "true"
       }
     },
     "testflight": {

@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { AppState } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { supabase } from "../lib/supabase";
 import AppNavigator from "../navigation";
 import { AppThemeProvider } from "./_layout";
@@ -277,15 +278,17 @@ export default function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <AppThemeProvider>
-          <NavigationContainer>
-            <StatusBar style="light" />
-            <AppNavigator />
-          </NavigationContainer>
-        </AppThemeProvider>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <AppThemeProvider>
+            <NavigationContainer>
+              <StatusBar style="light" />
+              <AppNavigator />
+            </NavigationContainer>
+          </AppThemeProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
