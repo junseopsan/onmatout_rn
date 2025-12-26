@@ -25,7 +25,8 @@
     "build:android:bundle": "cd android && ./gradlew bundleRelease && cd ..",
     "android:install:release": "cd android && ./gradlew assembleRelease && cd .. && adb install -r android/app/build/outputs/apk/release/app-release.apk",
     "build:android:dev": "npx eas build --platform android --profile development",
-    "build:android:dev-dev": "npx eas build --platform android --profile development-dev"
+    "build:android:dev-dev": "npx eas build --platform android --profile development-dev",
+    "install:android:release": "npm run android:install:release"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
