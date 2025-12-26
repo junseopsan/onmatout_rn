@@ -3,6 +3,8 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -45,18 +47,30 @@ export default function EditNicknameScreen() {
   }, [getUserProfile]);
 
   const handleNicknameChange = (text: string) => {
-    // 허용 문자: 한글, 영문, 숫자, 공백
-    const sanitized = text.replace(/[^가-힣a-zA-Z0-9\s]/g, "");
-    setNickname(sanitized);
-    setNicknameError("");
+    // 한글 입력 조합을 방해하지 않도록 입력값을 그대로 저장
+    setNickname(text);
+    
+    // 에러 메시지 초기화 (실시간 검증은 하지 않음)
+    if (nicknameError) {
+      setNicknameError("");
+    }
+  };
 
-    // 닉네임 유효성 검사
-    if (sanitized.length < 2) {
-      setNicknameError("닉네임은 2자 이상이어야 합니다.");
-    } else if (sanitized.length > 15) {
-      setNicknameError("닉네임은 15자 이하여야 합니다.");
-    } else if (!/^[가-힣a-zA-Z0-9\s]*$/.test(sanitized)) {
+  const handleNicknameBlur = () => {
+    // 포커스 해제 시 허용되지 않은 문자 제거 및 검증
+    const sanitized = nickname.replace(/[^가-힣a-zA-Z0-9\s]/g, "");
+    
+    if (sanitized !== nickname) {
+      setNickname(sanitized);
       setNicknameError("닉네임은 한글, 영문, 숫자만 사용 가능합니다.");
+    } else if (nickname.trim() && nickname.trim().length < 2) {
+      setNicknameError("닉네임은 2자 이상이어야 합니다.");
+    } else if (nickname.trim().length > 15) {
+      setNicknameError("닉네임은 15자 이하여야 합니다.");
+    } else if (nickname.trim() && !/^[가-힣a-zA-Z0-9\s]*$/.test(nickname.trim())) {
+      setNicknameError("닉네임은 한글, 영문, 숫자만 사용 가능합니다.");
+    } else {
+      setNicknameError("");
     }
   };
 
@@ -119,7 +133,11 @@ export default function EditNicknameScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -132,7 +150,11 @@ export default function EditNicknameScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>닉네임</Text>
@@ -140,6 +162,7 @@ export default function EditNicknameScreen() {
               <Input
                 value={nickname}
                 onChangeText={handleNicknameChange}
+                onBlur={handleNicknameBlur}
                 placeholder="닉네임을 입력해주세요."
                 error={nicknameError}
                 // 닉네임 입력창은 placeholder/텍스트 간격을 기본값(0)에 가깝게 유지
@@ -177,7 +200,7 @@ export default function EditNicknameScreen() {
           disabled={!nickname.trim() || !!nicknameError}
         />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

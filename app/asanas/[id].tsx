@@ -10,6 +10,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  AppState,
   Dimensions,
   ScrollView as RNScrollView,
   TouchableOpacity,
@@ -95,7 +96,26 @@ export default function AsanaDetailScreen() {
     isLoading: loading,
     isError,
     error,
+    refetch,
   } = useAsanaDetail(id);
+
+  // 포그라운드 복귀 시 데이터 리프레시
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (
+        AppState.currentState.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        console.log("[아사나 상세] 포그라운드 복귀 - 데이터 리프레시");
+        // 포그라운드 복귀 시 데이터 강제 리프레시
+        refetch().catch((err) => {
+          console.log("[아사나 상세] 포그라운드 복귀 리프레시 실패:", err);
+        });
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refetch]);
 
   // 로컬 상세 이미지 배열 (예: 006_001, 006_002, 006_003 ...)
   const imageSources = useMemo(() => {

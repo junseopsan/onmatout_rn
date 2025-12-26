@@ -70,6 +70,8 @@ export const useAsanaDetail = (id: string) => {
     staleTime: 10 * 60 * 1000, // 10분
     gcTime: 30 * 60 * 1000, // 30분
     retry: 2,
+    refetchOnMount: true, // 컴포넌트 마운트 시 stale한 데이터가 있으면 refetch
+    refetchOnWindowFocus: true, // 포커스 복귀 시 stale한 데이터가 있으면 refetch
   });
 };
 

@@ -442,15 +442,16 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
-            // iOS에서만 progressViewOffset 사용
-            // 헤더 높이(100) + Safe Area 고려하여 조정
-            {...(Platform.OS === "ios" && { progressViewOffset: 65 })}
+            colors={["transparent"]}
+            tintColor="transparent"
+            // 인디케이터를 투명하게 설정하여 숨김 (기능은 유지)
+            {...(Platform.OS === "ios" && {
+              progressViewOffset: 100,
+            })}
           />
         }
         {...(Platform.OS === "ios" && {
-          contentInsetAdjustmentBehavior: "automatic",
+          contentInsetAdjustmentBehavior: "never", // SafeArea 자동 조정 비활성화
         })}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -472,6 +473,7 @@ export default function DashboardScreen() {
         }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
+        style={{ zIndex: 1 }} // 로고 영역(zIndex: 10) 뒤에 있지만 인디케이터는 보이도록
       />
 
       {/* 피드 상세 모달 */}
@@ -534,7 +536,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   listContainer: {
-    paddingTop: 60, // 상단 여백을 더 줄여 로고와 첫 카드 간 기본 간격 축소
+    paddingTop: 45, // 상단 여백을 줄여 로고와 첫 카드 간 간격 축소
     paddingBottom: 20,
   },
   emptyContainer: {

@@ -14,6 +14,7 @@ interface InputProps {
   disabled?: boolean;
   style?: ViewStyle;
   inputStyle?: TextStyle;
+  onBlur?: () => void;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -28,6 +29,7 @@ export const Input: React.FC<InputProps> = ({
   disabled = false,
   style,
   inputStyle,
+  onBlur,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -83,7 +85,10 @@ export const Input: React.FC<InputProps> = ({
           autoCapitalize={autoCapitalize}
           editable={!disabled}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onBlur={() => {
+            setIsFocused(false);
+            onBlur?.();
+          }}
         />
       </View>
       {error && <Text style={errorStyle}>{error}</Text>}
