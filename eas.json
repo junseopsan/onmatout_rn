@@ -29,7 +29,7 @@
       },
       "android": {
         "resourceClass": "medium",
-        "gradleCommand": ":app:assembleRelease"
+        "buildType": "app-bundle"
       },
       "env": {
         "NODE_ENV": "production",
