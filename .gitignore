@@ -143,6 +143,10 @@ temp/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
+# Service account / credentials
+onmatout-*.json
+*service_account*.json
 
 # Expo
 .expo/
@@ -216,3 +220,6 @@ fastlane/test_output
 credentials.json
 
 app-example
+
+
+onmatout-*.json

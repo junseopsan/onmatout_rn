@@ -54,3 +54,20 @@ Join our community of developers creating universal apps.
 # onmatout android apk file build
 
 "gradleCommand": ":app:assembleRelease"
+
+## Google 서비스 계정 키 관리
+
+- `onmatout-c61ec9ef597f.json`과 같은 서비스 계정 키 파일을 리포에 두지 마세요.
+- 로컬 `.env` (커밋 금지)에 아래 형태로 저장해 사용하세요:
+  - `GOOGLE_SERVICE_ACCOUNT_TYPE=service_account`
+  - `GOOGLE_SERVICE_ACCOUNT_PROJECT_ID=onmatout`
+  - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID=<your_private_key_id>`
+  - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n<your_private_key>\n-----END PRIVATE KEY-----\n"`
+  - `GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL=onmatout@onmatout.iam.gserviceaccount.com`
+  - `GOOGLE_SERVICE_ACCOUNT_CLIENT_ID=<your_client_id>`
+  - `GOOGLE_SERVICE_ACCOUNT_AUTH_URI=https://accounts.google.com/o/oauth2/auth`
+  - `GOOGLE_SERVICE_ACCOUNT_TOKEN_URI=https://oauth2.googleapis.com/token`
+  - `GOOGLE_SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs`
+  - `GOOGLE_SERVICE_ACCOUNT_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/onmatout%40onmatout.iam.gserviceaccount.com`
+  - `GOOGLE_SERVICE_ACCOUNT_UNIVERSE_DOMAIN=googleapis.com`
+- 필요한 경우 코드에서 `process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` 등으로 읽어서 사용하세요. (서비스 계정 키는 클라이언트/모바일 빌드에 포함하지 마세요.)
