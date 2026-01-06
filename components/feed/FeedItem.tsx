@@ -110,6 +110,11 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     setShowCommentModal(true);
   };
 
+  const stateInfos =
+    record.states
+      ?.map((id) => getStateInfo(id))
+      .filter((s): s is NonNullable<typeof s> => !!s) || [];
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -142,7 +147,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         {record.asanas && record.asanas.length > 0 && (
           <View style={styles.asanasContainer}>
             <View style={styles.asanasList}>
-              {record.asanas.slice(0, 6).map((asanaId, index) => {
+              {record.asanas.map((asanaId, index) => {
                 const asana = getAsanaInfo(asanaId);
                 if (!asana) {
                   console.log(
@@ -184,13 +189,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                   </View>
                 );
               })}
-              {record.asanas.length > 6 && (
-                <View style={styles.moreAsanasOverlay}>
-                  <Text style={styles.moreAsanasText}>
-                    +{String(record.asanas.length - 6)}
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
         )}
@@ -234,6 +232,27 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
             <Text style={styles.actionCount}>{String(stats.commentCount)}</Text>
           ) : null}
         </TouchableOpacity>
+        <View style={styles.actionSpacer} />
+        {stateInfos.length > 0 && (
+          <View style={styles.statesChips}>
+            {stateInfos.map((state) => (
+              <View
+                key={state.id}
+                style={[
+                  styles.stateChip,
+                  {
+                    borderColor: state.color,
+                    backgroundColor: `${state.color}15`,
+                  },
+                ]}
+              >
+                <Text style={[styles.stateText, { color: state.color }]}>
+                  {state.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* 시간 정보 */}
@@ -403,6 +422,32 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "600",
+  },
+  actionSpacer: {
+    flex: 1,
+  },
+  stateChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 6,
+  },
+  stateText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  stateMore: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  statesChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    justifyContent: "flex-end",
   },
   photosContainer: {
     flexDirection: "row",

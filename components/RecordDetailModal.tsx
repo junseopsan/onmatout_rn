@@ -176,8 +176,8 @@ export default function RecordDetailModal({
           asanas: prev.asanas.filter((id) => id !== asanaId),
         };
       } else {
-        if (prev.asanas.length >= 10) {
-          Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+        if (prev.asanas.length >= 20) {
+          Alert.alert("알림", "최대 20개의 아사나만 선택할 수 있습니다.");
           return prev;
         }
         return {
@@ -197,6 +197,10 @@ export default function RecordDetailModal({
           states: prev.states.filter((id) => id !== stateId),
         };
       } else {
+        if (prev.states.length >= 3) {
+          Alert.alert("알림", "최대 3개의 상태만 선택할 수 있습니다.");
+          return prev;
+        }
         return {
           ...prev,
           states: [...prev.states, stateId],
@@ -316,7 +320,7 @@ export default function RecordDetailModal({
               <Text style={styles.sectionTitle}>수련한 아사나</Text>
               <Text style={styles.sectionSubtitle}>
                 {isEditMode
-                  ? `${editData.asanas.length}/10개 선택됨`
+                  ? `${editData.asanas.length}/20개 선택됨`
                   : `${record.asanas.length}개의 아사나`}
               </Text>
             </View>
@@ -327,7 +331,7 @@ export default function RecordDetailModal({
                 <Text
                   style={[styles.sectionSubtitle, styles.sectionSubtitleEdit]}
                 >
-                  최대 10개까지 선택 가능 ({editData.asanas.length}/10)
+                  최대 20개까지 선택 가능 ({editData.asanas.length}/20)
                 </Text>
 
                 {/* 아사나 추가 버튼 */}
@@ -464,7 +468,7 @@ export default function RecordDetailModal({
               // 수정 모드: 기록 추가 화면과 동일한 UI
               <>
                 <Text style={styles.sectionSubtitle}>
-                  수련 중 느낀 상태를 선택해주세요 (다중 선택 가능)
+                  수련 중 느낀 상태를 선택해주세요 (최대 3개)
                 </Text>
                 <View style={styles.statesContainer}>
                   {STATES.map((state) => (

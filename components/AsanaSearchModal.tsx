@@ -135,9 +135,9 @@ export default function AsanaSearchModal({
       if (isSelected) {
         return prev.filter((item) => item.id !== asana.id);
       } else {
-        // 10개 제한 확인
-        if (prev.length >= 10) {
-          Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+        // 최대 선택 개수 제한
+        if (prev.length >= 20) {
+          Alert.alert("알림", "최대 20개의 아사나만 선택할 수 있습니다.");
           return prev;
         }
         return [...prev, asana];

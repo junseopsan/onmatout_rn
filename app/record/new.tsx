@@ -55,8 +55,8 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
   // 모달에서 선택된 아사나 처리
   const handleAsanaSelect = (newAsanas: Asana[]) => {
     const totalCount = selectedAsanas.length + newAsanas.length;
-    if (totalCount > 10) {
-      Alert.alert("알림", "최대 10개의 아사나만 선택할 수 있습니다.");
+    if (totalCount > 20) {
+      Alert.alert("알림", "최대 20개의 아사나만 선택할 수 있습니다.");
       return;
     }
     setSelectedAsanas((prev) => [...prev, ...newAsanas]);
@@ -67,9 +67,12 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
     setSelectedStates((prev) => {
       if (prev.includes(stateId)) {
         return prev.filter((id) => id !== stateId);
-      } else {
-        return [...prev, stateId];
       }
+      if (prev.length >= 3) {
+        Alert.alert("알림", "최대 3개의 상태만 선택할 수 있습니다.");
+        return prev;
+      }
+      return [...prev, stateId];
     });
   };
 
@@ -188,7 +191,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           </TouchableOpacity>
 
           <Text style={styles.asanaCountText}>
-            최대 10개까지 선택 가능 ({selectedAsanas.length}/10)
+            최대 20개까지 선택 가능 ({selectedAsanas.length}/20)
           </Text>
 
           {/* 선택된 아사나 */}
@@ -237,7 +240,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
             ))}
           </View>
           <Text style={styles.stateSubtitleText}>
-            수련 중 느낀 상태를 선택해주세요 (다중 선택 가능)
+            수련 중 느낀 상태를 선택해주세요 (최대 3개)
           </Text>
         </View>
 
