@@ -141,12 +141,12 @@ const refreshSessionIfNeeded = async (): Promise<boolean> => {
     if (timeUntilExpiry >= 5 * 60 * 1000) {
       // 세션이 유효하면 상세 로그 생략
     } else {
-      console.log("🟢 [Session] 세션 상태:", {
-        expiresAt: new Date(expiresAt).toISOString(),
-        now: new Date(now).toISOString(),
-        timeUntilExpiry: Math.round(timeUntilExpiry / 1000 / 60) + "분",
+    console.log("🟢 [Session] 세션 상태:", {
+      expiresAt: new Date(expiresAt).toISOString(),
+      now: new Date(now).toISOString(),
+      timeUntilExpiry: Math.round(timeUntilExpiry / 1000 / 60) + "분",
         timeUntilExpirySeconds: Math.round(timeUntilExpiry / 1000) + "초",
-      });
+    });
     }
 
     // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신
@@ -177,13 +177,13 @@ const refreshSessionIfNeeded = async (): Promise<boolean> => {
           refreshTimeoutPromise,
         ]);
 
-        if (refreshError) {
+      if (refreshError) {
           console.log("❌ [Session] 세션 갱신 실패:", {
             message: refreshError.message,
             status: refreshError.status,
           });
           return false;
-        } else if (refreshData.session) {
+      } else if (refreshData.session) {
           console.log("✅ [Session] 세션 갱신 성공", {
             expiresAt: new Date(refreshData.session.expires_at * 1000).toISOString(),
           });
@@ -262,7 +262,7 @@ export default function App() {
             
             // 세션 갱신 결과와 관계없이 포커스 이벤트 발생
             // 네트워크 재연결 시 데이터를 불러오도록 함
-            focusManager.setFocused(true);
+          focusManager.setFocused(true);
           } catch (error) {
             console.log("❌ [App] 네트워크 재연결 처리 중 예외:", error);
           }
@@ -279,16 +279,16 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <AppThemeProvider>
-            <NavigationContainer>
-              <StatusBar style="light" />
-              <AppNavigator />
-            </NavigationContainer>
-          </AppThemeProvider>
-        </SafeAreaProvider>
-      </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <AppThemeProvider>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <AppNavigator />
+          </NavigationContainer>
+        </AppThemeProvider>
+      </SafeAreaProvider>
+    </QueryClientProvider>
     </ErrorBoundary>
   );
 }

@@ -107,7 +107,11 @@ export default function ProfileInfoScreen() {
           );
         }
       } else {
-        Alert.alert("오류", result.message || "이미지 업로드에 실패했습니다.");
+        const isCanceled = result.canceled || result.message?.includes("취소");
+        Alert.alert(
+          isCanceled ? "알림" : "오류",
+          result.message || "이미지 업로드에 실패했습니다."
+        );
       }
     } catch (error) {
       console.error("사진 촬영 실패:", error);
@@ -150,7 +154,11 @@ export default function ProfileInfoScreen() {
           );
         }
       } else {
-        Alert.alert("오류", result.message || "이미지 업로드에 실패했습니다.");
+        const isCanceled = result.canceled || result.message?.includes("취소");
+        Alert.alert(
+          isCanceled ? "알림" : "오류",
+          result.message || "이미지 업로드에 실패했습니다."
+        );
       }
     } catch (error) {
       console.error("이미지 선택 실패:", error);

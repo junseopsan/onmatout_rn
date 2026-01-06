@@ -1,5 +1,6 @@
+import { toByteArray } from "base64-js";
 import Constants from "expo-constants";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../supabase";
 import { logger } from "../utils/logger";
@@ -12,6 +13,7 @@ export const storageAPI = {
     success: boolean;
     url?: string;
     message?: string;
+    canceled?: boolean;
   }> => {
     try {
       logger.log("프로필 이미지 업로드 시작:", userId);
@@ -55,6 +57,12 @@ export const storageAPI = {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const imageAsset = result.assets[0];
         const imageUri = imageAsset.uri;
+        if (!imageUri) {
+          return {
+            success: false,
+            message: "이미지 경로를 찾을 수 없습니다. 다시 시도해주세요.",
+          };
+        }
         logger.log("선택된 이미지:", imageUri);
 
         // 파일 확장자 및 MIME 타입 추출
@@ -69,18 +77,71 @@ export const storageAPI = {
 
         logger.log("업로드할 파일 경로:", filePath);
 
-        // RN/Expo에서는 FileSystem을 통한 base64 업로드가 더 안정적
-        const base64 = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        // React Native에서 FileSystem을 사용하여 base64로 읽기
+        let base64: string;
+        try {
+          const encoding =
+            // expo-file-system
+            (FileSystem as any).EncodingType?.Base64 ||
+            (FileSystem as any).EncodingType?.base64 ||
+            // fallback string literal
+            "base64";
 
-        // base64를 Uint8Array로 변환
-        const byteCharacters = atob(base64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
+          base64 = await FileSystem.readAsStringAsync(imageUri, {
+            encoding,
+          } as any);
+        } catch (err) {
+          logger.log(
+            "base64 읽기 실패:",
+            err instanceof Error ? err.message : String(err)
+          );
+          return {
+            success: false,
+            message:
+              "이미지 데이터를 읽는 중 오류가 발생했습니다. 다시 시도해주세요.",
+          };
         }
-        const byteArray = new Uint8Array(byteNumbers);
+
+        if (!base64) {
+          return {
+            success: false,
+            message: "이미지 데이터를 읽을 수 없습니다. 다시 시도해주세요.",
+          };
+        }
+
+        // data URI가 섞여 있을 때 안전하게 분리
+        let normalized = base64.trim();
+        if (normalized.startsWith("data:")) {
+          const commaIdx = normalized.indexOf(",");
+          normalized =
+            commaIdx >= 0 ? normalized.slice(commaIdx + 1) : normalized;
+        }
+
+        // 공백/개행 제거
+        normalized = normalized.replace(/\\s/g, "");
+
+        // 길이 4의 배수가 되도록 패딩 보정
+        const padLen = normalized.length % 4;
+        if (padLen > 0) {
+          normalized = normalized.padEnd(normalized.length + (4 - padLen), "=");
+        }
+
+        logger.log("base64 길이:", normalized.length);
+
+        // 안정적인 base64 디코딩: base64-js 활용
+        let byteArray: Uint8Array;
+        try {
+          byteArray = toByteArray(normalized);
+        } catch (error) {
+          logger.log(
+            "base64 디코딩 실패:",
+            error instanceof Error ? error.message : String(error)
+          );
+          return {
+            success: false,
+            message: "이미지 변환 중 오류가 발생했습니다. 다시 시도해주세요.",
+          };
+        }
 
         logger.log("이미지 byteArray 생성 완료, 크기:", byteArray.length);
 
@@ -165,6 +226,7 @@ export const storageAPI = {
       return {
         success: false,
         message: "이미지 선택이 취소되었습니다.",
+        canceled: true,
       };
     } catch (error) {
       return {
@@ -206,7 +268,7 @@ export const storageAPI = {
       return {
         success: true,
       };
-    } catch (error) {
+    } catch {
       return {
         success: false,
         message: "이미지 삭제 중 오류가 발생했습니다.",
