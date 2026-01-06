@@ -26,6 +26,7 @@ const { width } = Dimensions.get("window");
 export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [isMemoExpanded, setIsMemoExpanded] = useState(false);
 
   // 소셜 기능 훅들
   const { data: stats } = useRecordStats(record.id);
@@ -193,8 +194,25 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
           </View>
         )}
 
-        {/* 메모 - 아이콘 위쪽 */}
-        {record.memo && <Text style={styles.memo}>{record.memo}</Text>}
+        {/* 메모 - 아이콘 위쪽 (인스타그램 스타일 줄임/더보기) */}
+        {record.memo && (
+          <View style={styles.memoContainer}>
+            <Text
+              style={styles.memo}
+              numberOfLines={isMemoExpanded ? undefined : 2}
+            >
+              {record.memo}
+            </Text>
+            {!isMemoExpanded && record.memo.length > 80 && (
+              <TouchableOpacity
+                onPress={() => setIsMemoExpanded(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.moreText}>더보기</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </TouchableOpacity>
 
       {/* 액션 버튼들 - 메모 아래쪽 (부모 터치 이벤트와 분리) */}
@@ -347,7 +365,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text,
     lineHeight: 20,
+    marginBottom: 4,
+  },
+  memoContainer: {
     marginBottom: 12,
+  },
+  moreText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 4,
   },
   statesContainer: {
     flexDirection: "row",

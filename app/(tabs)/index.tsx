@@ -8,13 +8,11 @@ import {
   Easing,
   FlatList,
   Platform,
-  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import FeedDetailModal from "../../components/feed/FeedDetailModal";
 import FeedItem from "../../components/feed/FeedItem";
 import { FeedItemSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
@@ -22,17 +20,12 @@ import { useAllAsanasForFeed } from "../../hooks/useAsanas";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeedRecords } from "../../hooks/useRecords";
 import { useAuthStore } from "../../stores/authStore";
-import { Record } from "../../types/record";
+
+// (Pull-to-refresh 제거됨)
 
 export default function DashboardScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { user } = useAuthStore();
-  const [selectedRecord, setSelectedRecord] = useState<
-    (Record & { user_name?: string; user_avatar_url?: string }) | null
-  >(null);
-  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [feedMode, setFeedMode] = useState<"latest" | "explore">("latest");
   const [exploreOffset, setExploreOffset] = useState(0);
   const tabRefreshInProgress = useRef(false);
@@ -175,79 +168,19 @@ export default function DashboardScreen() {
     }
 
     // 이미 새로고침 중이면 중복 실행 방지
-    if (
-      tabRefreshInProgress.current ||
-      isRefetching ||
-      isManualRefreshing ||
-      isPullRefreshing
-    ) {
+    if (tabRefreshInProgress.current || isRefetching) {
       return;
     }
 
     console.log("피드: 탭 재클릭 - 최상단 이동 및 새로고침");
     tabRefreshInProgress.current = true;
-    setIsManualRefreshing(true);
 
     refetch()
       .catch(() => {})
       .finally(() => {
         tabRefreshInProgress.current = false;
-        setTimeout(() => {
-          setIsManualRefreshing(false);
-        }, 500);
       });
-  }, [
-    isAuthenticated,
-    refetch,
-    headerTranslateY,
-    headerOpacity,
-    isRefetching,
-    isManualRefreshing,
-    isPullRefreshing,
-  ]);
-
-  // Pull-to-refresh 핸들러
-  const handleRefresh = useCallback(() => {
-    if (isAuthenticated) {
-      console.log("피드: Pull-to-refresh");
-      // 아래로 끌어당겨 새로고침하면 다시 최신 모드로 전환
-      setFeedMode("latest");
-      setExploreOffset(0);
-      setIsPullRefreshing(true);
-      refetch()
-        .catch((err) => {
-          console.log("피드: Pull-to-refresh 중 오류:", err);
-        })
-        .finally(() => {
-          // React Query 내부 상태와 상관없이 최대 1회 풀-리프레시 사이클만 유지
-          setIsPullRefreshing(false);
-        });
-    }
-  }, [isAuthenticated, refetch]);
-
-  // 새로고침 상태 (pull-to-refresh 또는 탭 클릭)
-  // React Query의 isRefetching에만 의존하지 않고, 로컬 상태로 안전하게 제어
-  const isRefreshing = isPullRefreshing || isManualRefreshing;
-
-  // refetch 종료 감지 시 로컬 새로고침 상태 정리 + 안전 타임아웃
-  React.useEffect(() => {
-    // isRefetching이 false로 내려오면 즉시 로컬 플래그 해제
-    if (!isRefetching && (isPullRefreshing || isManualRefreshing)) {
-      setIsPullRefreshing(false);
-      setIsManualRefreshing(false);
-      tabRefreshInProgress.current = false;
-    }
-
-    // 혹시 네트워크/포그라운드 이슈로 resolve가 지연될 때 10초 후 강제 해제
-    if (isPullRefreshing || isManualRefreshing) {
-      const timer = setTimeout(() => {
-        setIsPullRefreshing(false);
-        setIsManualRefreshing(false);
-        tabRefreshInProgress.current = false;
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isRefetching, isPullRefreshing, isManualRefreshing]);
+  }, [isAuthenticated, refetch, headerTranslateY, headerOpacity, isRefetching]);
 
   const navigation = useNavigation();
 
@@ -263,12 +196,7 @@ export default function DashboardScreen() {
       ) {
         console.log("[홈탭] 포그라운드 복귀 - 데이터 리프레시");
         // 포그라운드 복귀 시 데이터 강제 리프레시
-        if (
-          isAuthenticated &&
-          !isRefetching &&
-          !isPullRefreshing &&
-          !isManualRefreshing
-        ) {
+        if (isAuthenticated && !isRefetching) {
           refetch().catch((err) => {
             console.log("[홈탭] 포그라운드 복귀 리프레시 실패:", err);
           });
@@ -277,13 +205,7 @@ export default function DashboardScreen() {
     });
 
     return () => subscription.remove();
-  }, [
-    isAuthenticated,
-    isRefetching,
-    isPullRefreshing,
-    isManualRefreshing,
-    refetch,
-  ]);
+  }, [isAuthenticated, isRefetching, refetch]);
 
   // TabNavigator에 스크롤 함수 등록
   React.useEffect(() => {
@@ -362,18 +284,9 @@ export default function DashboardScreen() {
     );
   }
 
-  const handleRecordPress = (record: any) => {
-    setSelectedRecord(record);
-    setIsDetailModalVisible(true);
-  };
-
-  const handleCloseDetailModal = () => {
-    setIsDetailModalVisible(false);
-    setSelectedRecord(null);
-  };
-
+  // 피드 카드 탭 시 상세 팝업을 열지 않도록 onPress 제거
   const renderFeedItem = ({ item }: { item: any }) => (
-    <FeedItem record={item} asanas={asanas} onPress={handleRecordPress} />
+    <FeedItem record={item} asanas={asanas} />
   );
 
   const renderSkeletonItem = () => <FeedItemSkeleton />;
@@ -438,20 +351,8 @@ export default function DashboardScreen() {
           loadingData ? `skeleton-${index}` : item.id
         }
         ListEmptyComponent={!loadingData ? renderEmptyComponent : null}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={["transparent"]}
-            tintColor="transparent"
-            // 인디케이터를 투명하게 설정하여 숨김 (기능은 유지)
-            {...(Platform.OS === "ios" && {
-              progressViewOffset: 100,
-            })}
-          />
-        }
         {...(Platform.OS === "ios" && {
-          contentInsetAdjustmentBehavior: "never", // SafeArea 자동 조정 비활성화
+          contentInsetAdjustmentBehavior: "automatic",
         })}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -476,20 +377,7 @@ export default function DashboardScreen() {
         style={{ zIndex: 1 }} // 로고 영역(zIndex: 10) 뒤에 있지만 인디케이터는 보이도록
       />
 
-      {/* 피드 상세 모달 */}
-      <FeedDetailModal
-        visible={isDetailModalVisible}
-        record={
-          selectedRecord
-            ? {
-                ...selectedRecord,
-                user_name: selectedRecord.user_name || "익명",
-              }
-            : null
-        }
-        asanas={asanas}
-        onClose={handleCloseDetailModal}
-      />
+      {/* 피드 상세 모달 제거 (카드 탭 시 상세 팝업 비표시) */}
     </View>
   );
 }
@@ -536,7 +424,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   listContainer: {
-    paddingTop: 45, // 상단 여백을 줄여 로고와 첫 카드 간 간격 축소
+    paddingTop: 60, // 상단 여백을 늘려 리프레시 아이콘 위 공간 확보
     paddingBottom: 20,
   },
   emptyContainer: {
