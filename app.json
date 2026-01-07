@@ -41,7 +41,9 @@
     "extra": {
       "eas": {
         "projectId": "6b14beae-4cd3-4575-bfbd-403081113b72"
-      }
+      },
+      "supabaseUrl": "https://ueoytttgsjquapkaerwk.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVlb3l0dHRnc2pxdWFwa2FlcndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNDMzODAsImV4cCI6MjA1NzcxOTM4MH0.dci7PiBp7iA0D4dTb6F08HUCAd_lQuezA-1fJ8YQBuQ"
     },
     "owner": "jujoland",
     "plugins": ["expo-font", "expo-web-browser"]

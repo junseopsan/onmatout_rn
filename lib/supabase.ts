@@ -3,12 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 
 // Supabase 환경 변수에서 설정 가져오기 (여러 소스에서 시도)
+// Android에서는 process.env가 제대로 작동하지 않을 수 있으므로
+// Constants.expoConfig?.extra를 우선 확인
 const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  Constants.expoConfig?.extra?.supabaseUrl;
+  Constants.expoConfig?.extra?.supabaseUrl ||
+  process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-  Constants.expoConfig?.extra?.supabaseAnonKey;
+  Constants.expoConfig?.extra?.supabaseAnonKey ||
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // 환경 변수 검증
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -20,10 +22,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error("방법 1: .env 파일 생성");
   console.error("방법 2: app.json의 extra 섹션에 추가");
   console.error("방법 3: expo start 시 환경 변수 전달");
+  console.error("");
+  console.error("디버깅 정보:");
+  console.error("- Constants.expoConfig?.extra:", Constants.expoConfig?.extra);
+  console.error("- process.env.EXPO_PUBLIC_SUPABASE_URL:", process.env.EXPO_PUBLIC_SUPABASE_URL);
 
   throw new Error(
     "Supabase 환경 변수가 설정되지 않았습니다. .env 파일을 생성하거나 환경 변수를 설정해주세요."
   );
+}
+
+// 디버깅용 로그 (개발 환경에서만)
+if (__DEV__) {
+  console.log("✅ Supabase 환경 변수 로드 성공");
+  console.log("- URL:", supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : "없음");
+  console.log("- Anon Key:", supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : "없음");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
