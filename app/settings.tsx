@@ -7,6 +7,8 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -108,7 +110,22 @@ export default function SettingsScreen() {
       }
 
       if (finalStatus !== "granted") {
-        showSnackbar("알림을 받으려면 알림 권한을 허용해주세요.", "warning");
+        // Android에서만 설정으로 이동 팝업 표시
+        if (Platform.OS === "android") {
+          Alert.alert(
+            "알림 권한 필요",
+            "알림을 받으려면 알림 권한을 허용해주세요.",
+            [
+              { text: "취소", style: "cancel" },
+              {
+                text: "설정으로 이동",
+                onPress: () => Linking.openSettings(),
+              },
+            ]
+          );
+        } else {
+          showSnackbar("알림을 받으려면 알림 권한을 허용해주세요.", "warning");
+        }
         return false;
       }
 

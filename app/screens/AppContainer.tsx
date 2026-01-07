@@ -4,7 +4,7 @@ import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import { AppState, Platform } from "react-native";
+import { Alert, AppState, Linking, Platform } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
@@ -42,9 +42,8 @@ export default function AppContainer() {
 
   // 알림 권한 요청 함수
   const requestNotificationPermissions = async () => {
-    // Expo Go에서는 알림 기능 사용 불가 (SDK 53+)
+    // Expo Go에서는 알림 기능 사용 불가 (SDK 53+) - 조용히 무시
     if (Constants.executionEnvironment === "storeClient") {
-      console.log("Expo Go에서는 알림 기능을 사용할 수 없습니다.");
       return;
     }
 
@@ -68,12 +67,39 @@ export default function AppContainer() {
         const { status } = await Notifications.requestPermissionsAsync();
 
         if (status === "granted") {
+          console.log("[AppContainer] 알림 권한 허용됨");
         } else {
+          // 권한이 거부되었을 때 Android에서만 설정으로 이동
+          if (Platform.OS === "android") {
+            Alert.alert(
+              "알림 권한 필요",
+              "알림을 받으려면 알림 권한을 허용해주세요.",
+              [
+                { text: "취소", style: "cancel" },
+                {
+                  text: "설정으로 이동",
+                  onPress: () => Linking.openSettings(),
+                },
+              ]
+            );
+          }
         }
       } else {
+        console.log("[AppContainer] 알림 권한 이미 허용됨");
       }
-    } catch (error) {
-      console.log("알림 권한 요청 실패:", error);
+    } catch (error: any) {
+      // Expo Go 관련 에러는 조용히 무시
+      const errorMessage = error?.message || String(error);
+      if (
+        errorMessage.includes("Expo Go") ||
+        errorMessage.includes("expo-notifications") ||
+        errorMessage.includes("SDK 53") ||
+        errorMessage.includes("development build")
+      ) {
+        // Expo Go 환경에서 발생하는 정상적인 에러 - 무시
+        return;
+      }
+      console.log("[AppContainer] 알림 권한 요청 실패:", error);
     }
   };
 

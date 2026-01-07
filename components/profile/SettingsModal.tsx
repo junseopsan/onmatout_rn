@@ -7,6 +7,7 @@ import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Linking,
   Modal,
   Platform,
   StyleSheet,
@@ -118,7 +119,13 @@ export default function SettingsModal({
         Alert.alert(
           "알림 권한 필요",
           "알림을 받으려면 알림 권한을 허용해주세요.",
-          [{ text: "설정으로 이동", onPress: () => {} }]
+          [
+            { text: "취소", style: "cancel" },
+            {
+              text: "설정으로 이동",
+              onPress: () => Linking.openSettings(),
+            },
+          ]
         );
         return false;
       }
