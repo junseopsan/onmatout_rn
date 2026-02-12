@@ -604,10 +604,28 @@ export const recordsAPI = {
         };
       }
 
+      // 아사나 상세 정보 조회 (카드 썸네일 + 상세 화면 이름·카테고리용)
+      const allAsanas = await supabase.from("asanas").select("*");
+      const asanasMap = new Map<
+        string,
+        {
+          id: string;
+          image_number?: string;
+          category_name_en?: string;
+          sanskrit_name_kr?: string;
+          sanskrit_name_en?: string;
+          [key: string]: unknown;
+        }
+      >();
+      if (allAsanas.data) {
+        allAsanas.data.forEach((a) => {
+          asanasMap.set(a.id, { ...a });
+        });
+      }
+
       // 데이터 변환
       if (data && data.length > 0) {
         const convertedData: Record[] = data.map((item) => {
-          // JSON 문자열을 파싱하여 배열로 변환
           let asanas: string[] = [];
           let states: string[] = [];
           let photos: string[] = [];
@@ -631,18 +649,28 @@ export const recordsAPI = {
               photos = item.photos;
             }
           } catch (error) {
-            // 파싱 실패 시 빈 배열로 설정
             asanas = [];
             states = [];
             photos = [];
           }
+
+          const asanaDetails = asanas
+            .map((asanaId) => asanasMap.get(asanaId))
+            .filter(Boolean) as {
+            id: string;
+            image_number?: string;
+            category_name_en?: string;
+            sanskrit_name_kr?: string;
+            sanskrit_name_en?: string;
+            [key: string]: unknown;
+          }[];
 
           return {
             id: item.id,
             user_id: item.user_id,
             date: item.practice_date,
             title: item.title || `수련 기록 - ${item.practice_date}`,
-            asanas: asanas,
+            asanas: asanaDetails.length > 0 ? asanaDetails : asanas,
             memo: item.memo || "",
             states: states,
             photos: photos,

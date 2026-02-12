@@ -13,6 +13,7 @@ import { STATES } from "../../constants/states";
 import { useRecordStats, useToggleLike } from "../../hooks/useRecords";
 import { Asana } from "../../lib/api/asanas";
 import { Record } from "../../types/record";
+import AsanaDetailModal from "./AsanaDetailModal";
 import CommentModal from "./CommentModal";
 
 interface FeedItemProps {
@@ -27,6 +28,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isMemoExpanded, setIsMemoExpanded] = useState(false);
+  const [selectedAsana, setSelectedAsana] = useState<Asana | null>(null);
 
   // 소셜 기능 훅들
   const { data: stats } = useRecordStats(record.id);
@@ -162,9 +164,11 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                   : null;
 
                 return (
-                  <View
+                  <TouchableOpacity
                     key={`${asanaId}-${index}`}
                     style={styles.asanaThumbnail}
+                    onPress={() => setSelectedAsana(asana)}
+                    activeOpacity={0.8}
                   >
                     {imageUrl ? (
                       <Image
@@ -187,7 +191,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                         <Text style={styles.asanaImagePlaceholderText}>📝</Text>
                       </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
@@ -289,6 +293,13 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         onClose={() => setShowCommentModal(false)}
         recordId={record.id}
         recordTitle={record.title}
+      />
+
+      {/* 아사나 상세 팝업 (아사나 탭 상세와 동일 내용) */}
+      <AsanaDetailModal
+        visible={!!selectedAsana}
+        onClose={() => setSelectedAsana(null)}
+        asana={selectedAsana}
       />
     </View>
   );

@@ -17,7 +17,6 @@ import SimpleRecordCard from "../../components/SimpleRecordCard";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfileStats } from "../../hooks/useDashboard";
-import { useRecordData } from "../../hooks/useRecords";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -30,30 +29,37 @@ export default function ProfileScreen() {
 
   // authStore의 프로필 사용 (로컬 state 제거)
 
-  // 날짜 선택 상태
+  // 보기 모드: 'all' = 전체 수련 기록(기본), 'month' = 해당 연월만
+  const [viewMode, setViewMode] = useState<"all" | "month">("all");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
-  // 프로필 통계 데이터 가져오기 (allRecords만) - 로그인 사용자 기준
+  // 프로필 통계 + 전체 수련 기록 (allRecords로 통계·리스트 모두 사용)
   const userId = user?.id;
   const { allRecords, isLoading, refetch } = useProfileStats(userId);
 
-  // 기록 데이터 가져오기 (월별 리스트는 recentRecords 기준)
-  const {
-    recentRecords,
-    refetch: refetchRecords,
-    isLoading: isRecordDataLoading,
-  } = useRecordData();
+  // 날짜 기준 정렬 (최신순)
+  const sortedAllRecords = [...(allRecords || [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
-  // 선택한 년월에 따른 필터링된 기록
-  const filteredRecords = recentRecords.filter((record) => {
+  // 연월 필터 적용된 기록 (viewMode === 'month'일 때 사용)
+  const filteredByMonth = (allRecords || []).filter((record) => {
     const recordDate = new Date(record.created_at);
-    const recordYear = recordDate.getFullYear();
-    const recordMonth = recordDate.getMonth() + 1;
-
-    return recordYear === selectedYear && recordMonth === selectedMonth;
+    return (
+      recordDate.getFullYear() === selectedYear &&
+      recordDate.getMonth() + 1 === selectedMonth
+    );
   });
+
+  const recordsToList =
+    viewMode === "all"
+      ? sortedAllRecords
+      : filteredByMonth.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
 
   // 통계 계산 함수들
   const getThisWeekCount = () => {
@@ -90,31 +96,30 @@ export default function ProfileScreen() {
     navigation.navigate("RecordDetail", { record });
   };
 
-  // 날짜 선택 핸들러
   const handleDateSelect = (year: number, month: number) => {
     setSelectedYear(year);
     setSelectedMonth(month);
+    setViewMode("month");
+  };
+
+  const handleSelectAll = () => {
+    setViewMode("all");
   };
 
   const handleDateTextPress = () => {
     setDatePickerVisible(true);
   };
 
-  // 화면이 포커스될 때마다 데이터 새로고침 (프로필 정보는 useEffect에서 이미 처리)
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated && user?.id) {
-        // 사용자 ID가 변경되었을 수 있으므로 관련 캐시 무효화
         queryClient.invalidateQueries({ queryKey: ["profileStats"] });
         queryClient.invalidateQueries({ queryKey: ["allRecords"] });
         queryClient.invalidateQueries({ queryKey: ["todayRecords"] });
         queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
-
-        // 데이터 새로고침
         refetch();
-        refetchRecords();
       }
-    }, [isAuthenticated, user?.id, refetch, refetchRecords, queryClient])
+    }, [isAuthenticated, user?.id, refetch, queryClient])
   );
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
@@ -196,7 +201,9 @@ export default function ProfileScreen() {
               style={styles.dateTitleContainer}
             >
               <Text style={styles.sectionTitle}>
-                {selectedYear}년 {selectedMonth}월 수련 기록
+                {viewMode === "all"
+                  ? "전체 수련 기록"
+                  : `${selectedYear}년 ${selectedMonth}월 수련 기록`}
               </Text>
               <Ionicons
                 name="chevron-down"
@@ -206,22 +213,23 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/** 기록 데이터 로딩 중일 때는 스켈레톤/로딩 상태 표시 */}
-          {isRecordDataLoading ? (
+          {isLoading ? (
             <View style={styles.emptyRecordsContainer}>
               <Text style={styles.emptyRecordsText}>
                 수련 기록을 불러오는 중...
               </Text>
             </View>
-          ) : filteredRecords.length === 0 ? (
+          ) : recordsToList.length === 0 ? (
             <View style={styles.emptyRecordsContainer}>
               <Text style={styles.emptyRecordsText}>
-                {selectedYear}년 {selectedMonth}월에는 수련 기록이 없습니다.
+                {viewMode === "all"
+                  ? "아직 수련 기록이 없습니다."
+                  : `${selectedYear}년 ${selectedMonth}월에는 수련 기록이 없습니다.`}
               </Text>
             </View>
           ) : (
             <View style={styles.recordsList}>
-              {filteredRecords.map((record) => (
+              {recordsToList.map((record) => (
                 <Fragment key={record.id}>
                   <SimpleRecordCard
                     record={record}
@@ -237,13 +245,13 @@ export default function ProfileScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* 날짜 선택 모달 */}
       <DatePickerModal
         visible={datePickerVisible}
         onClose={() => setDatePickerVisible(false)}
         currentYear={selectedYear}
         currentMonth={selectedMonth}
         onDateSelect={handleDateSelect}
+        onSelectAll={handleSelectAll}
       />
     </View>
   );

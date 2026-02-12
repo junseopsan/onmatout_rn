@@ -16,6 +16,8 @@ interface DatePickerModalProps {
   currentYear: number;
   currentMonth: number;
   onDateSelect: (year: number, month: number) => void;
+  /** 제공 시 상단에 '전체 보기' 버튼 표시 (프로필 전체 수련 기록용) */
+  onSelectAll?: () => void;
 }
 
 export default function DatePickerModal({
@@ -24,6 +26,7 @@ export default function DatePickerModal({
   currentYear,
   currentMonth,
   onDateSelect,
+  onSelectAll,
 }: DatePickerModalProps) {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -56,6 +59,11 @@ export default function DatePickerModal({
     onClose();
   };
 
+  const handleSelectAll = () => {
+    onSelectAll?.();
+    onClose();
+  };
+
   const handleReset = () => {
     setSelectedYear(currentYearValue);
     setSelectedMonth(currentMonthValue);
@@ -78,6 +86,18 @@ export default function DatePickerModal({
               <Ionicons name="refresh" size={16} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
+
+          {onSelectAll != null && (
+            <View style={styles.selectAllSection}>
+              <TouchableOpacity
+                style={styles.selectAllButton}
+                onPress={handleSelectAll}
+              >
+                <Ionicons name="list" size={20} color={COLORS.primary} />
+                <Text style={styles.selectAllText}>전체 수련 기록 보기</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* 년도 선택 */}
           <View style={styles.section}>
@@ -179,6 +199,28 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     width: 32,
+  },
+  selectAllSection: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  selectAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.surface,
+  },
+  selectAllText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.primary,
   },
   title: {
     fontSize: 18,
