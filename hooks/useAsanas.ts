@@ -122,11 +122,18 @@ export const filterAsanasByQuery = (list: any[], query: string) => {
   return (list ?? []).filter((asana) => {
     const krName = normalizeText(asana.sanskrit_name_kr);
     const enName = normalizeText(asana.sanskrit_name_en);
+    const aliases: string[] = Array.isArray(asana.search_aliases)
+      ? asana.search_aliases
+      : [];
 
     const krMatch = searchTerms.every((term) => krName.includes(term));
     const enMatch = searchTerms.every((term) => enName.includes(term));
+    const aliasMatch =
+      searchTerms.every((term) =>
+        aliases.some((alias) => normalizeText(alias).includes(term))
+      ) && aliases.length > 0;
 
-    return krMatch || enMatch;
+    return krMatch || enMatch || aliasMatch;
   });
 };
 
@@ -151,11 +158,18 @@ export const useAsanaSearch = (query: string) => {
       return result.data.filter((asana) => {
         const krName = normalizeText(asana.sanskrit_name_kr);
         const enName = normalizeText(asana.sanskrit_name_en);
+        const aliases: string[] = Array.isArray(asana.search_aliases)
+          ? asana.search_aliases
+          : [];
 
         const krMatch = searchTerms.every((term) => krName.includes(term));
         const enMatch = searchTerms.every((term) => enName.includes(term));
+        const aliasMatch =
+          searchTerms.every((term) =>
+            aliases.some((alias) => normalizeText(alias).includes(term))
+          ) && aliases.length > 0;
 
-        return krMatch || enMatch;
+        return krMatch || enMatch || aliasMatch;
       });
     },
     enabled: query.trim().length > 0,

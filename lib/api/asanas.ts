@@ -13,6 +13,8 @@ export interface Asana {
   image_number: string;
   asana_meaning: string;
   image_count?: number | null;
+  /** 검색용 별칭 (예: 나무, 나무자세 → 브륵샤아사나) */
+  search_aliases?: string[] | null;
 }
 
 export interface PaginatedResponse<T> {
@@ -406,34 +408,62 @@ export const asanasAPI = {
     }
   },
 
-  // 검색
+  // 검색 (한글명, 영문명, search_aliases 별칭 포함)
   searchAsanas: async (
     query: string
   ): Promise<{ success: boolean; data?: Asana[]; message?: string }> => {
     try {
       logger.log("아사나 검색 시작:", query);
 
-      const { data, error } = await supabase
+      const trimmed = query.trim();
+      if (!trimmed) {
+        return { success: true, data: [] };
+      }
+
+      // 1) 이름 검색 (한글명, 영문명)
+      const { data: nameData, error: nameError } = await supabase
         .from("asanas")
         .select("*")
         .or(
-          `sanskrit_name_kr.ilike.%${query}%,sanskrit_name_en.ilike.%${query}%`
+          `sanskrit_name_kr.ilike.%${trimmed}%,sanskrit_name_en.ilike.%${trimmed}%`
         )
         .order("sanskrit_name_kr", { ascending: true })
-        .limit(50); // 검색 결과 제한
+        .limit(50);
 
-      if (error) {
+      if (nameError) {
         return {
           success: false,
-          message: error.message || "아사나 검색에 실패했습니다.",
+          message: nameError.message || "아사나 검색에 실패했습니다.",
         };
       }
 
-      logger.log("아사나 검색 성공:", data?.length || 0, "개");
-      return {
-        success: true,
-        data: data || [],
-      };
+      // 2) 별칭 검색 (search_aliases 배열에 검색어가 포함된 행)
+      const { data: aliasData, error: aliasError } = await supabase
+        .from("asanas")
+        .select("*")
+        .contains("search_aliases", [trimmed])
+        .order("sanskrit_name_kr", { ascending: true })
+        .limit(50);
+
+      if (aliasError) {
+        // search_aliases 컬럼/인덱스 없을 수 있음 → 이름 결과만 반환
+        logger.log("별칭 검색 스킵:", aliasError.message);
+        return {
+          success: true,
+          data: (nameData || []).slice(0, 50),
+        };
+      }
+
+      // 3) id 기준 병합·중복 제거, 최대 50건
+      const byId = new Map<string, Asana>();
+      for (const row of nameData || []) byId.set(row.id, row);
+      for (const row of aliasData || []) if (!byId.has(row.id)) byId.set(row.id, row);
+      const merged = Array.from(byId.values())
+        .sort((a, b) => (a.sanskrit_name_kr || "").localeCompare(b.sanskrit_name_kr || ""))
+        .slice(0, 50);
+
+      logger.log("아사나 검색 성공:", merged.length, "개");
+      return { success: true, data: merged };
     } catch (error) {
       return {
         success: false,
