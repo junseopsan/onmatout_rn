@@ -1,33 +1,39 @@
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { asanasAPI } from "../lib/api/asanas";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Asana, asanasAPI } from "../lib/api/asanas";
+
+type AsanasPage = {
+  data: Asana[];
+  nextCursor: number | undefined;
+  hasMore: boolean;
+  total: number;
+};
 
 // 아사나 목록 조회 (무한 스크롤)
 export const useAsanas = (pageSize: number = 20) => {
-  const queryClient = useQueryClient();
-  
   return useInfiniteQuery({
     queryKey: ["asanas"],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam }): Promise<AsanasPage> => {
       const result = await asanasAPI.getAllAsanas();
       if (!result.success || !result.data) {
         throw new Error(
-          result.message || "아사나 데이터를 불러오는데 실패했습니다."
+          result.message || "아사나 데이터를 불러오는데 실패했습니다.",
         );
       }
 
-      // 셔플 없이 원본 순서를 유지한 채 클라이언트 페이지네이션
-        const startIndex = pageParam * pageSize;
-        const endIndex = startIndex + pageSize;
+      const page = pageParam as number;
+      const startIndex = page * pageSize;
+      const endIndex = startIndex + pageSize;
       const paginatedData = result.data.slice(startIndex, endIndex);
 
-        return {
-          data: paginatedData,
-        nextCursor: endIndex < result.data.length ? pageParam + 1 : undefined,
+      return {
+        data: paginatedData,
+        nextCursor: endIndex < result.data.length ? page + 1 : undefined,
         hasMore: endIndex < result.data.length,
         total: result.data.length,
-        };
+      };
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: AsanasPage) => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000, // 5분
     gcTime: 10 * 60 * 1000, // 10분
     retry: 2,
@@ -42,7 +48,7 @@ export const useFavoriteAsanas = () => {
       const result = await asanasAPI.getFavoriteAsanas();
       if (!result.success) {
         throw new Error(
-          result.message || "즐겨찾기 아사나를 불러오는데 실패했습니다."
+          result.message || "즐겨찾기 아사나를 불러오는데 실패했습니다.",
         );
       }
       return result.data || [];
@@ -61,7 +67,7 @@ export const useAsanaDetail = (id: string) => {
       const result = await asanasAPI.getAsanaById(id);
       if (!result.success || !result.data) {
         throw new Error(
-          result.message || "아사나 데이터를 불러오는데 실패했습니다."
+          result.message || "아사나 데이터를 불러오는데 실패했습니다.",
         );
       }
       return result.data;
@@ -83,7 +89,7 @@ export const useAllAsanasForFeed = () => {
       const result = await asanasAPI.getAllAsanas();
       if (!result.success || !result.data) {
         throw new Error(
-          result.message || "아사나 데이터를 불러오는데 실패했습니다."
+          result.message || "아사나 데이터를 불러오는데 실패했습니다.",
         );
       }
       return result.data;
@@ -96,11 +102,7 @@ export const useAllAsanasForFeed = () => {
 
 // 아사나 검색
 export const normalizeText = (text: string | undefined | null) =>
-  (text ?? "")
-    .toString()
-    .normalize("NFC")
-    .toLowerCase()
-    .trim();
+  (text ?? "").toString().normalize("NFC").toLowerCase().trim();
 
 export const sortAsanasByName = (list: any[]) => {
   return [...(list || [])].sort((a, b) => {
@@ -130,7 +132,7 @@ export const filterAsanasByQuery = (list: any[], query: string) => {
     const enMatch = searchTerms.every((term) => enName.includes(term));
     const aliasMatch =
       searchTerms.every((term) =>
-        aliases.some((alias) => normalizeText(alias).includes(term))
+        aliases.some((alias) => normalizeText(alias).includes(term)),
       ) && aliases.length > 0;
 
     return krMatch || enMatch || aliasMatch;
@@ -144,7 +146,7 @@ export const useAsanaSearch = (query: string) => {
       const result = await asanasAPI.getAllAsanas();
       if (!result.success || !result.data) {
         throw new Error(
-          result.message || "아사나 데이터를 불러오는데 실패했습니다."
+          result.message || "아사나 데이터를 불러오는데 실패했습니다.",
         );
       }
 
@@ -166,7 +168,7 @@ export const useAsanaSearch = (query: string) => {
         const enMatch = searchTerms.every((term) => enName.includes(term));
         const aliasMatch =
           searchTerms.every((term) =>
-            aliases.some((alias) => normalizeText(alias).includes(term))
+            aliases.some((alias) => normalizeText(alias).includes(term)),
           ) && aliases.length > 0;
 
         return krMatch || enMatch || aliasMatch;

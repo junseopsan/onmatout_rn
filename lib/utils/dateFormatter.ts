@@ -54,6 +54,19 @@ export const formatDate = (dateString: string): string => {
 };
 
 /**
+ * 날짜를 "YYYY년 M월 D일" 형식으로 포맷 (편지 서명용, 요일 없음)
+ */
+export const formatDateLetter = (dateString: string): string => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}.${month}.${day}`;
+};
+
+/**
  * 시간을 "HH:MM" 형식으로 포맷
  * @param dateString - 날짜/시간 문자열 (ISO 형식 등)
  * @returns 포맷된 시간 문자열

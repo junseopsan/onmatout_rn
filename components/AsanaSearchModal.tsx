@@ -107,14 +107,15 @@ export default function AsanaSearchModal({
     }
   }, [visible, loadAllAsanas]);
 
-  // 검색어 변경 시 검색 실행
+  // 검색어/카테고리 변경 시 검색 실행 (아사나 목록 로드된 뒤에만 실행해 빈 목록으로 덮어쓰지 않음)
   useEffect(() => {
+    if (allAsanas.length === 0) return;
     const timeoutId = setTimeout(() => {
       searchAsanas(searchQuery, selectedCategories);
     }, 200);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, selectedCategories, searchAsanas]);
+  }, [searchQuery, selectedCategories, searchAsanas, allAsanas.length]);
 
   // 카테고리 토글
   const toggleCategory = (category: AsanaCategory) => {
@@ -253,13 +254,21 @@ export default function AsanaSearchModal({
           <TouchableOpacity
             style={[
               styles.completeButton,
-              { opacity: tempSelectedAsanas.length > 0 ? 1 : 0.5 },
+              {
+                opacity:
+                  selectedAsanas.length + tempSelectedAsanas.length > 0
+                    ? 1
+                    : 0.5,
+              },
             ]}
             onPress={handleComplete}
-            disabled={tempSelectedAsanas.length === 0}
+            disabled={
+              selectedAsanas.length + tempSelectedAsanas.length === 0
+            }
           >
             <Text style={styles.completeButtonText}>
-              선택 완료 ({tempSelectedAsanas.length})
+              선택 완료 (
+              {selectedAsanas.length + tempSelectedAsanas.length})
             </Text>
           </TouchableOpacity>
         </View>

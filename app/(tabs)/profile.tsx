@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { Fragment, useCallback, useState } from "react";
+import React, { Fragment, useCallback, useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import DatePickerModal from "../../components/DatePickerModal";
 import SimpleRecordCard from "../../components/SimpleRecordCard";
-// SettingsModal 제거됨 - 페이지로 변경
+import StoryShareModal from "../../components/StoryShareModal";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfileStats } from "../../hooks/useDashboard";
@@ -34,6 +34,7 @@ export default function ProfileScreen() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [storyShareVisible, setStoryShareVisible] = useState(false);
 
   // 프로필 통계 + 전체 수련 기록 (allRecords로 통계·리스트 모두 사용)
   const userId = user?.id;
@@ -90,6 +91,24 @@ export default function ProfileScreen() {
 
   // authStore에서 프로필 가져오기 (user.profile 사용)
   const userProfile = user?.profile;
+
+  // 스토리 공유 배경용: 수련한 아사나 image_number 수집 후 셔플
+  const backgroundAsanaImageNumbers = useMemo(() => {
+    const set = new Set<string>();
+    (allRecords || []).forEach((r: any) => {
+      const asanas = r.asanas || [];
+      asanas.forEach((a: any) => {
+        const num = a && typeof a === "object" && a.image_number;
+        if (num) set.add(String(num).padStart(3, "0"));
+      });
+    });
+    const arr = Array.from(set);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [allRecords]);
 
   // 기록 관련 핸들러 함수들
   const handleRecordPress = (record: any) => {
@@ -176,6 +195,13 @@ export default function ProfileScreen() {
         <View style={styles.statsSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>수련 통계</Text>
+            <TouchableOpacity
+              style={styles.storyShareButton}
+              onPress={() => setStoryShareVisible(true)}
+            >
+              <Ionicons name="share-social" size={20} color={COLORS.primary} />
+              <Text style={styles.storyShareButtonText}>스토리 공유</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
@@ -252,6 +278,19 @@ export default function ProfileScreen() {
         currentMonth={selectedMonth}
         onDateSelect={handleDateSelect}
         onSelectAll={handleSelectAll}
+      />
+
+      <StoryShareModal
+        visible={storyShareVisible}
+        onClose={() => setStoryShareVisible(false)}
+        mode="stats"
+        stats={{
+          totalCount: allRecords?.length || 0,
+          weekCount: getThisWeekCount(),
+          monthCount: getThisMonthCount(),
+          userName: userProfile?.name || undefined,
+          backgroundAsanaImageNumbers,
+        }}
       />
     </View>
   );
@@ -393,6 +432,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+  },
+  storyShareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  storyShareButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.primary,
   },
   dateTitleContainer: {
     flexDirection: "row",

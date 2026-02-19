@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { Button, Card, YStack } from "tamagui";
 import CommentModal from "../../components/feed/CommentModal";
+import StoryShareModal from "../../components/StoryShareModal";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { STATES } from "../../constants/states";
@@ -25,6 +26,7 @@ import {
   useToggleLike,
 } from "../../hooks/useRecords";
 import { formatDate } from "../../lib/utils/dateFormatter";
+import { useAuthStore } from "../../stores/authStore";
 import { RootStackParamList } from "../../navigation/types";
 import { AsanaCategory } from "../../types/asana";
 
@@ -39,6 +41,8 @@ export default function RecordDetailScreen() {
   const deleteRecordMutation = useDeleteRecord();
   const { showSnackbar } = useNotification();
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [showStoryShareModal, setShowStoryShareModal] = useState(false);
+  const { user } = useAuthStore();
   const { data: stats } = useRecordStats(record.id);
   const toggleLikeMutation = useToggleLike();
   const [isLiking, setIsLiking] = useState(false);
@@ -48,15 +52,17 @@ export default function RecordDetailScreen() {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["취소", "수정", "삭제"],
-          destructiveButtonIndex: 2,
+          options: ["취소", "스토리로 공유", "수정", "삭제"],
+          destructiveButtonIndex: 3,
           cancelButtonIndex: 0,
           title: "수련 기록",
         },
         (buttonIndex) => {
           if (buttonIndex === 1) {
-            handleEdit();
+            setShowStoryShareModal(true);
           } else if (buttonIndex === 2) {
+            handleEdit();
+          } else if (buttonIndex === 3) {
             handleDeleteRecord();
           }
         }
@@ -64,6 +70,7 @@ export default function RecordDetailScreen() {
     } else {
       Alert.alert("수련 기록", "작업을 선택하세요", [
         { text: "취소", style: "cancel" },
+        { text: "스토리로 공유", onPress: () => setShowStoryShareModal(true) },
         { text: "수정", onPress: handleEdit },
         { text: "삭제", style: "destructive", onPress: handleDeleteRecord },
       ]);
@@ -418,6 +425,15 @@ export default function RecordDetailScreen() {
         onClose={() => setShowCommentModal(false)}
         recordId={record.id}
         recordTitle={record.title}
+      />
+
+      {/* 스토리 공유: 이미지 작게·글 다 보이게 재배치된 카드 */}
+      <StoryShareModal
+        visible={showStoryShareModal}
+        onClose={() => setShowStoryShareModal(false)}
+        mode="record"
+        record={record}
+        userName={user?.profile?.name}
       />
     </View>
   );
