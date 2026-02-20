@@ -8,20 +8,22 @@ import { Alert, AppState, Linking, Platform } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
+import ForceUpdateScreen from "./ForceUpdateScreen";
 import SplashScreen from "./SplashScreen";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const isVersionLessThan = (a: string, b: string) => {
-  const pa = a.split(".").map(Number);
-  const pb = b.split(".").map(Number);
+/** 현재 버전이 최소 필요 버전보다 낮거나 같으면 업데이트 필요 (같을 때도 안내) */
+const needsForceUpdateByVersion = (current: string, minRequired: string) => {
+  const pa = current.split(".").map(Number);
+  const pb = minRequired.split(".").map(Number);
   for (let i = 0; i < 3; i++) {
     const av = pa[i] ?? 0;
     const bv = pb[i] ?? 0;
     if (av < bv) return true;
     if (av > bv) return false;
   }
-  return false;
+  return true; // 같을 때도 업데이트 안내
 };
 
 export default function AppContainer() {
@@ -80,7 +82,7 @@ export default function AppContainer() {
                   text: "설정으로 이동",
                   onPress: () => Linking.openSettings(),
                 },
-              ]
+              ],
             );
           }
         }
@@ -133,7 +135,7 @@ export default function AppContainer() {
         if (error) {
           console.log(
             "[AppContainer] 앱 시작 시 세션 조회 에러:",
-            error.message
+            error.message,
           );
           return;
         }
@@ -178,7 +180,7 @@ export default function AppContainer() {
             if (refreshError) {
               console.log(
                 "[AppContainer] 앱 시작 시 세션 갱신 실패:",
-                refreshError.message
+                refreshError.message,
               );
             } else if (refreshData?.session) {
               console.log("[AppContainer] 앱 시작 시 세션 갱신 성공");
@@ -189,7 +191,7 @@ export default function AppContainer() {
         // 세션 확인 실패는 앱 진행에 영향 없도록
         console.log(
           "[AppContainer] 앱 시작 시 세션 확인 중 오류 (무시):",
-          error
+          error,
         );
       }
     };
@@ -206,13 +208,14 @@ export default function AppContainer() {
 
     const checkAppVersion = async () => {
       try {
+        // 앱 버전은 항상 app.json의 version으로 비교 (Expo Go/개발빌드에서는 네이티브가 SDK 버전(54.x)을 반환함)
         const currentVersion =
+          Constants.expoConfig?.version ||
           Application.nativeApplicationVersion ||
           Application.nativeBuildVersion ||
           "0.0.0";
         const platform = Platform.OS === "ios" ? "ios" : "android";
 
-        // platform 값 대소문자/공백 차이에 대응 (ilike)
         const { data, error } = await supabase
           .from("app_versions")
           .select("min_version, store_url")
@@ -221,28 +224,23 @@ export default function AppContainer() {
           .limit(1)
           .maybeSingle();
 
+        console.log("[VersionCheck]", {
+          currentVersion,
+          minVersion: data?.min_version ?? null,
+          error: error?.message ?? null,
+        });
+
         if (!error && data?.min_version && data?.store_url) {
-          const needsForceUpdate = isVersionLessThan(
+          const needsForceUpdate = needsForceUpdateByVersion(
             currentVersion,
-            data.min_version
+            data.min_version,
           );
-          console.log("[VersionCheck]", {
-            currentVersion,
-            minVersion: data.min_version,
-            needsForceUpdate,
-          });
           if (needsForceUpdate) {
             setForceUpdateInfo({
               minVersion: data.min_version,
               storeUrl: data.store_url,
             });
           }
-        } else {
-          console.log("[VersionCheck] no version row", {
-            platform,
-            error,
-            data,
-          });
         }
       } catch (e) {
         // 버전 체크 실패 시에는 조용히 무시 (앱 사용 가능)
@@ -367,7 +365,7 @@ export default function AppContainer() {
           } catch (fallbackError) {
             console.log(
               "[AppContainer] navigation.navigate 실패:",
-              fallbackError
+              fallbackError,
             );
             // Fallback 네비게이션도 실패하면 hasRedirected를 false로 되돌려서 재시도 가능하게
             setHasRedirected(false);
@@ -385,10 +383,14 @@ export default function AppContainer() {
     isAuthenticated,
   ]);
 
-  // 안전장치: 5초 후에도 리다이렉트가 안되면 강제로 TabNavigator로 이동
+  // 안전장치: 5초 후에도 리다이렉트가 안되면 강제로 TabNavigator로 이동 (필수 업데이트 중이면 제외)
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
-      if ((isLoading || authLoading || !versionChecked) && !hasRedirected) {
+      if (
+        (isLoading || authLoading || !versionChecked) &&
+        !hasRedirected &&
+        !forceUpdateInfo
+      ) {
         console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도");
         try {
           setHasRedirected(true);
@@ -404,7 +406,14 @@ export default function AppContainer() {
     }, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [isLoading, authLoading, versionChecked, hasRedirected, navigation]);
+  }, [
+    isLoading,
+    authLoading,
+    versionChecked,
+    hasRedirected,
+    forceUpdateInfo,
+    navigation,
+  ]);
 
   // 스플래시 화면 표시 중이거나 인증 상태 로딩 중, 또는 버전 체크 중
   if (isLoading || authLoading || !versionChecked) {
@@ -416,16 +425,15 @@ export default function AppContainer() {
     return <SplashScreen />;
   }
 
-  // 필수 업데이트 안내 화면
-  // if (forceUpdateInfo) {
-  //   console.log("[AppContainer] ForceUpdateScreen 표시");
-  //   return (
-  //     <ForceUpdateScreen
-  //       storeUrl={forceUpdateInfo.storeUrl}
-  //       minVersion={forceUpdateInfo.minVersion}
-  //     />
-  //   );
-  // }
+  // 필수 업데이트 안내 화면 (구버전 사용자)
+  if (forceUpdateInfo) {
+    return (
+      <ForceUpdateScreen
+        storeUrl={forceUpdateInfo.storeUrl}
+        minVersion={forceUpdateInfo.minVersion}
+      />
+    );
+  }
 
   // 버전 체크 완료 후에도 리다이렉트가 안된 경우를 위한 안전장치
   // 리다이렉트가 진행 중이면 SplashScreen을 계속 표시
