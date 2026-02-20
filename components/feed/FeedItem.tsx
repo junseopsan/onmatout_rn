@@ -12,7 +12,9 @@ import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { useRecordStats, useToggleLike } from "../../hooks/useRecords";
 import { Asana } from "../../lib/api/asanas";
+import { useAuthStore } from "../../stores/authStore";
 import { Record } from "../../types/record";
+import StoryShareModal from "../StoryShareModal";
 import AsanaDetailModal from "./AsanaDetailModal";
 import CommentModal from "./CommentModal";
 
@@ -26,9 +28,13 @@ const { width } = Dimensions.get("window");
 
 export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [showStoryShareModal, setShowStoryShareModal] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isMemoExpanded, setIsMemoExpanded] = useState(false);
   const [selectedAsana, setSelectedAsana] = useState<Asana | null>(null);
+
+  const { user } = useAuthStore();
+  const isOwnRecord = user?.id === record.user_id;
 
   // 소셜 기능 훅들
   const { data: stats } = useRecordStats(record.id);
@@ -68,28 +74,6 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     });
   };
 
-  const getStateEmoji = (state: string) => {
-    const stateEmojis: { [key: string]: string } = {
-      calm: "😌",
-      energized: "⚡",
-      tired: "😴",
-      focused: "🧘",
-      tense: "😰",
-    };
-    return stateEmojis[state] || "😌";
-  };
-
-  const getStateText = (state: string) => {
-    const stateTexts: { [key: string]: string } = {
-      calm: "평온한",
-      energized: "에너지 넘치는",
-      tired: "피곤한",
-      focused: "집중된",
-      tense: "긴장된",
-    };
-    return stateTexts[state] || "평온한";
-  };
-
   // 상태 정보 가져오기
   const getStateInfo = (stateId: string) => {
     return STATES.find((state) => state.id === stateId);
@@ -117,6 +101,15 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     record.states
       ?.map((id) => getStateInfo(id))
       .filter((s): s is NonNullable<typeof s> => !!s) || [];
+
+  // 스토리 공유용: record.asanas는 ID 배열이므로 아사나 객체(image_number 포함)로 보강
+  const recordForShare = useMemo(() => {
+    const ids = record.asanas || [];
+    const resolved = ids
+      .map((id) => asanas.find((a) => a.id === id))
+      .filter((a): a is Asana => !!a);
+    return { ...record, asanas: resolved };
+  }, [record, asanas]);
 
   return (
     <View style={styles.container}>
@@ -154,7 +147,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                 const asana = getAsanaInfo(asanaId);
                 if (!asana) {
                   console.log(
-                    `피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`
+                    `피드: 아사나 정보를 찾을 수 없음 - ID: ${asanaId}`,
                   );
                   return null;
                 }
@@ -182,7 +175,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                         onError={(error) => {
                           console.log(
                             `피드 아사나 이미지 로딩 실패: ${asana.image_number}`,
-                            error
+                            error,
                           );
                         }}
                       />
@@ -254,6 +247,19 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
             <Text style={styles.actionCount}>{String(stats.commentCount)}</Text>
           ) : null}
         </TouchableOpacity>
+        {isOwnRecord && (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setShowStoryShareModal(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="share-outline"
+              size={16}
+              color={COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+        )}
         <View style={styles.actionSpacer} />
         {stateInfos.length > 0 && (
           <View style={styles.statesChips}>
@@ -268,7 +274,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                   },
                 ]}
               >
-                <Text style={[styles.stateText, { color: state.color }]}>
+                <Text style={[styles.stateChipText, { color: state.color }]}>
                   {state.label}
                 </Text>
               </View>
@@ -283,7 +289,7 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
           record.practice_time ||
             record.created_at ||
             record.practice_date ||
-            record.date
+            record.date,
         )}
       </Text>
 
@@ -300,6 +306,15 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
         visible={!!selectedAsana}
         onClose={() => setSelectedAsana(null)}
         asana={selectedAsana}
+      />
+
+      {/* 스토리 공유 (수련기록 상세와 동일, 아사나 객체 보강하여 이미지 표시) */}
+      <StoryShareModal
+        visible={showStoryShareModal}
+        onClose={() => setShowStoryShareModal(false)}
+        mode="record"
+        record={recordForShare as unknown as Record}
+        userName={record.user_name}
       />
     </View>
   );
@@ -472,7 +487,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 6,
   },
-  stateText: {
+  stateChipText: {
     fontSize: 12,
     fontWeight: "600",
   },

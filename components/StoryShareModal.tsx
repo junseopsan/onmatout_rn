@@ -87,7 +87,7 @@ export default function StoryShareModal(props: StoryShareModalProps) {
           </View>
 
           <Text style={styles.hint}>
-            공유 시 이미지가 저장되며, 인스타 스토리 등에 올릴 수 있어요.
+            공유 시 이미지가 저장되며, 인스타 스토리에 올릴 수 있어요.
           </Text>
 
           <TouchableOpacity

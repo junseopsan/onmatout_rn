@@ -16,8 +16,8 @@ import {
 import { Button, Card, YStack } from "tamagui";
 import CommentModal from "../../components/feed/CommentModal";
 import StoryShareModal from "../../components/StoryShareModal";
-import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
+import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
 import {
@@ -26,8 +26,8 @@ import {
   useToggleLike,
 } from "../../hooks/useRecords";
 import { formatDate } from "../../lib/utils/dateFormatter";
-import { useAuthStore } from "../../stores/authStore";
 import { RootStackParamList } from "../../navigation/types";
+import { useAuthStore } from "../../stores/authStore";
 import { AsanaCategory } from "../../types/asana";
 
 type RecordDetailRouteProp = RouteProp<RootStackParamList, "RecordDetail">;
@@ -52,7 +52,7 @@ export default function RecordDetailScreen() {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["취소", "스토리로 공유", "수정", "삭제"],
+          options: ["취소", "공유", "수정", "삭제"],
           destructiveButtonIndex: 3,
           cancelButtonIndex: 0,
           title: "수련 기록",
@@ -65,12 +65,12 @@ export default function RecordDetailScreen() {
           } else if (buttonIndex === 3) {
             handleDeleteRecord();
           }
-        }
+        },
       );
     } else {
       Alert.alert("수련 기록", "작업을 선택하세요", [
         { text: "취소", style: "cancel" },
-        { text: "스토리로 공유", onPress: () => setShowStoryShareModal(true) },
+        { text: "공유", onPress: () => setShowStoryShareModal(true) },
         { text: "수정", onPress: handleEdit },
         { text: "삭제", style: "destructive", onPress: handleDeleteRecord },
       ]);
@@ -175,7 +175,7 @@ export default function RecordDetailScreen() {
               />
               <Text style={styles.dateText}>
                 {formatDate(
-                  record.practice_date || record.date || record.created_at
+                  record.practice_date || record.date || record.created_at,
                 )}
               </Text>
             </View>
@@ -191,7 +191,7 @@ export default function RecordDetailScreen() {
                 {record.asanas.map((asana: any, index: number) => {
                   const imageUrl = getAsanaImageUrl(asana.image_number);
                   const categoryInfo = getCategoryInfo(
-                    asana.category_name_en || ""
+                    asana.category_name_en || "",
                   );
                   return (
                     <Card
@@ -234,7 +234,7 @@ export default function RecordDetailScreen() {
                               onError={() => {
                                 console.log(
                                   "아사나 이미지 로딩 실패:",
-                                  imageUrl
+                                  imageUrl,
                                 );
                               }}
                             />
@@ -411,6 +411,17 @@ export default function RecordDetailScreen() {
                   {String(stats.commentCount)}
                 </Text>
               ) : null}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => setShowStoryShareModal(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="share-outline"
+                size={16}
+                color={COLORS.textSecondary}
+              />
             </TouchableOpacity>
           </View>
         </View>

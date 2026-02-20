@@ -42,7 +42,8 @@ export default function ProfileScreen() {
 
   // 날짜 기준 정렬 (최신순)
   const sortedAllRecords = [...(allRecords || [])].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
   // 연월 필터 적용된 기록 (viewMode === 'month'일 때 사용)
@@ -59,7 +60,7 @@ export default function ProfileScreen() {
       ? sortedAllRecords
       : filteredByMonth.sort(
           (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );
 
   // 통계 계산 함수들
@@ -138,7 +139,7 @@ export default function ProfileScreen() {
         queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
         refetch();
       }
-    }, [isAuthenticated, user?.id, refetch, queryClient])
+    }, [isAuthenticated, user?.id, refetch, queryClient]),
   );
 
   // 로딩 중이거나 인증되지 않은 경우 빈 화면 표시
@@ -200,7 +201,7 @@ export default function ProfileScreen() {
               onPress={() => setStoryShareVisible(true)}
             >
               <Ionicons name="share-social" size={20} color={COLORS.primary} />
-              <Text style={styles.storyShareButtonText}>스토리 공유</Text>
+              <Text style={styles.storyShareButtonText}>통계 공유</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.statsGrid}>
