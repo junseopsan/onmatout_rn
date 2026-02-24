@@ -4,9 +4,16 @@ import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, AppState, Linking, Platform } from "react-native";
+import {
+  Alert,
+  AppState,
+  Linking,
+  Platform,
+  View,
+} from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
+import { COLORS } from "../../constants/Colors";
 import { RootStackParamList } from "../../navigation/types";
 import ForceUpdateScreen from "./ForceUpdateScreen";
 import SplashScreen from "./SplashScreen";
@@ -383,14 +390,10 @@ export default function AppContainer() {
     isAuthenticated,
   ]);
 
-  // 안전장치: 5초 후에도 리다이렉트가 안되면 강제로 TabNavigator로 이동 (필수 업데이트 중이면 제외)
+  // 안전장치: 5초 후에도 리다이렉트가 안 되면 강제로 TabNavigator로 이동 (필수 업데이트 중이면 제외)
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
-      if (
-        (isLoading || authLoading || !versionChecked) &&
-        !hasRedirected &&
-        !forceUpdateInfo
-      ) {
+      if (!hasRedirected && !forceUpdateInfo) {
         console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도");
         try {
           setHasRedirected(true);
@@ -406,14 +409,7 @@ export default function AppContainer() {
     }, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [
-    isLoading,
-    authLoading,
-    versionChecked,
-    hasRedirected,
-    forceUpdateInfo,
-    navigation,
-  ]);
+  }, [hasRedirected, forceUpdateInfo, navigation]);
 
   // 스플래시 화면 표시 중이거나 인증 상태 로딩 중, 또는 버전 체크 중
   if (isLoading || authLoading || !versionChecked) {
@@ -442,7 +438,9 @@ export default function AppContainer() {
     return <SplashScreen />;
   }
 
-  // 리다이렉트 완료 후에도 여기 도달하면 null 반환 (네비게이션이 처리해야 함)
-  console.log("[AppContainer] 리다이렉트 완료 - null 반환");
-  return null;
+  // 리다이렉트 완료 후: null 반환 시 프로덕션에서 검정 화면이 되므로 배경색 View 반환
+  // (reset 직후 한 프레임이라도 AppContainer가 null을 그리면 검정으로 보임)
+  return (
+    <View style={{ flex: 1, backgroundColor: COLORS.background }} />
+  );
 }
