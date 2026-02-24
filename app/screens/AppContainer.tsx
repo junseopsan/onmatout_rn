@@ -13,7 +13,7 @@ import SplashScreen from "./SplashScreen";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-/** 현재 버전이 최소 필요 버전보다 낮거나 같으면 업데이트 필요 (같을 때도 안내) */
+/** 현재 버전이 최소 필요 버전보다 낮을 때만 업데이트 필요 (같으면 통과) */
 const needsForceUpdateByVersion = (current: string, minRequired: string) => {
   const pa = current.split(".").map(Number);
   const pb = minRequired.split(".").map(Number);
@@ -23,7 +23,7 @@ const needsForceUpdateByVersion = (current: string, minRequired: string) => {
     if (av < bv) return true;
     if (av > bv) return false;
   }
-  return true; // 같을 때도 업데이트 안내
+  return false; // 같으면 업데이트 불필요 → 앱 사용 가능
 };
 
 export default function AppContainer() {
