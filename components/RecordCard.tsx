@@ -3,6 +3,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { STATES } from "../constants/states";
+import { getAsanaThumbnailSource } from "../lib/asanaImages";
 import { Asana } from "../lib/api/asanas";
 import { Record } from "../types/record";
 
@@ -27,11 +28,8 @@ export default function RecordCard({
     return STATES.find((state) => state.id === stateId);
   };
 
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
+  // 이미지: 로컬 썸네일
+  const getImageSource = (imageNumber: string) => getAsanaThumbnailSource(imageNumber);
 
   // 메모 요약 (1줄)
   const getMemoSummary = (memo: string) => {
@@ -88,13 +86,15 @@ export default function RecordCard({
               {record.asanas.slice(0, 4).map((asanaId, index) => {
                 const asana = getAsanaInfo(asanaId);
                 if (!asana) return null;
-
+                const src = asana.image_number
+                  ? getImageSource(asana.image_number)
+                  : null;
                 return (
                   <View key={asanaId} style={styles.asanaThumbnail}>
                     <View style={styles.asanaImageContainer}>
-                      {asana.image_number ? (
+                      {src ? (
                         <Image
-                          source={{ uri: getImageUrl(asana.image_number) }}
+                          source={src}
                           style={styles.asanaImage}
                           contentFit="contain"
                           placeholder="🖼️"

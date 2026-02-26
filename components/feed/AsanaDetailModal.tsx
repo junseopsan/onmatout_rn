@@ -17,6 +17,7 @@ import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { Asana } from "../../lib/api/asanas";
+import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { ASANA_DETAIL_IMAGES } from "../../app/asanas/detailImages";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -72,9 +73,7 @@ export default function AsanaDetailModal({
   const localImages = key ? ASANA_DETAIL_IMAGES[key] : undefined;
   const hasLocalImages = localImages && localImages.length > 0;
 
-  const fallbackImageUrl = asana.image_number
-    ? `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${asana.image_number.padStart(3, "0")}.png`
-    : null;
+  const fallbackImageSource = getAsanaThumbnailSource(asana.image_number);
 
   const categoryLabel =
     asana.category_name_en &&
@@ -154,9 +153,9 @@ export default function AsanaDetailModal({
                   style={styles.mainImage}
                   contentFit="contain"
                 />
-              ) : fallbackImageUrl ? (
+              ) : fallbackImageSource ? (
                 <Image
-                  source={{ uri: fallbackImageUrl }}
+                  source={fallbackImageSource}
                   style={styles.mainImage}
                   contentFit="contain"
                 />

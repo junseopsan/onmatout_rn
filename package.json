@@ -5,6 +5,7 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
+    "gen-asana-images": "node scripts/gen-asana-images.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
@@ -28,7 +29,8 @@
     "android:install:release": "cd android && ./gradlew assembleRelease && cd .. && adb install -r android/app/build/outputs/apk/release/app-release.apk",
     "build:android:dev": "npx eas build --platform android --profile development",
     "build:android:dev-dev": "npx eas build --platform android --profile development-dev",
-    "install:android:release": "npm run android:install:release"
+    "install:android:release": "npm run android:install:release",
+    "gen:asana-images": "node scripts/gen-asana-images.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

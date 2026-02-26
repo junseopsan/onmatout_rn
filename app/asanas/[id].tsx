@@ -23,6 +23,7 @@ import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
 import { useAsanaDetail } from "../../hooks/useAsanas";
 import { RootStackParamList } from "../../navigation/types";
+import { getAsanaFullImageSource, getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { ASANA_DETAIL_IMAGES } from "./detailImages";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -117,11 +118,17 @@ export default function AsanaDetailScreen() {
     return () => subscription.remove();
   }, [refetch]);
 
-  // 로컬 상세 이미지 배열 (예: 006_001, 006_002, 006_003 ...)
+  // 로컬 상세 이미지 배열 (ASANA_DETAIL_IMAGES 없으면 풀/썸네일 폴백)
   const imageSources = useMemo(() => {
     if (!asana?.image_number) return [];
     const key = asana.image_number.padStart(3, "0");
-    return ASANA_DETAIL_IMAGES[key] || [];
+    const detail = ASANA_DETAIL_IMAGES[key];
+    if (detail && detail.length > 0) return detail;
+    const full = getAsanaFullImageSource(asana.image_number);
+    if (full) return [full];
+    const thumb = getAsanaThumbnailSource(asana.image_number);
+    if (thumb) return [thumb];
+    return [];
   }, [asana?.image_number]);
 
   const hasImages = imageSources.length > 0;

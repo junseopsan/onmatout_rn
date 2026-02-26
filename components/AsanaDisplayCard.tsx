@@ -4,6 +4,7 @@ import { Text, View } from "react-native";
 import { Button, Card, YStack } from "tamagui";
 import { COLORS } from "../constants/Colors";
 import { CATEGORIES } from "../constants/categories";
+import { getAsanaThumbnailSource } from "../lib/asanaImages";
 import { AsanaCategory } from "../types/asana";
 
 interface AsanaDisplayCardProps {
@@ -21,12 +22,7 @@ interface AsanaDisplayCardProps {
  * 피드 상세, 기록 상세 등에서 아사나를 표시할 때 사용
  */
 export default function AsanaDisplayCard({ asana }: AsanaDisplayCardProps) {
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber?: string) => {
-    if (!imageNumber) return null;
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
+  const imageSource = getAsanaThumbnailSource(asana.image_number);
 
   // 카테고리 정보 가져오기
   const getCategoryInfo = (categoryName?: string) => {
@@ -49,7 +45,6 @@ export default function AsanaDisplayCard({ asana }: AsanaDisplayCardProps) {
     };
   };
 
-  const imageUrl = getImageUrl(asana.image_number);
   const categoryInfo = getCategoryInfo(asana.category_name_en);
 
   return (
@@ -72,9 +67,9 @@ export default function AsanaDisplayCard({ asana }: AsanaDisplayCardProps) {
           alignItems="center"
           backgroundColor="#FFFFFF"
         >
-          {imageUrl ? (
+          {imageSource ? (
             <Image
-              source={{ uri: imageUrl }}
+              source={imageSource}
               style={{
                 width: "80%",
                 height: "80%",
@@ -155,4 +150,3 @@ export default function AsanaDisplayCard({ asana }: AsanaDisplayCardProps) {
     </Card>
   );
 }
-

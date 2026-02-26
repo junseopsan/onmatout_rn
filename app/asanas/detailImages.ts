@@ -1,3 +1,9 @@
+/**
+ * 아사나 상세 이미지 (여러 장) 로컬 소스
+ * assets/images/asanas/ 에서 nnn_001.png, nnn_002.png ... 스캔하여 자동 생성
+ * 생성: node scripts/gen-asana-images.js
+ */
+
 export const ASANA_DETAIL_IMAGES: Record<string, any[]> = {
   "001": [require("../../assets/images/asanas/001_001.png")],
   "002": [require("../../assets/images/asanas/002_001.png")],
@@ -85,6 +91,7 @@ export const ASANA_DETAIL_IMAGES: Record<string, any[]> = {
   "084": [require("../../assets/images/asanas/084_001.png")],
   "085": [require("../../assets/images/asanas/085_001.png")],
   "086": [require("../../assets/images/asanas/086_001.png"), require("../../assets/images/asanas/086_002.png")],
+  "087": [require("../../assets/images/asanas/087_001.png")],
   "088": [require("../../assets/images/asanas/088_001.png")],
   "089": [require("../../assets/images/asanas/089_001.png")],
   "090": [require("../../assets/images/asanas/090_001.png")],
@@ -179,5 +186,5 @@ export const ASANA_DETAIL_IMAGES: Record<string, any[]> = {
   "179": [require("../../assets/images/asanas/179_001.png"), require("../../assets/images/asanas/179_002.png"), require("../../assets/images/asanas/179_003.png"), require("../../assets/images/asanas/179_004.png"), require("../../assets/images/asanas/179_005.png")],
   "180": [require("../../assets/images/asanas/180_001.png"), require("../../assets/images/asanas/180_002.png"), require("../../assets/images/asanas/180_003.png"), require("../../assets/images/asanas/180_004.png"), require("../../assets/images/asanas/180_005.png")],
   "181": [require("../../assets/images/asanas/181_001.png")],
-  "182": [require("../../assets/images/asanas/182_001.png")],
+  "182": [require("../../assets/images/asanas/182_001.png")]
 };

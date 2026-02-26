@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
+import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { STATES } from "../../constants/states";
 import { useRecordStats, useToggleLike } from "../../hooks/useRecords";
 import { Asana } from "../../lib/api/asanas";
@@ -45,14 +46,8 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
     return asanas.find((asana) => asana.id === asanaId);
   };
 
-  // 이미지 URL 생성 (메모이제이션)
-  const getImageUrl = useMemo(() => {
-    return (imageNumber: string) => {
-      if (!imageNumber) return null;
-      const formattedNumber = imageNumber.padStart(3, "0");
-      return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-    };
-  }, []);
+  // 이미지: 로컬 썸네일 (image_number → assets)
+  const getImageSource = (imageNumber: string) => getAsanaThumbnailSource(imageNumber);
   const formatRelativeTime = (dateString?: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -152,8 +147,8 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                   return null;
                 }
 
-                const imageUrl = asana.image_number
-                  ? getImageUrl(asana.image_number)
+                const imageSource = asana.image_number
+                  ? getImageSource(asana.image_number)
                   : null;
 
                 return (
@@ -163,9 +158,9 @@ export default function FeedItem({ record, asanas, onPress }: FeedItemProps) {
                     onPress={() => setSelectedAsana(asana)}
                     activeOpacity={0.8}
                   >
-                    {imageUrl ? (
+                    {imageSource ? (
                       <Image
-                        source={{ uri: imageUrl }}
+                        source={imageSource}
                         style={styles.asanaImage}
                         contentFit="contain"
                         cachePolicy="memory-disk"

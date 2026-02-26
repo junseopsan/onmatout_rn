@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { STATES } from "../constants/states";
+import { getAsanaThumbnailSource } from "../lib/asanaImages";
 import { Asana } from "../lib/api/asanas";
 import { recordsAPI } from "../lib/api/records";
 import { Record } from "../types/record";
@@ -116,11 +117,9 @@ export default function RecordDetailModal({
     return STATES.find((state) => state.id === stateId);
   };
 
-  // 이미지 URL 생성
-  const getImageUrl = (imageNumber: string) => {
-    const formattedNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${formattedNumber}.png`;
-  };
+  // 이미지: 로컬 썸네일
+  const getImageSource = (imageNumber: string) =>
+    getAsanaThumbnailSource(imageNumber);
 
   // 수정 모드 시작
   const handleEdit = () => {
@@ -356,29 +355,30 @@ export default function RecordDetailModal({
                         return (
                           <View key={asanaId} style={styles.selectedAsanaCard}>
                             <View style={styles.selectedAsanaImageContainer}>
-                              {asana.image_number ? (
-                                <Image
-                                  source={{
-                                    uri: getImageUrl(asana.image_number),
-                                  }}
-                                  style={styles.selectedAsanaImage}
-                                  contentFit="contain"
-                                  placeholder="🖼️"
-                                  placeholderContentFit="contain"
-                                />
-                              ) : (
-                                <View
-                                  style={styles.selectedAsanaImagePlaceholder}
-                                >
-                                  <Text
-                                    style={
-                                      styles.selectedAsanaImagePlaceholderText
-                                    }
+                              {(() => {
+                                const src = getImageSource(asana.image_number);
+                                return src ? (
+                                  <Image
+                                    source={src}
+                                    style={styles.selectedAsanaImage}
+                                    contentFit="contain"
+                                    placeholder="🖼️"
+                                    placeholderContentFit="contain"
+                                  />
+                                ) : (
+                                  <View
+                                    style={styles.selectedAsanaImagePlaceholder}
                                   >
-                                    📝
-                                  </Text>
-                                </View>
-                              )}
+                                    <Text
+                                      style={
+                                        styles.selectedAsanaImagePlaceholderText
+                                      }
+                                    >
+                                      📝
+                                    </Text>
+                                  </View>
+                                );
+                              })()}
                             </View>
                             <View style={styles.selectedAsanaInfo}>
                               <Text style={styles.selectedAsanaNumber}>
@@ -428,21 +428,24 @@ export default function RecordDetailModal({
                     return (
                       <View key={asanaId} style={styles.asanaCard}>
                         <View style={styles.asanaImageContainer}>
-                          {asana.image_number ? (
-                            <Image
-                              source={{ uri: getImageUrl(asana.image_number) }}
-                              style={styles.asanaImage}
-                              contentFit="contain"
-                              placeholder="🖼️"
-                              placeholderContentFit="contain"
-                            />
-                          ) : (
-                            <View style={styles.asanaImagePlaceholder}>
-                              <Text style={styles.asanaImagePlaceholderText}>
-                                📝
-                              </Text>
-                            </View>
-                          )}
+                          {(() => {
+                            const src = getImageSource(asana.image_number);
+                            return src ? (
+                              <Image
+                                source={src}
+                                style={styles.asanaImage}
+                                contentFit="contain"
+                                placeholder="🖼️"
+                                placeholderContentFit="contain"
+                              />
+                            ) : (
+                              <View style={styles.asanaImagePlaceholder}>
+                                <Text style={styles.asanaImagePlaceholderText}>
+                                  📝
+                                </Text>
+                              </View>
+                            );
+                          })()}
                         </View>
                         <View style={styles.asanaInfo}>
                           <Text style={styles.asanaName}>

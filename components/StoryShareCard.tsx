@@ -3,6 +3,7 @@ import React from "react";
 import { PixelRatio, StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { STATES } from "../constants/states";
+import { getAsanaThumbnailSource } from "../lib/asanaImages";
 import { formatDateLetter } from "../lib/utils/dateFormatter";
 import { Record } from "../types/record";
 
@@ -65,19 +66,20 @@ function StoryStatsCard({ stats }: { stats: StoryStatsData }) {
 
   return (
     <View style={[styles.card, styles.statsCard]} collapsable={false}>
-      {/* 배경: 수련한 아사나 이미지 랜덤 배치 (로딩 시간 이슈로 임시 비표시) */}
+      {/* 배경: 수련한 아사나 이미지 랜덤 배치 (로컬 썸네일) */}
       {/* {bgList.length > 0 ? (
         <View style={styles.statsBgLayer} pointerEvents="none">
           {bgList.map((imageNumber, i) => {
             const pos = STATS_BG_POSITIONS[i];
-            const url = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${String(imageNumber).padStart(3, "0")}.png`;
+            const src = getAsanaThumbnailSource(imageNumber);
+            if (!src) return null;
             return (
               <View
                 key={`${imageNumber}-${i}`}
                 style={[styles.statsBgThumb, pos]}
               >
                 <Image
-                  source={{ uri: url }}
+                  source={src}
                   style={styles.statsBgThumbImg}
                   contentFit="contain"
                 />
@@ -118,12 +120,6 @@ function StoryStatsCard({ stats }: { stats: StoryStatsData }) {
   );
 }
 
-function getAsanaImageUrl(asana: any): string | null {
-  const n = asana && typeof asana === "object" && asana.image_number;
-  if (!n) return null;
-  return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${String(n).padStart(3, "0")}.png`;
-}
-
 function StoryRecordCard({
   record,
   userName,
@@ -153,7 +149,7 @@ function StoryRecordCard({
         {asanaList.length > 0 ? (
           <View style={styles.recordAsanaRow}>
             {asanaList.map((a: any, i: number) => {
-              const url = getAsanaImageUrl(a);
+              const src = getAsanaThumbnailSource(a?.image_number);
               const n = asanaList.length;
               const thumbStyle =
                 n <= 4
@@ -163,9 +159,9 @@ function StoryRecordCard({
                     : styles.recordAsanaThumb;
               return (
                 <View key={i} style={[styles.recordAsanaThumbBase, thumbStyle]}>
-                  {url ? (
+                  {src ? (
                     <Image
-                      source={{ uri: url }}
+                      source={src}
                       style={styles.recordAsanaThumbImg}
                       contentFit="contain"
                     />

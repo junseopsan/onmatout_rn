@@ -26,6 +26,7 @@ import {
   useToggleLike,
 } from "../../hooks/useRecords";
 import { formatDate } from "../../lib/utils/dateFormatter";
+import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 import { AsanaCategory } from "../../types/asana";
@@ -82,12 +83,9 @@ export default function RecordDetailScreen() {
     navigation.navigate("EditRecord", { record });
   };
 
-  // 아사나 이미지 URL 생성
-  const getAsanaImageUrl = (imageNumber: string) => {
-    if (!imageNumber) return null;
-    const baseNumber = imageNumber.padStart(3, "0");
-    return `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/thumbnail/${baseNumber}.png`;
-  };
+  // 아사나 이미지: 로컬 썸네일
+  const getAsanaImageSource = (imageNumber: string) =>
+    getAsanaThumbnailSource(imageNumber);
 
   // 카테고리 정보 가져오기
   const getCategoryInfo = (categoryName: string) => {
@@ -189,7 +187,7 @@ export default function RecordDetailScreen() {
               </View>
               <View style={styles.asanasGrid}>
                 {record.asanas.map((asana: any, index: number) => {
-                  const imageUrl = getAsanaImageUrl(asana.image_number);
+                  const imageSource = getAsanaImageSource(asana.image_number);
                   const categoryInfo = getCategoryInfo(
                     asana.category_name_en || "",
                   );
@@ -213,7 +211,7 @@ export default function RecordDetailScreen() {
                         backgroundColor="#9A9A9A"
                         position="relative"
                       >
-                        {imageUrl ? (
+                        {imageSource ? (
                           <YStack
                             flex={1}
                             justifyContent="center"
@@ -221,7 +219,7 @@ export default function RecordDetailScreen() {
                             backgroundColor="#FFFFFF"
                           >
                             <Image
-                              source={{ uri: imageUrl }}
+                              source={imageSource}
                               style={{
                                 width: "80%",
                                 height: "80%",
@@ -234,7 +232,7 @@ export default function RecordDetailScreen() {
                               onError={() => {
                                 console.log(
                                   "아사나 이미지 로딩 실패:",
-                                  imageUrl,
+                                  asana.image_number,
                                 );
                               }}
                             />

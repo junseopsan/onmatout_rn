@@ -4,6 +4,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { formatDate } from "../lib/utils/dateFormatter";
+import { getAsanaFullImageSource } from "../lib/asanaImages";
 import { Record } from "../types/record";
 
 interface SimpleRecordCardProps {
@@ -15,16 +16,12 @@ export default function SimpleRecordCard({
   record,
   onPress,
 }: SimpleRecordCardProps) {
-  // 첫 번째 아사나 이미지 URL 생성 (아사나 객체에서 image_number 사용)
-  const getFirstAsanaImageUrl = () => {
+  // 첫 번째 아사나 이미지: 로컬 풀사이즈(_001.png)
+  const getFirstAsanaImageSource = () => {
     if (record.asanas && record.asanas.length > 0) {
       const firstAsana = record.asanas[0];
-
-      // 아사나 객체에서 image_number 속성 사용
       if (firstAsana && (firstAsana as any).image_number) {
-        const paddedId = (firstAsana as any).image_number.padStart(3, "0");
-        const imageUrl = `https://ueoytttgsjquapkaerwk.supabase.co/storage/v1/object/public/asanas-images/${paddedId}_001.png`;
-        return imageUrl;
+        return getAsanaFullImageSource((firstAsana as any).image_number);
       }
     }
     return null;
@@ -38,7 +35,7 @@ export default function SimpleRecordCard({
     return 0;
   };
 
-  const imageUrl = getFirstAsanaImageUrl();
+  const imageSource = getFirstAsanaImageSource();
   const additionalCount = getAdditionalAsanaCount();
 
   return (
@@ -49,10 +46,10 @@ export default function SimpleRecordCard({
     >
       <View style={styles.content}>
         <View style={styles.leftSection}>
-          {imageUrl ? (
+          {imageSource ? (
             <View style={styles.imageContainer}>
               <Image
-                source={{ uri: imageUrl }}
+                source={imageSource}
                 style={styles.asanaImage}
                 contentFit="contain"
                 onError={() => {
