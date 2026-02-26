@@ -7,6 +7,10 @@
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "runtimeVersion": "1.0.19",
+    "updates": {
+      "url": "https://u.expo.dev/6b14beae-4cd3-4575-bfbd-403081113b72"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onmatout.app",

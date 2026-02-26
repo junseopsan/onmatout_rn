@@ -14,6 +14,7 @@
       }
     },
     "preview": {
+      "channel": "preview",
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
@@ -24,6 +25,7 @@
       }
     },
     "production": {
+      "channel": "production",
       "ios": {
         "resourceClass": "m-medium"
       },
@@ -38,6 +40,7 @@
     },
     "testflight": {
       "extends": "production",
+      "channel": "production",
       "distribution": "store",
       "ios": {
         "resourceClass": "m-medium",
