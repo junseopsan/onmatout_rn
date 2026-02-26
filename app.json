@@ -2,12 +2,12 @@
   "expo": {
     "name": "OnMatOut",
     "slug": "onmatout_rn",
-    "version": "1.0.19",
+    "version": "1.0.20",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "runtimeVersion": "1.0.19",
+    "runtimeVersion": "1.0.20",
     "updates": {
       "url": "https://u.expo.dev/6b14beae-4cd3-4575-bfbd-403081113b72"
     },
