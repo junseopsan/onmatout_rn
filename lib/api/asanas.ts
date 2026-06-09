@@ -454,7 +454,7 @@ export const asanasAPI = {
         };
       }
 
-      // 3) id 기준 병합·중복 제거, 최대 50건
+      // 3) id 기준 병합, 중복 제거, 최대 50건
       const byId = new Map<string, Asana>();
       for (const row of nameData || []) byId.set(row.id, row);
       for (const row of aliasData || []) if (!byId.has(row.id)) byId.set(row.id, row);

@@ -604,7 +604,7 @@ export const recordsAPI = {
         };
       }
 
-      // 아사나 상세 정보 조회 (카드 썸네일 + 상세 화면 이름·카테고리용)
+      // 아사나 상세 정보 조회 (카드 썸네일 + 상세 화면 이름, 카테고리용)
       const allAsanas = await supabase.from("asanas").select("*");
       const asanasMap = new Map<
         string,

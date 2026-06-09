@@ -286,4 +286,134 @@ export const storageAPI = {
       Constants.expoConfig?.extra?.supabaseUrl;
     return url.includes(supabaseUrl || "supabase.co");
   },
+
+  // 수련기록용 사진 업로드 (avatars 버킷에 records/{userId}/ 경로로 저장)
+  // 한 번에 최대 maxCount 장 선택 가능. 각 사진의 publicUrl 배열을 반환.
+  uploadRecordPhotos: async (
+    userId: string,
+    maxCount: number = 5,
+  ): Promise<{
+    success: boolean;
+    urls?: string[];
+    message?: string;
+    canceled?: boolean;
+  }> => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser || authUser.id !== userId) {
+        return { success: false, message: "인증이 필요합니다." };
+      }
+
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return { success: false, message: "갤러리 접근 권한이 필요합니다." };
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+        base64: false,
+        exif: false,
+        allowsMultipleSelection: true,
+        selectionLimit: maxCount,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return { success: false, canceled: true, message: "취소되었습니다." };
+      }
+
+      const urls: string[] = [];
+      for (const asset of result.assets.slice(0, maxCount)) {
+        const uri = asset.uri;
+        if (!uri) continue;
+
+        const ext = (asset.fileName?.split(".").pop() || "jpg").toLowerCase();
+        const contentType = asset.mimeType || `image/${ext}`;
+
+        const encoding =
+          (FileSystem as any).EncodingType?.Base64 ||
+          (FileSystem as any).EncodingType?.base64 ||
+          "base64";
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding,
+        } as any);
+
+        let normalized = base64.trim();
+        if (normalized.startsWith("data:")) {
+          const commaIdx = normalized.indexOf(",");
+          normalized = commaIdx >= 0 ? normalized.slice(commaIdx + 1) : normalized;
+        }
+        normalized = normalized.replace(/\s/g, "");
+        const padLen = normalized.length % 4;
+        if (padLen > 0) {
+          normalized = normalized.padEnd(normalized.length + (4 - padLen), "=");
+        }
+
+        let bytes: Uint8Array;
+        try {
+          bytes = toByteArray(normalized);
+        } catch {
+          continue;
+        }
+
+        // 8MB 제한
+        if (bytes.length > 8 * 1024 * 1024) {
+          return {
+            success: false,
+            message: "한 장은 8MB 이하의 사진만 업로드할 수 있어요.",
+          };
+        }
+
+        const fileName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 6)}.${ext}`;
+        const path = `records/${userId}/${fileName}`;
+
+        const { error: upErr } = await supabase.storage
+          .from("avatars")
+          .upload(path, bytes, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType,
+          });
+        if (upErr) {
+          logger.log("record photo upload failed:", upErr.message);
+          return {
+            success: false,
+            message: `업로드 실패: ${upErr.message}`,
+          };
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(path);
+        urls.push(urlData.publicUrl);
+      }
+
+      return { success: true, urls };
+    } catch (e) {
+      return {
+        success: false,
+        message: `업로드 중 오류: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      };
+    }
+  },
+
+  // 수련기록 사진 단일 삭제 (best-effort)
+  deleteRecordPhoto: async (publicUrl: string): Promise<boolean> => {
+    try {
+      // publicUrl 형식: https://{ref}.supabase.co/storage/v1/object/public/avatars/records/{userId}/{file}
+      const marker = "/storage/v1/object/public/avatars/";
+      const idx = publicUrl.indexOf(marker);
+      if (idx === -1) return false;
+      const path = publicUrl.slice(idx + marker.length);
+      const { error } = await supabase.storage.from("avatars").remove([path]);
+      return !error;
+    } catch {
+      return false;
+    }
+  },
 };

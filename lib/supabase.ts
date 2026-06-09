@@ -8,16 +8,16 @@ import Constants from "expo-constants";
 const supabaseUrl =
   Constants.expoConfig?.extra?.supabaseUrl ||
   process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey =
-  Constants.expoConfig?.extra?.supabaseAnonKey ||
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabasePublishableKey =
+  Constants.expoConfig?.extra?.supabasePublishableKey ||
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 // 환경 변수 검증
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabasePublishableKey) {
   console.error("❌ Supabase 환경 변수가 설정되지 않았습니다.");
   console.error("다음 환경 변수를 설정해주세요:");
   console.error("- EXPO_PUBLIC_SUPABASE_URL");
-  console.error("- EXPO_PUBLIC_SUPABASE_ANON_KEY");
+  console.error("- EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
   console.error("");
   console.error("방법 1: .env 파일 생성");
   console.error("방법 2: app.json의 extra 섹션에 추가");
@@ -36,10 +36,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 if (__DEV__) {
   console.log("✅ Supabase 환경 변수 로드 성공");
   console.log("- URL:", supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : "없음");
-  console.log("- Anon Key:", supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : "없음");
+  console.log("- Publishable Key:", supabasePublishableKey ? `${supabasePublishableKey.substring(0, 20)}...` : "없음");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
     storage: AsyncStorage,
     // 백그라운드 후 복귀 시 토큰이 만료된 채로 남지 않도록 자동 갱신 활성화
@@ -275,4 +275,4 @@ export const signOut = async () => {
 };
 
 export const SUPABASE_URL = supabaseUrl;
-export const SUPABASE_ANON_KEY = supabaseAnonKey;
+export const SUPABASE_PUBLISHABLE_KEY = supabasePublishableKey;
