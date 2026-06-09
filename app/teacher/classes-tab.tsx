@@ -131,9 +131,20 @@ export default function TeacherClassesTabScreen() {
         >
           <SectionLabel>오늘, {todayLabel}</SectionLabel>
           {todayClasses.length === 0 ? (
-            <View style={styles.muted}>
-              <Ionicons name="cafe-outline" size={20} color={COLORS.textSecondary} />
-              <Text style={styles.mutedText}>오늘 예정된 클래스가 없어요.</Text>
+            <View style={styles.todayEmpty}>
+              <View style={styles.todayEmptyIcon}>
+                <Ionicons
+                  name="sunny-outline"
+                  size={24}
+                  color={COLORS.primary}
+                />
+              </View>
+              <Text style={styles.todayEmptyTitle}>
+                오늘은 예정된 클래스가 없어요
+              </Text>
+              <Text style={styles.todayEmptySub}>
+                여유롭게 쉬어가는 날이에요
+              </Text>
             </View>
           ) : (
             todayClasses.map((c) => (
@@ -224,6 +235,30 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   mutedText: { ...TEXT.body, color: COLORS.textSecondary },
+  todayEmpty: {
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: SPACING.xl,
+    marginBottom: SPACING.lg,
+  },
+  todayEmptyIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(139, 92, 246, 0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  todayEmptyTitle: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  todayEmptySub: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+  },
   fab: {
     position: "absolute",
     right: SPACING.lg,
