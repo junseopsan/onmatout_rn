@@ -21,6 +21,17 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    // Noto Sans KR — 한글 본문/UI (sans 폰트로 매핑)
+    NotoSansKR_400Regular: require("@expo-google-fonts/noto-sans-kr/400Regular/NotoSansKR_400Regular.ttf"),
+    NotoSansKR_500Medium: require("@expo-google-fonts/noto-sans-kr/500Medium/NotoSansKR_500Medium.ttf"),
+    NotoSansKR_600SemiBold: require("@expo-google-fonts/noto-sans-kr/600SemiBold/NotoSansKR_600SemiBold.ttf"),
+    NotoSansKR_700Bold: require("@expo-google-fonts/noto-sans-kr/700Bold/NotoSansKR_700Bold.ttf"),
+    // Noto Serif KR — 한글 serif 헤더 (Notion 풍, 한글 hero/title 용)
+    NotoSerifKR_500Medium: require("@expo-google-fonts/noto-serif-kr/500Medium/NotoSerifKR_500Medium.ttf"),
+    NotoSerifKR_600SemiBold: require("@expo-google-fonts/noto-serif-kr/600SemiBold/NotoSerifKR_600SemiBold.ttf"),
+    NotoSerifKR_700Bold: require("@expo-google-fonts/noto-serif-kr/700Bold/NotoSerifKR_700Bold.ttf"),
+    // Newsreader — Latin 인용/이탤릭 액센트 전용 (한글 본문엔 NotoSerifKR 사용)
+    Newsreader_400Regular_Italic: require("@expo-google-fonts/newsreader/400Regular_Italic/Newsreader_400Regular_Italic.ttf"),
   });
 
   if (!loaded) {

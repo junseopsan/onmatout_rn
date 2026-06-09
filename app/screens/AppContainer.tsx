@@ -4,14 +4,10 @@ import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  AppState,
-  Linking,
-  Platform,
-  View,
-} from "react-native";
+import { Alert, Linking, Platform, View } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
+import { useRoles } from "../../hooks/useRoles";
+import { registerPushTokenForUser } from "../../lib/pushTokens";
 import { supabase } from "../../lib/supabase";
 import { COLORS } from "../../constants/Colors";
 import { RootStackParamList } from "../../navigation/types";
@@ -43,11 +39,28 @@ export default function AppContainer() {
     storeUrl: string;
   } | null>(null);
   const navigation = useNavigation<NavigationProp>();
-  const { isAuthenticated, loading: authLoadingState } = useAuth();
+  const { isAuthenticated, loading: authLoadingState, user } = useAuth();
+  const {
+    isTeacher,
+    needsRoleSelection,
+    loaded: rolesLoaded,
+  } = useRoles();
 
-  // 이미 초기화되었는지 추적 (포그라운드 복귀 시 재초기화 방지)
+  // 로그인 후 푸시 토큰 등록 (한 번만)
+  const pushRegisteredRef = useRef(false);
+  useEffect(() => {
+    if (
+      !pushRegisteredRef.current &&
+      isAuthenticated &&
+      user?.id
+    ) {
+      pushRegisteredRef.current = true;
+      registerPushTokenForUser(user.id).catch(() => undefined);
+    }
+  }, [isAuthenticated, user?.id]);
+
+  // 이미 초기화되었는지 추적
   const hasInitializedRef = useRef(false);
-  const appStateRef = useRef(AppState.currentState);
 
   // 알림 권한 요청 함수
   const requestNotificationPermissions = async () => {
@@ -112,98 +125,11 @@ export default function AppContainer() {
     }
   };
 
-  // 앱 시작 시 알림 권한 요청 및 세션 갱신
+  // 앱 시작 시 알림 권한 요청. 세션 갱신은 supabase 클라이언트의 autoRefreshToken 이 담당.
   useEffect(() => {
-    // 알림 권한 요청은 에러가 발생해도 앱 진행에 영향 없도록
     requestNotificationPermissions().catch((error) => {
       console.log("[AppContainer] 알림 권한 요청 실패 (무시):", error);
     });
-
-    // 앱 시작 시 세션이 만료되었거나 만료 직전이면 즉시 갱신 시도
-    const refreshSessionOnStart = async () => {
-      try {
-        // 타임아웃 추가 (5초)
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<{
-          data: { session: null };
-          error: { message: string };
-        }>((resolve) => {
-          setTimeout(() => {
-            resolve({
-              data: { session: null },
-              error: { message: "Session timeout" },
-            });
-          }, 5000);
-        });
-
-        const result = await Promise.race([sessionPromise, timeoutPromise]);
-        const { data, error } = result;
-
-        if (error) {
-          console.log(
-            "[AppContainer] 앱 시작 시 세션 조회 에러:",
-            error.message,
-          );
-          return;
-        }
-
-        if (!data?.session) {
-          console.log("[AppContainer] 앱 시작 시 세션 없음");
-          return;
-        }
-
-        const session = data.session;
-        if (session.expires_at) {
-          const expiresAt = session.expires_at * 1000;
-          const now = Date.now();
-          const timeUntilExpiry = expiresAt - now;
-
-          // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신
-          if (timeUntilExpiry < 5 * 60 * 1000) {
-            console.log("[AppContainer] 앱 시작 시 세션 만료 임박, 갱신 시도", {
-              timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
-            });
-
-            // 갱신에도 타임아웃 추가
-            const refreshPromise = supabase.auth.refreshSession();
-            const refreshTimeoutPromise = new Promise<{
-              data: { session: null };
-              error: { message: string };
-            }>((resolve) => {
-              setTimeout(() => {
-                resolve({
-                  data: { session: null },
-                  error: { message: "Refresh timeout" },
-                });
-              }, 5000);
-            });
-
-            const refreshResult = await Promise.race([
-              refreshPromise,
-              refreshTimeoutPromise,
-            ]);
-            const { data: refreshData, error: refreshError } = refreshResult;
-
-            if (refreshError) {
-              console.log(
-                "[AppContainer] 앱 시작 시 세션 갱신 실패:",
-                refreshError.message,
-              );
-            } else if (refreshData?.session) {
-              console.log("[AppContainer] 앱 시작 시 세션 갱신 성공");
-            }
-          }
-        }
-      } catch (error) {
-        // 세션 확인 실패는 앱 진행에 영향 없도록
-        console.log(
-          "[AppContainer] 앱 시작 시 세션 확인 중 오류 (무시):",
-          error,
-        );
-      }
-    };
-
-    refreshSessionOnStart();
   }, []);
 
   // 앱 버전 체크 (필수 업데이트 여부)
@@ -277,30 +203,6 @@ export default function AppContainer() {
     }
   }, [authLoadingState]);
 
-  // 포그라운드 복귀 시 처리 (이미 초기화된 경우 빠르게 처리)
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (
-        appStateRef.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        console.log("[AppContainer] 포그라운드 복귀 감지");
-
-        // 이미 초기화된 경우, 빠르게 처리 (스플래시 스크린 건너뛰기)
-        if (hasInitializedRef.current && hasRedirected) {
-          console.log("[AppContainer] 이미 초기화됨 - 빠른 처리");
-          setIsLoading(false);
-          setAuthLoading(false);
-          setVersionChecked(true);
-          return;
-        }
-      }
-      appStateRef.current = nextAppState;
-    });
-
-    return () => subscription.remove();
-  }, [hasRedirected]);
-
   useEffect(() => {
     // 이미 초기화된 경우 빠르게 처리
     if (hasInitializedRef.current) {
@@ -332,16 +234,30 @@ export default function AppContainer() {
         !hasRedirected,
     });
 
+    // 인증된 사용자는 roles 첫 로드 완료(loaded=true)까지 기다림 — 그래야 역할 분기가 의미 있음
+    const rolesReady = !isAuthenticated || rolesLoaded;
+
     if (
       !isLoading &&
       !authLoading &&
       versionChecked &&
       !forceUpdateInfo &&
-      !hasRedirected
+      !hasRedirected &&
+      rolesReady
     ) {
-      // 모든 사용자(인증/비인증)를 TabNavigator로 이동
-      // TabNavigator 내부에서 비회원 사용자 처리
-      const targetRoute = "TabNavigator";
+      // 인증되지 않았거나 역할 정보 로딩 중이면 기존 TabNavigator (게스트 + nickname 흐름)
+      // 인증된 사용자는 역할 분기:
+      //   - user_roles 비어있음 → RoleSelect
+      //   - teacher 활성 → TeacherHome
+      //   - 그 외 → TabNavigator (기존 student 시점)
+      let targetRoute: keyof RootStackParamList = "TabNavigator";
+      if (isAuthenticated && rolesLoaded) {
+        if (needsRoleSelection) {
+          targetRoute = "RoleSelect";
+        } else if (isTeacher) {
+          targetRoute = "TeacherTabNavigator";
+        }
+      }
 
       // 중복 리다이렉트 방지
       setHasRedirected(true);
@@ -388,6 +304,9 @@ export default function AppContainer() {
     hasRedirected,
     navigation,
     isAuthenticated,
+    rolesLoaded,
+    isTeacher,
+    needsRoleSelection,
   ]);
 
   // 안전장치: 5초 후에도 리다이렉트가 안 되면 강제로 TabNavigator로 이동 (필수 업데이트 중이면 제외)

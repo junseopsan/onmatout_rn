@@ -5,6 +5,7 @@ import { BackHandler, ToastAndroid } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { pageList } from "./pages";
 import TabNavigator from "./TabNavigator";
+import TeacherTabNavigator from "./TeacherTabNavigator";
 import { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -132,6 +133,11 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="TeacherTabNavigator"
+        component={TeacherTabNavigator}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="NewRecord"
         component={pageList.find((p) => p.name === "NewRecord")?.component!}
         options={pageList.find((p) => p.name === "NewRecord")?.options}
@@ -186,6 +192,182 @@ export default function AppNavigator() {
         options={
           pageList.find((p) => p.name === "CreateSupportRequest")?.options
         }
+      />
+      <Stack.Screen
+        name="RoleSelect"
+        component={pageList.find((p) => p.name === "RoleSelect")?.component!}
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name="TeacherHome"
+        component={pageList.find((p) => p.name === "TeacherHome")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherMemberCreate"
+        component={
+          pageList.find((p) => p.name === "TeacherMemberCreate")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherMemberDetail"
+        component={
+          pageList.find((p) => p.name === "TeacherMemberDetail")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherClassCreate"
+        component={
+          pageList.find((p) => p.name === "TeacherClassCreate")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherClassDetail"
+        component={
+          pageList.find((p) => p.name === "TeacherClassDetail")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherMembershipCreate"
+        component={
+          pageList.find((p) => p.name === "TeacherMembershipCreate")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherMemberAttendance"
+        component={
+          pageList.find((p) => p.name === "TeacherMemberAttendance")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherClassAttendance"
+        component={
+          pageList.find((p) => p.name === "TeacherClassAttendance")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AuthMatch"
+        component={pageList.find((p) => p.name === "AuthMatch")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="StudentTeacherDetail"
+        component={
+          pageList.find((p) => p.name === "StudentTeacherDetail")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherRoutineList"
+        component={
+          pageList.find((p) => p.name === "TeacherRoutineList")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherRoutineCreate"
+        component={
+          pageList.find((p) => p.name === "TeacherRoutineCreate")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherRoutineDetail"
+        component={
+          pageList.find((p) => p.name === "TeacherRoutineDetail")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="StudentRoutineList"
+        component={
+          pageList.find((p) => p.name === "StudentRoutineList")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="StudentRoutineDetail"
+        component={
+          pageList.find((p) => p.name === "StudentRoutineDetail")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="StudentClassSchedule"
+        component={
+          pageList.find((p) => p.name === "StudentClassSchedule")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherStudioList"
+        component={
+          pageList.find((p) => p.name === "TeacherStudioList")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherStudioForm"
+        component={
+          pageList.find((p) => p.name === "TeacherStudioForm")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherStudioApply"
+        component={
+          pageList.find((p) => p.name === "TeacherStudioApply")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="YogaTalkThreadList"
+        component={
+          pageList.find((p) => p.name === "YogaTalkThreadList")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="YogaTalkThread"
+        component={
+          pageList.find((p) => p.name === "YogaTalkThread")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="YogaAiAssistant"
+        component={
+          pageList.find((p) => p.name === "YogaAiAssistant")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherProfileEdit"
+        component={
+          pageList.find((p) => p.name === "TeacherProfileEdit")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherClassEdit"
+        component={
+          pageList.find((p) => p.name === "TeacherClassEdit")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TeacherMemberEdit"
+        component={
+          pageList.find((p) => p.name === "TeacherMemberEdit")?.component!
+        }
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
