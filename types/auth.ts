@@ -13,6 +13,7 @@ export interface UserProfile {
   name?: string;
   email?: string;
   avatar_url?: string;
+  bio?: string | null;
   created_at: string;
   updated_at: string;
 }

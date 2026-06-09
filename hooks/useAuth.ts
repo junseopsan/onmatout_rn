@@ -1,6 +1,4 @@
 import { useEffect } from "react";
-import { AppState } from "react-native";
-import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
 
 export const useAuth = () => {
@@ -19,174 +17,42 @@ export const useAuth = () => {
     clearSession,
   } = useAuthStore();
 
-  // Initialize auth on mount (한 번만 실행)
+  // 마운트 시 1회 초기화. 포그라운드 복귀 시 세션 갱신은 supabase 클라이언트
+  // (autoRefreshToken: true) 와 onAuthStateChange 가 처리하므로 별도 AppState
+  // 리스너 / 주기적 인터벌을 두지 않는다.
   useEffect(() => {
-    let isMounted = true;
-    let hasInitialized = false;
+    let cancelled = false;
 
     const initAuth = async () => {
-      if (hasInitialized) return; // 중복 실행 방지
-      hasInitialized = true;
-
-      console.log("Auth initialization starting...");
-
-      // 타임아웃 설정 (10초)
       const timeoutId = setTimeout(() => {
-        console.log("Auth initialization timeout - 강제로 로딩 해제");
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }, 10000);
 
       try {
-        // 인증 초기화만 실행
         await initialize();
+      } catch {
+        if (!cancelled) setLoading(false);
+      } finally {
         clearTimeout(timeoutId);
-
-        if (isMounted) {
-          console.log("Auth initialization completed");
-        }
-      } catch (error) {
-        clearTimeout(timeoutId);
-
-        if (isMounted) {
-          // 에러 발생 시 로딩 상태 해제
-          setLoading(false);
-        }
       }
     };
 
-    // 이미 로딩이 완료된 상태라면 초기화하지 않음
-    if (!loading) {
-      console.log("Auth already initialized, skipping...");
-    } else {
+    if (loading) {
       initAuth();
     }
 
     return () => {
-      isMounted = false;
+      cancelled = true;
     };
-  }, []); // 빈 의존성 배열로 한 번만 실행
-
-  // 앱이 포그라운드로 돌아올 때 세션 재검증/갱신
-  useEffect(() => {
-    if (!user) return;
-
-    const handleAppStateChange = async (nextState: string) => {
-      if (nextState !== "active") return;
-      try {
-        const {
-          data: { session: latestSession },
-        } = await supabase.auth.getSession();
-
-        if (latestSession) {
-          setSession(latestSession);
-          return;
-        }
-
-        // 세션이 없으면 갱신 시도
-        const {
-          data: { session: refreshedSession },
-        } = await supabase.auth.refreshSession();
-
-        if (refreshedSession) {
-          setSession(refreshedSession);
-        }
-      } catch (error) {
-        console.log("[Auth] 포그라운드 세션 갱신 실패:", error);
-      }
-    };
-
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
-    return () => subscription.remove();
-  }, [user, setSession]);
-
-  // 주기적으로 세션 확인 및 갱신 (사용자가 로그인되어 있을 때만)
-  useEffect(() => {
-    if (!user) return;
-
-    const refreshSession = async () => {
-      try {
-        const {
-          data: { session: currentSession },
-        } = await supabase.auth.getSession();
-
-        if (currentSession) {
-          // 세션이 있으면 만료 시간 확인
-          if (currentSession.expires_at) {
-            const expiresAt = currentSession.expires_at * 1000;
-            const now = Date.now();
-            const timeUntilExpiry = expiresAt - now;
-
-            // 세션이 만료되었거나 만료 직전(5분 이내)이면 즉시 갱신 시도
-            // 세션 시간이 1시간이므로 5분 전에 갱신하는 것이 적절
-            if (timeUntilExpiry < 5 * 60 * 1000) {
-              console.log("[Auth] 세션 만료 임박 또는 만료됨, 주기적 갱신 시도", {
-                timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + "초",
-              });
-              const {
-                data: { session: refreshedSession },
-                error: refreshError,
-              } = await supabase.auth.refreshSession();
-
-              if (refreshedSession && !refreshError) {
-                console.log("[Auth] 주기적 세션 갱신 성공");
-                setSession(refreshedSession);
-              } else if (refreshError) {
-                console.log("[Auth] 주기적 세션 갱신 실패:", refreshError);
-                // 갱신 실패해도 사용자 정보는 유지
-              }
-            }
-          }
-        } else {
-          // 세션이 없으면 갱신 시도
-          console.log("[Auth] 세션 없음, 갱신 시도");
-          try {
-            const {
-              data: { session: refreshedSession },
-            } = await supabase.auth.refreshSession();
-            if (refreshedSession) {
-              console.log("[Auth] 세션 갱신 성공");
-              setSession(refreshedSession);
-            }
-          } catch (refreshError) {
-            console.log(
-              "[Auth] 세션 갱신 실패, 사용자 정보는 유지:",
-              refreshError
-            );
-          }
-        }
-      } catch (error) {
-        console.log("[Auth] 세션 확인 중 오류:", error);
-      }
-    };
-
-    // 초기 확인
-    refreshSession();
-
-    // 세션 시간이 1시간이므로 5분마다 세션 확인 및 갱신 (적절한 간격)
-    const interval = setInterval(refreshSession, 5 * 60 * 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [user, setSession]);
-
-  // 사용자 정보가 있으면 인증된 것으로 판단 (세션 없이도 허용)
-  const isAuthenticated = !!user;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
-    // State
     user,
     session,
     loading,
     error,
-    isAuthenticated,
-
-    // Actions
+    isAuthenticated: !!user,
     setUser,
     setSession,
     setLoading,

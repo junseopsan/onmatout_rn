@@ -283,6 +283,8 @@ export const userAPI = {
       if (profile.email !== undefined) updateData.email = profile.email;
       if (profile.avatar_url !== undefined)
         updateData.avatar_url = profile.avatar_url;
+      if ((profile as any).bio !== undefined)
+        updateData.bio = (profile as any).bio;
       if (profile.push_notifications !== undefined)
         updateData.push_notifications = profile.push_notifications;
       if (profile.email_notifications !== undefined)

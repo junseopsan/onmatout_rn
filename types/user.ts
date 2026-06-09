@@ -4,6 +4,7 @@ export interface UpdateUserProfileRequest {
   name?: string;
   email?: string;
   avatar_url?: string;
+  bio?: string | null;
   push_notifications?: boolean;
   email_notifications?: boolean;
   practice_reminders?: boolean;
@@ -40,6 +41,7 @@ export interface UserProfile {
   name: string;
   email?: string;
   avatar_url?: string;
+  bio?: string | null;
   push_notifications: boolean;
   email_notifications: boolean;
   practice_reminders: boolean;

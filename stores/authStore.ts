@@ -284,102 +284,58 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await Promise.race([initPromise, timeoutPromise]);
 
       // 인증 상태 구독으로 세션/유저 자동 동기화 (앱 생명주기 동안 1회 설정)
-      const { data } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          try {
-            const nextUser = session?.user ?? null;
-            const currentState = get();
+      // TOKEN_REFRESHED 는 백그라운드 복귀 시마다 발화하므로 프로필 재조회 없이
+      // 세션만 갱신 — 매번 user 객체를 갈아끼우면 구독 컴포넌트들이 리렌더되어
+      // "화면이 재시작된 듯한" 체감을 유발함.
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        try {
+          if (event === "SIGNED_OUT") {
+            await AsyncStorage.removeItem("user");
+            await AsyncStorage.removeItem("session");
+            set({ session: null, user: null, loading: false });
+            return;
+          }
 
-            // SIGNED_OUT 또는 세션 없음 → 강제 로그아웃
-            if (event === "SIGNED_OUT" || (!session && !nextUser)) {
-              await AsyncStorage.removeItem("user");
-              await AsyncStorage.removeItem("session");
-              set({ session: null, user: null, loading: false });
-              return;
-            }
-
-            // 사용자가 있으면 최신 프로필 가져오기
-            if (nextUser?.id) {
-              try {
-                const userProfile = await userAPI.getUserProfile(nextUser.id);
-                if (
-                  userProfile.success &&
-                  userProfile.data &&
-                  userProfile.data.name &&
-                  userProfile.data.name.trim() !== "" &&
-                  userProfile.data.name !== "null"
-                ) {
-                  const userWithProfile = {
-                    ...nextUser,
-                    profile: userProfile.data,
-                  } as any;
-                  set({ session: session ?? null, user: userWithProfile });
-
-                  // 로컬에도 보존
-                  await AsyncStorage.setItem(
-                    "user",
-                    JSON.stringify(userWithProfile)
-                  );
-                } else {
-                  set({
-                    session: session ?? null,
-                    user: (nextUser as any) ?? null,
-                  });
-                  if (nextUser) {
-                    await AsyncStorage.setItem(
-                      "user",
-                      JSON.stringify(nextUser)
-                    );
-                  } else {
-                    await AsyncStorage.removeItem("user");
-                  }
-                }
-              } catch (profileError) {
-                console.log("프로필 조회 실패:", profileError);
-                set({
-                  session: session ?? null,
-                  user: (nextUser as any) ?? null,
-                });
-                if (nextUser) {
-                  await AsyncStorage.setItem("user", JSON.stringify(nextUser));
-                } else {
-                  await AsyncStorage.removeItem("user");
-                }
-              }
-            } else {
-              // 세션이 없어도 로컬에 사용자 정보가 있으면 유지
-              const storedUser = await AsyncStorage.getItem("user");
-              if (storedUser) {
-                const parsedUser = JSON.parse(storedUser);
-                console.log(
-                  "[Auth] 세션 없지만 로컬 사용자 정보 유지:",
-                  parsedUser.id
-                );
-                set({ session: session ?? null, user: parsedUser });
-              } else {
-                set({
-                  session: session ?? null,
-                  user: (nextUser as any) ?? null,
-                });
-                if (nextUser) {
-                  await AsyncStorage.setItem("user", JSON.stringify(nextUser));
-                } else {
-                  await AsyncStorage.removeItem("user");
-                }
-              }
-            }
-
+          if (event === "TOKEN_REFRESHED") {
             if (session) {
               await AsyncStorage.setItem("session", JSON.stringify(session));
-            } else {
-              // 세션이 없어도 사용자 정보는 유지하므로 세션만 삭제
-              await AsyncStorage.removeItem("session");
+              set({ session });
             }
-          } catch (e) {
-            console.log("auth state sync 실패:", e);
+            return;
           }
+
+          // SIGNED_IN / USER_UPDATED / INITIAL_SESSION 등: 세션이 있으면 프로필까지 동기화
+          const nextUser = session?.user ?? null;
+          if (!session || !nextUser) {
+            return;
+          }
+
+          try {
+            const userProfile = await userAPI.getUserProfile(nextUser.id);
+            const hasValidProfile =
+              userProfile.success &&
+              userProfile.data &&
+              userProfile.data.name &&
+              userProfile.data.name.trim() !== "" &&
+              userProfile.data.name !== "null";
+
+            const userWithProfile = hasValidProfile
+              ? ({ ...nextUser, profile: userProfile.data } as any)
+              : ((nextUser as any) ?? null);
+
+            set({ session, user: userWithProfile });
+            await AsyncStorage.setItem("user", JSON.stringify(userWithProfile));
+            await AsyncStorage.setItem("session", JSON.stringify(session));
+          } catch (profileError) {
+            console.log("프로필 조회 실패:", profileError);
+            set({ session, user: nextUser as any });
+            await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+            await AsyncStorage.setItem("session", JSON.stringify(session));
+          }
+        } catch (e) {
+          console.log("auth state sync 실패:", e);
         }
-      );
+      });
 
       // 구독 핸들을 상태에 들고 있지 않으므로, 프로세스 생존 동안 유지됨
     } catch (error) {

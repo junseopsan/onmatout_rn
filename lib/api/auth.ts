@@ -130,9 +130,9 @@ export const authAPI = {
         );
       }
 
-      // 테스트 계정 확인 (심사용)
+      // 테스트 계정 — OTP 발송 안 함. verifyOTP 단계에서 phone+password 로 진짜 세션 생성.
       if (normalizedPhone === "01000000000") {
-        logger.log("테스트 계정 인증번호 발송 (우회)");
+        logger.log("테스트 계정 — OTP 발송 우회 (verifyOTP 에서 password 로그인)");
         return {
           success: true,
           message: "테스트 계정용 인증번호가 발송되었습니다.",
@@ -258,17 +258,47 @@ export const authAPI = {
           );
         }
 
-        // 테스트 계정 확인 (심사용)
+        // 테스트 계정 — phone+password 로그인으로 진짜 JWT 세션 생성.
+        // dev: 관리자 user 에 미리 설정한 password 사용 → 정상 작동
+        // main: password 가 설정 안 된 환경 → signInWithPassword 실패 후 user_profiles fallback
         if (
           normalizedPhone === "01000000000" &&
           credentials.code === "000000"
         ) {
-          logger.log("테스트 계정 인증번호 검증 (우회)");
+          logger.log("테스트 계정 인증번호 검증 - signInWithPassword 시도");
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+              phone: "+821000000000",
+              password: "Test1234!",
+            });
+            if (!error && data?.session && data?.user) {
+              logger.log("테스트 계정 password 로그인 성공", {
+                userId: data.user.id,
+              });
+              return {
+                success: true,
+                message: "테스트 계정 로그인 성공",
+                user: {
+                  id: data.user.id,
+                  phone: credentials.phone,
+                  profile: null,
+                },
+                session: data.session,
+                data: { user: data.user, session: data.session },
+              };
+            }
+            logger.log(
+              "테스트 계정 signInWithPassword 실패, user_profiles fallback",
+              error?.message,
+            );
+          } catch (e: any) {
+            logger.log(
+              "테스트 계정 signInWithPassword 예외, fallback 진행",
+              e?.message,
+            );
+          }
 
-          // 테스트 계정 인증 성공 처리
-          logger.log("테스트 계정 인증 성공, Supabase 사용자 조회/생성 시작");
-
-          // 기존 사용자 조회 (전화번호로)
+          // Fallback: user_profiles 에서 phone 으로 조회 (password 미설정 환경)
           const { data: existingProfiles, error: profileError } = await supabase
             .from("user_profiles")
             .select("*")
@@ -284,7 +314,7 @@ export const authAPI = {
           }
 
           if (existingProfiles && existingProfiles.length > 0) {
-            logger.log("기존 사용자 발견:", existingProfiles[0]);
+            logger.log("기존 사용자 발견 (fallback):", existingProfiles[0]);
             return {
               success: true,
               message: "테스트 계정 로그인 성공",
@@ -295,7 +325,6 @@ export const authAPI = {
               },
             };
           } else {
-            logger.log("기존 사용자 없음, 테스트 계정 생성 필요");
             return {
               success: false,
               message:
