@@ -1,11 +1,11 @@
 import { Image } from "expo-image";
 import React, { useEffect, useMemo, useState } from "react";
-import { TouchableOpacity, View } from "react-native";
-import { Button, Card, Text, XStack, YStack } from "tamagui";
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../constants/Colors";
 import { CATEGORIES } from "../constants/categories";
-import { getAsanaThumbnailSource } from "../lib/asanaImages";
 import { Asana, asanasAPI } from "../lib/api/asanas";
+import { getAsanaThumbnailSource } from "../lib/asanaImages";
+import { haptics } from "../lib/haptics";
 import { AsanaCategory } from "../types/asana";
 
 interface AsanaCardProps {
@@ -13,11 +13,12 @@ interface AsanaCardProps {
   onPress: (asana: Asana) => void;
   isFavorite?: boolean;
   onFavoriteToggle?: (asanaId: string, isFavorite: boolean) => void;
-  showFavoriteIndicator?: boolean; // 즐겨찾기 표시 여부
-  compact?: boolean; // 컴팩트 모드 (대시보드용)
-  userId?: string; // 사용자 ID 추가
+  showFavoriteIndicator?: boolean;
+  compact?: boolean;
+  userId?: string;
 }
 
+// 시퀀스 빌더의 카드 디자인과 동일 — 따뜻한 베이지 카드 + 카테고리 pill + serif 한글 + uppercase 영문
 export const AsanaCard = React.memo(
   function AsanaCard({
     asana,
@@ -25,236 +26,182 @@ export const AsanaCard = React.memo(
     isFavorite = false,
     onFavoriteToggle,
     showFavoriteIndicator = true,
-    compact = false,
     userId,
   }: AsanaCardProps) {
     const [favorite, setFavorite] = useState(isFavorite);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 즐겨찾기 상태가 변경될 때 업데이트 (아사나 ID도 함께 확인)
     useEffect(() => {
       setFavorite(isFavorite);
     }, [isFavorite, asana.id]);
 
     const handleFavoriteToggle = async (e: any) => {
-      e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
-
+      e.stopPropagation();
       if (isLoading) return;
-
-      console.log("즐겨찾기 토글 시작:", asana.id, "현재 상태:", favorite);
+      haptics.light();
       setIsLoading(true);
-
       try {
         const result = await asanasAPI.toggleFavorite(asana.id, userId);
-        console.log("즐겨찾기 API 결과:", result);
-
         if (result.success) {
-          const newFavoriteState = !favorite;
-          setFavorite(newFavoriteState);
-          console.log("즐겨찾기 상태 변경:", newFavoriteState);
-          onFavoriteToggle?.(asana.id, newFavoriteState);
-        } else {
-          console.error("즐겨찾기 토글 실패:", result.message);
+          const next = !favorite;
+          setFavorite(next);
+          onFavoriteToggle?.(asana.id, next);
         }
-      } catch (error) {
-        console.error("즐겨찾기 토글 에러:", error);
+      } catch (err) {
+        console.error("즐겨찾기 토글 에러:", err);
       } finally {
         setIsLoading(false);
       }
     };
-    const getCategoryInfo = (categoryName: string) => {
-      const category = CATEGORIES[categoryName as AsanaCategory];
-      if (category) {
-        return {
-          label: category.label,
-          color: category.color,
-        };
-      }
-      return {
-        label: "기타",
-        color: COLORS.textSecondary,
-      };
-    };
 
-    // 로컬 썸네일 소스 (lib/asanaImages, 001~183)
     const imageSource = useMemo(
       () => getAsanaThumbnailSource(asana.image_number),
-      [asana.image_number]
+      [asana.image_number],
     );
 
-    const categoryInfo = useMemo(
-      () => getCategoryInfo(asana.category_name_en),
-      [asana.category_name_en]
-    );
+    const categoryInfo = useMemo(() => {
+      const c = CATEGORIES[asana.category_name_en as AsanaCategory];
+      if (c) return { label: c.label, color: c.color };
+      return { label: "기타", color: COLORS.textSecondary };
+    }, [asana.category_name_en]);
 
     return (
-      <Card
-        backgroundColor="#4A4A4A"
-        borderRadius="$4"
-        overflow="hidden"
-        shadowColor="$shadow"
-        shadowOffset={{ width: 0, height: 2 }}
-        shadowOpacity={0.1}
-        shadowRadius={4}
-        elevation={3}
-        width="100%"
-        pressStyle={{ opacity: 0.8 }}
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
         onPress={() => onPress(asana)}
       >
-        {/* 이미지 영역 */}
-        <YStack height={160} backgroundColor="#9A9A9A" position="relative">
-          <YStack
-            flex={1}
-            justifyContent="center"
-            alignItems="center"
-            backgroundColor="#FFFFFF"
-          >
-            {imageSource ? (
-              <Image
-                source={imageSource}
-                style={{
-                  width: "80%",
-                  height: "80%",
-                  maxWidth: 120,
-                  maxHeight: 100,
-                }}
-                contentFit="contain"
-                cachePolicy="memory-disk"
-                transition={0}
-              />
-            ) : (
-              // 아사나 이미지가 없을 때 표시할 스켈레톤 박스
-              <View
-                style={{
-                  width: "70%",
-                  height: "65%",
-                  borderRadius: 12,
-                  backgroundColor: "#E0E0E0",
-                }}
-              />
-            )}
-          </YStack>
+        {/* 카테고리 pill */}
+        <View
+          style={[
+            styles.catBadge,
+            // 80% alpha — 살짝 비치는 톤
+            { backgroundColor: `${categoryInfo.color}CC` },
+          ]}
+        >
+          <Text style={styles.catBadgeText} numberOfLines={1}>
+            {categoryInfo.label}
+          </Text>
+        </View>
 
-          {/* 카테고리 배지를 이미지 영역 좌측 상단에 배치 */}
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-            }}
+        {/* 즐겨찾기 하트 */}
+        {showFavoriteIndicator && onFavoriteToggle ? (
+          <TouchableOpacity
+            style={styles.favBtn}
+            onPress={handleFavoriteToggle}
+            disabled={isLoading}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Button
-              backgroundColor={categoryInfo.color}
-              paddingHorizontal="$2"
-              paddingVertical="$1"
-              borderRadius={0}
-              borderTopLeftRadius={0}
-              borderTopRightRadius={0}
-              borderBottomLeftRadius={0}
-              borderBottomRightRadius={8}
-              disabled
-              height="auto"
-              minHeight={24}
-            >
-              <Text fontSize={11} fontWeight="bold" color="white">
-                {categoryInfo.label}
-              </Text>
-            </Button>
-          </View>
-        </YStack>
-
-        {/* 내용 영역 */}
-        <YStack padding="$3" paddingTop="$1">
-          {/* 한국어 이름과 즐겨찾기 버튼을 한 행에 배치 */}
-          <XStack
-            justifyContent="space-between"
-            alignItems="center"
-            marginBottom="$1"
-          >
-            <Text
-              fontSize={14}
-              fontWeight="bold"
-              color="$text"
-              flex={1}
-              marginRight="$2"
-              numberOfLines={1}
-            >
-              {asana.sanskrit_name_kr}
+            <Text style={[styles.favIcon, favorite && styles.favIconActive]}>
+              {favorite ? "♥" : "♡"}
             </Text>
+          </TouchableOpacity>
+        ) : null}
 
-            {/* 즐겨찾기 버튼을 우측 끝에 배치 */}
-            {showFavoriteIndicator && onFavoriteToggle && (
-              <TouchableOpacity
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "transparent",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginLeft: 8,
-                }}
-                onPress={handleFavoriteToggle}
-                disabled={isLoading}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: favorite ? "#FF6B6B" : "#B0B0B0",
-                  }}
-                >
-                  {favorite ? "♥" : "♡"}
-                </Text>
-              </TouchableOpacity>
-            )}
+        {/* 이미지 */}
+        <View style={styles.imageWrap}>
+          {imageSource ? (
+            <Image
+              source={imageSource}
+              style={styles.image}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              transition={0}
+            />
+          ) : (
+            <View style={styles.imageFallback}>
+              <Text style={styles.imageFallbackText}>
+                {asana.sanskrit_name_kr.charAt(0)}
+              </Text>
+            </View>
+          )}
+        </View>
 
-            {/* 즐겨찾기 표시 (읽기 전용) */}
-            {showFavoriteIndicator && !onFavoriteToggle && (
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "transparent",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginLeft: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: "#FF6B6B",
-                  }}
-                >
-                  ♥
-                </Text>
-              </View>
-            )}
-          </XStack>
-
-          {/* 영어 이름은 별도 행에 배치 */}
-          <Text
-            fontSize={12}
-            color="$textSecondary"
-            fontStyle="italic"
-            numberOfLines={1}
-          >
+        {/* 푸터 — 한글 (serif) + 영문 (uppercase) */}
+        <View style={styles.footer}>
+          <Text style={styles.name} numberOfLines={1}>
+            {asana.sanskrit_name_kr}
+          </Text>
+          <Text style={styles.sub} numberOfLines={1}>
             {asana.sanskrit_name_en}
           </Text>
-        </YStack>
-      </Card>
+        </View>
+      </Pressable>
     );
   },
-  (prevProps, nextProps) => {
-    // 메모이제이션 비교 함수: 즐겨찾기 상태와 아사나 ID만 비교
-    return (
-      prevProps.asana.id === nextProps.asana.id &&
-      prevProps.isFavorite === nextProps.isFavorite &&
-      prevProps.asana.image_number === nextProps.asana.image_number &&
-      prevProps.asana.category_name_en === nextProps.asana.category_name_en &&
-      prevProps.asana.sanskrit_name_kr === nextProps.asana.sanskrit_name_kr &&
-      prevProps.asana.sanskrit_name_en === nextProps.asana.sanskrit_name_en
-    );
-  }
+  (prev, next) =>
+    prev.asana.id === next.asana.id &&
+    prev.isFavorite === next.isFavorite &&
+    prev.asana.image_number === next.asana.image_number &&
+    prev.asana.category_name_en === next.asana.category_name_en &&
+    prev.asana.sanskrit_name_kr === next.asana.sanskrit_name_kr &&
+    prev.asana.sanskrit_name_en === next.asana.sanskrit_name_en,
 );
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#F5F0E8", // 따뜻한 베이지 — 요가 매트 톤
+    borderRadius: 20,
+    overflow: "hidden",
+    padding: 14,
+    position: "relative",
+    minHeight: 220,
+  },
+  catBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 2,
+  },
+  catBadgeText: { color: COLORS.white, fontSize: 11, fontWeight: "700" },
+  favBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  favIcon: { fontSize: 18, color: "#B0A89D" },
+  favIconActive: { color: "#EF4444" },
+  imageWrap: {
+    flex: 1,
+    width: "100%",
+    minHeight: 110,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  image: { width: "100%", height: "100%" },
+  imageFallback: {
+    width: "70%",
+    height: "70%",
+    borderRadius: 12,
+    backgroundColor: "#E8DFD2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageFallbackText: { color: "#7B6F65", fontSize: 32, fontWeight: "300" },
+  footer: { alignItems: "center", paddingTop: 10 },
+  name: {
+    color: "#2D2421",
+    fontSize: 15,
+    fontWeight: "500",
+    fontFamily: "Georgia",
+    textAlign: "center",
+  },
+  sub: {
+    color: "#7B6F65",
+    fontSize: 10,
+    marginTop: 4,
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+});

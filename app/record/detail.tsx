@@ -371,6 +371,20 @@ export default function RecordDetailScreen() {
             </View>
           )}
 
+          {/* 사진 섹션 */}
+          {Array.isArray(record.photos) && record.photos.length > 0 ? (
+            <View style={styles.photoGrid}>
+              {(record.photos as string[]).map((url, idx) => (
+                <Image
+                  key={`${url}-${idx}`}
+                  source={{ uri: url }}
+                  style={styles.photoTile}
+                  contentFit="cover"
+                />
+              ))}
+            </View>
+          ) : null}
+
           {/* 소셜 액션 - 메모 바로 아래 (좋아요 / 댓글) */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
@@ -436,7 +450,7 @@ export default function RecordDetailScreen() {
         recordTitle={record.title}
       />
 
-      {/* 스토리 공유: 이미지 작게·글 다 보이게 재배치된 카드 */}
+      {/* 스토리 공유: 이미지 작게, 글 다 보이게 재배치된 카드 */}
       <StoryShareModal
         visible={showStoryShareModal}
         onClose={() => setShowStoryShareModal(false)}
@@ -598,6 +612,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
     lineHeight: 22,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  photoTile: {
+    width: "32%",
+    aspectRatio: 1,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
   },
   bottomSpacer: {
     height: 40,

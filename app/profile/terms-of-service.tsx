@@ -52,7 +52,7 @@ export default function TermsOfServiceScreen() {
 
         <Text style={styles.sectionTitle}>제5조 (서비스의 중단)</Text>
         <Text style={styles.contentText}>
-          1. 회사는 컴퓨터 등 정보통신설비의 보수점검·교체 및 고장, 통신의 두절
+          1. 회사는 컴퓨터 등 정보통신설비의 보수점검, 교체 및 고장, 통신의 두절
           등의 사유가 발생한 경우에는 서비스의 제공을 일시적으로 중단할 수
           있습니다.{"\n"}
           2. 회사는 제1항의 사유로 서비스의 제공이 일시적으로 중단됨으로 인하여
@@ -115,7 +115,7 @@ export default function TermsOfServiceScreen() {
         <Text style={styles.sectionTitle}>제11조 (분쟁해결)</Text>
         <Text style={styles.contentText}>
           1. 회사는 이용자가 제기하는 정당한 의견이나 불만을 반영하고 그 피해를
-          보상처리하기 위하여 피해보상처리기구를 설치·운영합니다.{"\n"}
+          보상처리하기 위하여 피해보상처리기구를 설치, 운영합니다.{"\n"}
           2. 회사와 이용자 간에 발생한 전자상거래 분쟁에 대하여는
           소비자분쟁조정위원회의 조정에 따를 수 있습니다.
         </Text>

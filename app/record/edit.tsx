@@ -13,14 +13,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 import AsanaSearchModal from "../../components/AsanaSearchModal";
+import { Button } from "../../components/ui/Button";
 import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
 import SimpleDatePicker from "../../components/SimpleDatePicker";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
+import { useAuth } from "../../hooks/useAuth";
 import { useUpdateRecord } from "../../hooks/useRecords";
 import { Asana, asanasAPI } from "../../lib/api/asanas";
+import { storageAPI } from "../../lib/api/storage";
 import { RootStackParamList } from "../../navigation/types";
 import { RecordFormData } from "../../types/record";
 
@@ -40,10 +44,38 @@ export default function EditRecordScreen() {
   const [memo, setMemo] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const [memoSectionY, setMemoSectionY] = useState(0);
   const { showSnackbar } = useNotification();
   const updateRecordMutation = useUpdateRecord();
+  const { user } = useAuth();
+
+  const MAX_PHOTOS = 6;
+  const handleAddPhotos = async () => {
+    if (!user?.id) return;
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert("알림", `최대 ${MAX_PHOTOS}장까지 첨부할 수 있어요.`);
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const remaining = MAX_PHOTOS - photos.length;
+      const result = await storageAPI.uploadRecordPhotos(user.id, remaining);
+      if (result.success && result.urls) {
+        setPhotos((prev) => [...prev, ...result.urls!]);
+      } else if (!result.canceled && result.message) {
+        Alert.alert("업로드 실패", result.message);
+      }
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+  const handleRemovePhoto = (url: string) => {
+    setPhotos((prev) => prev.filter((p) => p !== url));
+    storageAPI.deleteRecordPhoto(url).catch(() => undefined);
+  };
 
   // 기존 데이터로 폼 초기화
   useEffect(() => {
@@ -53,6 +85,11 @@ export default function EditRecordScreen() {
       // 수련 날짜 설정
       const dateStr = record.practice_date || record.date || record.created_at;
       setSelectedDate(new Date(dateStr));
+      // 기존 사진 로드
+      const existing: string[] = Array.isArray(record.photos)
+        ? (record.photos as string[])
+        : [];
+      setPhotos(existing.filter((u) => typeof u === "string" && u.length > 0));
       // 아사나 데이터는 별도로 로드해야 함
       loadAsanaData();
     }
@@ -137,7 +174,7 @@ export default function EditRecordScreen() {
         asanas: selectedAsanas.map((asana) => asana.id),
         memo: memo.trim(),
         states: selectedStates,
-        photos: [], // TODO: 사진 첨부 기능 추가
+        photos,
         date: selectedDate.toISOString().split("T")[0], // 선택한 날짜
       };
 
@@ -202,12 +239,12 @@ export default function EditRecordScreen() {
         {/* 아사나 선택 */}
         <View style={styles.section}>
           {/* 아사나 추가 버튼 */}
-          <TouchableOpacity
-            style={styles.addAsanaButton}
+          <Button
+            title="+ 아사나"
+            size="medium"
             onPress={() => setSearchModalVisible(true)}
-          >
-            <Text style={styles.addAsanaButtonText}>+ 아사나</Text>
-          </TouchableOpacity>
+            style={{ alignSelf: "flex-start" }}
+          />
 
           <Text style={styles.asanaCountText}>
             최대 20개까지 선택 가능 ({selectedAsanas.length}/20)
@@ -294,45 +331,58 @@ export default function EditRecordScreen() {
           <Text style={styles.characterCount}>{memo.length}/500</Text>
         </View>
 
+        {/* 사진 첨부 */}
+        <View style={styles.section}>
+          <Text style={styles.stateSubtitleText}>
+            사진 ({photos.length}/{MAX_PHOTOS})
+          </Text>
+          <View style={styles.photoGrid}>
+            {photos.map((url) => (
+              <View key={url} style={styles.photoItem}>
+                <Image source={{ uri: url }} style={styles.photoImg} contentFit="cover" />
+                <TouchableOpacity
+                  style={styles.photoRemoveBtn}
+                  onPress={() => handleRemovePhoto(url)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.photoRemoveText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            {photos.length < MAX_PHOTOS ? (
+              <TouchableOpacity
+                style={[styles.photoItem, styles.photoAdd]}
+                onPress={handleAddPhotos}
+                disabled={uploadingPhoto}
+                activeOpacity={0.7}
+              >
+                {uploadingPhoto ? (
+                  <ActivityIndicator color={COLORS.textSecondary} />
+                ) : (
+                  <Text style={styles.photoAddText}>＋</Text>
+                )}
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+
         {/* 하단 여백 */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {/* 저장 버튼 */}
       <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={[
-            styles.saveButton,
-            (loading ||
-              selectedAsanas.length === 0 ||
-              selectedStates.length === 0 ||
-              memo.trim().length === 0) &&
-              styles.saveButtonDisabled,
-          ]}
-          onPress={handleSave}
+        <Button
+          title="완료"
+          size="large"
+          loading={loading}
           disabled={
-            loading ||
             selectedAsanas.length === 0 ||
             selectedStates.length === 0 ||
             memo.trim().length === 0
           }
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Text
-              style={[
-                styles.saveButtonText,
-                (!selectedAsanas.length ||
-                  !selectedStates.length ||
-                  !memo.trim()) &&
-                  styles.saveButtonTextDisabled,
-              ]}
-            >
-              완료
-            </Text>
-          )}
-        </TouchableOpacity>
+          onPress={handleSave}
+        />
       </View>
 
       {/* 아사나 검색 모달 */}
@@ -387,30 +437,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-  },
-  addAsanaButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-    alignSelf: "center",
-    minWidth: 120,
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  addAsanaButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
   },
   asanaCountText: {
     fontSize: 12,
@@ -484,34 +510,42 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.surfaceDark,
   },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 18,
-    borderRadius: 16,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "white",
-  },
-  saveButtonDisabled: {
-    backgroundColor: COLORS.surfaceDark,
-    opacity: 0.5,
-  },
-  saveButtonTextDisabled: {
-    color: COLORS.textSecondary,
-  },
   bottomSpacing: {
     height: 100,
   },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  photoItem: {
+    width: 78,
+    height: 78,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: "hidden",
+    position: "relative",
+  },
+  photoImg: { width: "100%", height: "100%" },
+  photoAdd: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderStyle: "dashed",
+  },
+  photoAddText: { color: COLORS.textSecondary, fontSize: 28, fontWeight: "300" },
+  photoRemoveBtn: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.error,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoRemoveText: { color: COLORS.white, fontSize: 11, fontWeight: "700" },
 });

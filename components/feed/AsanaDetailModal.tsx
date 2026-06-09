@@ -196,7 +196,7 @@ export default function AsanaDetailModal({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* 이름·난이도 */}
+            {/* 이름, 난이도 */}
             <View style={styles.titleRow}>
               <Text style={styles.nameKr} numberOfLines={1}>
                 {asana.sanskrit_name_kr || "아사나"}

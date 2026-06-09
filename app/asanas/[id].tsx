@@ -86,7 +86,7 @@ const ShimmerSkeleton: React.FC<{ style?: ViewStyle }> = ({ style }) => {
 
 export default function AsanaDetailScreen() {
   const route = useRoute<AsanaDetailRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { id } = route.params;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollRef = useRef<RNScrollView | null>(null);
@@ -353,10 +353,46 @@ export default function AsanaDetailScreen() {
               fontSize={18}
               color="$textSecondary"
               fontStyle="italic"
-              marginBottom="$8"
+              marginBottom="$4"
             >
               {asana?.sanskrit_name_en || ""}
             </Text>
+
+            {/* AI 도우미 진입점 */}
+            {asana?.sanskrit_name_kr ? (
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("YogaAiAssistant", {
+                    initialQuestion: `${asana.sanskrit_name_kr}에 대해 자세히 알려주세요. 자세 잡는 법과 효과, 주의할 점을 알려주세요.`,
+                  })
+                }
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 10,
+                  backgroundColor: "rgba(139, 92, 246, 0.12)",
+                  borderWidth: 1,
+                  borderColor: "rgba(139, 92, 246, 0.4)",
+                  marginBottom: 24,
+                  alignSelf: "flex-start",
+                }}
+                activeOpacity={0.85}
+              >
+                <Text style={{ fontSize: 14 }}>🤖</Text>
+                <Text
+                  style={{
+                    color: COLORS.primary,
+                    fontSize: 13,
+                    fontWeight: "700",
+                  }}
+                >
+                  이 아사나에 대해 AI에게 물어보기
+                </Text>
+              </TouchableOpacity>
+            ) : null}
 
             {/* 정보 섹션 */}
             <YStack gap="$6" marginBottom="$8">

@@ -11,21 +11,44 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../components/DatePickerModal";
 import SimpleRecordCard from "../../components/SimpleRecordCard";
 import StoryShareModal from "../../components/StoryShareModal";
 import { COLORS } from "../../constants/Colors";
+import { RADIUS, SPACING } from "../../constants/Design";
+import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfileStats } from "../../hooks/useDashboard";
+import { useRoles } from "../../hooks/useRoles";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function ProfileScreen() {
   const { isAuthenticated, loading } = useAuth();
   const { user } = useAuthStore();
+  const { roles, activeRole, setActiveRole } = useRoles();
   const queryClient = useQueryClient();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const otherRole: "teacher" | "student" | null =
+    activeRole === "teacher" && roles.includes("student")
+      ? "student"
+      : activeRole === "student" && roles.includes("teacher")
+        ? "teacher"
+        : null;
+
+  const handleSwitchRole = async () => {
+    if (!otherRole) return;
+    await setActiveRole(otherRole);
+    navigation.reset({
+      index: 0,
+      routes: [
+        { name: otherRole === "teacher" ? "TeacherTabNavigator" : "TabNavigator" },
+      ],
+    });
+  };
 
   // authStore의 프로필 사용 (로컬 state 제거)
 
@@ -36,7 +59,7 @@ export default function ProfileScreen() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [storyShareVisible, setStoryShareVisible] = useState(false);
 
-  // 프로필 통계 + 전체 수련 기록 (allRecords로 통계·리스트 모두 사용)
+  // 프로필 통계 + 전체 수련 기록 (allRecords로 통계, 리스트 모두 사용)
   const userId = user?.id;
   const { allRecords, isLoading, refetch } = useProfileStats(userId);
 
@@ -150,39 +173,33 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* 헤더 - 닉네임, 프로필 사진과 설정 아이콘 */}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* 헤더 - 우측 액션만 */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.userName}>
-            {userProfile?.name || "사용자"} 님,
-          </Text>
-        </View>
+        <View style={styles.headerLeft} />
         <View style={styles.headerButtons}>
+          {otherRole ? (
+            <TouchableOpacity
+              style={styles.roleChip}
+              activeOpacity={0.85}
+              onPress={handleSwitchRole}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            >
+              <Ionicons
+                name={otherRole === "teacher" ? "school" : "person"}
+                size={12}
+                color={COLORS.primary}
+              />
+              <Text style={styles.roleChipText}>
+                {otherRole === "teacher" ? "지도자" : "수련생"}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
             style={styles.settingsButton}
             onPress={() => navigation.navigate("Settings")}
           >
             <Ionicons name="settings-outline" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => navigation.navigate("ProfileInfo")}
-          >
-            {userProfile?.avatar_url ? (
-              <Image
-                source={{ uri: userProfile.avatar_url }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Text style={styles.profileImageText}>
-                  {userProfile?.name
-                    ? userProfile.name.charAt(0).toUpperCase()
-                    : "U"}
-                </Text>
-              </View>
-            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -192,32 +209,66 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* 수련 통계 섹션 */}
-        <View style={styles.statsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>수련 통계</Text>
-            <TouchableOpacity
-              style={styles.storyShareButton}
-              onPress={() => setStoryShareVisible(true)}
-            >
-              <Ionicons name="share-social" size={20} color={COLORS.primary} />
-              <Text style={styles.storyShareButtonText}>통계 공유</Text>
-            </TouchableOpacity>
+        {/* 인스타그램 스타일 프로필 카드 */}
+        <View style={styles.igHero}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ProfileInfo")}
+            activeOpacity={0.85}
+          >
+            {userProfile?.avatar_url ? (
+              <Image
+                source={{ uri: userProfile.avatar_url }}
+                style={styles.igAvatar}
+              />
+            ) : (
+              <View style={[styles.igAvatar, styles.igAvatarPlaceholder]}>
+                <Text style={styles.igAvatarText}>
+                  {userProfile?.name
+                    ? userProfile.name.charAt(0).toUpperCase()
+                    : "U"}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={styles.igStats}>
+            <View style={styles.igStatItem}>
+              <Text style={styles.igStatNumber}>{allRecords?.length || 0}</Text>
+              <Text style={styles.igStatLabel}>총 수련</Text>
+            </View>
+            <View style={styles.igStatItem}>
+              <Text style={styles.igStatNumber}>{getThisWeekCount()}</Text>
+              <Text style={styles.igStatLabel}>이번 주</Text>
+            </View>
+            <View style={styles.igStatItem}>
+              <Text style={styles.igStatNumber}>{getThisMonthCount()}</Text>
+              <Text style={styles.igStatLabel}>이번 달</Text>
+            </View>
           </View>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{allRecords?.length || 0}</Text>
-              <Text style={styles.statLabel}>총 수련 횟수</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{getThisWeekCount()}</Text>
-              <Text style={styles.statLabel}>이번 주</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{getThisMonthCount()}</Text>
-              <Text style={styles.statLabel}>이번 달</Text>
-            </View>
-          </View>
+        </View>
+
+        {/* 소개 */}
+        <View style={styles.igBioSection}>
+          <Text style={styles.igDisplayName}>
+            {userProfile?.name || "사용자"}
+          </Text>
+          {userProfile?.bio ? (
+            <Text style={styles.igBio}>{userProfile.bio}</Text>
+          ) : (
+            <Text style={styles.igBioPlaceholder}>
+              한 줄 소개를 적어보세요.
+            </Text>
+          )}
+        </View>
+
+        {/* 액션 행 */}
+        <View style={styles.igActionsRow}>
+          <TouchableOpacity
+            style={styles.igActionBtn}
+            onPress={() => navigation.navigate("ProfileInfo")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.igActionText}>프로필 수정</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 수련 기록 리스트 섹션 */}
@@ -234,6 +285,18 @@ export default function ProfileScreen() {
               </Text>
               <Ionicons
                 name="chevron-down"
+                size={16}
+                color={COLORS.textSecondary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setStoryShareVisible(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.shareIconBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="share-social-outline"
                 size={16}
                 color={COLORS.textSecondary}
               />
@@ -293,7 +356,7 @@ export default function ProfileScreen() {
           backgroundAsanaImageNumbers,
         }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -302,11 +365,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  roleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.pill,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+  },
+  roleChipText: {
+    ...TEXT.micro,
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "700",
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 60, // 상태바 높이 + 여백
+    paddingTop: SPACING.lg,
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
@@ -401,6 +481,88 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textSecondary,
   },
+  igHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 24,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  igAvatar: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+  },
+  igAvatarPlaceholder: {
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  igAvatarText: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "700",
+  },
+  igStats: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  igStatItem: { alignItems: "center" },
+  igStatNumber: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  igStatLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  igBioSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    gap: 4,
+  },
+  igDisplayName: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  igBio: {
+    color: COLORS.text,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  igBioPlaceholder: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontStyle: "italic",
+  },
+  igActionsRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+  igActionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  igActionText: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: "600",
+  },
   statsSection: {
     marginTop: 0,
     paddingHorizontal: 24,
@@ -445,6 +607,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: COLORS.primary,
+  },
+  shareIconBtn: {
+    padding: 4,
   },
   dateTitleContainer: {
     flexDirection: "row",

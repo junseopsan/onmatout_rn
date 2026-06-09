@@ -21,12 +21,16 @@ import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
+import { useRoles } from "../hooks/useRoles";
+import { useRoleSwitch } from "../hooks/useRoleSwitch";
 import { userAPI } from "../lib/api/user";
 import { RootStackParamList } from "../navigation/types";
 import { useAuthStore } from "../stores/authStore";
 
 export default function SettingsScreen() {
   const { user } = useAuth();
+  const { roles, activeRole, addRole, hasMultipleRoles } = useRoles();
+  const { switchTo } = useRoleSwitch();
   const { getUserProfile, clearSession, signOut } = useAuthStore();
   const { showSnackbar } = useNotification();
   const navigation =
@@ -339,6 +343,44 @@ export default function SettingsScreen() {
             />
           </View>
 
+          {/* 요가톡 */}
+          {user ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>대화</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() =>
+                  navigation.navigate("YogaTalkThreadList" as any)
+                }
+              >
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingText}>요가톡</Text>
+                  <Text style={styles.settingDescription}>
+                    수업 후 지도자와 나눈 대화 이력 — 수업 단위로 묶여있어요.
+                  </Text>
+                </View>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() =>
+                  navigation.navigate("YogaAiAssistant" as any)
+                }
+              >
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingText}>AI 요가 도우미 (베타)</Text>
+                  <Text style={styles.settingDescription}>
+                    자세, 호흡, 시퀀스 질문 → 등록된 자료를 근거로 답변. 통증/부상
+                    관련은 지도자 상담을 권유합니다.
+                  </Text>
+                </View>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
           {/* 고객지원 섹션 */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>고객지원</Text>
@@ -356,6 +398,162 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.arrowText}>›</Text>
           </TouchableOpacity>
+
+          {/* 역할 / 모드 섹션 (Phase 1) */}
+          {user ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>역할</Text>
+              </View>
+
+              {roles.length === 0 ? (
+                <View style={styles.settingItem}>
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>역할 미설정</Text>
+                    <Text style={styles.settingDescription}>
+                      홈에서 선생님 또는 회원 역할을 먼저 선택해 주세요.
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.settingItem}>
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>현재 모드</Text>
+                    <Text style={styles.settingDescription}>
+                      {activeRole === "teacher" ? "🧘‍♀️ 지도자 모드" : "📒 수련생 모드"}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {hasMultipleRoles ? (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={() =>
+                    switchTo(activeRole === "teacher" ? "student" : "teacher")
+                  }
+                >
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>
+                      {activeRole === "teacher"
+                        ? "수련생 모드로 전환"
+                        : "지도자 모드로 전환"}
+                    </Text>
+                    <Text style={styles.settingDescription}>
+                      다중 역할 — 언제든 전환할 수 있어요.
+                    </Text>
+                  </View>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+              ) : roles.length > 0 ? (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={async () => {
+                    const missing = roles.includes("teacher") ? "student" : "teacher";
+                    const ok = await addRole(missing);
+                    if (ok) {
+                      showSnackbar(
+                        missing === "teacher"
+                          ? "선생님 역할이 추가됐어요"
+                          : "회원 역할이 추가됐어요",
+                        "success",
+                      );
+                    }
+                  }}
+                >
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>
+                      {roles.includes("teacher")
+                        ? "회원 역할도 추가하기"
+                        : "선생님 역할도 추가하기"}
+                    </Text>
+                    <Text style={styles.settingDescription}>
+                      한 사용자가 선생님 + 회원 동시에 가능해요.
+                    </Text>
+                  </View>
+                  <Text style={styles.arrowText}>+</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              {/* 회원 모드일 때만 — 선생님 연결 진입점 */}
+              {roles.includes("student") ? (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={() => navigation.navigate("AuthMatch" as any)}
+                >
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>선생님과 연결 / 초대 코드</Text>
+                    <Text style={styles.settingDescription}>
+                      선생님이 회원으로 등록했거나 초대 코드(ONM-XXXX)를 받았다면
+                      여기서 연결하세요.
+                    </Text>
+                  </View>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+              ) : null}
+            </>
+          ) : null}
+
+          {/* 스튜디오 관리 — 선생님 역할 보유 시에만 노출 */}
+          {user && roles.includes("teacher") ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>스튜디오</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => navigation.navigate("TeacherStudioList" as any)}
+              >
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingText}>내 스튜디오 관리</Text>
+                  <Text style={styles.settingDescription}>
+                    상호명, 연락처, 운영시간, 홈페이지 등 정보를 추가/수정하고
+                    여러 스튜디오를 전환하세요.
+                  </Text>
+                </View>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() =>
+                  navigation.navigate("TeacherStudioApply" as any)
+                }
+              >
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingText}>+ 새 스튜디오 등록 신청</Text>
+                  <Text style={styles.settingDescription}>
+                    한 번의 신청으로 자동 승인돼요. 추가 요가원도 같은 흐름으로
+                    등록할 수 있어요.
+                  </Text>
+                </View>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
+          {/* 수련생 → 원장 전환 진입점: 아직 지도자 역할이 없을 때만 */}
+          {user && !roles.includes("teacher") ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>스튜디오</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() =>
+                  navigation.navigate("TeacherStudioApply" as any)
+                }
+              >
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingText}>스튜디오 등록 신청</Text>
+                  <Text style={styles.settingDescription}>
+                    내 요가원을 운영하시나요? 신청 즉시 원장으로 전환돼요 (자동
+                    승인, 후속 검토).
+                  </Text>
+                </View>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
 
           {/* 약관 및 정책 섹션 */}
           <View style={styles.sectionHeader}>

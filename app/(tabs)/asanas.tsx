@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { AsanaCard } from "../../components/AsanaCard";
+import { SearchBar } from "../../components/ui/SearchBar";
 import { AsanaCardSkeleton } from "../../components/ui/SkeletonLoader";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES, CATEGORY_ORDER } from "../../constants/categories";
@@ -395,7 +396,7 @@ export default function AsanasScreen() {
   const renderCategoryButton = (category: AsanaCategory) => {
     const categoryInfo = CATEGORIES[category];
     const isSelected = selectedCategories.includes(category);
-    const unifiedColor = "#EF4444"; // 후굴 색상으로 통일
+    const unifiedColor = "#EF4444";
 
     return (
       <TouchableOpacity
@@ -403,23 +404,17 @@ export default function AsanasScreen() {
         style={[
           styles.categoryButton,
           {
-            backgroundColor: COLORS.surface, // 항상 동일한 배경색
-            borderColor: isSelected ? unifiedColor : "#666666", // 선택 시 빨간색, 미선택 시 회색
-            borderWidth: isSelected ? 2 : 1, // 선택 시 더 굵은 테두리
-            // 테두리 두께 변화로 인한 크기 변화 방지
-            marginHorizontal: isSelected ? -0.5 : 0, // 선택 시 테두리가 1px 두꺼워지므로 마진으로 보정
+            backgroundColor: "rgba(23, 23, 23, 0.55)", // surface 에 살짝 투명
+            borderColor: isSelected ? unifiedColor : "rgba(170, 170, 170, 0.35)",
+            borderWidth: isSelected ? 2 : 1,
+            marginHorizontal: isSelected ? -0.5 : 0,
           },
         ]}
         onPress={() => toggleCategory(category)}
-        activeOpacity={0.8} // 터치 시 투명도 효과로 깜빡임 감소
-        delayPressIn={0} // 즉시 반응
+        activeOpacity={0.8}
+        delayPressIn={0}
       >
-        <Text
-          style={[
-            styles.categoryText,
-            { color: COLORS.text }, // 항상 동일한 텍스트 색상
-          ]}
-        >
+        <Text style={[styles.categoryText, { color: COLORS.text }]}>
           {categoryInfo.label}
         </Text>
       </TouchableOpacity>
@@ -517,17 +512,14 @@ export default function AsanasScreen() {
           {/* 검색창과 즐겨찾기 버튼 */}
           <View style={styles.searchRow}>
             <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
+              <SearchBar
+                value={searchQuery}
+                onChangeText={handleSearch}
                 placeholder={
                   showFavoritesOnly
                     ? "즐겨찾기 아사나 검색..."
                     : "아사나 이름으로 검색..."
                 }
-                placeholderTextColor={COLORS.textSecondary}
-                value={searchQuery}
-                onChangeText={handleSearch}
-                clearButtonMode="while-editing"
               />
             </View>
             {isAuthenticated && (

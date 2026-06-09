@@ -178,7 +178,7 @@ function StoryRecordCard({
         {memo ? <Text style={styles.recordMemo}>{memo}</Text> : null}
       </View>
 
-      {/* 감정(위, 색상 칩) + 날짜·닉네임(아래): 우측 끝 정렬 */}
+      {/* 감정(위, 색상 칩) + 날짜, 닉네임(아래): 우측 끝 정렬 */}
       {states.length > 0 || dateStr ? (
         <View style={styles.recordFooterColumn}>
           {states.length > 0 ? (

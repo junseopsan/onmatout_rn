@@ -63,7 +63,7 @@ export default function PrivacyPolicyScreen() {
           단, 아래의 경우 예외로 제공합니다.
         </Text>
         <Text style={styles.contentText}>
-          • 사용자가 사전에 동의한 경우{"\n"}• 법령에 의거하여 수사기관·법원
+          • 사용자가 사전에 동의한 경우{"\n"}• 법령에 의거하여 수사기관, 법원
           등이 요청하는 경우
         </Text>
 
@@ -78,7 +78,7 @@ export default function PrivacyPolicyScreen() {
 
         <Text style={styles.sectionTitle}>6. 이용자의 권리</Text>
         <Text style={styles.contentText}>
-          이용자는 언제든지 자신의 개인정보를 조회·수정·삭제할 수 있으며, 회원
+          이용자는 언제든지 자신의 개인정보를 조회, 수정, 삭제할 수 있으며, 회원
           탈퇴를 통해 개인정보 이용에 대한 동의를 철회할 수 있습니다.
         </Text>
 
@@ -107,7 +107,7 @@ export default function PrivacyPolicyScreen() {
 
         <Text style={styles.sectionTitle}>10. 개정 사항 고지</Text>
         <Text style={styles.contentText}>
-          본 개인정보처리방침은 시행일로부터 적용되며, 내용 추가·삭제·변경이
+          본 개인정보처리방침은 시행일로부터 적용되며, 내용 추가, 삭제, 변경이
           있을 경우 앱 내 공지사항 또는 이메일을 통해 고지합니다.
         </Text>
 

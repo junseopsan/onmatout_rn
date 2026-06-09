@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -25,9 +26,36 @@ export default function ProfileInfoScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [bioDraft, setBioDraft] = useState<string>("");
+  const [bioSaving, setBioSaving] = useState(false);
 
   // authStore의 프로필 사용 (로컬 state 제거)
   const userProfile = user?.profile;
+
+  React.useEffect(() => {
+    setBioDraft(userProfile?.bio ?? "");
+  }, [userProfile?.bio]);
+
+  const saveBio = async () => {
+    if (!user?.id) return;
+    const next = bioDraft.trim();
+    if ((userProfile?.bio ?? "") === next) return;
+    setBioSaving(true);
+    try {
+      const res = await userAPI.updateUserProfile(user.id, {
+        bio: next || null,
+      });
+      if (res.success && res.data) {
+        setUser({ ...user, profile: res.data });
+      } else {
+        Alert.alert("저장 실패", res.message ?? "다시 시도해 주세요.");
+      }
+    } catch (e: any) {
+      Alert.alert("저장 실패", e?.message ?? "다시 시도해 주세요.");
+    } finally {
+      setBioSaving(false);
+    }
+  };
 
   // 휴대폰 번호 포맷터 (숫자만 보관되어 있을 가능성이 높으므로 가독성 있게 변환)
   const formatPhoneNumber = (raw?: string | null): string | null => {
@@ -226,7 +254,10 @@ export default function ProfileInfoScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.profileContainer}>
           {/* 프로필 사진 섹션 */}
           <View style={styles.avatarSection}>
@@ -286,6 +317,35 @@ export default function ProfileInfoScreen() {
               <Text style={styles.infoValue}>
                 {formattedPhone || "전화번호 없음"}
               </Text>
+            </View>
+
+            <View style={styles.bioItem}>
+              <View style={styles.bioHeader}>
+                <Text style={styles.infoLabel}>소개</Text>
+                {(bioDraft ?? "") !== (userProfile?.bio ?? "") ? (
+                  <TouchableOpacity
+                    onPress={saveBio}
+                    disabled={bioSaving}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.bioSaveBtn}
+                  >
+                    <Text style={styles.bioSaveText}>
+                      {bioSaving ? "저장 중…" : "저장"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <TextInput
+                value={bioDraft}
+                onChangeText={setBioDraft}
+                placeholder="한 줄 소개를 적어보세요."
+                placeholderTextColor={COLORS.textMuted}
+                style={styles.bioInput}
+                multiline
+                maxLength={150}
+                editable={!bioSaving}
+              />
+              <Text style={styles.bioCount}>{bioDraft.length}/150</Text>
             </View>
           </View>
         </View>
@@ -440,6 +500,41 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  bioItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    marginBottom: 8,
+    gap: 8,
+  },
+  bioHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  bioSaveBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  bioSaveText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  bioInput: {
+    color: COLORS.text,
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 48,
+    textAlignVertical: "top",
+    padding: 0,
+  },
+  bioCount: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    textAlign: "right",
   },
   arrowText: {
     fontSize: 18,
