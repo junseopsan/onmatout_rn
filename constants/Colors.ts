@@ -1,55 +1,71 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Linear + Notion 하이브리드 팔레트 (다크 베이스)
+ *
+ * 컨셉:
+ *   - Background: 깊은 흑 (Linear 풍, 미세 그라데이션 가능)
+ *   - Surface: 살짝 떠 있는 dark gray (border 와 명확 분리)
+ *   - Primary: 보라 #8B5CF6 (sahasrara — 차크라 모티프, Linear 톤)
+ *   - Secondary: 에메랄드 #10B981 (anahata — 따뜻한 액센트)
+ *   - Text: 회색 톤 단계화 (textSecondary 도 너무 어둡지 않게)
+ *   - Border: 따뜻한 회색 (차가운 회색 → #262626)
  */
 
 export const COLORS = {
-  // Primary Colors - 빨간색 계열 유지
-  primary: "#E53935", // 브랜드 포인트 컬러(빨강 등)
-  primaryLight: "#FF6F60",
-  primaryDark: "#B71C1C",
+  // Brand — Linear 풍 보라
+  primary: "#8B5CF6",        // sahasrara — main brand
+  primaryLight: "#A78BFA",
+  primaryDark: "#7C3AED",
 
-  // Secondary Colors
+  // Secondary — anahata 에메랄드 (따뜻한 액센트, 성공/완료에도 사용)
   secondary: "#10B981",
   secondaryLight: "#34D399",
   secondaryDark: "#059669",
 
-  // Background Colors - 이미지처럼 어두운 테마
-  background: "#1A1A1A", // 이미지의 어두운 배경색
+  // Background — 깊은 흑
+  background: "#0A0A0A",     // 본 배경
   backgroundDark: "#000000",
-  surface: "#2D2D2D", // 어두운 회색 표면
-  surfaceDark: "#1F1F1F",
 
-  // Text Colors - 밝은 텍스트 (어두운 배경에 맞춤)
-  text: "#FFFFFF", // 흰색 텍스트
-  textSecondary: "#B0B0B0", // 연한 회색
-  textDark: "#FFFFFF",
-  textSecondaryDark: "#B0B0B0",
+  // Surface — 미세하게 떠 있는 카드/입력 (border 와 분리)
+  surface: "#171717",        // 카드/입력 배경
+  surfaceDark: "#0F0F0F",    // 약간 더 어두운 surface (modal 등)
 
-  // Status Colors
+  // Text — 가독성 단계화
+  text: "#FAFAFA",           // 본문 (#FFF 보다 살짝 덜 강함)
+  textSecondary: "#A1A1AA",  // 부제목 / 메타
+  textDark: "#FAFAFA",       // (light mode 대비용 alias)
+  textSecondaryDark: "#A1A1AA",
+  textMuted: "#71717A",      // 더 약한 hint / placeholder
+
+  // Status
   success: "#10B981",
   warning: "#F59E0B",
-  error: "#EF4444",
-  info: "#3B82F6",
+  error: "#F87171",
+  info: "#60A5FA",
 
-  // Border Colors - 어두운 테마에 맞는 테두리
-  border: "#404040",
-  borderDark: "#2D2D2D",
+  // Border — 차가운 회색 대신 한 단계 부드러운 톤
+  border: "#262626",         // 기본 카드/구분선
+  borderDark: "#171717",     // surface 와 동일
+  borderStrong: "#3F3F46",   // 강조 구분선
 
-  // Shadow Colors - 어두운 테마에 맞는 그림자
-  shadow: "rgba(0, 0, 0, 0.3)",
-  shadowDark: "rgba(0, 0, 0, 0.5)",
+  // Shadow / overlay
+  shadow: "rgba(0, 0, 0, 0.5)",
+  shadowDark: "rgba(0, 0, 0, 0.7)",
+  overlay: "rgba(0, 0, 0, 0.6)",
+  overlayDark: "rgba(0, 0, 0, 0.8)",
 
-  // Overlay Colors
-  overlay: "rgba(0, 0, 0, 0.5)",
-  overlayDark: "rgba(0, 0, 0, 0.7)",
-
-  // Additional Colors
-  white: "#FFFFFF", // 아사나 카드 이미지용 흰색 배경 유지
-  lightGray: "#404040",
-
-  // Transparent
+  // Util
+  white: "#FFFFFF",          // 아사나 카드 일러스트 배경에 사용
+  lightGray: "#3F3F46",
   transparent: "transparent",
+
+  // Chakra 팔레트 (Notion 의 컬러 토큰 같은 의미적 사용 — 카테고리/감정 매핑)
+  chakraCrown: "#8B5CF6",    // 보라
+  chakraThirdEye: "#6366F1", // 남보라
+  chakraThroat: "#0EA5E9",   // 푸른
+  chakraHeart: "#10B981",    // 초록
+  chakraSolar: "#FACC15",    // 노랑
+  chakraSacral: "#FB923C",   // 주황
+  chakraRoot: "#EF4444",     // 빨강
 } as const;
 
 export type ColorKey = keyof typeof COLORS;
