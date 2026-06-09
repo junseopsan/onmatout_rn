@@ -143,7 +143,7 @@ export default function TeacherClassCreateScreen() {
             label="위치"
             value={location}
             onChangeText={setLocation}
-            placeholder="예: 온매트 스튜디오 A룸"
+            placeholder="예: 온매트 요가원 A룸"
           />
           <PillInput
             label="정원"

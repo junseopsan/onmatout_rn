@@ -59,7 +59,7 @@ export default function TeacherStudioApplyScreen() {
 
       // 자동승인 트리거가 동작했다면 status=auto_approved + studio_id 가 채워짐
       if (result.status === "auto_approved" && result.studio_id) {
-        // 역할 + 스튜디오 새로 불러오기
+        // 역할 + 요가원 새로 불러오기
         await reloadRoles();
         await reloadStudios();
         await setActiveRole("teacher");
@@ -97,7 +97,7 @@ export default function TeacherStudioApplyScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title="스튜디오 등록 신청"
+        title="요가원 등록 신청"
         trailing={{
           kind: "text",
           label: submitting ? "신청 중…" : "신청",
@@ -179,7 +179,7 @@ export default function TeacherStudioApplyScreen() {
             activeOpacity={0.9}
           >
             <Text style={styles.submitBtnText}>
-              {submitting ? "신청 중…" : "스튜디오 등록 신청"}
+              {submitting ? "신청 중…" : "요가원 등록 신청"}
             </Text>
           </TouchableOpacity>
 

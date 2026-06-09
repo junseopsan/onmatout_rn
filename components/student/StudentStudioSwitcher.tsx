@@ -27,7 +27,7 @@ export function StudentStudioSwitcher() {
   if (!loaded) return null;
   if (memberships.length === 0) return null;
 
-  const label = activeStudio?.name ?? "스튜디오 선택";
+  const label = activeStudio?.name ?? "요가원 선택";
 
   return (
     <>

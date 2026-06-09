@@ -37,7 +37,7 @@ export default function TeacherStudioListScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title="내 스튜디오"
+        title="내 요가원"
         trailing={{
           kind: "icon",
           icon: "add",
@@ -50,12 +50,12 @@ export default function TeacherStudioListScreen() {
       ) : studios.length === 0 ? (
         <EmptyState
           icon="🏠"
-          title="아직 스튜디오가 없어요"
+          title="아직 요가원이 없어요"
           description={
-            "운영 중인 요가원 정보를 추가하면\n클래스, 회원, 시퀀스을 스튜디오 단위로 관리할 수 있어요."
+            "운영 중인 요가원 정보를 추가하면\n클래스, 회원, 시퀀스을 요가원 단위로 관리할 수 있어요."
           }
           action={{
-            label: "+ 스튜디오 추가",
+            label: "+ 요가원 추가",
             onPress: () => navigation.navigate("TeacherStudioForm"),
           }}
         />

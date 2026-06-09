@@ -95,10 +95,10 @@ export default function TeacherProfileEditScreen() {
       >
         <ScrollView contentContainerStyle={styles.form}>
           <PillInput
-            label="스튜디오 이름"
+            label="요가원 이름"
             value={studioName}
             onChangeText={setStudioName}
-            placeholder="예: 온매트 스튜디오"
+            placeholder="예: 온매트 요가원"
           />
           <PillInput
             label="소개"

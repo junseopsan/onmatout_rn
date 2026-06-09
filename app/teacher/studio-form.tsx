@@ -93,7 +93,7 @@ export default function TeacherStudioFormScreen() {
       if (editing && studioId) {
         const updated = await pivotStudioApi.updateStudio(studioId, payload);
         updateStudioLocal(updated);
-        Alert.alert("저장 완료", "스튜디오 정보를 업데이트했어요.");
+        Alert.alert("저장 완료", "요가원 정보를 업데이트했어요.");
         navigation.goBack();
       } else {
         const created = await createStudio(payload);
@@ -101,8 +101,8 @@ export default function TeacherStudioFormScreen() {
           await setActiveStudio(created);
           await reloadStudios();
           Alert.alert(
-            "스튜디오 추가 완료",
-            `${created.name} 으로 활성 스튜디오를 전환했어요.`,
+            "요가원 추가 완료",
+            `${created.name} 으로 활성 요가원을 전환했어요.`,
           );
           navigation.goBack();
         }
@@ -119,7 +119,7 @@ export default function TeacherStudioFormScreen() {
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <DetailHeader
           onBack={() => navigation.goBack()}
-          title={editing ? "스튜디오 정보" : "새 스튜디오"}
+          title={editing ? "요가원 정보" : "새 요가원"}
         />
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
@@ -130,7 +130,7 @@ export default function TeacherStudioFormScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title={editing ? "스튜디오 정보" : "새 스튜디오"}
+        title={editing ? "요가원 정보" : "새 요가원"}
         trailing={{
           kind: "text",
           label: submitting ? "저장 중…" : "저장",
@@ -215,7 +215,7 @@ export default function TeacherStudioFormScreen() {
           />
 
           <Button
-            title={editing ? "변경 저장" : "스튜디오 추가"}
+            title={editing ? "변경 저장" : "요가원 추가"}
             onPress={handleSubmit}
             disabled={!canSubmit}
             loading={submitting}

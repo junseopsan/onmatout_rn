@@ -34,7 +34,7 @@ export interface StudioPromotion {
   created_at: string;
 }
 
-// 스튜디오 정보가 함께 포함된 프로모션
+// 요가원 정보가 함께 포함된 프로모션
 export interface StudioPromotionWithStudio extends StudioPromotion {
   studio?: {
     id: string;
@@ -404,7 +404,7 @@ export const studioAPI = {
       }
 
       // Supabase 조인 결과에서 studio 필드가 배열 형태로 올 수 있으므로
-      // 첫 번째 요소만 사용하여 단일 스튜디오 객체로 매핑
+      // 첫 번째 요소만 사용하여 단일 요가원 객체로 매핑
       const mapped =
         (data as any[] | null)?.map((item) => {
           const studioField = (item as any).studio;

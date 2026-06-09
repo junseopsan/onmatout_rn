@@ -147,13 +147,13 @@ export default function TeacherMemberDetailScreen() {
     if (!student?.user_id || !activeStudio?.id) {
       Alert.alert(
         "승급 불가",
-        "수련생이 아직 앱에 가입하지 않았거나 활성 스튜디오가 없습니다.",
+        "수련생이 아직 앱에 가입하지 않았거나 활성 요가원이 없습니다.",
       );
       return;
     }
     Alert.alert(
       "지도자로 승급",
-      `${student.name} 님을 ${activeStudio.name} 스튜디오의 지도자로 등록할까요? 클래스는 만들 수 없지만 수련생 관리, 출석을 도와줄 수 있어요.`,
+      `${student.name} 님을 ${activeStudio.name} 요가원의 지도자로 등록할까요? 클래스는 만들 수 없지만 수련생 관리, 출석을 도와줄 수 있어요.`,
       [
         { text: "취소", style: "cancel" },
         {
@@ -386,8 +386,8 @@ export default function TeacherMemberDetailScreen() {
                 </Text>
                 <Text style={styles.promoteDesc}>
                   {isTeacherOfStudio
-                    ? "이 수련생은 현재 스튜디오의 지도자예요. 출석, 수련생 관리를 도와줄 수 있어요."
-                    : "이 수련생을 현재 스튜디오의 지도자로 등록하면 출석, 수련생 관리를 함께 할 수 있어요."}
+                    ? "이 수련생은 현재 요가원의 지도자예요. 출석, 수련생 관리를 도와줄 수 있어요."
+                    : "이 수련생을 현재 요가원의 지도자로 등록하면 출석, 수련생 관리를 함께 할 수 있어요."}
                 </Text>
               </View>
               <Button

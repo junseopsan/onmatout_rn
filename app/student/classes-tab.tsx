@@ -104,7 +104,7 @@ export default function StudentClassesTabScreen() {
   const studio = activeStudio;
   const studentProfileId = activeMembership?.studentProfileId ?? null;
 
-  // 스튜디오 상세 + 활성 수업권 로드
+  // 요가원 상세 + 활성 수업권 로드
   useEffect(() => {
     if (!activeMembership) {
       setStudioInfo(null);

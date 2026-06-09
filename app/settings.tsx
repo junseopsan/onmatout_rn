@@ -494,21 +494,21 @@ export default function SettingsScreen() {
             </>
           ) : null}
 
-          {/* 스튜디오 관리 — 선생님 역할 보유 시에만 노출 */}
+          {/* 요가원 관리 — 선생님 역할 보유 시에만 노출 */}
           {user && roles.includes("teacher") ? (
             <>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>스튜디오</Text>
+                <Text style={styles.sectionTitle}>요가원</Text>
               </View>
               <TouchableOpacity
                 style={styles.settingItem}
                 onPress={() => navigation.navigate("TeacherStudioList" as any)}
               >
                 <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>내 스튜디오 관리</Text>
+                  <Text style={styles.settingText}>내 요가원 관리</Text>
                   <Text style={styles.settingDescription}>
                     상호명, 연락처, 운영시간, 홈페이지 등 정보를 추가/수정하고
-                    여러 스튜디오를 전환하세요.
+                    여러 요가원을 전환하세요.
                   </Text>
                 </View>
                 <Text style={styles.arrowText}>›</Text>
@@ -520,7 +520,7 @@ export default function SettingsScreen() {
                 }
               >
                 <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>+ 새 스튜디오 등록 신청</Text>
+                  <Text style={styles.settingText}>+ 새 요가원 등록 신청</Text>
                   <Text style={styles.settingDescription}>
                     한 번의 신청으로 자동 승인돼요. 추가 요가원도 같은 흐름으로
                     등록할 수 있어요.
@@ -535,7 +535,7 @@ export default function SettingsScreen() {
           {user && !roles.includes("teacher") ? (
             <>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>스튜디오</Text>
+                <Text style={styles.sectionTitle}>요가원</Text>
               </View>
               <TouchableOpacity
                 style={styles.settingItem}
@@ -544,7 +544,7 @@ export default function SettingsScreen() {
                 }
               >
                 <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>스튜디오 등록 신청</Text>
+                  <Text style={styles.settingText}>요가원 등록 신청</Text>
                   <Text style={styles.settingDescription}>
                     내 요가원을 운영하시나요? 신청 즉시 원장으로 전환돼요 (자동
                     승인, 후속 검토).

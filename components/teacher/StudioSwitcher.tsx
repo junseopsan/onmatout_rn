@@ -21,7 +21,7 @@ export function StudioSwitcher() {
 
   if (!loaded) return null;
 
-  const label = activeStudio?.name ?? "스튜디오 선택";
+  const label = activeStudio?.name ?? "요가원 선택";
 
   return (
     <>
@@ -103,7 +103,7 @@ export function StudioSwitcher() {
           activeOpacity={0.85}
         >
           <Ionicons name="settings-outline" size={16} color={COLORS.primary} />
-          <Text style={styles.manageBtnText}>스튜디오 관리, 추가</Text>
+          <Text style={styles.manageBtnText}>요가원 관리, 추가</Text>
           <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
         </TouchableOpacity>
       </Sheet>

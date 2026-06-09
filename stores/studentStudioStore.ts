@@ -52,7 +52,7 @@ export const useStudentStudioStore = create<Store>((set, get) => ({
       });
     } catch (e: any) {
       set({
-        error: e?.message ?? "스튜디오 정보를 불러오지 못했어요",
+        error: e?.message ?? "요가원 정보를 불러오지 못했어요",
         loading: false,
         loaded: true,
       });

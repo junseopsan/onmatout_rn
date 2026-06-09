@@ -13,6 +13,6 @@ export const haptics = {
   // 경고 / 에러
   warning: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined),
   error: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined),
-  // 선택 변경 (스튜디오 전환, 탭 변경)
+  // 선택 변경 (요가원 전환, 탭 변경)
   select: () => Haptics.selectionAsync().catch(() => undefined),
 };

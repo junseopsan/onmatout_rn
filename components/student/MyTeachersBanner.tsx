@@ -83,7 +83,7 @@ function TeacherCard({
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <Text style={styles.studio} numberOfLines={1}>
-        {link.teacherName ?? "이름 없는 스튜디오"}
+        {link.teacherName ?? "이름 없는 요가원"}
       </Text>
       {m ? (
         <Text style={styles.meta}>{describeMembership(m)}</Text>

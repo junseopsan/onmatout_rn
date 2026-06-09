@@ -53,7 +53,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       set({ studios, activeStudio: active, loading: false, loaded: true });
     } catch (e: any) {
       set({
-        error: e?.message ?? "스튜디오 정보를 불러오지 못했어요",
+        error: e?.message ?? "요가원 정보를 불러오지 못했어요",
         loading: false,
         loaded: true,
       });
@@ -77,7 +77,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       }
       return created;
     } catch (e: any) {
-      set({ error: e?.message ?? "스튜디오를 만들지 못했어요" });
+      set({ error: e?.message ?? "요가원을 만들지 못했어요" });
       return null;
     }
   },
