@@ -124,36 +124,50 @@ export default function AuthMatchScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>
-            {candidates.length > 0
-              ? "선생님이 수련생으로 등록했어요"
-              : "선생님과 연결할까요?"}
-          </Text>
+          <Text style={styles.title}>선생님과 연결</Text>
           <Text style={styles.subtitle}>
-            {candidates.length > 0
-              ? "수련생님이 맞는지 확인해 주세요. 거절하면 나중에 초대 코드로도 연결할 수 있어요."
-              : "선생님에게 받은 초대 코드 (ONM-XXXX) 가 있다면 입력하세요."}
+            선생님의 초대 QR을 스캔하면 가장 빠르게 연결돼요.
           </Text>
 
-          {candidates.map((c) => (
-            <View key={c.studentProfileId} style={styles.card}>
-              <Text style={styles.cardEyebrow}>
-                {c.teacherStudioName ?? "선생님"}
-              </Text>
-              <Text style={styles.cardName}>{c.studentName}</Text>
-              <Text style={styles.cardMeta}>초대 코드: {c.inviteCode}</Text>
-              <Button
-                title="연결 수락"
-                onPress={() => handleAccept(c)}
-                disabled={submitting}
-                loading={submitting}
-                style={{ marginTop: 12 }}
-              />
-            </View>
-          ))}
+          {/* 1) QR 스캔 — 메인 */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ScanInvite")}
+            style={styles.qrPrimary}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="qr-code" size={26} color={COLORS.white} />
+            <Text style={styles.qrPrimaryText}>QR 스캔으로 연결</Text>
+          </TouchableOpacity>
 
-          <Text style={styles.label}>초대 코드</Text>
-          <View style={styles.codeBox}>
+          {/* 2) 전화번호 자동 매칭 후보 */}
+          {candidates.length > 0 ? (
+            <View style={styles.matchSection}>
+              <Text style={styles.sectionLabel}>나를 등록한 선생님</Text>
+              {candidates.map((c) => (
+                <View key={c.studentProfileId} style={styles.card}>
+                  <Text style={styles.cardEyebrow}>
+                    {c.teacherStudioName ?? "선생님"}
+                  </Text>
+                  <Text style={styles.cardName}>{c.studentName}</Text>
+                  <Button
+                    title="연결 수락"
+                    onPress={() => handleAccept(c)}
+                    disabled={submitting}
+                    loading={submitting}
+                    style={{ marginTop: 12 }}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {/* 3) 초대 코드 직접 입력 — 폴백 */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>또는 코드로</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          <View style={styles.codeRow}>
             <TextInput
               value={code}
               onChangeText={(v) =>
@@ -165,23 +179,17 @@ export default function AuthMatchScreen() {
               autoCapitalize="characters"
               maxLength={9}
             />
+            <TouchableOpacity
+              style={[
+                styles.codeBtn,
+                code.trim().length < 5 && { opacity: 0.4 },
+              ]}
+              onPress={() => handleCodeSubmit()}
+              disabled={submitting || code.trim().length < 5}
+            >
+              <Text style={styles.codeBtnText}>연결</Text>
+            </TouchableOpacity>
           </View>
-          <Button
-            title="코드로 연결"
-            onPress={() => handleCodeSubmit()}
-            disabled={submitting || code.trim().length < 5}
-            variant="outline"
-            style={{ marginTop: 12 }}
-          />
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("ScanInvite")}
-            style={styles.scanBtn}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="qr-code-outline" size={18} color={COLORS.primary} />
-            <Text style={styles.scanText}>QR 스캔으로 연결</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity onPress={finish} style={styles.skipBtn}>
             <Text style={styles.skipText}>나중에 할게요</Text>
@@ -228,44 +236,59 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardMeta: { color: COLORS.textSecondary, fontSize: 13 },
-  label: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  codeBox: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  codeInput: {
-    color: COLORS.text,
-    fontSize: 18,
-    letterSpacing: 1,
-    textAlign: "center",
-  },
-  skipBtn: {
-    alignItems: "center",
-    paddingVertical: 16,
-    marginTop: 16,
-  },
-  skipText: { color: COLORS.textSecondary, fontSize: 14 },
-  scanBtn: {
+  qrPrimary: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    marginTop: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.4)",
-    backgroundColor: "rgba(139, 92, 246, 0.1)",
+    gap: 10,
+    paddingVertical: 18,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
   },
-  scanText: { color: COLORS.primary, fontSize: 14, fontWeight: "800" },
+  qrPrimaryText: { color: COLORS.white, fontSize: 16, fontWeight: "800" },
+  matchSection: { marginTop: 24 },
+  sectionLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 28,
+    marginBottom: 14,
+  },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: COLORS.border },
+  dividerText: { color: COLORS.textMuted, fontSize: 12, fontWeight: "600" },
+  codeRow: { flexDirection: "row", gap: 8 },
+  codeInput: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 16,
+    letterSpacing: 1,
+    textAlign: "center",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    paddingVertical: 12,
+  },
+  codeBtn: {
+    paddingHorizontal: 20,
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  codeBtnText: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
+  skipBtn: {
+    alignItems: "center",
+    paddingVertical: 16,
+    marginTop: 20,
+  },
+  skipText: { color: COLORS.textSecondary, fontSize: 14 },
 });
