@@ -402,6 +402,185 @@ export const storageAPI = {
     }
   },
 
+  // 요가원 대표사진 다중 업로드 → publicUrl 배열 반환
+  uploadStudioPhotos: async (
+    userId: string,
+    maxCount: number = 10,
+  ): Promise<{
+    success: boolean;
+    urls?: string[];
+    message?: string;
+    canceled?: boolean;
+  }> => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return { success: false, message: "갤러리 접근 권한이 필요합니다." };
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+        base64: false,
+        exif: false,
+        allowsMultipleSelection: true,
+        selectionLimit: maxCount,
+      });
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return { success: false, canceled: true, message: "취소되었습니다." };
+      }
+
+      const urls: string[] = [];
+      for (const asset of result.assets.slice(0, maxCount)) {
+        const uri = asset.uri;
+        if (!uri) continue;
+        const ext = (asset.fileName?.split(".").pop() || "jpg").toLowerCase();
+        const contentType = asset.mimeType || `image/${ext}`;
+        const encoding =
+          (FileSystem as any).EncodingType?.Base64 ||
+          (FileSystem as any).EncodingType?.base64 ||
+          "base64";
+        let normalized = (
+          await FileSystem.readAsStringAsync(uri, { encoding } as any)
+        ).trim();
+        if (normalized.startsWith("data:")) {
+          const c = normalized.indexOf(",");
+          normalized = c >= 0 ? normalized.slice(c + 1) : normalized;
+        }
+        normalized = normalized.replace(/\s/g, "");
+        const padLen = normalized.length % 4;
+        if (padLen > 0)
+          normalized = normalized.padEnd(normalized.length + (4 - padLen), "=");
+        let bytes: Uint8Array;
+        try {
+          bytes = toByteArray(normalized);
+        } catch {
+          continue;
+        }
+        if (bytes.length > 8 * 1024 * 1024) continue;
+        const fileName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 6)}.${ext}`;
+        const path = `studios/${userId}/${fileName}`;
+        const { error: upErr } = await supabase.storage
+          .from("avatars")
+          .upload(path, bytes, { cacheControl: "3600", upsert: false, contentType });
+        if (upErr) continue;
+        const { data: urlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(path);
+        urls.push(urlData.publicUrl);
+      }
+      if (urls.length === 0)
+        return { success: false, message: "업로드된 사진이 없어요." };
+      return { success: true, urls };
+    } catch (e) {
+      return {
+        success: false,
+        message: `업로드 중 오류: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      };
+    }
+  },
+
+  // 요가원 안내 이미지(가격표/정책 등) 단일 업로드 → publicUrl 반환
+  uploadStudioImage: async (
+    userId: string,
+  ): Promise<{
+    success: boolean;
+    url?: string;
+    message?: string;
+    canceled?: boolean;
+  }> => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return { success: false, message: "갤러리 접근 권한이 필요합니다." };
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.85,
+        base64: false,
+        exif: false,
+        allowsMultipleSelection: false,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return { success: false, canceled: true, message: "취소되었습니다." };
+      }
+
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      if (!uri) return { success: false, message: "이미지를 읽지 못했어요." };
+
+      const ext = (asset.fileName?.split(".").pop() || "jpg").toLowerCase();
+      const contentType = asset.mimeType || `image/${ext}`;
+
+      const encoding =
+        (FileSystem as any).EncodingType?.Base64 ||
+        (FileSystem as any).EncodingType?.base64 ||
+        "base64";
+      let normalized = (
+        await FileSystem.readAsStringAsync(uri, { encoding } as any)
+      ).trim();
+      if (normalized.startsWith("data:")) {
+        const commaIdx = normalized.indexOf(",");
+        normalized = commaIdx >= 0 ? normalized.slice(commaIdx + 1) : normalized;
+      }
+      normalized = normalized.replace(/\s/g, "");
+      const padLen = normalized.length % 4;
+      if (padLen > 0) {
+        normalized = normalized.padEnd(normalized.length + (4 - padLen), "=");
+      }
+
+      let bytes: Uint8Array;
+      try {
+        bytes = toByteArray(normalized);
+      } catch {
+        return { success: false, message: "이미지를 처리하지 못했어요." };
+      }
+      if (bytes.length > 8 * 1024 * 1024) {
+        return {
+          success: false,
+          message: "8MB 이하의 이미지만 업로드할 수 있어요.",
+        };
+      }
+
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 6)}.${ext}`;
+      const path = `studios/${userId}/${fileName}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, bytes, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType,
+        });
+      if (upErr) {
+        return { success: false, message: `업로드 실패: ${upErr.message}` };
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+      return { success: true, url: urlData.publicUrl };
+    } catch (e) {
+      return {
+        success: false,
+        message: `업로드 중 오류: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      };
+    }
+  },
+
   // 수련기록 사진 단일 삭제 (best-effort)
   deleteRecordPhoto: async (publicUrl: string): Promise<boolean> => {
     try {

@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
+  Image,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -81,15 +83,32 @@ function openUrl(url: string) {
   Linking.openURL(u).catch(() => undefined);
 }
 
+const DAY_ORDER: { key: string; label: string }[] = [
+  { key: "1", label: "월" },
+  { key: "2", label: "화" },
+  { key: "3", label: "수" },
+  { key: "4", label: "목" },
+  { key: "5", label: "금" },
+  { key: "6", label: "토" },
+  { key: "0", label: "일" },
+];
+
 export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
   const [open, setOpen] = useState(false);
   const hasContact =
     !!studio.phone || !!studio.instagram_url || !!studio.kakao_url;
-  const hasGuide =
-    plans.length > 0 ||
-    !!studio.pricing_text ||
+  const hasPricing =
+    plans.length > 0 || !!studio.pricing_text || !!studio.pricing_image_url;
+  const hasPolicy =
+    studio.cancel_cutoff_hours > 0 ||
     !!studio.policy_text ||
-    studio.cancel_cutoff_hours > 0;
+    !!studio.policy_image_url ||
+    !!studio.rules_image_url;
+  const hasIntro = !!studio.description || !!studio.description_image_url;
+  const hourRows = DAY_ORDER.filter((d) => studio.hours_by_day?.[d.key]);
+  const hasOps = hourRows.length > 0 || !!studio.bank_account;
+  const hasPhotos = studio.photos.length > 0;
+  const hasGuide = hasPricing || hasPolicy || hasIntro || hasOps || hasPhotos;
 
   if (memberships.length === 0 && !hasContact && !hasGuide) return null;
 
@@ -114,6 +133,19 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
       </Pressable>
 
       <Sheet visible={open} onClose={() => setOpen(false)} title={studio.name}>
+        {hasPhotos ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.galleryRow}
+            style={{ marginBottom: 14 }}
+          >
+            {studio.photos.map((url) => (
+              <Image key={url} source={{ uri: url }} style={styles.galleryImg} />
+            ))}
+          </ScrollView>
+        ) : null}
+
         {memberships.length > 0 ? (
           <Text style={styles.sectionLabel}>내 수강권</Text>
         ) : null}
@@ -152,7 +184,43 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
           })
         )}
 
-        {plans.length > 0 ? (
+        {hasIntro ? (
+          <View style={styles.guideSection}>
+            <Text style={styles.guideTitle}>소개</Text>
+            {studio.description ? (
+              <Text style={styles.guideBody}>{studio.description}</Text>
+            ) : null}
+            {studio.description_image_url ? (
+              <Image
+                source={{ uri: studio.description_image_url }}
+                style={styles.guideImage}
+                resizeMode="contain"
+              />
+            ) : null}
+          </View>
+        ) : null}
+
+        {hasOps ? (
+          <View style={styles.guideSection}>
+            <Text style={styles.guideTitle}>운영 안내</Text>
+            {hourRows.map((d) => (
+              <View key={d.key} style={styles.hourRow}>
+                <Text style={styles.hourDay}>{d.label}</Text>
+                <Text style={styles.hourVal}>
+                  {studio.hours_by_day?.[d.key]}
+                </Text>
+              </View>
+            ))}
+            {studio.bank_account ? (
+              <View style={[styles.hourRow, { marginTop: hourRows.length ? 8 : 0 }]}>
+                <Text style={styles.hourDay}>계좌</Text>
+                <Text style={styles.hourVal}>{studio.bank_account}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {hasPricing ? (
           <View style={styles.guideSection}>
             <Text style={styles.guideTitle}>수업권 안내</Text>
             {plans.map((p) => (
@@ -169,21 +237,28 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
               </View>
             ))}
             {studio.pricing_text ? (
-              <Text style={[styles.guideBody, { marginTop: 10 }]}>
+              <Text
+                style={[
+                  styles.guideBody,
+                  plans.length > 0 && { marginTop: 10 },
+                ]}
+              >
                 {studio.pricing_text}
               </Text>
             ) : null}
-          </View>
-        ) : studio.pricing_text ? (
-          <View style={styles.guideSection}>
-            <Text style={styles.guideTitle}>수업권 안내</Text>
-            <Text style={styles.guideBody}>{studio.pricing_text}</Text>
+            {studio.pricing_image_url ? (
+              <Image
+                source={{ uri: studio.pricing_image_url }}
+                style={styles.guideImage}
+                resizeMode="contain"
+              />
+            ) : null}
           </View>
         ) : null}
 
-        {studio.cancel_cutoff_hours > 0 || studio.policy_text ? (
+        {hasPolicy ? (
           <View style={styles.guideSection}>
-            <Text style={styles.guideTitle}>등록 / 예약 안내</Text>
+            <Text style={styles.guideTitle}>등록/예약 안내</Text>
             {studio.cancel_cutoff_hours > 0 ? (
               <View style={styles.ruleLine}>
                 <Ionicons
@@ -205,6 +280,20 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
               >
                 {studio.policy_text}
               </Text>
+            ) : null}
+            {studio.policy_image_url ? (
+              <Image
+                source={{ uri: studio.policy_image_url }}
+                style={styles.guideImage}
+                resizeMode="contain"
+              />
+            ) : null}
+            {studio.rules_image_url ? (
+              <Image
+                source={{ uri: studio.rules_image_url }}
+                style={styles.guideImage}
+                resizeMode="contain"
+              />
             ) : null}
           </View>
         ) : null}
@@ -392,6 +481,28 @@ const styles = StyleSheet.create({
   },
   ruleLine: { flexDirection: "row", alignItems: "center", gap: 6 },
   ruleText: { color: COLORS.warning, fontSize: 12, fontWeight: "700" },
+  guideImage: {
+    width: "100%",
+    height: 420,
+    borderRadius: 10,
+    marginTop: 10,
+    backgroundColor: COLORS.surface,
+  },
+  galleryRow: { gap: 8 },
+  galleryImg: {
+    width: 150,
+    height: 150,
+    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+  },
+  hourRow: { flexDirection: "row", alignItems: "center", paddingVertical: 3 },
+  hourDay: {
+    width: 40,
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  hourVal: { flex: 1, color: COLORS.text, fontSize: 13 },
   actionsRow: {
     flexDirection: "row",
     flexWrap: "wrap",

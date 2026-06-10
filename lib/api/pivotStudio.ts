@@ -13,6 +13,13 @@ export type PivotStudio = {
   description: string | null;
   policy_text: string | null;
   pricing_text: string | null;
+  pricing_image_url: string | null;
+  policy_image_url: string | null;
+  description_image_url: string | null;
+  rules_image_url: string | null;
+  photos: string[];
+  hours_by_day: Record<string, string> | null;
+  bank_account: string | null;
   cancel_cutoff_hours: number;
   created_at: string;
   updated_at: string;
@@ -29,6 +36,13 @@ export type PivotStudioInput = {
   description?: string | null;
   policy_text?: string | null;
   pricing_text?: string | null;
+  pricing_image_url?: string | null;
+  policy_image_url?: string | null;
+  description_image_url?: string | null;
+  rules_image_url?: string | null;
+  photos?: string[];
+  hours_by_day?: Record<string, string> | null;
+  bank_account?: string | null;
   cancel_cutoff_hours?: number;
 };
 
@@ -155,6 +169,13 @@ export const pivotStudioApi = {
         description: rest.description ?? null,
         policy_text: rest.policy_text ?? null,
         pricing_text: rest.pricing_text ?? null,
+        pricing_image_url: rest.pricing_image_url ?? null,
+        policy_image_url: rest.policy_image_url ?? null,
+        description_image_url: rest.description_image_url ?? null,
+        rules_image_url: rest.rules_image_url ?? null,
+        photos: rest.photos ?? [],
+        hours_by_day: rest.hours_by_day ?? null,
+        bank_account: rest.bank_account ?? null,
         cancel_cutoff_hours: rest.cancel_cutoff_hours ?? 0,
       })
       .select()
@@ -179,6 +200,19 @@ export const pivotStudioApi = {
     if (input.policy_text !== undefined) patch.policy_text = input.policy_text;
     if (input.pricing_text !== undefined)
       patch.pricing_text = input.pricing_text;
+    if (input.pricing_image_url !== undefined)
+      patch.pricing_image_url = input.pricing_image_url;
+    if (input.policy_image_url !== undefined)
+      patch.policy_image_url = input.policy_image_url;
+    if (input.description_image_url !== undefined)
+      patch.description_image_url = input.description_image_url;
+    if (input.rules_image_url !== undefined)
+      patch.rules_image_url = input.rules_image_url;
+    if (input.photos !== undefined) patch.photos = input.photos;
+    if (input.hours_by_day !== undefined)
+      patch.hours_by_day = input.hours_by_day;
+    if (input.bank_account !== undefined)
+      patch.bank_account = input.bank_account;
     if (input.cancel_cutoff_hours !== undefined)
       patch.cancel_cutoff_hours = input.cancel_cutoff_hours;
     const { data, error } = await supabase

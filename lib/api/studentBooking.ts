@@ -48,6 +48,13 @@ export type StudioFullInfo = {
   description: string | null;
   policy_text: string | null;
   pricing_text: string | null;
+  pricing_image_url: string | null;
+  policy_image_url: string | null;
+  description_image_url: string | null;
+  rules_image_url: string | null;
+  photos: string[];
+  hours_by_day: Record<string, string> | null;
+  bank_account: string | null;
   cancel_cutoff_hours: number;
   ownerName: string | null;
 };
@@ -69,7 +76,7 @@ export const studentBookingApi = {
     const { data: studio, error } = await supabase
       .from("pivot_studios")
       .select(
-        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, cancel_cutoff_hours, owner_id",
+        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, pricing_image_url, policy_image_url, description_image_url, rules_image_url, photos, hours_by_day, bank_account, cancel_cutoff_hours, owner_id",
       )
       .eq("id", studioId)
       .maybeSingle();
@@ -96,6 +103,15 @@ export const studentBookingApi = {
       description: (studio.description as string | null) ?? null,
       policy_text: (studio.policy_text as string | null) ?? null,
       pricing_text: (studio.pricing_text as string | null) ?? null,
+      pricing_image_url: (studio.pricing_image_url as string | null) ?? null,
+      policy_image_url: (studio.policy_image_url as string | null) ?? null,
+      description_image_url:
+        (studio.description_image_url as string | null) ?? null,
+      rules_image_url: (studio.rules_image_url as string | null) ?? null,
+      photos: (studio.photos as string[] | null) ?? [],
+      hours_by_day:
+        (studio.hours_by_day as Record<string, string> | null) ?? null,
+      bank_account: (studio.bank_account as string | null) ?? null,
       cancel_cutoff_hours: (studio.cancel_cutoff_hours as number | null) ?? 0,
       ownerName,
     };
