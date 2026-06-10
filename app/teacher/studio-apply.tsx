@@ -8,16 +8,17 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { DetailHeader } from "../../components/ui/DetailHeader";
-import { SectionLabel } from "../../components/ui/SectionLabel";
-import { SurfaceCard } from "../../components/ui/SurfaceCard";
+import {
+  Button,
+  DetailHeader,
+  PillInput,
+  SurfaceCard,
+} from "../../components/ui";
 import { COLORS } from "../../constants/Colors";
-import { RADIUS, SPACING } from "../../constants/Design";
+import { SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
@@ -59,7 +60,6 @@ export default function TeacherStudioApplyScreen() {
 
       // 자동승인 트리거가 동작했다면 status=auto_approved + studio_id 가 채워짐
       if (result.status === "auto_approved" && result.studio_id) {
-        // 역할 + 요가원 새로 불러오기
         await reloadRoles();
         await reloadStudios();
         await setActiveRole("teacher");
@@ -80,11 +80,9 @@ export default function TeacherStudioApplyScreen() {
           ],
         );
       } else {
-        Alert.alert(
-          "신청 접수",
-          "신청이 접수됐어요. 검토 후 결과를 알려드릴게요.",
-          [{ text: "확인", onPress: () => navigation.goBack() }],
-        );
+        Alert.alert("신청 접수", "신청이 접수됐어요. 검토 후 결과를 알려드릴게요.", [
+          { text: "확인", onPress: () => navigation.goBack() },
+        ]);
       }
     } catch (e: any) {
       Alert.alert("신청 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
@@ -98,12 +96,7 @@ export default function TeacherStudioApplyScreen() {
       <DetailHeader
         onBack={() => navigation.goBack()}
         title="요가원 등록 신청"
-        trailing={{
-          kind: "text",
-          label: submitting ? "신청 중…" : "신청",
-          tone: "primary",
-          onPress: handleSubmit,
-        }}
+        serif={false}
       />
 
       <KeyboardAvoidingView
@@ -123,132 +116,89 @@ export default function TeacherStudioApplyScreen() {
             </Text>
           </SurfaceCard>
 
-          <SectionLabel>기본 정보</SectionLabel>
-          <Field
-            label="상호명 *"
-            placeholder="예) 시바난다 요가 강남"
+          <PillInput
+            label="상호명"
+            required
+            placeholder="상호명을 입력해주세요"
             value={name}
             onChangeText={setName}
           />
-          <Field
+          <PillInput
             label="주소"
-            placeholder="예) 서울 강남구 테헤란로 ..."
+            placeholder="주소를 입력해주세요"
             value={location}
             onChangeText={setLocation}
           />
-
-          <View style={{ height: SPACING.lg }} />
-          <SectionLabel>연락, 운영</SectionLabel>
-          <Field
+          <PillInput
             label="연락처"
-            placeholder="02-1234-5678 또는 010-..."
+            placeholder="연락처를 입력해주세요"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
-          <Field
+          <PillInput
             label="운영 시간"
-            placeholder="예) 평일 07:00 - 22:00 / 주말 09:00 - 18:00"
+            placeholder="운영 시간을 입력해주세요"
             value={hours}
             onChangeText={setHours}
             multiline
           />
-          <Field
+          <PillInput
             label="홈페이지"
-            placeholder="https://..."
+            placeholder="홈페이지 주소를 입력해주세요"
             value={website}
             onChangeText={setWebsite}
             autoCapitalize="none"
             keyboardType="url"
           />
-
-          <View style={{ height: SPACING.lg }} />
-          <SectionLabel>소개 (선택)</SectionLabel>
-          <Field
+          <PillInput
             label="소개"
-            placeholder="요가원의 분위기, 수업 컨셉 등을 짧게 적어주세요."
+            placeholder="요가원 소개를 입력해주세요"
             value={description}
             onChangeText={setDescription}
             multiline
           />
 
-          <TouchableOpacity
-            style={[styles.submitBtn, !canSubmit && { opacity: 0.5 }]}
-            disabled={!canSubmit}
-            onPress={handleSubmit}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.submitBtnText}>
-              {submitting ? "신청 중…" : "요가원 등록 신청"}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={{ height: SPACING.xxl }} />
+          <Text style={styles.hint}>
+            상세 정보(운영시간, 대표사진, 수업권 등)는 승인 후 요가원 정보에서 편집할
+            수 있어요.
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
-}
 
-function Field({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  multiline,
-  keyboardType,
-  autoCapitalize,
-}: {
-  label: string;
-  placeholder?: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  multiline?: boolean;
-  keyboardType?: "default" | "phone-pad" | "url" | "email-address" | "numeric";
-  autoCapitalize?: "none" | "sentences" | "words" | "characters";
-}) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
-        style={[styles.input, multiline && styles.inputMulti]}
-        multiline={multiline}
-        keyboardType={keyboardType ?? "default"}
-        autoCapitalize={autoCapitalize ?? "sentences"}
-      />
-    </View>
+      <View style={styles.submitWrap}>
+        <Button
+          title="요가원 등록 신청"
+          size="large"
+          onPress={handleSubmit}
+          loading={submitting}
+          disabled={!canSubmit}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  content: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: 120,
+  },
   intro: { marginBottom: SPACING.lg },
   introTitle: { ...TEXT.bodyMed, color: COLORS.text, marginBottom: 4 },
   introText: { ...TEXT.caption, color: COLORS.textSecondary, lineHeight: 20 },
-  field: { marginBottom: SPACING.md },
-  fieldLabel: { ...TEXT.caption, color: COLORS.textSecondary, marginBottom: 6 },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    color: COLORS.text,
-    ...TEXT.body,
+  hint: {
+    ...TEXT.caption,
+    color: COLORS.textMuted,
+    marginTop: SPACING.md,
+    lineHeight: 18,
   },
-  inputMulti: { minHeight: 80, textAlignVertical: "top" },
-  submitBtn: {
-    marginTop: SPACING.lg,
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.pill,
-    alignItems: "center",
+  submitWrap: {
+    position: "absolute",
+    left: SPACING.lg,
+    right: SPACING.lg,
+    bottom: SPACING.lg,
   },
-  submitBtnText: { color: COLORS.white, fontSize: 15, fontWeight: "700" },
 });
