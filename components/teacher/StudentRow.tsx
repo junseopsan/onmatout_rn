@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
@@ -42,12 +41,9 @@ export function StudentRow({
             ) : null}
           </Text>
           {hasLinkedUser ? (
-            <Ionicons
-              name="checkmark-circle"
-              size={12}
-              color={COLORS.primary}
-              style={{ marginLeft: 2 }}
-            />
+            <View style={styles.appBadge}>
+              <Text style={styles.appBadgeText}>앱 가입</Text>
+            </View>
           ) : null}
           {isTeacher ? (
             <View style={styles.teacherBadge}>
@@ -111,4 +107,12 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   teacherBadgeText: { color: COLORS.info, fontSize: 10, fontWeight: "800" },
+  appBadge: {
+    backgroundColor: "rgba(16, 185, 129, 0.16)",
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginLeft: 2,
+  },
+  appBadgeText: { color: COLORS.success, fontSize: 10, fontWeight: "800" },
 });
