@@ -512,38 +512,37 @@ export default function TeacherStudioFormScreen() {
         onClose={() => setPicker(null)}
         title={picker?.which === "close" ? "마감 시간" : "오픈 시간"}
       >
-        {TIMES.map((t) => {
-          const selected =
-            picker != null && hours[picker.key]?.[picker.which] === t;
-          return (
-            <TouchableOpacity
-              key={t}
-              style={[styles.timeOption, selected && styles.timeOptionOn]}
-              onPress={() => {
-                if (picker)
-                  updateDay(
-                    picker.key,
-                    picker.which === "open"
-                      ? { open: t, closed: false }
-                      : { close: t, closed: false },
-                  );
-                setPicker(null);
-              }}
-            >
-              <Text
-                style={[
-                  styles.timeOptionText,
-                  selected && { color: COLORS.primary, fontWeight: "800" },
-                ]}
+        <View style={styles.timeGrid}>
+          {TIMES.map((t) => {
+            const selected =
+              picker != null && hours[picker.key]?.[picker.which] === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                style={[styles.timeCell, selected && styles.timeCellOn]}
+                onPress={() => {
+                  if (picker)
+                    updateDay(
+                      picker.key,
+                      picker.which === "open"
+                        ? { open: t, closed: false }
+                        : { close: t, closed: false },
+                    );
+                  setPicker(null);
+                }}
               >
-                {t}
-              </Text>
-              {selected ? (
-                <Ionicons name="checkmark" size={18} color={COLORS.primary} />
-              ) : null}
-            </TouchableOpacity>
-          );
-        })}
+                <Text
+                  style={[
+                    styles.timeCellText,
+                    selected && { color: COLORS.primary, fontWeight: "800" },
+                  ]}
+                >
+                  {t}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </Sheet>
     </SafeAreaView>
   );
@@ -715,17 +714,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   dayToggleText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "700" },
-  timeOption: {
+  timeGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    flexWrap: "wrap",
+    gap: SPACING.sm,
+    paddingVertical: 4,
   },
-  timeOptionOn: { backgroundColor: "rgba(139, 92, 246, 0.08)" },
-  timeOptionText: { color: COLORS.text, fontSize: 16, fontWeight: "600" },
+  timeCell: {
+    width: "22%",
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+  },
+  timeCellOn: {
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderColor: COLORS.primary,
+  },
+  timeCellText: { color: COLORS.text, fontSize: 14, fontWeight: "700" },
   stepperLabel: {
     color: COLORS.text,
     fontSize: 13,
