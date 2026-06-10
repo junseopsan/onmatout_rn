@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
+import { Chip } from "../../components/ui/Chip";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { PillInput } from "../../components/ui/PillInput";
@@ -309,64 +310,81 @@ function PlanFormSheet({
       />
 
       <Text style={styles.fieldLabel}>유형</Text>
-      <View style={styles.segRow}>
-        {TYPES.map((t) => {
-          const on = type === t.value;
-          return (
-            <TouchableOpacity
-              key={t.value}
-              onPress={() => setType(t.value)}
-              style={[styles.seg, on && styles.segOn]}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.segText, on && styles.segTextOn]}>
-                {t.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.chipRow}>
+        {TYPES.map((t) => (
+          <Chip
+            key={t.value}
+            label={t.label}
+            active={type === t.value}
+            onPress={() => setType(t.value)}
+          />
+        ))}
       </View>
 
-      <PillInput
-        label="수업 길이 (분, 선택)"
-        value={duration}
-        onChangeText={setDuration}
-        placeholder="예) 90"
-        keyboardType="numeric"
-      />
+      <Text style={styles.fieldLabel}>수업 시간</Text>
+      <View style={styles.chipRow}>
+        {[60, 90, 120].map((m) => (
+          <Chip
+            key={m}
+            label={`${m}분`}
+            active={duration === String(m)}
+            onPress={() =>
+              setDuration(duration === String(m) ? "" : String(m))
+            }
+          />
+        ))}
+      </View>
 
       {type === "count" ? (
         <PillInput
           label="총 횟수"
           value={count}
-          onChangeText={setCount}
+          onChangeText={(t) => setCount(t.replace(/[^\d]/g, ""))}
           placeholder="예) 10"
-          keyboardType="numeric"
+          keyboardType="number-pad"
         />
       ) : null}
       {type === "period_weekly" ? (
         <PillInput
           label="주당 횟수"
           value={weekly}
-          onChangeText={setWeekly}
+          onChangeText={(t) => setWeekly(t.replace(/[^\d]/g, ""))}
           placeholder="예) 3"
-          keyboardType="numeric"
+          keyboardType="number-pad"
         />
       ) : null}
 
+      <Text style={styles.fieldLabel}>사용기한</Text>
+      <View style={styles.chipRow}>
+        {[
+          { m: 1, d: 30 },
+          { m: 2, d: 60 },
+          { m: 3, d: 90 },
+          { m: 6, d: 180 },
+        ].map((o) => (
+          <Chip
+            key={o.d}
+            label={`${o.m}개월`}
+            active={validDays === String(o.d)}
+            onPress={() =>
+              setValidDays(validDays === String(o.d) ? "" : String(o.d))
+            }
+          />
+        ))}
+      </View>
       <PillInput
-        label="사용기한 (일, 선택)"
         value={validDays}
-        onChangeText={setValidDays}
-        placeholder="예) 90"
-        keyboardType="numeric"
+        onChangeText={(t) => setValidDays(t.replace(/[^\d]/g, ""))}
+        placeholder="직접 입력 (일)"
+        keyboardType="number-pad"
       />
+
       <PillInput
-        label="가격 (원, 선택)"
-        value={price}
-        onChangeText={setPrice}
-        placeholder="예) 250000"
-        keyboardType="numeric"
+        label="가격"
+        value={price ? Number(price).toLocaleString("en-US") : ""}
+        onChangeText={(t) => setPrice(t.replace(/[^\d]/g, ""))}
+        placeholder="예) 250,000"
+        keyboardType="number-pad"
       />
 
       {plan ? (
@@ -456,22 +474,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     paddingHorizontal: 4,
   },
-  segRow: { flexDirection: "row", gap: 8 },
-  seg: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.surfaceDark,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: "center",
-  },
-  segOn: {
-    backgroundColor: "rgba(139, 92, 246, 0.16)",
-    borderColor: COLORS.primary,
-  },
-  segText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: "700" },
-  segTextOn: { color: COLORS.primary },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: SPACING.sm },
   activeToggle: {
     flexDirection: "row",
     alignItems: "center",
