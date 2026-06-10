@@ -97,27 +97,12 @@ export const pivotStudioApi = {
     studioId: string;
     teacherUserId: string;
   }) {
-    // 1. studio_teachers 등록
-    const { error: stErr } = await supabase
-      .from("studio_teachers")
-      .upsert(
-        {
-          studio_id: input.studioId,
-          teacher_id: input.teacherUserId,
-          status: "active",
-        },
-        { onConflict: "studio_id,teacher_id" },
-      );
-    if (stErr) throw stErr;
-
-    // 2. teacher 역할 부여 (없으면)
-    const { error: roleErr } = await supabase
-      .from("user_roles")
-      .upsert(
-        { user_id: input.teacherUserId, role: "teacher" },
-        { onConflict: "user_id,role" },
-      );
-    if (roleErr) throw roleErr;
+    // 남의 user_roles에 역할 부여는 RLS로 막히므로 소유권 검증 RPC로 처리
+    const { error } = await supabase.rpc("promote_student_to_teacher", {
+      p_studio_id: input.studioId,
+      p_teacher_user_id: input.teacherUserId,
+    });
+    if (error) throw error;
   },
 
   async removeStudioTeacher(input: {
