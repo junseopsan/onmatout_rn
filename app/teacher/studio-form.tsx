@@ -79,6 +79,18 @@ function dayColor(key: string): string | null {
   return null;
 }
 
+// 기본값: 평일 09:00~22:00, 토/일 휴무
+function defaultHours(): Record<string, DayHours> {
+  const h: Record<string, DayHours> = {};
+  for (const d of DAYS) {
+    h[d.key] =
+      d.key === "0" || d.key === "6"
+        ? { closed: true }
+        : { open: "09:00", close: "22:00" };
+  }
+  return h;
+}
+
 export default function TeacherStudioFormScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
@@ -98,7 +110,7 @@ export default function TeacherStudioFormScreen() {
   const [instagram, setInstagram] = useState("");
   const [kakao, setKakao] = useState("");
   const [bankAccount, setBankAccount] = useState("");
-  const [hours, setHours] = useState<Record<string, DayHours>>({});
+  const [hours, setHours] = useState<Record<string, DayHours>>(defaultHours);
   const [picker, setPicker] = useState<{
     key: string;
     which: "open" | "close";
@@ -129,9 +141,11 @@ export default function TeacherStudioFormScreen() {
           setKakao(s.kakao_url ?? "");
           setBankAccount(s.bank_account ?? "");
           const hb = s.hours_by_day ?? {};
-          const parsed: Record<string, DayHours> = {};
-          for (const d of DAYS) parsed[d.key] = parseDayHours(hb[d.key]);
-          setHours(parsed);
+          if (Object.keys(hb).length > 0) {
+            const parsed: Record<string, DayHours> = {};
+            for (const d of DAYS) parsed[d.key] = parseDayHours(hb[d.key]);
+            setHours(parsed);
+          }
           setDescription(s.description ?? "");
           setPolicy(s.policy_text ?? "");
           setPricing(s.pricing_text ?? "");
