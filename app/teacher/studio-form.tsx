@@ -295,7 +295,7 @@ export default function TeacherStudioFormScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* 대표 사진 */}
-          <SectionLabel>대표 사진</SectionLabel>
+          <SectionLabel textStyle={styles.bigLabel}>대표 사진</SectionLabel>
           <PhotoGallery
             photos={photos}
             uploading={uploading === "gallery"}
@@ -390,7 +390,7 @@ export default function TeacherStudioFormScreen() {
           ) : null}
 
           <View style={{ height: SPACING.lg }} />
-          <SectionLabel>운영 시간</SectionLabel>
+          <SectionLabel textStyle={styles.bigLabel}>운영 시간</SectionLabel>
           {DAYS.map((d) => {
             const dh = hours[d.key] ?? {};
             const color = dayColor(d.key);
@@ -489,34 +489,68 @@ export default function TeacherStudioFormScreen() {
           </View>
 
           <View style={{ height: SPACING.lg }} />
-          <SectionLabel>등록/예약 안내</SectionLabel>
+          <SectionLabel
+            textStyle={styles.bigLabel}
+            trailing={
+              !policyImage ? (
+                <Button
+                  title="이미지로 등록"
+                  variant="outline"
+                  size="small"
+                  onPress={() => pickSingle("policy")}
+                  loading={uploading === "policy"}
+                />
+              ) : null
+            }
+          >
+            등록/예약 안내
+          </SectionLabel>
           <PillInput
             placeholder="등록/예약 안내를 입력해주세요"
             value={policy}
             onChangeText={setPolicy}
             multiline
           />
-          <ImageRow
-            url={policyImage}
-            uploading={uploading === "policy"}
-            onPick={() => pickSingle("policy")}
-            onRemove={() => setPolicyImage(null)}
-          />
+          {policyImage ? (
+            <ImageRow
+              url={policyImage}
+              uploading={uploading === "policy"}
+              onPick={() => pickSingle("policy")}
+              onRemove={() => setPolicyImage(null)}
+            />
+          ) : null}
 
           <View style={{ height: SPACING.lg }} />
-          <SectionLabel>수업권 가격 안내</SectionLabel>
+          <SectionLabel
+            textStyle={styles.bigLabel}
+            trailing={
+              !pricingImage ? (
+                <Button
+                  title="이미지로 등록"
+                  variant="outline"
+                  size="small"
+                  onPress={() => pickSingle("pricing")}
+                  loading={uploading === "pricing"}
+                />
+              ) : null
+            }
+          >
+            수업권 가격 안내
+          </SectionLabel>
           <PillInput
             placeholder="수업권 가격 안내를 입력해주세요"
             value={pricing}
             onChangeText={setPricing}
             multiline
           />
-          <ImageRow
-            url={pricingImage}
-            uploading={uploading === "pricing"}
-            onPick={() => pickSingle("pricing")}
-            onRemove={() => setPricingImage(null)}
-          />
+          {pricingImage ? (
+            <ImageRow
+              url={pricingImage}
+              uploading={uploading === "pricing"}
+              onPick={() => pickSingle("pricing")}
+              onRemove={() => setPricingImage(null)}
+            />
+          ) : null}
 
           <Button
             title={editing ? "변경 저장" : "요가원 추가"}
