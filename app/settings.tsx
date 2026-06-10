@@ -25,8 +25,8 @@ import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
 import { useRoleSwitch } from "../hooks/useRoleSwitch";
-import { userAPI } from "../lib/api/user";
 import { nearbyApi } from "../lib/api/nearby";
+import { userAPI } from "../lib/api/user";
 import { getCurrentCoords } from "../lib/location";
 import { RootStackParamList } from "../navigation/types";
 import { useAuthStore } from "../stores/authStore";
@@ -60,20 +60,35 @@ export default function SettingsScreen() {
   }, [user?.id, roles]);
 
   const toggleDiscoverable = async (on: boolean) => {
-    setDiscoverable(on);
-    try {
-      await nearbyApi.setDiscoverable(on);
-      if (on) {
-        const coords = await getCurrentCoords();
-        if (coords) {
-          await nearbyApi.updateLocation(coords.lat, coords.lng);
-        } else {
-          showSnackbar("위치 권한을 허용하면 더 잘 찾을 수 있어요.", "warning");
-        }
+    if (on) {
+      // 위치가 있어야 근처 선생님에게 보일 수 있음 — 권한/위치 먼저 확보
+      const coords = await getCurrentCoords();
+      if (!coords) {
+        // 거절/실패 → 켜지 않음 (토글 off 유지)
+        setDiscoverable(false);
+        await nearbyApi.setDiscoverable(false).catch(() => undefined);
+        showSnackbar(
+          "위치 권한을 허용해야 근처 선생님에게 보일 수 있어요.",
+          "warning",
+        );
+        return;
       }
-    } catch {
-      setDiscoverable(!on);
-      showSnackbar("변경하지 못했어요. 다시 시도해 주세요.", "error");
+      setDiscoverable(true);
+      try {
+        await nearbyApi.setDiscoverable(true);
+        await nearbyApi.updateLocation(coords.lat, coords.lng);
+      } catch {
+        setDiscoverable(false);
+        showSnackbar("변경하지 못했어요. 다시 시도해 주세요.", "error");
+      }
+    } else {
+      setDiscoverable(false);
+      try {
+        await nearbyApi.setDiscoverable(false);
+      } catch {
+        setDiscoverable(true);
+        showSnackbar("변경하지 못했어요. 다시 시도해 주세요.", "error");
+      }
     }
   };
 
@@ -467,7 +482,7 @@ export default function SettingsScreen() {
                     <Text style={styles.settingText}>
                       {roles.includes("teacher")
                         ? "수련생 역할도 추가하기"
-                        : "선생님 역할도 추가하기"}
+                        : "선생님 역할 추가하기"}
                     </Text>
                     <Text style={styles.settingDescription}>
                       한 사용자가 선생님 + 수련생 동시에 가능해요.
@@ -540,15 +555,21 @@ export default function SettingsScreen() {
 
                   <View style={styles.settingItem}>
                     <View style={styles.settingContent}>
-                      <Text style={styles.settingText}>근처 선생님에게 보이기</Text>
+                      <Text style={styles.settingText}>
+                        근처 선생님에게 보이기
+                      </Text>
                       <Text style={styles.settingDescription}>
-                        켜면 가까이 있는 선생님이 나를 찾아 바로 초대할 수 있어요.
+                        켜면 가까이 있는 선생님이 나를 찾아 바로 초대할 수
+                        있어요.
                       </Text>
                     </View>
                     <Switch
                       value={discoverable}
                       onValueChange={toggleDiscoverable}
-                      trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                      trackColor={{
+                        false: COLORS.border,
+                        true: COLORS.primary,
+                      }}
                       thumbColor={COLORS.white}
                     />
                   </View>
@@ -694,7 +715,10 @@ export default function SettingsScreen() {
           style={styles.tInfoBackdrop}
           onPress={() => setTeacherInfoOpen(false)}
         >
-          <Pressable style={styles.tInfoCard} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={styles.tInfoCard}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.tInfoIcon}>
               <Ionicons name="school" size={26} color={COLORS.primary} />
             </View>
@@ -705,9 +729,18 @@ export default function SettingsScreen() {
 
             <View style={styles.tInfoList}>
               {[
-                { icon: "calendar-outline", text: "클래스(수업)와 요일/시간 스케줄 만들기" },
-                { icon: "people-outline", text: "수련생 등록과 초대 코드 발급" },
-                { icon: "checkmark-done-outline", text: "출석 체크와 수련생별 출석 현황" },
+                {
+                  icon: "calendar-outline",
+                  text: "클래스(수업)와 요일/시간 스케줄 만들기",
+                },
+                {
+                  icon: "people-outline",
+                  text: "수련생 등록과 초대 코드 발급",
+                },
+                {
+                  icon: "checkmark-done-outline",
+                  text: "출석 체크와 수련생별 출석 현황",
+                },
                 { icon: "ticket-outline", text: "수업권(횟수권/기간권) 관리" },
                 { icon: "albums-outline", text: "복습 시퀀스 만들고 공유하기" },
               ].map((it) => (
@@ -723,7 +756,8 @@ export default function SettingsScreen() {
             </View>
 
             <Text style={styles.tInfoNote}>
-              요가원을 운영하신다면 설정의 "요가원 등록 신청"으로 원장이 될 수도 있어요.
+              요가원을 운영하신다면 설정의 "요가원 등록 신청"으로 원장이 될 수도
+              있어요.
             </Text>
 
             <View style={styles.tInfoActions}>
