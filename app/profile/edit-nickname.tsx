@@ -224,6 +224,7 @@ export default function EditNicknameScreen() {
                 onBlur={handleNicknameBlur}
                 placeholder="닉네임을 입력해주세요."
                 error={nicknameError}
+                autoFocus
                 // 닉네임 입력창은 placeholder/텍스트 간격을 기본값(0)에 가깝게 유지
                 inputStyle={{ letterSpacing: 0 }}
               />

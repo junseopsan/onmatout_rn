@@ -15,6 +15,7 @@ interface InputProps {
   style?: ViewStyle;
   inputStyle?: TextStyle;
   onBlur?: () => void;
+  autoFocus?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -30,6 +31,7 @@ export const Input: React.FC<InputProps> = ({
   style,
   inputStyle,
   onBlur,
+  autoFocus,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -87,6 +89,7 @@ export const Input: React.FC<InputProps> = ({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           editable={!disabled}
+          autoFocus={autoFocus}
           onFocus={() => setIsFocused(true)}
           onBlur={() => {
             setIsFocused(false);
