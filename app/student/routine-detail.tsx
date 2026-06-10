@@ -26,6 +26,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { studentRoutinesApi } from "../../lib/api/routines-student";
 import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import type { AsanaCategory } from "../../types/asana";
+import { RootStackParamList } from "../../navigation/types";
+import type { Routine, RoutineItem } from "../../types/teacher";
 
 const GRID_COLS = 3;
 const ARROW_W = 22;
@@ -33,8 +35,6 @@ const SCREEN_W = Dimensions.get("window").width;
 const CARD_SIZE = Math.floor(
   (SCREEN_W - SPACING.lg * 2 - ARROW_W * (GRID_COLS - 1)) / GRID_COLS,
 );
-import { RootStackParamList } from "../../navigation/types";
-import type { Routine, RoutineItem } from "../../types/teacher";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "StudentRoutineDetail">;

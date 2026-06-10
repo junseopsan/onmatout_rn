@@ -19,12 +19,12 @@ export type MatchCandidate = {
 };
 
 export type StudentTeacherDetail = StudentTeacherLink & {
-  attendance: Array<{
+  attendance: {
     id: string;
     attendance_date: string;
     status: string;
     deducted: boolean;
-  }>;
+  }[];
   allMemberships: Membership[];
 };
 

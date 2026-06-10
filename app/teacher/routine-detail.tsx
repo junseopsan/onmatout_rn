@@ -32,13 +32,6 @@ import { teacherApi } from "../../lib/api/teacher";
 import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { RootStackParamList } from "../../navigation/types";
 import type { AsanaCategory } from "../../types/asana";
-
-const GRID_COLS = 3;
-const ARROW_W = 22;
-const SCREEN_W = Dimensions.get("window").width;
-const CARD_SIZE = Math.floor(
-  (SCREEN_W - SPACING.lg * 2 - ARROW_W * (GRID_COLS - 1)) / GRID_COLS,
-);
 import type {
   Class,
   Routine,
@@ -46,6 +39,13 @@ import type {
   RoutineShare,
   StudentProfile,
 } from "../../types/teacher";
+
+const GRID_COLS = 3;
+const ARROW_W = 22;
+const SCREEN_W = Dimensions.get("window").width;
+const CARD_SIZE = Math.floor(
+  (SCREEN_W - SPACING.lg * 2 - ARROW_W * (GRID_COLS - 1)) / GRID_COLS,
+);
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "TeacherRoutineDetail">;

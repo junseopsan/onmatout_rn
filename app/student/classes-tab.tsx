@@ -212,7 +212,7 @@ export default function StudentClassesTabScreen() {
   // 선택된 날짜의 슬롯별 stats 불러오기 — 의존성 비워서 무한루프 방지
   // (이미 캐시된 키는 setState 콜백 안에서 skip)
   const loadStatsForSlots = useCallback(async (slots: DaySlot[]) => {
-    const fetched: Array<[string, DayStats]> = [];
+    const fetched: [string, DayStats][] = [];
     for (const slot of slots) {
       try {
         const s = await studentBookingApi.getClassDayStats(

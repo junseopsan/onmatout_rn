@@ -18,11 +18,11 @@ interface DialogState {
   title?: string;
   message?: string;
   type?: "info" | "success" | "warning" | "error";
-  buttons?: Array<{
+  buttons?: {
     text: string;
     onPress: () => void;
     style?: "default" | "cancel" | "destructive";
-  }>;
+  }[];
 }
 
 interface NotificationContextType {
@@ -36,11 +36,11 @@ interface NotificationContextType {
     title: string,
     message: string,
     type?: "info" | "success" | "warning" | "error",
-    buttons?: Array<{
+    buttons?: {
       text: string;
       onPress: () => void;
       style?: "default" | "cancel" | "destructive";
-    }>
+    }[]
   ) => void;
   hideSnackbar: () => void;
   hideDialog: () => void;
@@ -101,11 +101,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     title: string,
     message: string,
     type: "info" | "success" | "warning" | "error" = "info",
-    buttons: Array<{
+    buttons: {
       text: string;
       onPress: () => void;
       style?: "default" | "cancel" | "destructive";
-    }> = []
+    }[] = []
   ) => {
     setDialog({
       visible: true,

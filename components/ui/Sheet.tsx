@@ -67,7 +67,7 @@ export function Sheet({
         (finished) => {
           if (finished) {
             // unmount after exit animation
-            // eslint-disable-next-line react-hooks/rules-of-hooks
+             
             // (Reanimated worklet → runOnJS not needed because state is React)
           }
         },
