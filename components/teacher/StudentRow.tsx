@@ -104,11 +104,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   teacherBadge: {
-    backgroundColor: "rgba(139, 92, 246, 0.16)",
+    backgroundColor: "rgba(96, 165, 250, 0.18)",
     borderRadius: 999,
     paddingHorizontal: 7,
     paddingVertical: 2,
     marginLeft: 2,
   },
-  teacherBadgeText: { color: COLORS.primary, fontSize: 10, fontWeight: "800" },
+  teacherBadgeText: { color: COLORS.info, fontSize: 10, fontWeight: "800" },
 });

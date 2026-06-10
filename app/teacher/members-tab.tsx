@@ -145,6 +145,7 @@ export default function TeacherMembersTabScreen() {
             <Chip
               label={`선생님 ${teacherCount}`}
               size="sm"
+              color={COLORS.info}
               active={roleFilter === "teacher"}
               onPress={() => setRoleFilter("teacher")}
             />
