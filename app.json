@@ -20,7 +20,7 @@
           "NSAllowsArbitraryLoads": true
         },
         "NSUserNotificationUsageDescription": "요가 수련 리마인더와 중요 알림을 받기 위해 알림 권한이 필요합니다.",
-        "NSLocationWhenInUseUsageDescription": "주변 요가원을 찾기 위해 위치 정보가 필요합니다.",
+        "NSLocationWhenInUseUsageDescription": "근처 수련생을 찾아 초대하거나, 가까운 선생님에게 나를 보이기 위해 위치 정보를 사용합니다.",
         "UIBackgroundModes": ["remote-notification"]
       },
       "config": {
