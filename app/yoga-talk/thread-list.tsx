@@ -97,7 +97,10 @@ export default function YogaTalkThreadListScreen() {
       <PageHeader trailingSlot={<NewMessageBtn onPress={() => setNewOpen(true)} />} />
 
       <FlatList
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          threads.length === 0 && styles.listEmpty,
+        ]}
         data={threads}
         keyExtractor={(t) => t.id}
         ItemSeparatorComponent={() => <View style={styles.divider} />}
@@ -406,6 +409,7 @@ function NewMessageSheet({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   list: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl },
+  listEmpty: { flexGrow: 1, paddingTop: 0, paddingBottom: 0 },
   divider: { height: 1 },
   omFab: {
     position: "absolute",
