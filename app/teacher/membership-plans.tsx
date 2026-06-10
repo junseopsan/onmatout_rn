@@ -323,7 +323,7 @@ function PlanFormSheet({
 
       <Text style={styles.fieldLabel}>수업 시간</Text>
       <View style={styles.chipRow}>
-        {[60, 90, 120].map((m) => (
+        {[50, 90, 120].map((m) => (
           <Chip
             key={m}
             label={`${m}분`}
@@ -334,6 +334,12 @@ function PlanFormSheet({
           />
         ))}
       </View>
+      <PillInput
+        value={duration}
+        onChangeText={(t) => setDuration(t.replace(/[^\d]/g, ""))}
+        placeholder="직접 입력 (분)"
+        keyboardType="number-pad"
+      />
 
       {type === "count" ? (
         <PillInput
