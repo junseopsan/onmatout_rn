@@ -277,12 +277,6 @@ export default function TeacherStudioFormScreen() {
       <DetailHeader
         onBack={() => navigation.goBack()}
         title={editing ? "요가원 정보" : "새 요가원"}
-        trailing={{
-          kind: "text",
-          label: submitting ? "저장 중…" : "저장",
-          tone: "primary",
-          onPress: handleSubmit,
-        }}
       />
 
       <KeyboardAvoidingView
