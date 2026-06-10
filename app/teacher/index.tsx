@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useState } from "react";
@@ -80,7 +81,7 @@ export default function TeacherHomeScreen() {
           onPress={() => navigation.navigate("TeacherProfileEdit")}
           activeOpacity={0.7}
         >
-          <Text style={styles.eyebrow}>선생님 모드, 프로필 편집 ›</Text>
+          <Text style={styles.eyebrow}>지도자 모드, 프로필 편집 ›</Text>
           <SerifTitle size="hero">오늘의 회원</SerifTitle>
         </TouchableOpacity>
         {hasMultipleRoles ? (
@@ -89,7 +90,18 @@ export default function TeacherHomeScreen() {
             onPress={() => switchTo("student")}
             activeOpacity={0.7}
           >
-            <Text style={styles.toggleBtnText}>회원 모드 ↔</Text>
+            <Ionicons
+              name="swap-horizontal"
+              size={13}
+              color={COLORS.primary}
+            />
+            <Text style={styles.toggleBtnCurrent}>지도자</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={10}
+              color={COLORS.textMuted}
+            />
+            <Text style={styles.toggleBtnTarget}>수련생</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -263,13 +275,27 @@ const styles = StyleSheet.create({
   eyebrow: { ...TEXT.eyebrow, color: COLORS.textSecondary, marginBottom: 6 },
   title: { color: COLORS.text, fontSize: 24, fontWeight: "700" },
   toggleBtn: {
-    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
   },
   toggleBtnText: { color: COLORS.text, fontSize: 13 },
+  toggleBtnCurrent: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  toggleBtnTarget: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+  },
   scrollContent: { padding: 16, paddingBottom: 64 },
   statsRow: {
     flexDirection: "row",

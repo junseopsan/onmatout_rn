@@ -186,11 +186,19 @@ export default function ProfileScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             >
               <Ionicons
-                name={otherRole === "teacher" ? "school" : "person"}
-                size={12}
+                name="swap-horizontal"
+                size={13}
                 color={COLORS.primary}
               />
               <Text style={styles.roleChipText}>
+                {activeRole === "teacher" ? "지도자" : "수련생"}
+              </Text>
+              <Ionicons
+                name="arrow-forward"
+                size={10}
+                color={COLORS.textMuted}
+              />
+              <Text style={styles.roleChipTarget}>
                 {otherRole === "teacher" ? "지도자" : "수련생"}
               </Text>
             </TouchableOpacity>
@@ -379,6 +387,12 @@ const styles = StyleSheet.create({
   roleChipText: {
     ...TEXT.micro,
     color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  roleChipTarget: {
+    ...TEXT.micro,
+    color: COLORS.textMuted,
     fontSize: 11,
     fontWeight: "700",
   },
