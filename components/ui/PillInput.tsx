@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: Platform.OS === "ios" ? 12 : 8,
     borderWidth: 1.5,
-    borderColor: "transparent",
+    borderColor: COLORS.border,
   },
   boxMulti: {
     backgroundColor: COLORS.surface,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     minHeight: 90,
     borderWidth: 1.5,
-    borderColor: "transparent",
+    borderColor: COLORS.border,
   },
   boxFocused: { borderColor: COLORS.primary },
   boxError: { borderColor: COLORS.error },

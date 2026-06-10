@@ -245,7 +245,7 @@ function PlanFormSheet({
       setName("");
       setType("count");
       setDuration("");
-      setCount("");
+      setCount("10");
       setWeekly("");
       setValidDays("");
       setPrice("");
@@ -334,21 +334,44 @@ function PlanFormSheet({
           />
         ))}
       </View>
-      <PillInput
-        value={duration}
-        onChangeText={(t) => setDuration(t.replace(/[^\d]/g, ""))}
-        placeholder="직접 입력 (분)"
-        keyboardType="number-pad"
-      />
-
-      {type === "count" ? (
+      <View style={styles.narrowInput}>
         <PillInput
-          label="총 횟수"
-          value={count}
-          onChangeText={(t) => setCount(t.replace(/[^\d]/g, ""))}
-          placeholder="예) 10"
+          value={duration}
+          onChangeText={(t) => setDuration(t.replace(/[^\d]/g, ""))}
+          placeholder="수업 시간 (분)"
           keyboardType="number-pad"
         />
+      </View>
+
+      {type === "count" ? (
+        <>
+          <Text style={styles.fieldLabel}>총 횟수</Text>
+          <View style={styles.stepperRow}>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() =>
+                setCount((c) =>
+                  String(Math.max(1, (parseInt(c, 10) || 0) - 1)),
+                )
+              }
+            >
+              <Ionicons name="remove" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+            <View style={styles.stepperValue}>
+              <Text style={styles.stepperValueText}>
+                {parseInt(count, 10) || 0}회
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() =>
+                setCount((c) => String((parseInt(c, 10) || 0) + 1))
+              }
+            >
+              <Ionicons name="add" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+        </>
       ) : type === "period_weekly" ? (
         <PillInput
           label="주당 횟수"
@@ -384,12 +407,14 @@ function PlanFormSheet({
           />
         ))}
       </View>
-      <PillInput
-        value={validDays}
-        onChangeText={(t) => setValidDays(t.replace(/[^\d]/g, ""))}
-        placeholder="직접 입력 (일)"
-        keyboardType="number-pad"
-      />
+      <View style={styles.narrowInput}>
+        <PillInput
+          value={validDays}
+          onChangeText={(t) => setValidDays(t.replace(/[^\d]/g, ""))}
+          placeholder="사용기한 (일)"
+          keyboardType="number-pad"
+        />
+      </View>
 
       <PillInput
         label="가격"
@@ -487,6 +512,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: SPACING.sm },
+  narrowInput: { width: 180 },
+  stepperRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
+  stepperBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperValue: {
+    flex: 1,
+    height: 48,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperValueText: { color: COLORS.text, fontSize: 16, fontWeight: "700" },
   infoBox: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
