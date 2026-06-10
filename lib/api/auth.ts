@@ -7,6 +7,26 @@ import {
 import { supabase } from "../supabase";
 import { logger } from "../utils/logger";
 
+// 개발용 테스트 계정 (OTP 우회, 인증코드 000000, 비번 Test1234!)
+// - 01000000000: 관리자 (teacher+student, 데이터 풀세트)
+// - 01011111111: 신규 온보딩 테스트 (역할/프로필 없음 → 역할선택부터 시작)
+const TEST_ACCOUNTS: Record<string, string> = {
+  "01000000000": "+821000000000",
+  "01011111111": "+821011111111",
+};
+
+function resolveTestAccount(
+  rawPhone: string,
+): { local: string; e164: string } | null {
+  const digits = (rawPhone || "").replace(/[^\d]/g, "");
+  let local: string;
+  if (digits.startsWith("8210")) local = "0" + digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("010")) local = digits;
+  else local = rawPhone;
+  const e164 = TEST_ACCOUNTS[local];
+  return e164 ? { local, e164 } : null;
+}
+
 // 이메일/전화번호 정규화 유틸 함수
 const normalizeEmail = (email: string) =>
   email.normalize("NFKC").trim().toLowerCase();
@@ -118,21 +138,13 @@ export const authAPI = {
     try {
       logger.log("OTP 인증번호 발송 시작:", credentials.phone);
 
-      // 전화번호 형식 정규화 (테스트 계정용)
-      let normalizedPhone = credentials.phone;
-      if (credentials.phone === "+821000000000") {
-        normalizedPhone = "01000000000";
-        logger.log(
-          "전화번호 형식 정규화:",
-          credentials.phone,
-          "->",
-          normalizedPhone
-        );
-      }
-
       // 테스트 계정 — OTP 발송 안 함. verifyOTP 단계에서 phone+password 로 진짜 세션 생성.
-      if (normalizedPhone === "01000000000") {
-        logger.log("테스트 계정 — OTP 발송 우회 (verifyOTP 에서 password 로그인)");
+      const testAcct = resolveTestAccount(credentials.phone);
+      if (testAcct) {
+        logger.log(
+          "테스트 계정 — OTP 발송 우회 (verifyOTP 에서 password 로그인):",
+          testAcct.local,
+        );
         return {
           success: true,
           message: "테스트 계정용 인증번호가 발송되었습니다.",
@@ -246,29 +258,21 @@ export const authAPI = {
       if (credentials.phone) {
         logger.log("전화번호 OTP 검증 시작");
 
-        // 전화번호 형식 정규화 (테스트 계정용)
-        let normalizedPhone = credentials.phone;
-        if (credentials.phone === "+821000000000") {
-          normalizedPhone = "01000000000";
-          logger.log(
-            "전화번호 형식 정규화:",
-            credentials.phone,
-            "->",
-            normalizedPhone
-          );
-        }
-
         // 테스트 계정 — phone+password 로그인으로 진짜 JWT 세션 생성.
-        // dev: 관리자 user 에 미리 설정한 password 사용 → 정상 작동
-        // main: password 가 설정 안 된 환경 → signInWithPassword 실패 후 user_profiles fallback
-        if (
-          normalizedPhone === "01000000000" &&
-          credentials.code === "000000"
-        ) {
-          logger.log("테스트 계정 인증번호 검증 - signInWithPassword 시도");
+        // dev: 미리 설정한 password(Test1234!) 로 정상 작동
+        const testAcct = resolveTestAccount(credentials.phone);
+        if (testAcct) {
+          if (credentials.code !== "000000") {
+            logger.log("테스트 계정 인증번호 불일치");
+            return {
+              success: false,
+              message: "테스트 계정의 인증번호는 000000입니다.",
+            };
+          }
+          logger.log("테스트 계정 검증 - signInWithPassword 시도:", testAcct.local);
           try {
             const { data, error } = await supabase.auth.signInWithPassword({
-              phone: "+821000000000",
+              phone: testAcct.e164,
               password: "Test1234!",
             });
             if (!error && data?.session && data?.user) {
@@ -299,22 +303,19 @@ export const authAPI = {
           }
 
           // Fallback: user_profiles 에서 phone 으로 조회 (password 미설정 환경)
+          const phoneDigits = testAcct.e164.replace("+", "");
           const { data: existingProfiles, error: profileError } = await supabase
             .from("user_profiles")
             .select("*")
-            .eq("phone", "821000000000")
+            .eq("phone", phoneDigits)
             .limit(1);
 
           if (profileError) {
             logger.log("기존 사용자 조회 실패:", profileError);
-            return {
-              success: false,
-              message: "사용자 조회에 실패했습니다.",
-            };
+            return { success: false, message: "사용자 조회에 실패했습니다." };
           }
 
           if (existingProfiles && existingProfiles.length > 0) {
-            logger.log("기존 사용자 발견 (fallback):", existingProfiles[0]);
             return {
               success: true,
               message: "테스트 계정 로그인 성공",
@@ -324,18 +325,10 @@ export const authAPI = {
                 profile: existingProfiles[0],
               },
             };
-          } else {
-            return {
-              success: false,
-              message:
-                "테스트 계정이 생성되지 않았습니다. 관리자에게 문의하세요.",
-            };
           }
-        } else if (credentials.phone === "01000000000") {
-          logger.log("테스트 계정 인증번호 불일치");
           return {
             success: false,
-            message: "테스트 계정의 인증번호는 000000입니다.",
+            message: "테스트 계정이 생성되지 않았습니다. 관리자에게 문의하세요.",
           };
         }
 
