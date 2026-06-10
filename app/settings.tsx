@@ -9,7 +9,9 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   Linking,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -44,6 +46,17 @@ export default function SettingsScreen() {
     useState<string>("unknown");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [teacherInfoOpen, setTeacherInfoOpen] = useState(false);
+
+  const startTeacherRole = async () => {
+    setTeacherInfoOpen(false);
+    const ok = await addRole("teacher");
+    if (ok) {
+      showSnackbar("선생님 역할이 추가됐어요", "success");
+    } else {
+      showSnackbar("추가하지 못했어요. 다시 시도해 주세요.", "error");
+    }
+  };
 
   // 알림 권한 상태 확인
   useEffect(() => {
@@ -410,17 +423,14 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   style={styles.settingItem}
                   onPress={async () => {
-                    const missing = roles.includes("teacher")
-                      ? "student"
-                      : "teacher";
-                    const ok = await addRole(missing);
+                    if (!roles.includes("teacher")) {
+                      // 선생님 역할 추가 전 안내 모달
+                      setTeacherInfoOpen(true);
+                      return;
+                    }
+                    const ok = await addRole("student");
                     if (ok) {
-                      showSnackbar(
-                        missing === "teacher"
-                          ? "선생님 역할이 추가됐어요"
-                          : "수련생 역할이 추가됐어요",
-                        "success",
-                      );
+                      showSnackbar("수련생 역할이 추가됐어요", "success");
                     }
                   }}
                 >
@@ -626,6 +636,67 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* 선생님 역할 안내 모달 */}
+      <Modal
+        visible={teacherInfoOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setTeacherInfoOpen(false)}
+      >
+        <Pressable
+          style={styles.tInfoBackdrop}
+          onPress={() => setTeacherInfoOpen(false)}
+        >
+          <Pressable style={styles.tInfoCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.tInfoIcon}>
+              <Ionicons name="school" size={26} color={COLORS.primary} />
+            </View>
+            <Text style={styles.tInfoTitle}>선생님이 되면</Text>
+            <Text style={styles.tInfoSub}>
+              수련생을 수업 밖에서도 케어할 수 있어요.
+            </Text>
+
+            <View style={styles.tInfoList}>
+              {[
+                { icon: "calendar-outline", text: "클래스(수업)와 요일/시간 스케줄 만들기" },
+                { icon: "people-outline", text: "수련생 등록과 초대 코드 발급" },
+                { icon: "checkmark-done-outline", text: "출석 체크와 수련생별 출석 현황" },
+                { icon: "ticket-outline", text: "수업권(횟수권/기간권) 관리" },
+                { icon: "albums-outline", text: "복습 시퀀스 만들고 공유하기" },
+              ].map((it) => (
+                <View key={it.text} style={styles.tInfoRow}>
+                  <Ionicons
+                    name={it.icon as any}
+                    size={17}
+                    color={COLORS.primary}
+                  />
+                  <Text style={styles.tInfoRowText}>{it.text}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Text style={styles.tInfoNote}>
+              요가원을 운영하신다면 설정의 "요가원 등록 신청"으로 원장이 될 수도 있어요.
+            </Text>
+
+            <View style={styles.tInfoActions}>
+              <TouchableOpacity
+                style={[styles.tInfoBtn, styles.tInfoBtnCancel]}
+                onPress={() => setTeacherInfoOpen(false)}
+              >
+                <Text style={styles.tInfoBtnCancelText}>나중에</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tInfoBtn, styles.tInfoBtnGo]}
+                onPress={startTeacherRole}
+              >
+                <Text style={styles.tInfoBtnGoText}>선생님 시작하기</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -704,6 +775,96 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: COLORS.textSecondary,
     fontWeight: "300",
+  },
+  tInfoBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  tInfoCard: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 22,
+    alignItems: "center",
+  },
+  tInfoIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(139, 92, 246, 0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  tInfoTitle: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  tInfoSub: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  tInfoList: {
+    alignSelf: "stretch",
+    gap: 12,
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  tInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  tInfoRowText: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  tInfoNote: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  tInfoActions: {
+    flexDirection: "row",
+    gap: 8,
+    alignSelf: "stretch",
+  },
+  tInfoBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  tInfoBtnCancel: {
+    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  tInfoBtnCancelText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  tInfoBtnGo: {
+    backgroundColor: COLORS.primary,
+  },
+  tInfoBtnGoText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: "800",
   },
   dangerItem: {
     borderWidth: 1,
