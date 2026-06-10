@@ -382,13 +382,14 @@ export default function TeacherStudioFormScreen() {
                 </View>
 
                 {dh.closed ? (
-                  <TouchableOpacity
-                    style={styles.closedChip}
-                    onPress={() => updateDay(d.key, { closed: false })}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.closedChipText}>휴무</Text>
-                  </TouchableOpacity>
+                  <View style={styles.closedChip}>
+                    <Ionicons
+                      name="moon-outline"
+                      size={14}
+                      color={COLORS.textMuted}
+                    />
+                    <Text style={styles.closedChipText}>휴무일</Text>
+                  </View>
                 ) : (
                   <View style={styles.timeChips}>
                     <TimeChip
@@ -404,13 +405,19 @@ export default function TeacherStudioFormScreen() {
                 )}
 
                 <TouchableOpacity
-                  style={styles.dayToggle}
-                  onPress={() =>
-                    updateDay(d.key, { closed: !dh.closed })
-                  }
-                  hitSlop={8}
+                  style={[
+                    styles.dayToggle,
+                    dh.closed && styles.dayToggleOn,
+                  ]}
+                  onPress={() => updateDay(d.key, { closed: !dh.closed })}
+                  activeOpacity={0.85}
                 >
-                  <Text style={styles.dayToggleText}>
+                  <Text
+                    style={[
+                      styles.dayToggleText,
+                      dh.closed && styles.dayToggleTextOn,
+                    ]}
+                  >
                     {dh.closed ? "운영" : "휴무"}
                   </Text>
                 </TouchableOpacity>
@@ -700,20 +707,35 @@ const styles = StyleSheet.create({
   timeChipText: { color: COLORS.text, fontSize: 14, fontWeight: "700" },
   closedChip: {
     flex: 1,
-    height: 44,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.surfaceDark,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: COLORS.borderDark,
+    borderStyle: "dashed",
   },
-  closedChipText: { color: COLORS.textMuted, fontSize: 14, fontWeight: "700" },
+  closedChipText: { color: COLORS.textMuted, fontSize: 13, fontWeight: "700" },
   dayToggle: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    minWidth: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  dayToggleOn: {
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderColor: COLORS.primary,
   },
   dayToggleText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "700" },
+  dayToggleTextOn: { color: COLORS.primary },
   timeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
