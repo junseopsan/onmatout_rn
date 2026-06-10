@@ -20,6 +20,17 @@ import type {
 import type { TablesUpdate } from "../../types/database.types";
 
 export type TeacherProfileUpdate = TablesUpdate<"teacher_profiles">;
+
+export type AttendanceWithClass = Attendance & {
+  classes: {
+    title: string;
+    class_schedules: {
+      day_of_week: number;
+      start_time: string;
+      end_time: string;
+    }[];
+  } | null;
+};
 export type TeacherProfile = {
   user_id: string;
   studio_name: string | null;
@@ -92,12 +103,14 @@ export const teacherApi = {
   async listStudentAttendance(studentProfileId: string, limit = 20) {
     const { data, error } = await supabase
       .from("attendance")
-      .select("*")
+      .select(
+        "*, classes:class_id(title, class_schedules(day_of_week, start_time, end_time))",
+      )
       .eq("student_id", studentProfileId)
       .order("attendance_date", { ascending: false })
       .limit(limit);
     if (error) throw error;
-    return (data ?? []) as Attendance[];
+    return (data ?? []) as AttendanceWithClass[];
   },
 
   async getClass(classId: string) {
@@ -261,6 +274,8 @@ export const teacherApi = {
       teacher_studio_name: string | null;
       like_count: number;
       liked_by_me: boolean;
+      is_draft: boolean;
+      visibility: string;
     })[];
   },
 
@@ -323,12 +338,12 @@ export const teacherApi = {
   },
 
   async createRoutine(
-    input: RoutineInsert,
+    input: RoutineInsert & { is_draft?: boolean },
     items: { asana_id: string; duration_seconds?: number | null; memo?: string | null }[],
   ) {
     const { data: created, error } = await supabase
       .from("routines")
-      .insert(input)
+      .insert(input as any)
       .select()
       .single();
     if (error) throw error;
@@ -376,11 +391,12 @@ export const teacherApi = {
       title?: string;
       description?: string | null;
       visibility?: "private" | "public";
+      is_draft?: boolean;
     },
   ) {
     const { error } = await supabase
       .from("routines")
-      .update({ ...patch, updated_at: new Date().toISOString() })
+      .update({ ...patch, updated_at: new Date().toISOString() } as any)
       .eq("id", routineId);
     if (error) throw error;
   },
@@ -417,6 +433,17 @@ export const teacherApi = {
     });
     if (error) throw error;
     return data as string;
+  },
+
+  async deleteRoutine(routineId: string) {
+    // 의존 행 정리 후 본체 삭제 (FK cascade 미설정 대비)
+    await supabase.from("routine_shares").delete().eq("routine_id", routineId);
+    await supabase.from("routine_items").delete().eq("routine_id", routineId);
+    const { error } = await supabase
+      .from("routines")
+      .delete()
+      .eq("id", routineId);
+    if (error) throw error;
   },
 
   async getMyTeacherProfile(userId: string) {

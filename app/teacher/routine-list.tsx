@@ -40,9 +40,10 @@ type RoutineWithCount = Routine & {
   teacher_studio_name: string | null;
   like_count: number;
   liked_by_me: boolean;
+  is_draft: boolean;
 };
 
-type Tab = "ready" | "drafts";
+type Tab = "public" | "private" | "drafts";
 
 export default function TeacherRoutineListScreen() {
   const navigation = useNavigation<Nav>();
@@ -50,7 +51,7 @@ export default function TeacherRoutineListScreen() {
   const [routines, setRoutines] = useState<RoutineWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<Tab>("ready");
+  const [tab, setTab] = useState<Tab>("public");
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -76,44 +77,85 @@ export default function TeacherRoutineListScreen() {
     }, [load]),
   );
 
-  const ready = routines.filter((r) => (r.routine_items?.[0]?.count ?? 0) > 0);
-  const drafts = routines.filter((r) => (r.routine_items?.[0]?.count ?? 0) === 0);
-  const data = tab === "ready" ? ready : drafts;
+  const published = routines.filter((r) => !r.is_draft);
+  const publicR = published.filter((r) => r.visibility === "public");
+  const privateR = published.filter((r) => r.visibility !== "public");
+  const drafts = routines.filter((r) => r.is_draft);
+  const data =
+    tab === "public" ? publicR : tab === "private" ? privateR : drafts;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <PageHeader />
 
-      <View style={styles.tabsRow}>
-        <SegmentTab
-          label={`공유 가능${ready.length ? ` ${ready.length}` : ""}`}
-          icon="checkmark-circle"
-          active={tab === "ready"}
+      {tab !== "drafts" ? (
+        <View style={styles.tabsRow}>
+          <SegmentTab
+            label={`공개${publicR.length ? ` ${publicR.length}` : ""}`}
+            icon="earth"
+            active={tab === "public"}
+            onPress={() => {
+              haptics.select();
+              setTab("public");
+            }}
+          />
+          <SegmentTab
+            label={`비공개${privateR.length ? ` ${privateR.length}` : ""}`}
+            icon="lock-closed"
+            active={tab === "private"}
+            onPress={() => {
+              haptics.select();
+              setTab("private");
+            }}
+          />
+          {drafts.length > 0 ? (
+            <TouchableOpacity
+              style={styles.draftAccess}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => {
+                haptics.select();
+                setTab("drafts");
+              }}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={16}
+                color={COLORS.textSecondary}
+              />
+              <Text style={styles.draftAccessText}>임시저장</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.draftHeader}
+          activeOpacity={0.7}
           onPress={() => {
             haptics.select();
-            setTab("ready");
+            setTab("public");
           }}
-        />
-        <SegmentTab
-          label={`임시저장${drafts.length ? ` ${drafts.length}` : ""}`}
-          icon="document-text"
-          active={tab === "drafts"}
-          onPress={() => {
-            haptics.select();
-            setTab("drafts");
-          }}
-        />
-      </View>
+        >
+          <Ionicons name="chevron-back" size={20} color={COLORS.text} />
+          <Text style={styles.draftHeaderText}>임시저장 {drafts.length}</Text>
+        </TouchableOpacity>
+      )}
 
       {loading ? (
         <ListSkeleton count={4} rowHeight={108} />
       ) : data.length === 0 ? (
-        tab === "ready" ? (
+        tab === "drafts" ? (
           <EmptyState
-            icon="📋"
-            title="공유 가능한 시퀀스가 없어요"
+            icon="✍️"
+            title="임시저장된 시퀀스가 없어요"
+            description="만들기 도중 임시저장하면 여기에 보관돼요."
+          />
+        ) : tab === "public" ? (
+          <EmptyState
+            icon="🌿"
+            title="공개한 시퀀스가 없어요"
             description={
-              "아사나를 순서대로 묶어 첫 시퀀스를 만들어 보세요.\n클래스 단위 또는 특정 회원에게 보낼 수 있어요."
+              "시퀀스를 발행하고 공개로 전환하면\n둘러보기에서 다른 사람도 볼 수 있어요."
             }
             action={{
               label: "+ 시퀀스 만들기",
@@ -122,9 +164,15 @@ export default function TeacherRoutineListScreen() {
           />
         ) : (
           <EmptyState
-            icon="✍️"
-            title="임시저장된 시퀀스가 없어요"
-            description="만들기 도중 임시저장하면 여기에 모입니다."
+            icon="📋"
+            title="비공개 시퀀스가 없어요"
+            description={
+              "아사나를 순서대로 묶어 첫 시퀀스를 발행해 보세요.\n클래스 단위 또는 특정 회원에게 공유할 수 있어요."
+            }
+            action={{
+              label: "+ 시퀀스 만들기",
+              onPress: () => navigation.navigate("TeacherRoutineCreate"),
+            }}
           />
         )
       ) : (
@@ -146,7 +194,13 @@ export default function TeacherRoutineListScreen() {
               currentUserId={user?.id}
               delay={idx * 40}
               onPress={() =>
-                navigation.navigate("TeacherRoutineDetail", { routineId: r.id })
+                tab === "drafts"
+                  ? navigation.navigate("TeacherRoutineCreate", {
+                      routineId: r.id,
+                    })
+                  : navigation.navigate("TeacherRoutineDetail", {
+                      routineId: r.id,
+                    })
               }
             />
           ))}
@@ -181,7 +235,7 @@ function SegmentTab({
     >
       <Ionicons
         name={icon}
-        size={16}
+        size={13}
         color={active ? COLORS.white : COLORS.textSecondary}
       />
       <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
@@ -342,16 +396,43 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
   },
+  draftAccess: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginLeft: "auto",
+    paddingVertical: 6,
+    paddingLeft: 8,
+  },
+  draftAccessText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  draftHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  draftHeaderText: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: "800",
+  },
   segmentTab: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
@@ -364,7 +445,7 @@ const styles = StyleSheet.create({
   segmentText: {
     ...TEXT.captionMed,
     color: COLORS.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
   },
   segmentTextActive: { color: COLORS.white, fontWeight: "700" as const },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },

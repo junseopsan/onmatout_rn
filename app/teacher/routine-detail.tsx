@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -14,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { IconBadge } from "../../components/ui/IconBadge";
@@ -67,6 +69,7 @@ export default function TeacherRoutineDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { routineId } = route.params;
 
   const [routine, setRoutine] = useState<Routine | null>(null);
@@ -75,6 +78,7 @@ export default function TeacherRoutineDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const load = useCallback(async () => {
     const [{ routine: r, items: it }, sh] = await Promise.all([
@@ -112,6 +116,29 @@ export default function TeacherRoutineDetailScreen() {
     }
   };
 
+  const confirmDelete = () => {
+    if (!routine) return;
+    Alert.alert(
+      "시퀀스 삭제",
+      `"${routine.title}" 시퀀스를 삭제할까요? 공유 내역과 아사나 구성이 모두 사라지며 되돌릴 수 없어요.`,
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await teacherApi.deleteRoutine(routine.id);
+              navigation.goBack();
+            } catch (e: any) {
+              Alert.alert("삭제 실패", e?.message ?? "다시 시도해 주세요.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const cloneToMyRoutines = async () => {
     if (!routine) return;
     try {
@@ -147,19 +174,18 @@ export default function TeacherRoutineDetailScreen() {
         trailing={
           isOwner
             ? {
-                kind: "text",
-                label: "수정",
-                tone: "primary",
-                onPress: () =>
-                  navigation.navigate("TeacherRoutineCreate", {
-                    routineId: routine.id,
-                  }),
+                kind: "icon",
+                icon: "ellipsis-horizontal",
+                onPress: () => setMenuOpen(true),
               }
             : { kind: "icon", icon: "copy-outline", onPress: cloneToMyRoutines }
         }
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, styles.contentGrow]}
+        showsVerticalScrollIndicator={false}
+      >
         {routine.description ? (
           <SurfaceCard style={styles.card}>
             <Text style={styles.description}>{routine.description}</Text>
@@ -324,22 +350,18 @@ export default function TeacherRoutineDetailScreen() {
           )}
         </View>
 
+        {isOwner ? <View style={styles.flexSpacer} /> : null}
+
         {isOwner ? (
           <View style={styles.shareMini}>
-            <View style={styles.shareMiniHeaderRow}>
-              <Text style={styles.shareMiniHeader}>
-                공유 내역 {shares.length}
+            <Text style={styles.shareMiniHeader}>
+              공유 내역 {shares.length}
+            </Text>
+            {shares.length === 0 ? (
+              <Text style={styles.shareEmpty}>
+                아직 공유한 곳이 없어요. 아래 공유하기로 클래스나 회원에게 보내보세요.
               </Text>
-              <TouchableOpacity
-                onPress={() => setShareOpen(true)}
-                activeOpacity={0.7}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.shareMiniBtn}
-              >
-                <Ionicons name="add" size={14} color={COLORS.primary} />
-                <Text style={styles.shareMiniBtnText}>공유</Text>
-              </TouchableOpacity>
-            </View>
+            ) : null}
             {shares.map((s) => (
               <View key={s.id} style={styles.shareMiniRow}>
                 <IconBadge
@@ -362,6 +384,71 @@ export default function TeacherRoutineDetailScreen() {
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+
+      {isOwner ? (
+        <View
+          style={[
+            styles.bottomBar,
+            { paddingBottom: Math.max(insets.bottom, SPACING.md) },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={() => setShareOpen(true)}
+            activeOpacity={0.85}
+          >
+            <Ionicons
+              name="share-social-outline"
+              size={18}
+              color={COLORS.white}
+            />
+            <Text style={styles.shareBtnText}>공유하기</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {/* 더보기 메뉴 (수정 / 삭제) */}
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuOpen(false)}
+      >
+        <Pressable
+          style={styles.menuBackdrop}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View style={[styles.menuCard, { top: insets.top + 44 }]}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                setMenuOpen(false);
+                navigation.navigate("TeacherRoutineCreate", {
+                  routineId: routine.id,
+                });
+              }}
+            >
+              <Ionicons name="create-outline" size={18} color={COLORS.text} />
+              <Text style={styles.menuItemText}>수정</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={() => {
+                setMenuOpen(false);
+                setTimeout(confirmDelete, 250);
+              }}
+            >
+              <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+              <Text style={[styles.menuItemText, { color: COLORS.error }]}>
+                삭제
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
 
       <ShareSheet
         visible={shareOpen}
@@ -520,7 +607,9 @@ function ShareSheet({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl },
+  content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.lg },
+  contentGrow: { flexGrow: 1 },
+  flexSpacer: { flex: 1, minHeight: SPACING.lg },
   card: { marginBottom: SPACING.md },
   section: { marginTop: SPACING.lg },
   sectionTight: {
@@ -656,16 +745,74 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: COLORS.textSecondary,
+    marginBottom: 8,
   },
-  shareMiniBtn: {
+  shareEmpty: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  bottomBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    gap: 10,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
-  shareMiniBtnText: {
-    fontSize: 12,
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  menuCard: {
+    position: "absolute",
+    right: SPACING.lg,
+    minWidth: 150,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  menuItemText: {
+    color: COLORS.text,
+    fontSize: 15,
     fontWeight: "700",
-    color: COLORS.primary,
+  },
+  menuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 8,
+  },
+  shareBtn: {
+    flex: 1,
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+  },
+  shareBtnText: {
+    color: COLORS.white,
+    fontSize: 15,
+    fontWeight: "800",
   },
   shareMiniRow: {
     flexDirection: "row",

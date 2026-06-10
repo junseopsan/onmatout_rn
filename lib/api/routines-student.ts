@@ -52,6 +52,7 @@ export const studentRoutinesApi = {
       .select(
         "*, routine_items(count), routine_likes(user_id), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
       )
+      .eq("is_draft", false)
       .order("created_at", { ascending: false });
     if (userId) {
       query = query.or(`visibility.neq.public,teacher_id.eq.${userId}`);
@@ -68,6 +69,7 @@ export const studentRoutinesApi = {
         "*, routine_items(count), routine_likes(user_id), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
       )
       .eq("visibility", "public")
+      .eq("is_draft", false)
       .order("created_at", { ascending: false })
       .limit(50);
     if (excludeUserId) {

@@ -183,11 +183,15 @@ export default function TeacherRoutineCreateScreen() {
   const canSubmit = title.trim().length > 0 && items.length > 0 && !submitting;
   const canDraft = title.trim().length > 0 && !savingDraft && !submitting;
 
-  const persist = async () => {
+  // isDraft=true → 임시저장(목록 숨김), false → 발행(목록 노출)
+  const persist = async (isDraft: boolean) => {
     if (!user?.id) throw new Error("로그인이 필요해요");
     const itemRows = items.map((a) => ({ asana_id: a.id }));
     if (draftId) {
-      await teacherApi.updateRoutine(draftId, { title: title.trim() });
+      await teacherApi.updateRoutine(draftId, {
+        title: title.trim(),
+        is_draft: isDraft,
+      });
       await teacherApi.replaceRoutineItems(draftId, itemRows);
       return draftId;
     }
@@ -197,6 +201,7 @@ export default function TeacherRoutineCreateScreen() {
         title: title.trim(),
         description: null,
         visibility: "private",
+        is_draft: isDraft,
       },
       itemRows,
     );
@@ -208,8 +213,11 @@ export default function TeacherRoutineCreateScreen() {
     if (!canDraft) return;
     setSavingDraft(true);
     try {
-      await persist();
-      Alert.alert("임시저장 완료", "계속 편집할 수 있어요.");
+      await persist(true);
+      Alert.alert("임시저장 완료", "임시저장함에 보관했어요. 목록에는 보이지 않아요.", [
+        { text: "계속 편집", style: "cancel" },
+        { text: "닫기", onPress: () => navigation.goBack() },
+      ]);
     } catch (e: any) {
       Alert.alert("임시저장 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
     } finally {
@@ -221,10 +229,10 @@ export default function TeacherRoutineCreateScreen() {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      const id = await persist();
+      const id = await persist(false);
       navigation.replace("TeacherRoutineDetail", { routineId: id });
     } catch (e: any) {
-      Alert.alert("저장 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+      Alert.alert("발행 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
     } finally {
       setSubmitting(false);
     }
@@ -463,7 +471,7 @@ export default function TeacherRoutineCreateScreen() {
           style={{ flex: 1 }}
         />
         <Button
-          title={`저장${items.length > 0 ? ` (${items.length})` : ""}`}
+          title={`발행${items.length > 0 ? ` (${items.length})` : ""}`}
           variant="primary"
           size="large"
           onPress={handleSave}
