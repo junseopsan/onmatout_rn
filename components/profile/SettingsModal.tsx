@@ -54,7 +54,7 @@ export default function SettingsModal({
         const { status } = await Notifications.getPermissionsAsync();
         setNotificationPermissionStatus(status);
         console.log("설정: 알림 권한 상태:", status);
-      } catch (error) {
+      } catch {
         setNotificationPermissionStatus("unknown");
       }
     };
@@ -146,7 +146,7 @@ export default function SettingsModal({
         projectId: "your-project-id", // Expo 프로젝트 ID로 변경 필요
       });
       return token.data;
-    } catch (error) {
+    } catch {
       return null;
     }
   };
@@ -171,7 +171,7 @@ export default function SettingsModal({
       });
 
       console.log("수련 알림이 성공적으로 스케줄되었습니다.");
-    } catch (error) {}
+    } catch {}
   };
 
   // 알림 설정 업데이트
@@ -220,7 +220,7 @@ export default function SettingsModal({
           Alert.alert("알림 설정", "수련 알림이 해제되었습니다.");
         }
       }
-    } catch (error) {
+    } catch {
       Alert.alert("오류", "알림 설정 중 오류가 발생했습니다.");
     }
   };

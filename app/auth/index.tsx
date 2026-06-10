@@ -27,7 +27,7 @@ const EMAIL_DOMAINS = [
 ];
 
 export default function AuthScreen() {
-  const [isPhoneMode, setIsPhoneMode] = useState(true);
+  const [isPhoneMode] = useState(true);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
@@ -52,22 +52,6 @@ export default function AuthScreen() {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  const resetErrorsAndTimer = () => {
-    setEmailError("");
-    setPhoneError("");
-    setRateLimitSeconds(null);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    clearError();
-  };
-
-  const handleToggleLoginMode = () => {
-    setIsPhoneMode((prev) => !prev);
-    resetErrorsAndTimer();
-  };
 
   const handleEmailChange = (text: string) => {
     const value = text.trim();

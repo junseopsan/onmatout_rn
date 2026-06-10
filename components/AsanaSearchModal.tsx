@@ -43,8 +43,8 @@ export default function AsanaSearchModal({
   const [tempSelectedAsanas, setTempSelectedAsanas] = useState<Asana[]>([]);
   const [searching, setSearching] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [, setHasMore] = useState(false);
+  const [, setCurrentPage] = useState(1);
 
   // 모든 아사나를 한 번 로드해 로컬 검색(아사나 탭과 동일 정규화)으로 사용
   const loadAllAsanas = React.useCallback(async () => {

@@ -11,7 +11,6 @@ import {
   FlatList,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -54,7 +53,6 @@ export default function AsanasScreen() {
   const loadingMoreRef = useRef(false);
 
   // 스크롤 애니메이션을 위한 ref
-  const scrollY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
   const scrollDirection = useRef<"up" | "down">("up");
   const headerTranslateY = useRef(new Animated.Value(0)).current;

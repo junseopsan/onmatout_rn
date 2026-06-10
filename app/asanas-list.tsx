@@ -47,7 +47,7 @@ export default function AsanasScreen() {
       } else {
         setError(result.message || "아사나 데이터를 불러오는데 실패했습니다.");
       }
-    } catch (error) {
+    } catch {
       setError("아사나 데이터를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setLoadingAsanas(false);

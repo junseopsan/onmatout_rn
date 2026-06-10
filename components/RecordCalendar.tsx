@@ -99,8 +99,6 @@ export default function RecordCalendar({
 
   // 현재 날짜 정보
   const now = new Date();
-  const todayYear = now.getFullYear();
-  const todayMonth = now.getMonth();
   const currentDate = now.toISOString().split("T")[0];
 
   const days = getDaysInMonth(currentYear, currentMonth);

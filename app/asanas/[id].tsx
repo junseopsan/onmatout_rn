@@ -146,19 +146,6 @@ export default function AsanaDetailScreen() {
     [imageSources.length]
   );
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "1":
-        return "#4CAF50"; // 초급: 밝은 초록색
-      case "2":
-        return "#FF9800"; // 중급: 주황색
-      case "3":
-        return "#F44336"; // 고급: 빨간색
-      default:
-        return COLORS.textSecondary;
-    }
-  };
-
   const getLevelText = (level: string) => {
     switch (level) {
       case "1":

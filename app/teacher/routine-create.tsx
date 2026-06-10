@@ -238,8 +238,6 @@ export default function TeacherRoutineCreateScreen() {
     }
   };
 
-  const centerAsana = filtered[centerIndex] ?? null;
-
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       {/* Header */}

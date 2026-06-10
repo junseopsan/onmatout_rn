@@ -705,7 +705,7 @@ export default function SettingsScreen() {
             </View>
 
             <Text style={styles.tInfoNote}>
-              선생님이 되면 "내 요가원"에서 요가원 정보를 등록하고 클래스, 수업권을
+              선생님이 되면 &quot;내 요가원&quot;에서 요가원 정보를 등록하고 클래스, 수업권을
               관리할 수 있어요.
             </Text>
 

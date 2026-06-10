@@ -20,7 +20,7 @@ import { Chip } from "../../components/ui/Chip";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { PillInput } from "../../components/ui/PillInput";
 import { COLORS } from "../../constants/Colors";
-import { RADIUS, SPACING } from "../../constants/Design";
+import { SPACING } from "../../constants/Design";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { teacherApi } from "../../lib/api/teacher";

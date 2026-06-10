@@ -20,7 +20,7 @@ import { SectionLabel } from "../../components/ui/SectionLabel";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
-import { RADIUS, SPACING } from "../../constants/Design";
+import { SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { studentRoutinesApi } from "../../lib/api/routines-student";

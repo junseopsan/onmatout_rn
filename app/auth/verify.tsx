@@ -35,7 +35,6 @@ export default function VerifyScreen() {
     loading,
     error,
     clearError,
-    user,
     getUserProfile,
   } = useAuthStore();
 
@@ -180,7 +179,7 @@ export default function VerifyScreen() {
           showSnackbar(errorMessage, "error");
         }
       }
-    } catch (error) {
+    } catch {
       showSnackbar("인증 중 오류가 발생했습니다. 다시 시도해주세요.", "error");
     }
   };
@@ -194,14 +193,6 @@ export default function VerifyScreen() {
       }, 60);
     }
   }, [initialToastShown, toastMessage, toastType, showSnackbar]);
-
-  // 신규 회원 판단 함수 (24시간 이내 생성된 계정)
-  const isRecentlyCreated = (createdAt: string): boolean => {
-    const createdTime = new Date(createdAt).getTime();
-    const currentTime = new Date().getTime();
-    const hoursDiff = (currentTime - createdTime) / (1000 * 60 * 60);
-    return hoursDiff < 24;
-  };
 
   const handleResend = async () => {
     if (!canResend || (!email && !phone)) return;
@@ -222,7 +213,7 @@ export default function VerifyScreen() {
       } else {
         showSnackbar("인증 코드 재전송에 실패했습니다.", "error");
       }
-    } catch (error) {
+    } catch {
       showSnackbar("재전송 중 오류가 발생했습니다.", "error");
     }
   };

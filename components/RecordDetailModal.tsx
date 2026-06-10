@@ -166,61 +166,11 @@ export default function RecordDetailModal({
     setAsanaSearchVisible(false);
   };
 
-  // 아사나 선택/해제
-  const toggleAsana = (asanaId: string) => {
-    setEditData((prev) => {
-      if (prev.asanas.includes(asanaId)) {
-        return {
-          ...prev,
-          asanas: prev.asanas.filter((id) => id !== asanaId),
-        };
-      } else {
-        if (prev.asanas.length >= 20) {
-          Alert.alert("알림", "최대 20개의 아사나만 선택할 수 있습니다.");
-          return prev;
-        }
-        return {
-          ...prev,
-          asanas: [...prev.asanas, asanaId],
-        };
-      }
-    });
-  };
-
-  // 상태 선택/해제
-  const toggleState = (stateId: string) => {
-    setEditData((prev) => {
-      if (prev.states.includes(stateId)) {
-        return {
-          ...prev,
-          states: prev.states.filter((id) => id !== stateId),
-        };
-      } else {
-        if (prev.states.length >= 3) {
-          Alert.alert("알림", "최대 3개의 상태만 선택할 수 있습니다.");
-          return prev;
-        }
-        return {
-          ...prev,
-          states: [...prev.states, stateId],
-        };
-      }
-    });
-  };
-
   // 제목 수정
   const handleTitleChange = (text: string) => {
     setEditData((prev) => ({
       ...prev,
       title: text,
-    }));
-  };
-
-  // 메모 수정
-  const handleMemoChange = (text: string) => {
-    setEditData((prev) => ({
-      ...prev,
-      memo: text,
     }));
   };
 
@@ -244,7 +194,7 @@ export default function RecordDetailModal({
       } else {
         Alert.alert("오류", result.message || "수정 중 오류가 발생했습니다.");
       }
-    } catch (error) {
+    } catch {
       Alert.alert("오류", "수정 중 오류가 발생했습니다.");
     }
   };

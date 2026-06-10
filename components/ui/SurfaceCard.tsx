@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { COLORS } from "../../constants/Colors";
-import { RADIUS, SPACING } from "../../constants/Design";
+import { SPACING } from "../../constants/Design";
 import { haptics } from "../../lib/haptics";
 
 interface SurfaceCardProps {

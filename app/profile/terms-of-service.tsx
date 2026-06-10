@@ -12,19 +12,19 @@ export default function TermsOfServiceScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionTitle}>제1조 (목적)</Text>
         <Text style={styles.contentText}>
-          이 약관은 ONMATOUT(이하 '회사')이 제공하는 요가 수련 기록 서비스(이하
-          '서비스')의 이용과 관련하여 회사와 회원과의 권리, 의무 및 책임사항,
+          이 약관은 ONMATOUT(이하 &apos;회사&apos;)이 제공하는 요가 수련 기록 서비스(이하
+          &apos;서비스&apos;)의 이용과 관련하여 회사와 회원과의 권리, 의무 및 책임사항,
           기타 필요한 사항을 규정함을 목적으로 합니다.
         </Text>
 
         <Text style={styles.sectionTitle}>제2조 (정의)</Text>
         <Text style={styles.contentText}>
-          1. "서비스"라 함은 회사가 제공하는 요가 수련 기록 및 관리 서비스를
+          1. &quot;서비스&quot;라 함은 회사가 제공하는 요가 수련 기록 및 관리 서비스를
           의미합니다.{"\n"}
-          2. "회원"이라 함은 회사의 서비스에 접속하여 이 약관에 따라 회사와
+          2. &quot;회원&quot;이라 함은 회사의 서비스에 접속하여 이 약관에 따라 회사와
           이용계약을 체결하고 회사가 제공하는 서비스를 이용하는 고객을 말합니다.
           {"\n"}
-          3. "계정"이라 함은 회원의 식별과 회원의 서비스 이용을 위하여 사용되는
+          3. &quot;계정&quot;이라 함은 회원의 식별과 회원의 서비스 이용을 위하여 사용되는
           고유한 정보를 의미합니다.
         </Text>
 

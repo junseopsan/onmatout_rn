@@ -158,7 +158,7 @@ const REGIONS = {
 type RegionKey = keyof typeof REGIONS;
 
 export default function StudiosScreen() {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
@@ -391,12 +391,6 @@ export default function StudiosScreen() {
     setShowDistrictModal(false);
   };
 
-  // 필터 초기화
-  const handleFilterReset = () => {
-    setSelectedRegion(null);
-    setSelectedDistrict(null);
-  };
-
   // 지역 드롭다운 열기
   const openRegionModal = () => {
     setShowRegionModal(true);
@@ -418,7 +412,7 @@ export default function StudiosScreen() {
       } else {
         Alert.alert("오류", "카카오 지도를 열 수 없습니다.");
       }
-    } catch (error) {
+    } catch {
       Alert.alert("오류", "카카오 지도를 열 수 없습니다.");
     }
   };

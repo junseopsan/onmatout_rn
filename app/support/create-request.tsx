@@ -82,7 +82,7 @@ export default function CreateSupportRequestScreen() {
           "error"
         );
       }
-    } catch (error) {
+    } catch {
       showSnackbar("건의사항 등록 중 오류가 발생했습니다.", "error");
     } finally {
       setIsSubmitting(false);

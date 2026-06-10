@@ -43,7 +43,7 @@ export default function CommentModal({
   const [commentText, setCommentText] = useState("");
   const [inputHeight, setInputHeight] = useState(32);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const { data: comments, isLoading } = useComments(recordId);
+  const { data: comments } = useComments(recordId);
   const addCommentMutation = useAddComment();
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();

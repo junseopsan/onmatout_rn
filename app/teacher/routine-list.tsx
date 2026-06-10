@@ -287,7 +287,7 @@ function RoutineCard({
       const res = await teacherApi.toggleRoutineLike(routine.id, currentUserId);
       setLiked(res.liked);
       setLikeCount(res.like_count);
-    } catch (e) {
+    } catch {
       setLiked(prev.liked);
       setLikeCount(prev.likeCount);
     } finally {

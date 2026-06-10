@@ -45,7 +45,7 @@ export default function TeacherMemberEditScreen() {
   const [phone, setPhone] = useState("");
   const [phoneConsent, setPhoneConsent] = useState(false);
   const [memo, setMemo] = useState("");
-  const [status, setStatus] = useState<Status>("active");
+  const [, setStatus] = useState<Status>("active");
   const [statusMode, setStatusMode] = useState<StatusMode>("active");
   const [customStatus, setCustomStatus] = useState("");
   const [originalPhone, setOriginalPhone] = useState<string | null>(null);

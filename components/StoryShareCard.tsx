@@ -44,51 +44,9 @@ export default function StoryShareCard(props: StoryShareCardProps) {
   return <StoryRecordCard record={props.record} userName={props.userName} />;
 }
 
-// 통계 카드 배경용 랜덤 위치 (고정 시드로 캡처 시 동일하게 나오도록)
-const STATS_BG_POSITIONS = [
-  { left: 8, top: 60 },
-  { right: 8, top: 100 },
-  { left: 12, top: 220 },
-  { right: 12, top: 260 },
-  { left: 4, top: 380 },
-  { right: 4, top: 420 },
-  { left: 20, top: 520 },
-  { right: 20, top: 560 },
-  { left: 28, top: 140 },
-  { right: 28, top: 320 },
-  { left: 16, top: 480 },
-  { right: 16, top: 640 },
-];
-
 function StoryStatsCard({ stats }: { stats: StoryStatsData }) {
-  const bgAsanas = stats.backgroundAsanaImageNumbers ?? [];
-  const bgList = bgAsanas.slice(0, STATS_BG_POSITIONS.length);
-
   return (
     <View style={[styles.card, styles.statsCard]} collapsable={false}>
-      {/* 배경: 수련한 아사나 이미지 랜덤 배치 (로컬 썸네일) */}
-      {/* {bgList.length > 0 ? (
-        <View style={styles.statsBgLayer} pointerEvents="none">
-          {bgList.map((imageNumber, i) => {
-            const pos = STATS_BG_POSITIONS[i];
-            const src = getAsanaThumbnailSource(imageNumber);
-            if (!src) return null;
-            return (
-              <View
-                key={`${imageNumber}-${i}`}
-                style={[styles.statsBgThumb, pos]}
-              >
-                <Image
-                  source={src}
-                  style={styles.statsBgThumbImg}
-                  contentFit="contain"
-                />
-              </View>
-            );
-          })}
-        </View>
-      ) : null} */}
-
       {/* 상단: ○○님의 수련 (크게) */}
       {stats.userName ? (
         <View style={styles.statsTopTitle}>

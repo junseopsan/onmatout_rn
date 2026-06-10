@@ -61,21 +61,6 @@ export default function PhoneLoginScreen() {
     return true;
   };
 
-  const formatPhoneNumber = (value: string) => {
-    // 숫자만 추출
-    const numbers = value.replace(/[^0-9]/g, "");
-    // 010-0000-0000 형식으로 포맷
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 7) {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-    } else {
-      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
-        7,
-        11
-      )}`;
-    }
-  };
 
   const handleSubmit = async () => {
     const isPhoneValid = validatePhone(phone);
@@ -135,7 +120,7 @@ export default function PhoneLoginScreen() {
 
         showSnackbar(errorMessage, "error");
       }
-    } catch (e) {
+    } catch {
       showSnackbar(
         "인증번호 발송 중 오류가 발생했습니다. 다시 시도해주세요.",
         "error"

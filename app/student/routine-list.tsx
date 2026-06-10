@@ -216,7 +216,7 @@ function RoutineCard({
       );
       setLiked(res.liked);
       setLikeCount(res.like_count);
-    } catch (e) {
+    } catch {
       setLiked(prev.liked);
       setLikeCount(prev.likeCount);
     } finally {

@@ -1,15 +1,5 @@
 import { Alert } from "react-native";
 
-interface AlertDialogProps {
-  title: string;
-  message: string;
-  cancelText?: string;
-  confirmText?: string;
-  onCancel?: () => void;
-  onConfirm?: () => void;
-  showCancel?: boolean;
-}
-
 export const AlertDialog = {
   // 기본 확인 다이얼로그
   show: (title: string, message: string, onConfirm?: () => void) => {
