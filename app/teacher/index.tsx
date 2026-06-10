@@ -81,8 +81,8 @@ export default function TeacherHomeScreen() {
           onPress={() => navigation.navigate("TeacherProfileEdit")}
           activeOpacity={0.7}
         >
-          <Text style={styles.eyebrow}>지도자 모드, 프로필 편집 ›</Text>
-          <SerifTitle size="hero">오늘의 회원</SerifTitle>
+          <Text style={styles.eyebrow}>선생님 모드, 프로필 편집 ›</Text>
+          <SerifTitle size="hero">오늘의 수련생</SerifTitle>
         </TouchableOpacity>
         {hasMultipleRoles ? (
           <TouchableOpacity
@@ -95,7 +95,7 @@ export default function TeacherHomeScreen() {
               size={13}
               color={COLORS.primary}
             />
-            <Text style={styles.toggleBtnCurrent}>지도자</Text>
+            <Text style={styles.toggleBtnCurrent}>선생님</Text>
             <Ionicons
               name="arrow-forward"
               size={10}
@@ -121,13 +121,13 @@ export default function TeacherHomeScreen() {
         ) : (
           <>
             <View style={styles.statsRow}>
-              <StatBlock label="회원" value={activeStudents.length} />
+              <StatBlock label="수련생" value={activeStudents.length} />
               <StatBlock label="클래스" value={classes.length} />
               <StatBlock label="휴면" value={pausedStudents.length} muted />
             </View>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>회원</Text>
+              <Text style={styles.sectionTitle}>수련생</Text>
               <TouchableOpacity
                 style={styles.primaryAction}
                 onPress={() => navigation.navigate("TeacherMemberCreate")}
@@ -140,8 +140,8 @@ export default function TeacherHomeScreen() {
             {students.length === 0 ? (
               <EmptyHint
                 icon="📒"
-                title="아직 회원이 없어요"
-                description="우측 상단 [등록] 버튼으로 첫 회원을 추가해 보세요. 등록 즉시 초대 코드가 자동 생성돼요."
+                title="아직 수련생이 없어요"
+                description="우측 상단 [등록] 버튼으로 첫 수련생을 추가해 보세요. 등록 즉시 초대 코드가 자동 생성돼요."
               />
             ) : (
               <>

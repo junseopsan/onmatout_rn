@@ -90,7 +90,7 @@ export default function SettingsScreen() {
     if (Constants.executionEnvironment === "storeClient") {
       showSnackbar(
         "Expo Go에서는 알림 기능을 사용할 수 없습니다. 개발 빌드를 사용해주세요.",
-        "warning"
+        "warning",
       );
       return false;
     }
@@ -126,7 +126,7 @@ export default function SettingsScreen() {
                 text: "설정으로 이동",
                 onPress: () => Linking.openSettings(),
               },
-            ]
+            ],
           );
         } else {
           showSnackbar("알림을 받으려면 알림 권한을 허용해주세요.", "warning");
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
     } catch (error: any) {
       showSnackbar(
         error?.message || "로그아웃에 실패했습니다. 다시 시도해주세요.",
-        "error"
+        "error",
       );
     } finally {
       setIsLoggingOut(false);
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
       handleLogout,
       () => {},
       "로그아웃",
-      "취소"
+      "취소",
     );
   };
 
@@ -248,7 +248,7 @@ export default function SettingsScreen() {
         if (value) {
           showSnackbar(
             "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다.",
-            "success"
+            "success",
           );
         } else {
           showSnackbar("수련 알림이 해제되었습니다.", "info");
@@ -269,7 +269,7 @@ export default function SettingsScreen() {
 
   const confirmDeleteAccount = () => {
     AlertDialog.confirm(
-      "회원 탈퇴",
+      "수련생 탈퇴",
       "탈퇴 시 모든 수련 기록과 즐겨찾기 정보가 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
       async () => {
         setIsDeletingAccount(true);
@@ -285,7 +285,7 @@ export default function SettingsScreen() {
           } else {
             showSnackbar(
               result.message || "계정을 삭제할 수 없습니다. 다시 시도해주세요.",
-              "error"
+              "error",
             );
           }
         } catch (error) {
@@ -296,7 +296,7 @@ export default function SettingsScreen() {
       },
       undefined,
       "탈퇴하기",
-      "취소"
+      "취소",
     );
   };
 
@@ -329,7 +329,7 @@ export default function SettingsScreen() {
               </Text>
               {notificationPermissionStatus === "denied" && (
                 <Text style={styles.permissionWarning}>
-                  ⚠️ 알림 권한이 거부되었습니다. 설정에서 허용해주세요.
+                  알림 권한이 거부되었습니다. 설정에서 허용해주세요.
                 </Text>
               )}
             </View>
@@ -343,7 +343,6 @@ export default function SettingsScreen() {
               thumbColor={pushNotifications ? "white" : COLORS.textSecondary}
             />
           </View>
-
 
           {/* 고객지원 섹션 */}
           <View style={styles.sectionHeader}>
@@ -381,7 +380,7 @@ export default function SettingsScreen() {
                     <Text style={styles.settingText}>
                       {activeRole === "teacher"
                         ? "수련생 모드로 전환"
-                        : "지도자 모드로 전환"}
+                        : "선생님 모드로 전환"}
                     </Text>
                     <Text style={styles.settingDescription}>
                       다중 역할 — 언제든 전환할 수 있어요.
@@ -393,13 +392,15 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   style={styles.settingItem}
                   onPress={async () => {
-                    const missing = roles.includes("teacher") ? "student" : "teacher";
+                    const missing = roles.includes("teacher")
+                      ? "student"
+                      : "teacher";
                     const ok = await addRole(missing);
                     if (ok) {
                       showSnackbar(
                         missing === "teacher"
                           ? "선생님 역할이 추가됐어요"
-                          : "회원 역할이 추가됐어요",
+                          : "수련생 역할이 추가됐어요",
                         "success",
                       );
                     }
@@ -408,25 +409,25 @@ export default function SettingsScreen() {
                   <View style={styles.settingContent}>
                     <Text style={styles.settingText}>
                       {roles.includes("teacher")
-                        ? "회원 역할도 추가하기"
+                        ? "수련생 역할도 추가하기"
                         : "선생님 역할도 추가하기"}
                     </Text>
                     <Text style={styles.settingDescription}>
-                      한 사용자가 선생님 + 회원 동시에 가능해요.
+                      한 사용자가 선생님 + 수련생 동시에 가능해요.
                     </Text>
                   </View>
                   <Text style={styles.arrowText}>+</Text>
                 </TouchableOpacity>
               ) : null}
 
-              {/* 지도자 역할 해제 (지도자 + 다른 역할이 있을 때만) */}
+              {/* 선생님 역할 해제 (선생님 + 다른 역할이 있을 때만) */}
               {roles.includes("teacher") && roles.length > 1 ? (
                 <TouchableOpacity
                   style={styles.settingItem}
                   onPress={() => {
                     Alert.alert(
-                      "지도자 역할 해제",
-                      "지도자 역할을 해제하면 클래스/회원 관리 기능을 사용할 수 없어요. 이미 만든 요가원 정보는 보존됩니다. 해제할까요?",
+                      "선생님 역할 해제",
+                      "선생님 역할을 해제하면 클래스/수련생 관리 기능을 사용할 수 없어요. 이미 만든 요가원 정보는 보존됩니다. 해제할까요?",
                       [
                         { text: "취소", style: "cancel" },
                         {
@@ -435,7 +436,10 @@ export default function SettingsScreen() {
                           onPress: async () => {
                             const ok = await removeRole("teacher");
                             if (ok) {
-                              showSnackbar("지도자 역할을 해제했어요", "success");
+                              showSnackbar(
+                                "선생님 역할을 해제했어요",
+                                "success",
+                              );
                             } else {
                               showSnackbar(
                                 "해제하지 못했어요. 다시 시도해 주세요.",
@@ -449,7 +453,7 @@ export default function SettingsScreen() {
                   }}
                 >
                   <View style={styles.settingContent}>
-                    <Text style={styles.settingText}>지도자 역할 해제</Text>
+                    <Text style={styles.settingText}>선생님 역할 해제</Text>
                     <Text style={styles.settingDescription}>
                       수련생 역할만 남깁니다. 요가원 정보는 보존돼요.
                     </Text>
@@ -458,17 +462,19 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ) : null}
 
-              {/* 회원 모드일 때만 — 선생님 연결 진입점 */}
+              {/* 수련생 모드일 때만 — 선생님 연결 진입점 */}
               {roles.includes("student") ? (
                 <TouchableOpacity
                   style={styles.settingItem}
                   onPress={() => navigation.navigate("AuthMatch" as any)}
                 >
                   <View style={styles.settingContent}>
-                    <Text style={styles.settingText}>선생님과 연결 / 초대 코드</Text>
+                    <Text style={styles.settingText}>
+                      선생님과 연결 / 초대 코드
+                    </Text>
                     <Text style={styles.settingDescription}>
-                      선생님이 회원으로 등록했거나 초대 코드(ONM-XXXX)를 받았다면
-                      여기서 연결하세요.
+                      선생님이 수련생으로 등록했거나 초대 코드(ONM-XXXX)를
+                      받았다면 여기서 연결하세요.
                     </Text>
                   </View>
                   <Text style={styles.arrowText}>›</Text>
@@ -498,9 +504,7 @@ export default function SettingsScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.settingItem}
-                onPress={() =>
-                  navigation.navigate("TeacherStudioApply" as any)
-                }
+                onPress={() => navigation.navigate("TeacherStudioApply" as any)}
               >
                 <View style={styles.settingContent}>
                   <Text style={styles.settingText}>+ 새 요가원 등록 신청</Text>
@@ -514,7 +518,7 @@ export default function SettingsScreen() {
             </>
           ) : null}
 
-          {/* 수련생 → 원장 전환 진입점: 아직 지도자 역할이 없을 때만 */}
+          {/* 수련생 → 원장 전환 진입점: 아직 선생님 역할이 없을 때만 */}
           {user && !roles.includes("teacher") ? (
             <>
               <View style={styles.sectionHeader}>
@@ -522,9 +526,7 @@ export default function SettingsScreen() {
               </View>
               <TouchableOpacity
                 style={styles.settingItem}
-                onPress={() =>
-                  navigation.navigate("TeacherStudioApply" as any)
-                }
+                onPress={() => navigation.navigate("TeacherStudioApply" as any)}
               >
                 <View style={styles.settingContent}>
                   <Text style={styles.settingText}>요가원 등록 신청</Text>
@@ -592,7 +594,7 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingContent}>
               <Text style={[styles.settingText, styles.dangerText]}>
-                회원 탈퇴
+                수련생 탈퇴
               </Text>
               <Text
                 style={[styles.settingDescription, styles.dangerDescription]}

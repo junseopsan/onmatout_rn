@@ -28,7 +28,7 @@ export type PivotStudioInput = {
 
 export const pivotStudioApi = {
   async listMyStudios(userId: string): Promise<PivotStudio[]> {
-    // 내가 소유한 요가원 + 지도자로 초대된 요가원 (status=active)
+    // 내가 소유한 요가원 + 선생님으로 초대된 요가원 (status=active)
     const [{ data: owned, error: oErr }, { data: invited, error: iErr }] =
       await Promise.all([
         supabase

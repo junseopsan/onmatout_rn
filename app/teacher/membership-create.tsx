@@ -147,7 +147,7 @@ export default function TeacherMembershipCreateScreen() {
         <ScrollView contentContainerStyle={styles.form}>
           {student ? (
             <Text style={styles.studentLine}>
-              회원:{" "}
+              수련생:{" "}
               <Text style={{ color: COLORS.text, fontWeight: "600" }}>
                 {student.name}
               </Text>

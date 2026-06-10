@@ -161,7 +161,7 @@ export const studentBookingApi = {
     return (data ?? []) as StudioClass[];
   },
 
-  // Classes the student has been assigned to by the 지도자/원장 via class_students
+  // Classes the student has been assigned to by the 선생님/원장 via class_students
   async listMyEnrolledClasses(
     studentProfileId: string,
   ): Promise<StudioClass[]> {
@@ -233,7 +233,7 @@ export const studentBookingApi = {
     return (Array.isArray(data) ? data[0] : data) as ClassBooking;
   },
 
-  // 등록된 모든 클래스 + 메타 (정원 / 지도자 이름 / 클래스 스케줄)
+  // 등록된 모든 클래스 + 메타 (정원 / 선생님 이름 / 클래스 스케줄)
   async listMyEnrolledClassesWithMeta(studentProfileId: string) {
     const { data, error } = await supabase
       .from("class_students")
@@ -250,14 +250,14 @@ export const studentBookingApi = {
 
     if (classes.length === 0) return { classes: [] as StudioClass[], teacherNames: new Map<string, string>() };
 
-    // 지도자 이름 batch 조회
+    // 선생님 이름 batch 조회
     const teacherIds = Array.from(new Set(classes.map((c) => c.teacher_id)));
     const { data: profiles } = await supabase
       .from("user_profiles")
       .select("user_id, name")
       .in("user_id", teacherIds);
     const teacherNames = new Map<string, string>(
-      (profiles ?? []).map((p: any) => [p.user_id, p.name ?? "지도자"]),
+      (profiles ?? []).map((p: any) => [p.user_id, p.name ?? "선생님"]),
     );
 
     return { classes, teacherNames };

@@ -476,7 +476,7 @@ export default function AsanasScreen() {
     return null;
   };
 
-  // 로딩 중인 경우만 빈 화면 표시 (비회원도 아사나 탭 접근 가능)
+  // 로딩 중인 경우만 빈 화면 표시 (비수련생도 아사나 탭 접근 가능)
   if (loading) {
     return (
       <View style={styles.container}>{/* 빈 화면 - 배경색만 표시 */}</View>

@@ -29,15 +29,15 @@ const OPTIONS: RoleOption[] = [
   {
     role: "teacher",
     emoji: "🧘‍♀️",
-    title: "지도자로 시작",
+    title: "선생님으로 시작",
     subtitle: "수련생과 클래스를 관리하고 싶어요",
-    description: "회원 등록, 출석 체크, 복습 시퀀스 공유",
+    description: "수련생 등록, 출석 체크, 복습 시퀀스 공유",
   },
   {
     role: "student",
     emoji: "📒",
     title: "수련생으로 시작",
-    subtitle: "지도자와 연결되어 수업을 듣고 있어요",
+    subtitle: "선생님과 연결되어 수업을 듣고 있어요",
     description: "출석, 잔여 횟수, 복습 시퀀스 확인",
   },
 ];
@@ -108,7 +108,7 @@ export default function RoleSelectScreen() {
         </View>
 
         <Text style={styles.footnote}>
-          지도자 + 수련생 둘 다 사용하시려면, 먼저 한 가지로 시작하고 설정에서
+          선생님 + 수련생 둘 다 사용하시려면, 먼저 한 가지로 시작하고 설정에서
           역할을 추가할 수 있어요.
         </Text>
       </View>

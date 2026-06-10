@@ -27,7 +27,7 @@ const STATUS_OPTIONS: { value: AttendanceStatus; label: string; color: string }[
   { value: "absent", label: "결석", color: COLORS.error },
 ];
 
-// 회원 영역 최소 높이 — 날짜 이동 시 시트 높이가 들쭉날쭉하지 않게 고정
+// 수련생 영역 최소 높이 — 날짜 이동 시 시트 높이가 들쭉날쭉하지 않게 고정
 const LIST_MIN_H = Math.round(Dimensions.get("window").height * 0.48);
 
 function todayISO() {
@@ -283,7 +283,7 @@ export function AttendanceSheet({
                   ]}
                   numberOfLines={1}
                 >
-                  {b.student?.name ?? "회원"}
+                  {b.student?.name ?? "수련생"}
                   {b.status === "waitlisted" ? ", 대기" : ""}
                 </Text>
               </View>
@@ -311,7 +311,7 @@ export function AttendanceSheet({
         </View>
       ) : members.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>이 클래스에 등록된 회원이 없어요.</Text>
+          <Text style={styles.emptyText}>이 클래스에 등록된 수련생이 없어요.</Text>
         </View>
       ) : (
         <View style={styles.list}>

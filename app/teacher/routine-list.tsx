@@ -165,14 +165,14 @@ export default function TeacherRoutineListScreen() {
           <EmptyState
             icon="🌿"
             title="공개된 시퀀스가 없어요"
-            description="다른 지도자와 요가인들이 공개한 시퀀스가 여기에 모여요."
+            description="다른 선생님과 요가인들이 공개한 시퀀스가 여기에 모여요."
           />
         ) : (
           <EmptyState
             icon="📋"
             title="내 시퀀스가 없어요"
             description={
-              "아사나를 순서대로 묶어 첫 시퀀스를 만들어 보세요.\n클래스 단위 또는 특정 회원에게 공유할 수 있어요."
+              "아사나를 순서대로 묶어 첫 시퀀스를 만들어 보세요.\n클래스 단위 또는 특정 수련생에게 공유할 수 있어요."
             }
             action={{
               label: "+ 시퀀스 만들기",

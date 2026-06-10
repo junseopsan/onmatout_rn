@@ -122,7 +122,7 @@ export default function TeacherClassEditScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.switchTitle}>활성</Text>
               <Text style={styles.switchHint}>
-                비활성 클래스는 새 회원 배정, 출석 체크에서 제외돼요.
+                비활성 클래스는 새 수련생 배정, 출석 체크에서 제외돼요.
               </Text>
             </View>
             <Switch

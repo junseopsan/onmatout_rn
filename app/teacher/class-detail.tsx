@@ -244,9 +244,9 @@ export default function TeacherClassDetailScreen() {
                 size={28}
                 color={COLORS.textMuted}
               />
-              <Text style={styles.muted}>아직 배정된 회원이 없어요.</Text>
+              <Text style={styles.muted}>아직 배정된 수련생이 없어요.</Text>
               <Text style={styles.mutedSub}>
-                + 배정 으로 회원을 추가해 보세요.
+                + 배정 으로 수련생을 추가해 보세요.
               </Text>
             </View>
           ) : (
@@ -342,7 +342,7 @@ function AssignStudentsModal({
       <Pressable style={styles.modalBackdrop} onPress={onClose} />
       <View style={styles.modalSheet}>
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>회원 배정</Text>
+          <Text style={styles.modalTitle}>수련생 배정</Text>
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.modalCancel}>닫기</Text>
           </TouchableOpacity>
@@ -351,7 +351,7 @@ function AssignStudentsModal({
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 24 }} />
         ) : available.length === 0 ? (
-          <Text style={styles.muted}>배정 가능한 회원이 없어요.</Text>
+          <Text style={styles.muted}>배정 가능한 수련생이 없어요.</Text>
         ) : (
           <ScrollView style={{ maxHeight: 360 }}>
             {available.map((s) => {
@@ -381,7 +381,7 @@ function AssignStudentsModal({
         )}
 
         <Button
-          title={picked.size > 0 ? `${picked.size}명 배정` : "회원을 선택해 주세요"}
+          title={picked.size > 0 ? `${picked.size}명 배정` : "수련생을 선택해 주세요"}
           size="large"
           disabled={picked.size === 0}
           onPress={() => onSubmit(Array.from(picked))}

@@ -19,12 +19,12 @@ import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
-import { getAsanaThumbnailSource } from "../../lib/asanaImages";
-import { haptics } from "../../lib/haptics";
 import {
   studentRoutinesApi,
   type RoutineSummary,
 } from "../../lib/api/routines-student";
+import { getAsanaThumbnailSource } from "../../lib/asanaImages";
+import { haptics } from "../../lib/haptics";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -81,13 +81,19 @@ export default function StudentRoutineListScreen() {
           label="전체"
           icon="earth"
           active={tab === "discover"}
-          onPress={() => { haptics.select(); setTab("discover"); }}
+          onPress={() => {
+            haptics.select();
+            setTab("discover");
+          }}
         />
         <SegmentTab
           label={`내 시퀀스${shared.length ? ` ${shared.length}` : ""}`}
           icon="bookmark"
           active={tab === "shared"}
-          onPress={() => { haptics.select(); setTab("shared"); }}
+          onPress={() => {
+            haptics.select();
+            setTab("shared");
+          }}
         />
       </View>
 
@@ -99,7 +105,7 @@ export default function StudentRoutineListScreen() {
             icon="📥"
             title="내 시퀀스가 없어요"
             description={
-              "선생님이 클래스 또는 회원에게 시퀀스를 보내면 여기에 모입니다.\n전체에서 공개 시퀀스를 둘러볼 수도 있어요."
+              "선생님이 클래스 또는 수련생에게\n시퀀스를 보내면여기에 모입니다."
             }
             action={{
               label: "전체 보기",
@@ -267,11 +273,7 @@ function RoutineCard({
 
       <View style={styles.body}>
         <View style={styles.creatorRow}>
-          <Ionicons
-            name="person-circle"
-            size={16}
-            color={COLORS.primary}
-          />
+          <Ionicons name="person-circle" size={16} color={COLORS.primary} />
           <Text style={styles.creatorText} numberOfLines={1}>
             {routine.teacher_studio_name ?? "선생님"}
           </Text>

@@ -52,7 +52,7 @@ export default function TeacherStudioListScreen() {
           icon="🏠"
           title="아직 요가원이 없어요"
           description={
-            "운영 중인 요가원 정보를 추가하면\n클래스, 회원, 시퀀스을 요가원 단위로 관리할 수 있어요."
+            "운영 중인 요가원 정보를 추가하면\n클래스, 수련생, 시퀀스을 요가원 단위로 관리할 수 있어요."
           }
           action={{
             label: "+ 요가원 추가",

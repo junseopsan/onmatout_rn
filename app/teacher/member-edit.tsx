@@ -86,7 +86,7 @@ export default function TeacherMemberEditScreen() {
     if (phoneTrimmed && !phoneConsent) {
       Alert.alert(
         "동의 확인",
-        "전화번호를 저장하려면 회원의 동의 체크가 필요해요.",
+        "전화번호를 저장하려면 수련생의 동의 체크가 필요해요.",
       );
       return;
     }
@@ -140,7 +140,7 @@ export default function TeacherMemberEditScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
-        title="회원 정보 수정"
+        title="수련생 정보 수정"
         serif={false}
         onBack={() => navigation.goBack()}
       />
@@ -171,7 +171,7 @@ export default function TeacherMemberEditScreen() {
                 trackColor={{ true: COLORS.primary, false: COLORS.border }}
               />
               <Text style={styles.consentText}>
-                회원의 동의를 받고 전화번호를 저장합니다.
+                수련생의 동의를 받고 전화번호를 저장합니다.
               </Text>
             </View>
           ) : null}

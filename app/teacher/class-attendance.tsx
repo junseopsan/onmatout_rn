@@ -237,7 +237,7 @@ export default function TeacherClassAttendanceScreen() {
                   ]}
                   numberOfLines={1}
                 >
-                  {b.student?.name ?? "회원"}
+                  {b.student?.name ?? "수련생"}
                   {b.status === "waitlisted" ? ", 대기" : ""}
                 </Text>
               </View>
@@ -250,7 +250,7 @@ export default function TeacherClassAttendanceScreen() {
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} />
       ) : members.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>이 클래스에 등록된 회원이 없어요.</Text>
+          <Text style={styles.emptyText}>이 클래스에 등록된 수련생이 없어요.</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>

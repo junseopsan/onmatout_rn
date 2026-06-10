@@ -66,7 +66,7 @@ export default function TeacherStudioApplyScreen() {
 
         Alert.alert(
           "신청 완료",
-          "요가원이 자동 승인됐어요. 지도자(원장) 모드로 전환합니다.",
+          "요가원이 자동 승인됐어요. 선생님(원장) 모드로 전환합니다.",
           [
             {
               text: "확인",
@@ -118,7 +118,7 @@ export default function TeacherStudioApplyScreen() {
           <SurfaceCard style={styles.intro}>
             <Text style={styles.introTitle}>한 번의 신청으로 원장이 되세요</Text>
             <Text style={styles.introText}>
-              요가원 정보를 입력하면 자동으로 승인돼요. 승인 후엔 지도자 모드에서
+              요가원 정보를 입력하면 자동으로 승인돼요. 승인 후엔 선생님 모드에서
               클래스를 만들고 수련생을 등록할 수 있어요.
             </Text>
           </SurfaceCard>

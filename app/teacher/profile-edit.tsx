@@ -114,12 +114,12 @@ export default function TeacherProfileEditScreen() {
             placeholder="예: 서울 강남구"
           />
           <PillInput
-            label="회원 셀프 취소 가능 시간"
+            label="수련생 셀프 취소 가능 시간"
             value={cancellation}
             onChangeText={setCancellation}
             placeholder="24"
             keyboardType="numeric"
-            hint="수업 시작 N시간 전까지 회원이 직접 취소할 수 있어요."
+            hint="수업 시작 N시간 전까지 수련생이 직접 취소할 수 있어요."
           />
           <View style={{ height: 100 }} />
         </ScrollView>

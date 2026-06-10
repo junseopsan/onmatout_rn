@@ -91,7 +91,7 @@ export default function SettingsModal({
     if (Constants.executionEnvironment === "storeClient") {
       Alert.alert(
         "알림 기능 사용 불가",
-        "Expo Go에서는 알림 기능을 사용할 수 없습니다. 개발 빌드를 사용해주세요."
+        "Expo Go에서는 알림 기능을 사용할 수 없습니다. 개발 빌드를 사용해주세요.",
       );
       return false;
     }
@@ -125,7 +125,7 @@ export default function SettingsModal({
               text: "설정으로 이동",
               onPress: () => Linking.openSettings(),
             },
-          ]
+          ],
         );
         return false;
       }
@@ -214,7 +214,7 @@ export default function SettingsModal({
         if (value) {
           Alert.alert(
             "알림 설정",
-            "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다."
+            "수련 알림이 설정되었습니다. 매일 오전 9시에 알림을 받으실 수 있습니다.",
           );
         } else {
           Alert.alert("알림 설정", "수련 알림이 해제되었습니다.");
@@ -291,7 +291,7 @@ export default function SettingsModal({
                 </Text>
                 {notificationPermissionStatus === "denied" && (
                   <Text style={styles.permissionWarning}>
-                    ⚠️ 알림 권한이 거부되었습니다. 설정에서 허용해주세요.
+                    알림 권한이 거부되었습니다. 설정에서 허용해주세요.
                   </Text>
                 )}
               </View>

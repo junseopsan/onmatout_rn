@@ -30,7 +30,7 @@ export default function TabNavigator() {
   // 프로필 탭 진입 전에 전체 기록을 미리 불러와 첫 로딩 체감 속도 향상
   useAllRecords(user?.id);
 
-  // 비회원 사용자가 로그인이 필요한 탭을 클릭했을 때
+  // 비수련생 사용자가 로그인이 필요한 탭을 클릭했을 때
   const handleTabPress = (routeName: string) => {
     if (routeName === "Asanas") return true;
     if (!isAuthenticated || !user) {

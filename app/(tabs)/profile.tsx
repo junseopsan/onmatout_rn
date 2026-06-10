@@ -186,7 +186,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="person-circle" size={15} color={COLORS.primary} />
             <Text style={styles.roleChipText}>
-              {activeRole === "teacher" ? "지도자" : "수련생"}
+              {activeRole === "teacher" ? "선생님" : "수련생"}
             </Text>
             {otherRole ? (
               <>
@@ -196,7 +196,7 @@ export default function ProfileScreen() {
                   color={COLORS.textMuted}
                 />
                 <Text style={styles.roleChipTarget}>
-                  {otherRole === "teacher" ? "지도자" : "수련생"}
+                  {otherRole === "teacher" ? "선생님" : "수련생"}
                 </Text>
               </>
             ) : null}

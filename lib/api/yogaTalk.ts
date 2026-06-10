@@ -44,7 +44,7 @@ export type ThreadSummary = YogaTalkThread & {
 };
 
 export const yogaTalkApi = {
-  // 지도자 측: 페어당 기본 스레드만 (목록 화면)
+  // 선생님 측: 페어당 기본 스레드만 (목록 화면)
   async listAsTeacher(teacherUserId: string): Promise<ThreadSummary[]> {
     const { data, error } = await supabase
       .from("yoga_talk_threads")

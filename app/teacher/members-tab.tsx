@@ -103,10 +103,10 @@ export default function TeacherMembersTabScreen() {
       ) : students.length === 0 ? (
         <EmptyState
           icon="📒"
-          title="아직 회원이 없어요"
-          description={"+ 등록으로 첫 회원을 추가하면\n자동으로 초대 코드가 생성됩니다."}
+          title="아직 수련생이 없어요"
+          description={"+ 등록으로 첫 수련생을 추가하면\n자동으로 초대 코드가 생성됩니다."}
           action={{
-            label: "회원 등록",
+            label: "수련생 등록",
             onPress: () => navigation.navigate("TeacherMemberCreate"),
           }}
         />
@@ -114,7 +114,7 @@ export default function TeacherMembersTabScreen() {
         <EmptyState
           icon="🔎"
           title="검색 결과가 없어요"
-          description={`"${query}" 와 일치하는 회원이 없습니다.`}
+          description={`"${query}" 와 일치하는 수련생이 없습니다.`}
         />
       ) : (
         <ScrollView

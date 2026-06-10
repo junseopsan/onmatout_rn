@@ -359,7 +359,7 @@ export default function TeacherRoutineDetailScreen() {
             </Text>
             {shares.length === 0 ? (
               <Text style={styles.shareEmpty}>
-                아직 공유한 곳이 없어요. 아래 공유하기로 클래스나 회원에게 보내보세요.
+                아직 공유한 곳이 없어요. 아래 공유하기로 클래스나 수련생에게 보내보세요.
               </Text>
             ) : null}
             {shares.map((s) => (
@@ -530,7 +530,7 @@ function ShareSheet({
       visible={visible}
       onClose={onClose}
       title="시퀀스 공유"
-      description="클래스 단위 또는 특정 회원에게 보낼 수 있어요."
+      description="클래스 단위 또는 특정 수련생에게 보낼 수 있어요."
     >
       {loading ? (
         <ActivityIndicator color={COLORS.primary} style={{ marginVertical: SPACING.xl }} />
@@ -566,7 +566,7 @@ function ShareSheet({
 
           {students.length > 0 ? (
             <View>
-              <SectionLabel>특정 회원</SectionLabel>
+              <SectionLabel>특정 수련생</SectionLabel>
               {students.map((s) => {
                 const alreadyShared = sharedStudentIds.has(s.id);
                 return (
@@ -596,7 +596,7 @@ function ShareSheet({
             <EmptyState
               icon="🤝"
               title="공유 대상이 없어요"
-              description="먼저 클래스를 만들거나 회원을 등록해 주세요."
+              description="먼저 클래스를 만들거나 수련생을 등록해 주세요."
             />
           ) : null}
         </>

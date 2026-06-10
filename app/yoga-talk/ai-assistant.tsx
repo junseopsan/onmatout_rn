@@ -356,7 +356,7 @@ export default function YogaTalkAiAssistantScreen() {
                   color={COLORS.textMuted}
                 />
                 <Text style={styles.disclaimerText}>
-                  통증, 부상, 임신 관련 질문엔 지도자/의료진 상담을 권유해요.
+                  통증, 부상, 임신 관련 질문엔 선생님/의료진 상담을 권유해요.
                 </Text>
               </View>
             </View>
@@ -389,7 +389,7 @@ export default function YogaTalkAiAssistantScreen() {
                         />
                         <Text style={styles.safetyText}>
                           통증, 부상, 만성질환 관련 질문이에요. 정확한 판단은
-                          지도자/의료진과 상담하세요.
+                          선생님/의료진과 상담하세요.
                         </Text>
                       </View>
                     ) : null}

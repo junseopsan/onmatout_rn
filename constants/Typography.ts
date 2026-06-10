@@ -58,7 +58,7 @@ export const TEXT = {
     letterSpacing: -0.5,
   },
 
-  // Serif 헤더 (Notion 영감 — 루틴 / 회원 / 클래스 / 요가원 이름)
+  // Serif 헤더 (Notion 영감 — 루틴 / 수련생 / 클래스 / 요가원 이름)
   serifTitle: {
     fontFamily: FONT.serifSemiBold,
     fontSize: 22,

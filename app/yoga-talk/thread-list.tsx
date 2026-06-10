@@ -111,7 +111,7 @@ export default function YogaTalkThreadListScreen() {
             description={
               isTeacher
                 ? "수련생 상세에서 대화를 시작할 수 있어요.\n수업별로 묶어서 이력이 기록됩니다."
-                : "수업 상세에서 요가톡으로 지도자에게\n메시지를 남겨보세요."
+                : "수업 상세에서 요가톡으로 선생님에게\n메시지를 남겨보세요."
             }
           />
         }
@@ -266,7 +266,7 @@ function NewMessageSheet({
     (async () => {
       try {
         if (isTeacher) {
-          // 지도자: 내 학생 목록
+          // 선생님: 내 학생 목록
           const teacherMod = await import("../../lib/api/teacher");
           const list = await teacherMod.teacherApi.listMyStudents(currentUserId);
           setContacts(
@@ -277,7 +277,7 @@ function NewMessageSheet({
             })),
           );
         } else {
-          // 수련생: 담당 지도자 목록 (보통 1명)
+          // 수련생: 담당 선생님 목록 (보통 1명)
           const { data: profiles } = await supabase
             .from("student_profiles")
             .select("id, teacher_id, studio_id")
@@ -293,14 +293,14 @@ function NewMessageSheet({
             .from("user_profiles")
             .select("user_id, name")
             .in("user_id", teacherIds);
-          // student_profile_id 를 contact.id 로 사용 (지도자 1명당 1 profile 가정)
+          // student_profile_id 를 contact.id 로 사용 (선생님 1명당 1 profile 가정)
           const tNameById = new Map<string, string>(
-            (teachers ?? []).map((t: any) => [t.user_id, t.name ?? "지도자"]),
+            (teachers ?? []).map((t: any) => [t.user_id, t.name ?? "선생님"]),
           );
           setContacts(
             (profiles ?? []).map((p: any) => ({
               id: p.id, // student_profile_id
-              name: tNameById.get(p.teacher_id) ?? "지도자",
+              name: tNameById.get(p.teacher_id) ?? "선생님",
               subtitle: undefined,
             })),
           );
@@ -342,7 +342,7 @@ function NewMessageSheet({
           teacherUserId: sp.teacher_id,
           studentProfileId: contact.id,
           classId: null,
-          title: `${contact.name} 지도자와의 대화`,
+          title: `${contact.name} 선생님과의 대화`,
           category: "general",
         });
         onPicked(thread.id);

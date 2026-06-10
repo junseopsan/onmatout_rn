@@ -96,7 +96,7 @@ export default function TeacherMemberDetailScreen() {
       setMembershipClass(null);
     }
 
-    // 지도자 등록 여부 확인 (active studio 기준)
+    // 선생님 등록 여부 확인 (active studio 기준)
     if (s.user_id && activeStudio?.id) {
       try {
         const list = await pivotStudioApi.listStudioTeachers(activeStudio.id);
@@ -152,8 +152,8 @@ export default function TeacherMemberDetailScreen() {
       return;
     }
     Alert.alert(
-      "지도자로 승급",
-      `${student.name} 님을 ${activeStudio.name} 요가원의 지도자로 등록할까요? 클래스는 만들 수 없지만 수련생 관리, 출석을 도와줄 수 있어요.`,
+      "선생님으로 승급",
+      `${student.name} 님을 ${activeStudio.name} 요가원의 선생님으로 등록할까요? 클래스는 만들 수 없지만 수련생 관리, 출석을 도와줄 수 있어요.`,
       [
         { text: "취소", style: "cancel" },
         {
@@ -167,7 +167,7 @@ export default function TeacherMemberDetailScreen() {
                 teacherUserId: student.user_id!,
               });
               setIsTeacherOfStudio(true);
-              Alert.alert("완료", "지도자로 승급됐어요.");
+              Alert.alert("완료", "선생님으로 승급됐어요.");
             } catch (e: any) {
               Alert.alert(
                 "실패",
@@ -219,8 +219,8 @@ export default function TeacherMemberDetailScreen() {
 
     if (Platform.OS === "ios" && (Alert as any).prompt) {
       (Alert as any).prompt(
-        "지도자 해제",
-        `${student.name} 님을 지도자에서 해제할까요? 사유를 남기면 기록됩니다 (선택).`,
+        "선생님 해제",
+        `${student.name} 님을 선생님에서 해제할까요? 사유를 남기면 기록됩니다 (선택).`,
         [
           { text: "취소", style: "cancel" },
           {
@@ -235,8 +235,8 @@ export default function TeacherMemberDetailScreen() {
     }
 
     Alert.alert(
-      "지도자 해제",
-      `${student.name} 님을 지도자에서 해제할까요?`,
+      "선생님 해제",
+      `${student.name} 님을 선생님에서 해제할까요?`,
       [
         { text: "취소", style: "cancel" },
         {
@@ -275,7 +275,7 @@ export default function TeacherMemberDetailScreen() {
   if (loading || !student) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <DetailHeader onBack={() => navigation.goBack()} title="회원" />
+        <DetailHeader onBack={() => navigation.goBack()} title="수련생" />
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
@@ -285,7 +285,7 @@ export default function TeacherMemberDetailScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title="회원"
+        title="수련생"
         serif={false}
         trailing={{
           kind: "text",
@@ -376,18 +376,18 @@ export default function TeacherMemberDetailScreen() {
           ) : null}
         </SurfaceCard>
 
-        {/* 지도자 승급 (원장만 노출) */}
+        {/* 선생님 승급 (원장만 노출) */}
         {isDirectorOfActive && student.user_id ? (
           <SurfaceCard style={styles.card}>
             <View style={styles.promoteRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.promoteTitle}>
-                  {isTeacherOfStudio ? "지도자로 등록됨" : "지도자로 승급"}
+                  {isTeacherOfStudio ? "선생님으로 등록됨" : "선생님으로 승급"}
                 </Text>
                 <Text style={styles.promoteDesc}>
                   {isTeacherOfStudio
-                    ? "이 수련생은 현재 요가원의 지도자예요. 출석, 수련생 관리를 도와줄 수 있어요."
-                    : "이 수련생을 현재 요가원의 지도자로 등록하면 출석, 수련생 관리를 함께 할 수 있어요."}
+                    ? "이 수련생은 현재 요가원의 선생님이에요. 출석, 수련생 관리를 도와줄 수 있어요."
+                    : "이 수련생을 현재 요가원의 선생님으로 등록하면 출석, 수련생 관리를 함께 할 수 있어요."}
                 </Text>
               </View>
               <Button

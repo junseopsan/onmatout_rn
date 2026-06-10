@@ -107,7 +107,7 @@ export default function TeacherMemberCreateScreen() {
 
           <View style={styles.secondaryRow}>
             <Button
-              title="회원 더 등록"
+              title="수련생 더 등록"
               variant="secondary"
               size="medium"
               style={{ flex: 1 }}
@@ -120,7 +120,7 @@ export default function TeacherMemberCreateScreen() {
               }}
             />
             <Button
-              title="회원 목록"
+              title="수련생 목록"
               variant="secondary"
               size="medium"
               style={{ flex: 1 }}
@@ -135,7 +135,7 @@ export default function TeacherMemberCreateScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
-        title="회원 등록"
+        title="수련생 등록"
         serif={false}
         onBack={() => navigation.goBack()}
       />
@@ -169,7 +169,7 @@ export default function TeacherMemberCreateScreen() {
                 trackColor={{ true: COLORS.primary, false: COLORS.border }}
               />
               <Text style={styles.consentText}>
-                회원의 동의를 받고 전화번호를 입력합니다.
+                수련생의 동의를 받고 전화번호를 입력합니다.
               </Text>
             </View>
           ) : null}
@@ -196,7 +196,7 @@ export default function TeacherMemberCreateScreen() {
 
       <View style={styles.submitWrap}>
         <Button
-          title="회원 등록"
+          title="수련생 등록"
           size="large"
           onPress={handleSubmit}
           loading={submitting}

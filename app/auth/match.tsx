@@ -113,12 +113,12 @@ export default function AuthMatchScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>
             {candidates.length > 0
-              ? "선생님이 회원으로 등록했어요"
+              ? "선생님이 수련생으로 등록했어요"
               : "선생님과 연결할까요?"}
           </Text>
           <Text style={styles.subtitle}>
             {candidates.length > 0
-              ? "회원님이 맞는지 확인해 주세요. 거절하면 나중에 초대 코드로도 연결할 수 있어요."
+              ? "수련생님이 맞는지 확인해 주세요. 거절하면 나중에 초대 코드로도 연결할 수 있어요."
               : "선생님에게 받은 초대 코드 (ONM-XXXX) 가 있다면 입력하세요."}
           </Text>
 

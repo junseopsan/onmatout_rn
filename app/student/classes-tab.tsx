@@ -183,7 +183,7 @@ export default function StudentClassesTabScreen() {
             classId: c.id,
             classTitle: c.title,
             classLocation: c.location,
-            teacherName: teacherNames.get(c.teacher_id) ?? "지도자",
+            teacherName: teacherNames.get(c.teacher_id) ?? "선생님",
             capacity: c.capacity ?? null,
             scheduleId: s.id,
             startTime: s.start_time,
@@ -356,7 +356,7 @@ export default function StudentClassesTabScreen() {
           icon="🏠"
           title="등록된 요가원이 없어요"
           description={
-            "지도자가 보낸 초대 코드로 가입하면\n해당 요가원의 수업을 신청할 수 있어요."
+            "선생님이 보낸 초대 코드로 가입하면\n해당 요가원의 수업을 신청할 수 있어요."
           }
         />
       ) : (
@@ -395,7 +395,7 @@ export default function StudentClassesTabScreen() {
                 }
                 description={
                   classes.length === 0
-                    ? "지도자가 수업에 등록해주면\n이곳에서 스케줄을 확인하고 신청할 수 있어요."
+                    ? "선생님이 수업에 등록해주면\n이곳에서 스케줄을 확인하고 신청할 수 있어요."
                     : "다른 날짜를 선택해 보세요."
                 }
               />

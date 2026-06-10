@@ -101,7 +101,7 @@ export default function NicknameScreen() {
       const success = await saveUserProfile(nickname.trim());
 
       if (success) {
-        // 기본 역할 = 수련생 (지도자는 설정 > 요가원 등록 신청으로 추가)
+        // 기본 역할 = 수련생 (선생님은 설정 > 요가원 등록 신청으로 추가)
         if (user?.id) {
           await addRole(user.id, "student").catch(() => undefined);
         }

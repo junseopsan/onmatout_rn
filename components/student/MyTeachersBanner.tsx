@@ -43,7 +43,7 @@ export function MyTeachersBanner() {
   return (
     <View style={styles.wrap}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>내 지도자</Text>
+        <Text style={styles.title}>내 선생님</Text>
         <TouchableOpacity
           onPress={() => navigation.navigate("StudentRoutineList")}
           style={styles.routineLink}

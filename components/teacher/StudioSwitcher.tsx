@@ -49,7 +49,7 @@ export function StudioSwitcher() {
                   : { color: COLORS.textSecondary },
               ]}
             >
-              {isDirectorOfActive ? "원장" : "지도자"}
+              {isDirectorOfActive ? "원장" : "선생님"}
             </Text>
           </View>
         ) : null}
@@ -60,7 +60,7 @@ export function StudioSwitcher() {
         visible={open}
         onClose={() => setOpen(false)}
         title="요가원 선택"
-        description="활성 요가원의 클래스, 회원, 시퀀스만 보입니다."
+        description="활성 요가원의 클래스, 수련생, 시퀀스만 보입니다."
       >
         <View style={{ gap: SPACING.sm, marginBottom: SPACING.md }}>
           {studios.map((s) => {

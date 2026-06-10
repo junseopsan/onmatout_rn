@@ -110,7 +110,7 @@ export default function TeacherClassesTabScreen() {
           description={
             isDirectorOfActive
               ? "첫 클래스를 만들고 요일, 시간 스케줄을 묶어 보세요.\n오늘 출석 체크가 한 번에 해결됩니다."
-              : "원장이 클래스를 등록하면 여기에 표시돼요.\n지도자는 출석 체크와 수련생 관리를 도와줄 수 있어요."
+              : "원장이 클래스를 등록하면 여기에 표시돼요.\n선생님은 출석 체크와 수련생 관리를 도와줄 수 있어요."
           }
           action={
             isDirectorOfActive
