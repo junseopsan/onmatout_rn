@@ -5,6 +5,20 @@ import type { StudentProfile } from "../../types/teacher";
 import { Avatar } from "../ui/Avatar";
 import { StatusChip } from "../ui/StatusChip";
 
+// 한국 전화번호 표기 포맷 (010-1234-5678, 02-123-4567 등)
+function formatPhone(raw: string): string {
+  const d = raw.replace(/[^\d]/g, "");
+  if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+  if (d.length === 10) {
+    if (d.startsWith("02"))
+      return `02-${d.slice(2, 6)}-${d.slice(6)}`;
+    return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  if (d.length === 9 && d.startsWith("02"))
+    return `02-${d.slice(2, 5)}-${d.slice(5)}`;
+  return raw;
+}
+
 interface StudentRowProps {
   student: StudentProfile;
   onPress?: (student: StudentProfile) => void;
@@ -37,12 +51,12 @@ export function StudentRow({
           <Text style={styles.name} numberOfLines={1}>
             {student.name}
             {student.phone ? (
-              <Text style={styles.phoneInline}>{` (${student.phone})`}</Text>
+              <Text style={styles.phoneInline}>{` (${formatPhone(student.phone)})`}</Text>
             ) : null}
           </Text>
-          {hasLinkedUser ? (
-            <View style={styles.appBadge}>
-              <Text style={styles.appBadgeText}>앱 가입</Text>
+          {!hasLinkedUser ? (
+            <View style={styles.unlinkedBadge}>
+              <Text style={styles.unlinkedBadgeText}>미가입</Text>
             </View>
           ) : null}
           {isTeacher ? (
@@ -107,12 +121,14 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   teacherBadgeText: { color: COLORS.info, fontSize: 10, fontWeight: "800" },
-  appBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.16)",
+  unlinkedBadge: {
+    backgroundColor: COLORS.surfaceDark,
     borderRadius: 999,
     paddingHorizontal: 7,
     paddingVertical: 2,
     marginLeft: 2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  appBadgeText: { color: COLORS.success, fontSize: 10, fontWeight: "800" },
+  unlinkedBadgeText: { color: COLORS.textMuted, fontSize: 10, fontWeight: "800" },
 });
