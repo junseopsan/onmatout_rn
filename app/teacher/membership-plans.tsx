@@ -383,7 +383,9 @@ function PlanFormSheet({
         placeholder="수업명을 입력해주세요"
       />
 
-      <Text style={styles.fieldLabel}>유형</Text>
+      <Text style={[styles.fieldLabel, { marginTop: SPACING.md }]}>
+        수업 유형
+      </Text>
       <View style={styles.chipRow}>
         {TYPES.map((t) => (
           <Chip
@@ -395,21 +397,7 @@ function PlanFormSheet({
         ))}
       </View>
 
-      <NumberSelect
-        label="수업 시간"
-        value={duration}
-        onChangeValue={setDuration}
-        suffix="분"
-        width={180}
-        placeholder="선택 또는 입력"
-        options={[
-          { label: "50분", value: 50 },
-          { label: "60분", value: 60 },
-          { label: "90분", value: 90 },
-          { label: "120분", value: 120 },
-        ]}
-      />
-
+      <View style={{ height: SPACING.md }} />
       {type === "count" ? (
         <>
           <Text style={styles.fieldLabel}>총 횟수</Text>
@@ -475,21 +463,40 @@ function PlanFormSheet({
         </>
       )}
 
-      <NumberSelect
-        label="사용기한"
-        value={validDays}
-        onChangeValue={setValidDays}
-        suffix="일"
-        width={180}
-        placeholder="선택 또는 입력"
-        options={[
-          { label: "1개월 (30일)", value: 30 },
-          { label: "2개월 (60일)", value: 60 },
-          { label: "3개월 (90일)", value: 90 },
-          { label: "6개월 (180일)", value: 180 },
-          { label: "1년 (365일)", value: 365 },
-        ]}
-      />
+      <View style={{ height: SPACING.md }} />
+      <View style={styles.fieldRow}>
+        <View style={{ flex: 1 }}>
+          <NumberSelect
+            label="수업 시간"
+            value={duration}
+            onChangeValue={setDuration}
+            suffix="분"
+            placeholder="선택/입력"
+            options={[
+              { label: "50분", value: 50 },
+              { label: "60분", value: 60 },
+              { label: "90분", value: 90 },
+              { label: "120분", value: 120 },
+            ]}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <NumberSelect
+            label="사용기한"
+            value={validDays}
+            onChangeValue={setValidDays}
+            suffix="일"
+            placeholder="선택/입력"
+            options={[
+              { label: "1개월 (30일)", value: 30 },
+              { label: "2개월 (60일)", value: 60 },
+              { label: "3개월 (90일)", value: 90 },
+              { label: "6개월 (180일)", value: 180 },
+              { label: "1년 (365일)", value: 365 },
+            ]}
+          />
+        </View>
+      </View>
 
       <PillInput
         label="가격"
@@ -592,6 +599,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: SPACING.sm,
   },
+  fieldRow: { flexDirection: "row", gap: SPACING.md, alignItems: "flex-start" },
   planImageWrap: { marginBottom: SPACING.sm },
   planImage: {
     width: "100%",
