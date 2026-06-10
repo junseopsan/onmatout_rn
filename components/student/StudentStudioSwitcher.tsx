@@ -93,7 +93,7 @@ export function StudentStudioSwitcher() {
           activeOpacity={0.85}
         >
           <Ionicons name="add" size={16} color={COLORS.primary} />
-          <Text style={styles.addBtnText}>다른 요가원에 가입</Text>
+          <Text style={styles.addBtnText}>다른 요가원</Text>
         </TouchableOpacity>
       </Sheet>
     </>
