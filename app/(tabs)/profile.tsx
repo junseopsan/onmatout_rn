@@ -376,6 +376,7 @@ const styles = StyleSheet.create({
   roleChip: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-start",
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
