@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,19 +12,23 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button } from "../../components/ui/Button";
-import { Chip } from "../../components/ui/Chip";
-import { DetailHeader } from "../../components/ui/DetailHeader";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { PillInput } from "../../components/ui/PillInput";
-import { Sheet } from "../../components/ui/Sheet";
+import {
+  Button,
+  Chip,
+  DetailHeader,
+  EmptyState,
+  PillInput,
+  Sheet,
+} from "../../components/ui";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
+import { useAuth } from "../../hooks/useAuth";
 import {
   membershipPlansApi,
   type MembershipPlan,
   type MembershipPlanType,
 } from "../../lib/api/membershipPlans";
+import { storageAPI } from "../../lib/api/storage";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -139,6 +144,9 @@ export default function TeacherMembershipPlansScreen() {
               key={p.id}
               style={[styles.card, !p.is_active && styles.cardInactive]}
             >
+              {p.image_url ? (
+                <Image source={{ uri: p.image_url }} style={styles.cardThumb} />
+              ) : null}
               <View style={{ flex: 1 }}>
                 <View style={styles.cardTop}>
                   <Text style={styles.planName}>{p.name}</Text>
@@ -227,8 +235,11 @@ function PlanFormSheet({
   const [weekly, setWeekly] = useState("");
   const [validDays, setValidDays] = useState("");
   const [price, setPrice] = useState("");
+  const [image, setImage] = useState<string | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [active, setActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!visible) return;
@@ -240,6 +251,7 @@ function PlanFormSheet({
       setWeekly(plan.weekly_limit != null ? String(plan.weekly_limit) : "");
       setValidDays(plan.valid_days != null ? String(plan.valid_days) : "");
       setPrice(plan.price != null ? String(plan.price) : "");
+      setImage(plan.image_url ?? null);
       setActive(plan.is_active);
     } else {
       setName("");
@@ -249,9 +261,23 @@ function PlanFormSheet({
       setWeekly("2");
       setValidDays("30");
       setPrice("");
+      setImage(null);
       setActive(true);
     }
   }, [visible, plan]);
+
+  const pickImage = async () => {
+    if (!user?.id) return Alert.alert("로그인이 필요해요");
+    setUploadingImg(true);
+    try {
+      const res = await storageAPI.uploadStudioImage(user.id);
+      if (res.success && res.url) setImage(res.url);
+      else if (!res.canceled)
+        Alert.alert("업로드 실패", res.message ?? "잠시 후 다시 시도해 주세요.");
+    } finally {
+      setUploadingImg(false);
+    }
+  };
 
   const numOrNull = (s: string): number | null => {
     const n = parseInt(s.replace(/[^\d]/g, ""), 10);
@@ -278,6 +304,7 @@ function PlanFormSheet({
         weekly_limit: type === "period_weekly" ? numOrNull(weekly) : null,
         valid_days: numOrNull(validDays),
         price: numOrNull(price),
+        image_url: image,
       };
       const saved = plan
         ? await membershipPlansApi.update(plan.id, {
@@ -310,6 +337,38 @@ function PlanFormSheet({
         />
       }
     >
+      <Text style={[styles.fieldLabel, { marginTop: 0 }]}>대표 사진</Text>
+      {image ? (
+        <View style={styles.planImageWrap}>
+          <Image source={{ uri: image }} style={styles.planImage} />
+          <View style={styles.planImageActions}>
+            <Button
+              title="변경"
+              variant="outline"
+              size="small"
+              onPress={pickImage}
+              loading={uploadingImg}
+              style={{ flex: 1 }}
+            />
+            <Button
+              title="삭제"
+              variant="destructive"
+              size="small"
+              onPress={() => setImage(null)}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
+      ) : (
+        <Button
+          title="대표 사진 등록"
+          variant="outline"
+          onPress={pickImage}
+          loading={uploadingImg}
+        />
+      )}
+
+      <View style={{ height: SPACING.md }} />
       <PillInput
         label="이름"
         value={name}
@@ -499,6 +558,13 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   cardInactive: { opacity: 0.55 },
+  cardThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    marginRight: SPACING.md,
+    backgroundColor: COLORS.surface,
+  },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   planName: { color: COLORS.text, fontSize: 15, fontWeight: "800" },
   typeChip: {
@@ -542,6 +608,20 @@ const styles = StyleSheet.create({
   equalChipRow: { flexDirection: "row", gap: 6, marginBottom: SPACING.sm },
   equalChip: { flex: 1, paddingHorizontal: 0 },
   narrowInput: { width: 120 },
+  planImageWrap: { marginBottom: SPACING.sm },
+  planImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  planImageActions: {
+    flexDirection: "row",
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
   stepperRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
   stepperBtn: {
     width: 48,

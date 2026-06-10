@@ -225,6 +225,12 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
             <Text style={styles.guideTitle}>수업권 안내</Text>
             {plans.map((p) => (
               <View key={p.id} style={styles.planLine}>
+                {p.image_url ? (
+                  <Image
+                    source={{ uri: p.image_url }}
+                    style={styles.planThumb}
+                  />
+                ) : null}
                 <View style={{ flex: 1 }}>
                   <Text style={styles.planName}>{p.name}</Text>
                   <Text style={styles.planSummary}>{planSummary(p)}</Text>
@@ -466,6 +472,13 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: COLORS.border,
+  },
+  planThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 10,
+    backgroundColor: COLORS.surface,
   },
   planName: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
   planSummary: {

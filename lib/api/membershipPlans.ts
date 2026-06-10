@@ -15,6 +15,7 @@ export type MembershipPlan = {
   weekly_limit: number | null;
   valid_days: number | null;
   price: number | null;
+  image_url: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -30,6 +31,7 @@ export type MembershipPlanInput = {
   weekly_limit?: number | null;
   valid_days?: number | null;
   price?: number | null;
+  image_url?: string | null;
   sort_order?: number;
 };
 
@@ -62,6 +64,7 @@ export const membershipPlansApi = {
         weekly_limit: input.weekly_limit ?? null,
         valid_days: input.valid_days ?? null,
         price: input.price ?? null,
+        image_url: input.image_url ?? null,
         sort_order: input.sort_order ?? 0,
       })
       .select()
@@ -85,6 +88,7 @@ export const membershipPlansApi = {
       "weekly_limit",
       "valid_days",
       "price",
+      "image_url",
       "sort_order",
       "is_active",
     ] as const) {
