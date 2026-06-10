@@ -12,6 +12,7 @@ export function useRoles() {
     error,
     loadRoles,
     addRole,
+    removeRole,
     setActiveRole,
     reset,
   } = useRoleStore();
@@ -42,6 +43,8 @@ export function useRoles() {
     error,
     addRole: (role: "teacher" | "student") =>
       user?.id ? addRole(user.id, role) : Promise.resolve(false),
+    removeRole: (role: "teacher" | "student") =>
+      user?.id ? removeRole(user.id, role) : Promise.resolve(false),
     setActiveRole,
     reloadRoles: () => (user?.id ? loadRoles(user.id) : Promise.resolve()),
   };

@@ -16,6 +16,7 @@ interface RoleState {
 interface RoleStore extends RoleState {
   loadRoles: (userId: string) => Promise<void>;
   addRole: (userId: string, role: UserRole) => Promise<boolean>;
+  removeRole: (userId: string, role: UserRole) => Promise<boolean>;
   setActiveRole: (role: UserRole) => Promise<void>;
   reset: () => void;
 }
@@ -82,6 +83,38 @@ export const useRoleStore = create<RoleStore>((set, get) => ({
       return true;
     } catch (e: any) {
       set({ error: e.message ?? "역할을 추가하지 못했어요" });
+      return false;
+    }
+  },
+
+  removeRole: async (userId: string, role: UserRole) => {
+    try {
+      // 마지막 역할은 제거 불가 (최소 1개 유지)
+      if (get().roles.length <= 1) {
+        set({ error: "마지막 역할은 제거할 수 없어요" });
+        return false;
+      }
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role);
+      if (error) throw error;
+
+      const next = get().roles.filter((r) => r !== role);
+      set({ roles: next });
+
+      // 제거한 역할이 활성이었으면 남은 역할로 전환
+      if (get().activeRole === role) {
+        const fallback = next[0] ?? null;
+        if (fallback) {
+          await AsyncStorage.setItem(ACTIVE_ROLE_KEY, fallback);
+          set({ activeRole: fallback });
+        }
+      }
+      return true;
+    } catch (e: any) {
+      set({ error: e.message ?? "역할을 제거하지 못했어요" });
       return false;
     }
   },

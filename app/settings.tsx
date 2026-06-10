@@ -29,7 +29,8 @@ import { useAuthStore } from "../stores/authStore";
 
 export default function SettingsScreen() {
   const { user } = useAuth();
-  const { roles, activeRole, addRole, hasMultipleRoles } = useRoles();
+  const { roles, activeRole, addRole, removeRole, hasMultipleRoles } =
+    useRoles();
   const { switchTo } = useRoleSwitch();
   const { getUserProfile, clearSession, signOut } = useAuthStore();
   const { showSnackbar } = useNotification();
@@ -343,43 +344,6 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* 요가톡 */}
-          {user ? (
-            <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>대화</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={() =>
-                  navigation.navigate("YogaTalkThreadList" as any)
-                }
-              >
-                <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>요가톡</Text>
-                  <Text style={styles.settingDescription}>
-                    수업 후 지도자와 나눈 대화 이력 — 수업 단위로 묶여있어요.
-                  </Text>
-                </View>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={() =>
-                  navigation.navigate("YogaAiAssistant" as any)
-                }
-              >
-                <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>AI 요가 도우미 (베타)</Text>
-                  <Text style={styles.settingDescription}>
-                    자세, 호흡, 시퀀스 질문 → 등록된 자료를 근거로 답변. 통증/부상
-                    관련은 지도자 상담을 권유합니다.
-                  </Text>
-                </View>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
-            </>
-          ) : null}
 
           {/* 고객지원 섹션 */}
           <View style={styles.sectionHeader}>
@@ -405,26 +369,6 @@ export default function SettingsScreen() {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>역할</Text>
               </View>
-
-              {roles.length === 0 ? (
-                <View style={styles.settingItem}>
-                  <View style={styles.settingContent}>
-                    <Text style={styles.settingText}>역할 미설정</Text>
-                    <Text style={styles.settingDescription}>
-                      홈에서 선생님 또는 회원 역할을 먼저 선택해 주세요.
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.settingItem}>
-                  <View style={styles.settingContent}>
-                    <Text style={styles.settingText}>현재 모드</Text>
-                    <Text style={styles.settingDescription}>
-                      {activeRole === "teacher" ? "🧘‍♀️ 지도자 모드" : "📒 수련생 모드"}
-                    </Text>
-                  </View>
-                </View>
-              )}
 
               {hasMultipleRoles ? (
                 <TouchableOpacity
@@ -472,6 +416,45 @@ export default function SettingsScreen() {
                     </Text>
                   </View>
                   <Text style={styles.arrowText}>+</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              {/* 지도자 역할 해제 (지도자 + 다른 역할이 있을 때만) */}
+              {roles.includes("teacher") && roles.length > 1 ? (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={() => {
+                    Alert.alert(
+                      "지도자 역할 해제",
+                      "지도자 역할을 해제하면 클래스/회원 관리 기능을 사용할 수 없어요. 이미 만든 요가원 정보는 보존됩니다. 해제할까요?",
+                      [
+                        { text: "취소", style: "cancel" },
+                        {
+                          text: "해제",
+                          style: "destructive",
+                          onPress: async () => {
+                            const ok = await removeRole("teacher");
+                            if (ok) {
+                              showSnackbar("지도자 역할을 해제했어요", "success");
+                            } else {
+                              showSnackbar(
+                                "해제하지 못했어요. 다시 시도해 주세요.",
+                                "error",
+                              );
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                >
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>지도자 역할 해제</Text>
+                    <Text style={styles.settingDescription}>
+                      수련생 역할만 남깁니다. 요가원 정보는 보존돼요.
+                    </Text>
+                  </View>
+                  <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
               ) : null}
 

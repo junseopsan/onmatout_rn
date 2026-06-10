@@ -176,33 +176,33 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* 헤더 - 우측 액션만 */}
       <View style={styles.header}>
-        <View style={styles.headerLeft} />
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.roleChip}
+            activeOpacity={otherRole ? 0.85 : 1}
+            onPress={otherRole ? handleSwitchRole : undefined}
+            disabled={!otherRole}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <Ionicons name="person-circle" size={15} color={COLORS.primary} />
+            <Text style={styles.roleChipText}>
+              {activeRole === "teacher" ? "지도자" : "수련생"}
+            </Text>
+            {otherRole ? (
+              <>
+                <Ionicons
+                  name="swap-horizontal"
+                  size={12}
+                  color={COLORS.textMuted}
+                />
+                <Text style={styles.roleChipTarget}>
+                  {otherRole === "teacher" ? "지도자" : "수련생"}
+                </Text>
+              </>
+            ) : null}
+          </TouchableOpacity>
+        </View>
         <View style={styles.headerButtons}>
-          {otherRole ? (
-            <TouchableOpacity
-              style={styles.roleChip}
-              activeOpacity={0.85}
-              onPress={handleSwitchRole}
-              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-            >
-              <Ionicons
-                name="swap-horizontal"
-                size={13}
-                color={COLORS.primary}
-              />
-              <Text style={styles.roleChipText}>
-                {activeRole === "teacher" ? "지도자" : "수련생"}
-              </Text>
-              <Ionicons
-                name="arrow-forward"
-                size={10}
-                color={COLORS.textMuted}
-              />
-              <Text style={styles.roleChipTarget}>
-                {otherRole === "teacher" ? "지도자" : "수련생"}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
           <TouchableOpacity
             style={styles.settingsButton}
             onPress={() => navigation.navigate("Settings")}
