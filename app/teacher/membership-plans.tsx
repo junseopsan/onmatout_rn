@@ -246,7 +246,7 @@ function PlanFormSheet({
       setType("count");
       setDuration("");
       setCount("10");
-      setWeekly("");
+      setWeekly("2");
       setValidDays("");
       setPrice("");
       setActive(true);
@@ -373,13 +373,34 @@ function PlanFormSheet({
           </View>
         </>
       ) : type === "period_weekly" ? (
-        <PillInput
-          label="주당 횟수"
-          value={weekly}
-          onChangeText={(t) => setWeekly(t.replace(/[^\d]/g, ""))}
-          placeholder="예) 3"
-          keyboardType="number-pad"
-        />
+        <>
+          <Text style={styles.fieldLabel}>주당 횟수</Text>
+          <View style={styles.stepperRow}>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() =>
+                setWeekly((c) =>
+                  String(Math.max(1, (parseInt(c, 10) || 0) - 1)),
+                )
+              }
+            >
+              <Ionicons name="remove" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+            <View style={styles.stepperValue}>
+              <Text style={styles.stepperValueText}>
+                주 {parseInt(weekly, 10) || 0}회
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() =>
+                setWeekly((c) => String((parseInt(c, 10) || 0) + 1))
+              }
+            >
+              <Ionicons name="add" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+        </>
       ) : (
         <>
           <Text style={styles.fieldLabel}>출석</Text>
