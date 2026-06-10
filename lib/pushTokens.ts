@@ -3,6 +3,16 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { supabase } from "./supabase";
 
+// 포그라운드(앱 실행 중)에서도 푸시를 배너/목록에 표시
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 // 푸시 토큰 등록 — 인증된 사용자가 처음 화면 진입할 때 호출.
 // Expo Go 환경에서는 토큰 발급 안 됨 (SDK 53+).
 export async function registerPushTokenForUser(userId: string): Promise<void> {

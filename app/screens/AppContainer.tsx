@@ -59,6 +59,48 @@ export default function AppContainer() {
     }
   }, [isAuthenticated, user?.id]);
 
+  // 푸시 탭 → 화면 이동 (data 기반 딥링크)
+  const routeFromNotification = (data: any) => {
+    if (!data) return;
+    try {
+      if (data.thread_id) {
+        navigation.navigate("YogaTalkThread", { threadId: data.thread_id });
+      } else {
+        navigation.navigate("Notifications");
+      }
+    } catch {
+      // 네비게이터 미준비 등 — 무시
+    }
+  };
+
+  // 앱 실행 중 푸시 탭 + 종료 상태에서 푸시로 실행된 경우
+  const coldStartHandledRef = useRef(false);
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        routeFromNotification(response.notification.request.content.data);
+      },
+    );
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (coldStartHandledRef.current) return;
+    if (!isAuthenticated || !rolesLoaded) return;
+    coldStartHandledRef.current = true;
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) {
+          routeFromNotification(
+            response.notification.request.content.data,
+          );
+        }
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, rolesLoaded]);
+
   // 이미 초기화되었는지 추적
   const hasInitializedRef = useRef(false);
 
