@@ -16,6 +16,7 @@ interface PillInputProps extends Omit<TextInputProps, "style"> {
   error?: string;
   multiline?: boolean;
   required?: boolean;
+  suffix?: string;
 }
 
 // Floga 스타일 pill 입력 필드
@@ -25,6 +26,7 @@ export function PillInput({
   error,
   multiline,
   required,
+  suffix,
   ...rest
 }: PillInputProps) {
   const [focused, setFocused] = useState(false);
@@ -43,21 +45,30 @@ export function PillInput({
           error && styles.boxError,
         ]}
       >
-        <TextInput
-          {...rest}
-          multiline={multiline}
-          onFocus={(e) => {
-            setFocused(true);
-            rest.onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setFocused(false);
-            rest.onBlur?.(e);
-          }}
-          placeholderTextColor={COLORS.textSecondary}
-          style={multiline ? styles.inputMulti : styles.input}
-          textAlignVertical={multiline ? "top" : undefined}
-        />
+        <View style={styles.inputRow}>
+          <TextInput
+            {...rest}
+            multiline={multiline}
+            onFocus={(e) => {
+              setFocused(true);
+              rest.onFocus?.(e);
+            }}
+            onBlur={(e) => {
+              setFocused(false);
+              rest.onBlur?.(e);
+            }}
+            placeholderTextColor={COLORS.textSecondary}
+            style={[
+              multiline ? styles.inputMulti : styles.input,
+              !multiline && styles.inputFlex,
+              suffix && !multiline ? styles.inputRightAlign : null,
+            ]}
+            textAlignVertical={multiline ? "top" : undefined}
+          />
+          {suffix && !multiline ? (
+            <Text style={styles.suffix}>{suffix}</Text>
+          ) : null}
+        </View>
       </View>
       {error ? (
         <Text style={styles.error}>{error}</Text>
@@ -100,6 +111,15 @@ const styles = StyleSheet.create({
   },
   boxFocused: { borderColor: COLORS.primary },
   boxError: { borderColor: COLORS.error },
+  inputRow: { flexDirection: "row", alignItems: "center" },
+  inputFlex: { flex: 1 },
+  inputRightAlign: { textAlign: "right" },
+  suffix: {
+    color: COLORS.textSecondary,
+    fontSize: 15,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
   input: { color: COLORS.text, fontSize: 16, padding: 0 },
   inputMulti: { color: COLORS.text, fontSize: 16, padding: 0, minHeight: 60 },
   hint: {

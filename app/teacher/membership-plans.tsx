@@ -244,10 +244,10 @@ function PlanFormSheet({
     } else {
       setName("");
       setType("count");
-      setDuration("");
+      setDuration("50");
       setCount("10");
       setWeekly("2");
-      setValidDays("");
+      setValidDays("30");
       setPrice("");
       setActive(true);
     }
@@ -301,12 +301,20 @@ function PlanFormSheet({
       visible={visible}
       onClose={onClose}
       title={plan ? "수업권 수정" : "수업권 추가"}
+      footer={
+        <Button
+          title={plan ? "변경 저장" : "수업권 추가"}
+          onPress={save}
+          disabled={!canSave}
+          loading={submitting}
+        />
+      }
     >
       <PillInput
         label="이름"
         value={name}
         onChangeText={setName}
-        placeholder="예) 90분 10회권"
+        placeholder="이름을 입력해주세요"
       />
 
       <Text style={styles.fieldLabel}>유형</Text>
@@ -338,8 +346,9 @@ function PlanFormSheet({
         <PillInput
           value={duration}
           onChangeText={(t) => setDuration(t.replace(/[^\d]/g, ""))}
-          placeholder="수업 시간 (분)"
+          placeholder="직접 입력"
           keyboardType="number-pad"
+          suffix={duration ? "분" : undefined}
         />
       </View>
 
@@ -411,16 +420,19 @@ function PlanFormSheet({
       )}
 
       <Text style={styles.fieldLabel}>사용기한</Text>
-      <View style={styles.chipRow}>
+      <View style={styles.equalChipRow}>
         {[
-          { m: 1, d: 30 },
-          { m: 2, d: 60 },
-          { m: 3, d: 90 },
-          { m: 6, d: 180 },
+          { label: "1개월", d: 30 },
+          { label: "2개월", d: 60 },
+          { label: "3개월", d: 90 },
+          { label: "6개월", d: 180 },
+          { label: "1년", d: 365 },
         ].map((o) => (
           <Chip
             key={o.d}
-            label={`${o.m}개월`}
+            label={o.label}
+            size="sm"
+            style={styles.equalChip}
             active={validDays === String(o.d)}
             onPress={() =>
               setValidDays(validDays === String(o.d) ? "" : String(o.d))
@@ -432,8 +444,9 @@ function PlanFormSheet({
         <PillInput
           value={validDays}
           onChangeText={(t) => setValidDays(t.replace(/[^\d]/g, ""))}
-          placeholder="사용기한 (일)"
+          placeholder="직접 입력"
           keyboardType="number-pad"
+          suffix={validDays ? "일" : undefined}
         />
       </View>
 
@@ -441,8 +454,9 @@ function PlanFormSheet({
         label="가격"
         value={price ? Number(price).toLocaleString("en-US") : ""}
         onChangeText={(t) => setPrice(t.replace(/[^\d]/g, ""))}
-        placeholder="예) 250,000"
+        placeholder="가격을 입력해주세요"
         keyboardType="number-pad"
+        suffix={price ? "원" : undefined}
       />
 
       {plan ? (
@@ -461,14 +475,6 @@ function PlanFormSheet({
           </Text>
         </TouchableOpacity>
       ) : null}
-
-      <Button
-        title={plan ? "변경 저장" : "수업권 추가"}
-        onPress={save}
-        disabled={!canSave}
-        loading={submitting}
-        style={{ marginTop: SPACING.md }}
-      />
     </Sheet>
   );
 }
@@ -533,7 +539,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: SPACING.sm },
-  narrowInput: { width: 180 },
+  equalChipRow: { flexDirection: "row", gap: 6, marginBottom: SPACING.sm },
+  equalChip: { flex: 1, paddingHorizontal: 0 },
+  narrowInput: { width: 120 },
   stepperRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
   stepperBtn: {
     width: 48,

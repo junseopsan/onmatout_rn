@@ -1,5 +1,11 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { SPACING } from "../../constants/Design";
 
@@ -9,6 +15,7 @@ interface ChipProps {
   color?: string;
   onPress?: () => void;
   size?: "sm" | "md";
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Chip({
@@ -17,6 +24,7 @@ export function Chip({
   color,
   onPress,
   size = "md",
+  style,
 }: ChipProps) {
   const activeColor = color ?? COLORS.primary;
   return (
@@ -25,6 +33,7 @@ export function Chip({
         styles.base,
         size === "sm" ? styles.sm : styles.md,
         active && { backgroundColor: activeColor, borderColor: activeColor },
+        style,
       ]}
       onPress={onPress}
       activeOpacity={0.7}
