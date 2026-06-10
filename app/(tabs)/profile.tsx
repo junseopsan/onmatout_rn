@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.sm,
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
