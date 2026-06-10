@@ -17,6 +17,7 @@ import {
   Chip,
   DetailHeader,
   EmptyState,
+  NumberSelect,
   PillInput,
   Sheet,
 } from "../../components/ui";
@@ -105,7 +106,10 @@ export default function TeacherMembershipPlansScreen() {
             await membershipPlansApi.remove(p.id);
             setPlans((prev) => prev.filter((x) => x.id !== p.id));
           } catch (e: any) {
-            Alert.alert("삭제 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+            Alert.alert(
+              "삭제 실패",
+              e?.message ?? "잠시 후 다시 시도해 주세요.",
+            );
           }
         },
       },
@@ -273,7 +277,10 @@ function PlanFormSheet({
       const res = await storageAPI.uploadStudioImage(user.id, [1, 1]);
       if (res.success && res.url) setImage(res.url);
       else if (!res.canceled)
-        Alert.alert("업로드 실패", res.message ?? "잠시 후 다시 시도해 주세요.");
+        Alert.alert(
+          "업로드 실패",
+          res.message ?? "잠시 후 다시 시도해 주세요.",
+        );
     } finally {
       setUploadingImg(false);
     }
@@ -361,7 +368,7 @@ function PlanFormSheet({
         </View>
       ) : (
         <Button
-          title="대표 사진 등록"
+          title="대표 사진"
           variant="outline"
           onPress={pickImage}
           loading={uploadingImg}
@@ -370,10 +377,10 @@ function PlanFormSheet({
 
       <View style={{ height: SPACING.md }} />
       <PillInput
-        label="이름"
+        label="수업명"
         value={name}
         onChangeText={setName}
-        placeholder="이름을 입력해주세요"
+        placeholder="수업명을 입력해주세요"
       />
 
       <Text style={styles.fieldLabel}>유형</Text>
@@ -388,28 +395,19 @@ function PlanFormSheet({
         ))}
       </View>
 
-      <Text style={styles.fieldLabel}>수업 시간</Text>
-      <View style={styles.chipRow}>
-        {[50, 90, 120].map((m) => (
-          <Chip
-            key={m}
-            label={`${m}분`}
-            active={duration === String(m)}
-            onPress={() =>
-              setDuration(duration === String(m) ? "" : String(m))
-            }
-          />
-        ))}
-      </View>
-      <View style={styles.narrowInput}>
-        <PillInput
-          value={duration}
-          onChangeText={(t) => setDuration(t.replace(/[^\d]/g, ""))}
-          placeholder="직접 입력"
-          keyboardType="number-pad"
-          suffix={duration ? "분" : undefined}
-        />
-      </View>
+      <NumberSelect
+        label="수업 시간"
+        value={duration}
+        onChangeValue={setDuration}
+        suffix="분"
+        placeholder="선택 또는 입력"
+        options={[
+          { label: "50분", value: 50 },
+          { label: "60분", value: 60 },
+          { label: "90분", value: 90 },
+          { label: "120분", value: 120 },
+        ]}
+      />
 
       {type === "count" ? (
         <>
@@ -418,9 +416,7 @@ function PlanFormSheet({
             <TouchableOpacity
               style={styles.stepperBtn}
               onPress={() =>
-                setCount((c) =>
-                  String(Math.max(1, (parseInt(c, 10) || 0) - 1)),
-                )
+                setCount((c) => String(Math.max(1, (parseInt(c, 10) || 0) - 1)))
               }
             >
               <Ionicons name="remove" size={22} color={COLORS.text} />
@@ -478,36 +474,20 @@ function PlanFormSheet({
         </>
       )}
 
-      <Text style={styles.fieldLabel}>사용기한</Text>
-      <View style={styles.equalChipRow}>
-        {[
-          { label: "1개월", d: 30 },
-          { label: "2개월", d: 60 },
-          { label: "3개월", d: 90 },
-          { label: "6개월", d: 180 },
-          { label: "1년", d: 365 },
-        ].map((o) => (
-          <Chip
-            key={o.d}
-            label={o.label}
-            size="sm"
-            style={styles.equalChip}
-            active={validDays === String(o.d)}
-            onPress={() =>
-              setValidDays(validDays === String(o.d) ? "" : String(o.d))
-            }
-          />
-        ))}
-      </View>
-      <View style={styles.narrowInput}>
-        <PillInput
-          value={validDays}
-          onChangeText={(t) => setValidDays(t.replace(/[^\d]/g, ""))}
-          placeholder="직접 입력"
-          keyboardType="number-pad"
-          suffix={validDays ? "일" : undefined}
-        />
-      </View>
+      <NumberSelect
+        label="사용기한"
+        value={validDays}
+        onChangeValue={setValidDays}
+        suffix="일"
+        placeholder="선택 또는 입력"
+        options={[
+          { label: "1개월 (30일)", value: 30 },
+          { label: "2개월 (60일)", value: 60 },
+          { label: "3개월 (90일)", value: 90 },
+          { label: "6개월 (180일)", value: 180 },
+          { label: "1년 (365일)", value: 365 },
+        ]}
+      />
 
       <PillInput
         label="가격"
@@ -604,10 +584,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     paddingHorizontal: 4,
   },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: SPACING.sm },
-  equalChipRow: { flexDirection: "row", gap: 6, marginBottom: SPACING.sm },
-  equalChip: { flex: 1, paddingHorizontal: 0 },
-  narrowInput: { width: 120 },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: SPACING.sm,
+  },
   planImageWrap: { marginBottom: SPACING.sm },
   planImage: {
     width: "100%",

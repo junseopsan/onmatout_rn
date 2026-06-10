@@ -12,6 +12,7 @@ export * from "./IconBadge";
 export * from "./Input";
 export * from "./ListSkeleton";
 export * from "./Loading";
+export * from "./NumberSelect";
 export * from "./NotificationBell";
 export * from "./PageHeader";
 export * from "./PillInput";
