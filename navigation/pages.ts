@@ -47,6 +47,7 @@ import TeacherNearbyScreen from "../app/teacher/nearby";
 import TeacherMemberCreateScreen from "../app/teacher/member-create";
 import TeacherMemberDetailScreen from "../app/teacher/member-detail";
 import TeacherMembershipCreateScreen from "../app/teacher/membership-create";
+import TeacherMembershipPlansScreen from "../app/teacher/membership-plans";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
 import SettingsScreen from "../app/settings";
@@ -292,6 +293,11 @@ export const pageList: PageConfig[] = [
   {
     name: "TeacherMembershipCreate",
     component: TeacherMembershipCreateScreen,
+    options: { headerShown: false },
+  },
+  {
+    name: "TeacherMembershipPlans",
+    component: TeacherMembershipPlansScreen,
     options: { headerShown: false },
   },
   {

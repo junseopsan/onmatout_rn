@@ -33,6 +33,10 @@ import {
   type StudioFullInfo,
 } from "../../lib/api/studentBooking";
 import { yogaTalkApi } from "../../lib/api/yogaTalk";
+import {
+  membershipPlansApi,
+  type MembershipPlan,
+} from "../../lib/api/membershipPlans";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -90,6 +94,7 @@ export default function StudentClassesTabScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
   const [studioInfo, setStudioInfo] = useState<StudioFullInfo | null>(null);
+  const [studioPlans, setStudioPlans] = useState<MembershipPlan[]>([]);
   const [activeMemberships, setActiveMemberships] = useState<
     MyMembershipInfo[]
   >([]);
@@ -101,6 +106,7 @@ export default function StudentClassesTabScreen() {
   useEffect(() => {
     if (!activeMembership) {
       setStudioInfo(null);
+      setStudioPlans([]);
       setActiveMemberships([]);
       return;
     }
@@ -110,11 +116,15 @@ export default function StudentClassesTabScreen() {
       studentBookingApi.listActiveMemberships(
         activeMembership.studentProfileId,
       ),
+      membershipPlansApi.listByStudio(activeMembership.studio.id, {
+        activeOnly: true,
+      }),
     ])
-      .then(([info, memos]) => {
+      .then(([info, memos, plans]) => {
         if (!mounted) return;
         setStudioInfo(info);
         setActiveMemberships(memos);
+        setStudioPlans(plans);
       })
       .catch((e) => console.warn("[ClassesTab] studio info load failed", e));
     return () => {
@@ -371,6 +381,7 @@ export default function StudentClassesTabScreen() {
             <StudioInfoCard
               studio={studioInfo}
               memberships={activeMemberships}
+              plans={studioPlans}
             />
           ) : null}
           <WeekDayStrip

@@ -18,7 +18,12 @@ import { DetailHeader } from "../../components/ui/DetailHeader";
 import { PillInput } from "../../components/ui/PillInput";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
+import {
+  membershipPlansApi,
+  type MembershipPlan,
+} from "../../lib/api/membershipPlans";
 import { teacherApi } from "../../lib/api/teacher";
+import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { RootStackParamList } from "../../navigation/types";
 import type { MembershipType, StudentProfile } from "../../types/teacher";
 
@@ -67,7 +72,11 @@ export default function TeacherMembershipCreateScreen() {
   const route = useRoute<R>();
   const { studentProfileId } = route.params;
 
+  const { activeStudio } = usePivotStudios();
+
   const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [type, setType] = useState<MembershipType>("count");
   const [totalCount, setTotalCount] = useState("10");
   const [weeklyLimit, setWeeklyLimit] = useState("3");
@@ -87,9 +96,34 @@ export default function TeacherMembershipCreateScreen() {
   }, [studentProfileId]);
 
   useEffect(() => {
+    if (!activeStudio?.id) return;
+    let mounted = true;
+    membershipPlansApi
+      .listByStudio(activeStudio.id, { activeOnly: true })
+      .then((rows) => mounted && setPlans(rows))
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, [activeStudio?.id]);
+
+  // 플랜 미선택 시에만 유형 기본 기간을 자동 계산
+  useEffect(() => {
+    if (selectedPlanId) return;
     if (type === "count") setEndDate(addDays(startDate, 60));
     else setEndDate(addDays(startDate, 30));
-  }, [type, startDate]);
+  }, [type, startDate, selectedPlanId]);
+
+  const applyPlan = (p: MembershipPlan) => {
+    setSelectedPlanId(p.id);
+    setType(p.type);
+    if (p.type === "count" && p.total_count != null)
+      setTotalCount(String(p.total_count));
+    if (p.type === "period_weekly" && p.weekly_limit != null)
+      setWeeklyLimit(String(p.weekly_limit));
+    const days = p.valid_days ?? (p.type === "count" ? 60 : 30);
+    setEndDate(addDays(startDate, days));
+  };
 
   const validate = (): string | null => {
     if (!startDate || !endDate) return "기간을 입력해 주세요.";
@@ -154,6 +188,36 @@ export default function TeacherMembershipCreateScreen() {
             </Text>
           ) : null}
 
+          {plans.length > 0 ? (
+            <>
+              <Text style={styles.label}>수업권 선택 (선택)</Text>
+              <View style={styles.planRow}>
+                {plans.map((p) => {
+                  const on = selectedPlanId === p.id;
+                  return (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.planChip, on && styles.planChipOn]}
+                      onPress={() => applyPlan(p)}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[styles.planChipName, on && { color: COLORS.primary }]}
+                      >
+                        {p.name}
+                      </Text>
+                      {p.price != null ? (
+                        <Text style={styles.planChipPrice}>
+                          {p.price.toLocaleString("en-US")}원
+                        </Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
+
           <Text style={styles.label}>유형</Text>
           <View style={{ gap: SPACING.md }}>
             {TYPE_OPTIONS.map((opt) => {
@@ -162,7 +226,10 @@ export default function TeacherMembershipCreateScreen() {
                 <TouchableOpacity
                   key={opt.value}
                   style={[styles.typeCard, active && styles.typeCardActive]}
-                  onPress={() => setType(opt.value)}
+                  onPress={() => {
+                    setSelectedPlanId(null);
+                    setType(opt.value);
+                  }}
                   activeOpacity={0.85}
                 >
                   <View
@@ -314,6 +381,30 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: COLORS.primary,
+  },
+  planRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  planChip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+  },
+  planChipOn: {
+    borderColor: COLORS.primary,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+  },
+  planChipName: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
+  planChipPrice: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
   },
   dateRow: { flexDirection: "row", marginTop: SPACING.md },
   submitWrap: {

@@ -116,6 +116,19 @@ export default function TeacherStudioListScreen() {
                     <Ionicons name="create-outline" size={14} color={COLORS.text} />
                     <Text style={styles.actionGhostText}>정보 수정</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.actionGhost]}
+                    onPress={() =>
+                      navigation.navigate("TeacherMembershipPlans", {
+                        studioId: s.id,
+                        studioName: s.name,
+                      })
+                    }
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="ticket-outline" size={14} color={COLORS.text} />
+                    <Text style={styles.actionGhostText}>수업권</Text>
+                  </TouchableOpacity>
                 </View>
               </SurfaceCard>
             );

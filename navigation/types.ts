@@ -23,6 +23,7 @@ export type RootStackParamList = {
   TeacherClassCreate: undefined;
   TeacherClassDetail: { classId: string };
   TeacherMembershipCreate: { studentProfileId: string };
+  TeacherMembershipPlans: { studioId: string; studioName?: string };
   TeacherClassAttendance: { classId: string; date?: string };
   StudentTeacherDetail: { studentProfileId: string };
   TeacherProfileEdit: undefined;

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
+import type { MembershipPlan } from "../../lib/api/membershipPlans";
 import type {
   MyMembershipInfo,
   StudioFullInfo,
@@ -19,6 +20,18 @@ import { Sheet } from "../ui/Sheet";
 interface Props {
   studio: StudioFullInfo;
   memberships: MyMembershipInfo[];
+  plans?: MembershipPlan[];
+}
+
+function planSummary(p: MembershipPlan): string {
+  const parts: string[] = [];
+  if (p.duration_min) parts.push(`${p.duration_min}분`);
+  if (p.type === "count" && p.total_count) parts.push(`${p.total_count}회`);
+  if (p.type === "period_weekly" && p.weekly_limit)
+    parts.push(`주 ${p.weekly_limit}회`);
+  if (p.type === "period_unlimited") parts.push("무제한");
+  if (p.valid_days) parts.push(`사용기한 ${p.valid_days}일`);
+  return parts.join(", ");
 }
 
 function typeLabel(m: MyMembershipInfo): string {
@@ -68,11 +81,12 @@ function openUrl(url: string) {
   Linking.openURL(u).catch(() => undefined);
 }
 
-export function StudioInfoCard({ studio, memberships }: Props) {
+export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
   const [open, setOpen] = useState(false);
   const hasContact =
     !!studio.phone || !!studio.instagram_url || !!studio.kakao_url;
-  const hasGuide = !!studio.pricing_text || !!studio.policy_text;
+  const hasGuide =
+    plans.length > 0 || !!studio.pricing_text || !!studio.policy_text;
 
   if (memberships.length === 0 && !hasContact && !hasGuide) return null;
 
@@ -135,7 +149,29 @@ export function StudioInfoCard({ studio, memberships }: Props) {
           })
         )}
 
-        {studio.pricing_text ? (
+        {plans.length > 0 ? (
+          <View style={styles.guideSection}>
+            <Text style={styles.guideTitle}>수업권 안내</Text>
+            {plans.map((p) => (
+              <View key={p.id} style={styles.planLine}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.planName}>{p.name}</Text>
+                  <Text style={styles.planSummary}>{planSummary(p)}</Text>
+                </View>
+                {p.price != null ? (
+                  <Text style={styles.planPrice}>
+                    {p.price.toLocaleString("en-US")}원
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+            {studio.pricing_text ? (
+              <Text style={[styles.guideBody, { marginTop: 10 }]}>
+                {studio.pricing_text}
+              </Text>
+            ) : null}
+          </View>
+        ) : studio.pricing_text ? (
           <View style={styles.guideSection}>
             <Text style={styles.guideTitle}>수업권 안내</Text>
             <Text style={styles.guideBody}>{studio.pricing_text}</Text>
@@ -309,6 +345,26 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 13,
     lineHeight: 20,
+  },
+  planLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 7,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+  },
+  planName: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
+  planSummary: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  planPrice: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
   actionsRow: {
     flexDirection: "row",
