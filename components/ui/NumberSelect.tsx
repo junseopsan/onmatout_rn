@@ -127,7 +127,13 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   boxFocused: { borderColor: COLORS.primary },
-  input: { flex: 1, color: COLORS.text, fontSize: 16, padding: 0 },
+  input: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 16,
+    padding: 0,
+    textAlign: "right",
+  },
   suffix: {
     color: COLORS.textSecondary,
     fontSize: 15,
