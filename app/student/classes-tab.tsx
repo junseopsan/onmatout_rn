@@ -4,8 +4,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  FlatList,
   RefreshControl,
-  SectionList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,7 +14,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StudentStudioSwitcher } from "../../components/student/StudentStudioSwitcher";
 import { StudioInfoCard } from "../../components/student/StudioInfoCard";
-import { WeekPicker } from "../../components/student/WeekPicker";
+import { WeekDayStrip } from "../../components/student/WeekDayStrip";
+import { NotificationBell } from "../../components/ui/NotificationBell";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -54,15 +55,6 @@ type DayStats = {
 };
 
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
-const DOW_LABELS_FULL = [
-  "일요일",
-  "월요일",
-  "화요일",
-  "수요일",
-  "목요일",
-  "금요일",
-  "토요일",
-];
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -82,10 +74,9 @@ export default function StudentClassesTabScreen() {
   const { activeMembership, activeStudio, memberships, loaded: studiosLoaded } =
     useStudentStudios();
 
-  const [weekStart, setWeekStart] = useState<Date>(() => {
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay());
     return d;
   });
   const [classes, setClasses] = useState<StudioClass[]>([]);
@@ -176,52 +167,35 @@ export default function StudentClassesTabScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studiosLoaded, activeMembership?.studentProfileId]);
 
-  // 한 주의 모든 슬롯을 요일별로 그룹핑 — SectionList용
-  const weekSections = useMemo(() => {
+  // 선택한 날짜 하루치 슬롯만 (시간순)
+  const daySlots = useMemo(() => {
     if (classes.length === 0) return [];
-    const sections: { title: string; date: string; dow: number; data: DaySlot[] }[] = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() + i);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      const iso = `${yyyy}-${mm}-${dd}`;
-      const dow = d.getDay();
-      const daySlots: DaySlot[] = [];
-      for (const c of classes) {
-        for (const s of c.class_schedules ?? []) {
-          if (s.day_of_week === dow) {
-            daySlots.push({
-              classId: c.id,
-              classTitle: c.title,
-              classLocation: c.location,
-              teacherName: teacherNames.get(c.teacher_id) ?? "지도자",
-              capacity: c.capacity ?? null,
-              scheduleId: s.id,
-              startTime: s.start_time,
-              endTime: s.end_time,
-              date: iso,
-            });
-          }
+    const yyyy = selectedDate.getFullYear();
+    const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(selectedDate.getDate()).padStart(2, "0");
+    const iso = `${yyyy}-${mm}-${dd}`;
+    const dow = selectedDate.getDay();
+    const slots: DaySlot[] = [];
+    for (const c of classes) {
+      for (const s of c.class_schedules ?? []) {
+        if (s.day_of_week === dow) {
+          slots.push({
+            classId: c.id,
+            classTitle: c.title,
+            classLocation: c.location,
+            teacherName: teacherNames.get(c.teacher_id) ?? "지도자",
+            capacity: c.capacity ?? null,
+            scheduleId: s.id,
+            startTime: s.start_time,
+            endTime: s.end_time,
+            date: iso,
+          });
         }
       }
-      if (daySlots.length === 0) continue;
-      daySlots.sort((a, b) => (a.startTime < b.startTime ? -1 : 1));
-      sections.push({
-        title: `${DOW_LABELS_FULL[dow]} ${d.getMonth() + 1}/${d.getDate()}`,
-        date: iso,
-        dow,
-        data: daySlots,
-      });
     }
-    return sections;
-  }, [classes, weekStart, teacherNames]);
-
-  const allSlots = useMemo(
-    () => weekSections.flatMap((s) => s.data),
-    [weekSections],
-  );
+    slots.sort((a, b) => (a.startTime < b.startTime ? -1 : 1));
+    return slots;
+  }, [classes, selectedDate, teacherNames]);
 
   // 선택된 날짜의 슬롯별 stats 불러오기 — 의존성 비워서 무한루프 방지
   // (이미 캐시된 키는 setState 콜백 안에서 skip)
@@ -251,12 +225,12 @@ export default function StudentClassesTabScreen() {
     });
   }, []);
 
-  // 주가 바뀌거나 classes 가 바뀌면 모든 슬롯의 stats 로드
+  // 날짜가 바뀌거나 classes 가 바뀌면 그날 슬롯 stats 로드
   React.useEffect(() => {
-    if (allSlots.length === 0) return;
-    loadStatsForSlots(allSlots);
+    if (daySlots.length === 0) return;
+    loadStatsForSlots(daySlots);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekStart, classes]);
+  }, [selectedDate, classes]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -374,6 +348,7 @@ export default function StudentClassesTabScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <PageHeader
         eyebrowSlot={hasMemberships ? <StudentStudioSwitcher /> : undefined}
+        trailingSlot={<NotificationBell />}
       />
 
       {!studio ? (
@@ -392,16 +367,15 @@ export default function StudentClassesTabScreen() {
               memberships={activeMemberships}
             />
           ) : null}
-          <WeekPicker
-            weekStart={weekStart}
-            onWeekChange={setWeekStart}
-            maxWeekOffset={1}
+          <WeekDayStrip
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            maxDayOffset={14}
           />
 
-          <SectionList
-            sections={weekSections}
+          <FlatList
+            data={daySlots}
             keyExtractor={(slot, idx) => `${slot.classId}|${slot.date}-${idx}`}
-            stickySectionHeadersEnabled={false}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -417,50 +391,16 @@ export default function StudentClassesTabScreen() {
                 title={
                   classes.length === 0
                     ? "등록된 수업이 없어요"
-                    : "이번 주에 수업이 없어요"
+                    : "이 날은 수업이 없어요"
                 }
                 description={
                   classes.length === 0
                     ? "지도자가 수업에 등록해주면\n이곳에서 스케줄을 확인하고 신청할 수 있어요."
-                    : "다음 주를 확인해 보세요."
+                    : "다른 날짜를 선택해 보세요."
                 }
               />
             }
             ListFooterComponent={<View style={{ height: SPACING.xxl }} />}
-            renderSectionHeader={({ section }) => {
-              const isPast = section.date < todayISO();
-              const isToday = section.date === todayISO();
-              const d = new Date(section.date + "T00:00:00");
-              const relLabel = isToday
-                ? "오늘"
-                : section.date ===
-                    (() => {
-                      const t = new Date();
-                      t.setDate(t.getDate() + 1);
-                      return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-                    })()
-                  ? "내일"
-                  : null;
-              return (
-                <View style={styles.daySectionHeader}>
-                  {isToday ? (
-                    <View style={styles.todayDot} />
-                  ) : (
-                    <View style={styles.dayDot} />
-                  )}
-                  <Text
-                    style={[
-                      styles.daySectionTitle,
-                      isToday && styles.daySectionTitleToday,
-                      isPast && styles.daySectionPast,
-                    ]}
-                  >
-                    {relLabel ? `${relLabel}, ` : ""}
-                    {d.getMonth() + 1}월 {d.getDate()}일 ({DOW_KO[d.getDay()]})
-                  </Text>
-                </View>
-              );
-            }}
             renderItem={({ item: slot }) => {
               const key = `${slot.classId}|${slot.date}`;
               const stats = statsByKey.get(key);
