@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     alignSelf: "center", // 중앙 정렬
   },
   button: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.chakraRoot, // 나마스떼 — 빨강 계열
     padding: 16,
     borderRadius: 8,
     alignItems: "center",

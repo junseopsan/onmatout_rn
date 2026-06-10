@@ -344,6 +344,24 @@ export default function SettingsScreen() {
             />
           </View>
 
+          {/* 앱 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>앱</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => Linking.openSettings()}
+          >
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>앱 설정 열기</Text>
+              <Text style={styles.settingDescription}>
+                알림, 권한 등 기기의 앱 설정으로 이동해요.
+              </Text>
+            </View>
+            <Text style={styles.arrowText}>›</Text>
+          </TouchableOpacity>
+
           {/* 고객지원 섹션 */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>고객지원</Text>
@@ -647,19 +665,24 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionHeader: {
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: 26,
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.textSecondary,
+    letterSpacing: 0.6,
   },
   settingItem: {
     backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
