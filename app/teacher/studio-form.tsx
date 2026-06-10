@@ -19,6 +19,7 @@ import { DetailHeader } from "../../components/ui/DetailHeader";
 import { Loading } from "../../components/ui/Loading";
 import { PillInput } from "../../components/ui/PillInput";
 import { SectionLabel } from "../../components/ui/SectionLabel";
+import { Sheet } from "../../components/ui/Sheet";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { useAuth } from "../../hooks/useAuth";
@@ -30,7 +31,7 @@ import { RootStackParamList } from "../../navigation/types";
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "TeacherStudioForm">;
 
-type ImageKind = "description" | "rules" | "policy" | "pricing";
+type ImageKind = "description" | "policy" | "pricing";
 
 // 월~일 순서 (key는 0=일 .. 6=토)
 const DAYS: { key: string; label: string }[] = [
@@ -44,6 +45,39 @@ const DAYS: { key: string; label: string }[] = [
 ];
 
 const MAX_PHOTOS = 10;
+
+type DayHours = { open?: string; close?: string; closed?: boolean };
+
+// 30분 단위 시간 목록
+const TIMES: string[] = (() => {
+  const out: string[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of [0, 30]) {
+      out.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+  }
+  return out;
+})();
+
+function parseDayHours(v?: string): DayHours {
+  if (!v) return {};
+  if (v === "휴무") return { closed: true };
+  const [o, c] = v.split("-");
+  return { open: o || undefined, close: c || undefined };
+}
+
+function serializeDayHours(d: DayHours): string | null {
+  if (d.closed) return "휴무";
+  if (d.open && d.close) return `${d.open}-${d.close}`;
+  return null;
+}
+
+// 토=파랑, 일=빨강, 평일=뮤트
+function dayColor(key: string): string | null {
+  if (key === "6") return COLORS.info;
+  if (key === "0") return COLORS.error;
+  return null;
+}
 
 export default function TeacherStudioFormScreen() {
   const navigation = useNavigation<Nav>();
@@ -64,15 +98,18 @@ export default function TeacherStudioFormScreen() {
   const [instagram, setInstagram] = useState("");
   const [kakao, setKakao] = useState("");
   const [bankAccount, setBankAccount] = useState("");
-  const [hoursByDay, setHoursByDay] = useState<Record<string, string>>({});
+  const [hours, setHours] = useState<Record<string, DayHours>>({});
+  const [picker, setPicker] = useState<{
+    key: string;
+    which: "open" | "close";
+  } | null>(null);
   const [description, setDescription] = useState("");
   const [policy, setPolicy] = useState("");
   const [pricing, setPricing] = useState("");
-  const [cancelCutoff, setCancelCutoff] = useState("");
+  const [cancelCutoff, setCancelCutoff] = useState(0);
 
   const [photos, setPhotos] = useState<string[]>([]);
   const [descriptionImage, setDescriptionImage] = useState<string | null>(null);
-  const [rulesImage, setRulesImage] = useState<string | null>(null);
   const [policyImage, setPolicyImage] = useState<string | null>(null);
   const [pricingImage, setPricingImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<ImageKind | "gallery" | null>(null);
@@ -91,16 +128,16 @@ export default function TeacherStudioFormScreen() {
           setInstagram(s.instagram_url ?? "");
           setKakao(s.kakao_url ?? "");
           setBankAccount(s.bank_account ?? "");
-          setHoursByDay(s.hours_by_day ?? {});
+          const hb = s.hours_by_day ?? {};
+          const parsed: Record<string, DayHours> = {};
+          for (const d of DAYS) parsed[d.key] = parseDayHours(hb[d.key]);
+          setHours(parsed);
           setDescription(s.description ?? "");
           setPolicy(s.policy_text ?? "");
           setPricing(s.pricing_text ?? "");
-          setCancelCutoff(
-            s.cancel_cutoff_hours ? String(s.cancel_cutoff_hours) : "",
-          );
+          setCancelCutoff(s.cancel_cutoff_hours ?? 0);
           setPhotos(s.photos ?? []);
           setDescriptionImage(s.description_image_url ?? null);
-          setRulesImage(s.rules_image_url ?? null);
           setPolicyImage(s.policy_image_url ?? null);
           setPricingImage(s.pricing_image_url ?? null);
         }
@@ -120,7 +157,6 @@ export default function TeacherStudioFormScreen() {
   const setterFor = (kind: ImageKind) =>
     ({
       description: setDescriptionImage,
-      rules: setRulesImage,
       policy: setPolicyImage,
       pricing: setPricingImage,
     })[kind];
@@ -155,13 +191,16 @@ export default function TeacherStudioFormScreen() {
     }
   };
 
+  const updateDay = (key: string, patch: DayHours) =>
+    setHours((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
     try {
       const hb: Record<string, string> = {};
       for (const d of DAYS) {
-        const v = (hoursByDay[d.key] ?? "").trim();
+        const v = serializeDayHours(hours[d.key] ?? {});
         if (v) hb[d.key] = v;
       }
       const payload = {
@@ -178,11 +217,10 @@ export default function TeacherStudioFormScreen() {
         pricing_text: pricing.trim() || null,
         photos,
         description_image_url: descriptionImage,
-        rules_image_url: rulesImage,
+        rules_image_url: null,
         policy_image_url: policyImage,
         pricing_image_url: pricingImage,
-        cancel_cutoff_hours:
-          parseInt(cancelCutoff.replace(/[^\d]/g, ""), 10) || 0,
+        cancel_cutoff_hours: cancelCutoff,
       };
       if (editing && studioId) {
         const updated = await pivotStudioApi.updateStudio(studioId, payload);
@@ -308,22 +346,63 @@ export default function TeacherStudioFormScreen() {
 
           <View style={{ height: SPACING.lg }} />
           <SectionLabel>운영 시간</SectionLabel>
-          {DAYS.map((d) => (
-            <View key={d.key} style={styles.dayRow}>
-              <View style={styles.dayBadge}>
-                <Text style={styles.dayBadgeText}>{d.label}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <PillInput
-                  placeholder="예: 07:00-22:00 또는 휴무"
-                  value={hoursByDay[d.key] ?? ""}
-                  onChangeText={(v) =>
-                    setHoursByDay((prev) => ({ ...prev, [d.key]: v }))
+          {DAYS.map((d) => {
+            const dh = hours[d.key] ?? {};
+            const color = dayColor(d.key);
+            return (
+              <View key={d.key} style={styles.dayRow}>
+                <View
+                  style={[
+                    styles.dayBadge,
+                    color ? { backgroundColor: `${color}22`, borderColor: color } : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dayBadgeText,
+                      { color: color ?? COLORS.textSecondary },
+                    ]}
+                  >
+                    {d.label}
+                  </Text>
+                </View>
+
+                {dh.closed ? (
+                  <TouchableOpacity
+                    style={styles.closedChip}
+                    onPress={() => updateDay(d.key, { closed: false })}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.closedChipText}>휴무</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.timeChips}>
+                    <TimeChip
+                      value={dh.open}
+                      onPress={() => setPicker({ key: d.key, which: "open" })}
+                    />
+                    <Text style={styles.tilde}>~</Text>
+                    <TimeChip
+                      value={dh.close}
+                      onPress={() => setPicker({ key: d.key, which: "close" })}
+                    />
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.dayToggle}
+                  onPress={() =>
+                    updateDay(d.key, { closed: !dh.closed })
                   }
-                />
+                  hitSlop={8}
+                >
+                  <Text style={styles.dayToggleText}>
+                    {dh.closed ? "운영" : "휴무"}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </View>
-          ))}
+            );
+          })}
 
           <View style={{ height: SPACING.lg }} />
           <SectionLabel>소개</SectionLabel>
@@ -341,20 +420,36 @@ export default function TeacherStudioFormScreen() {
           />
 
           <View style={{ height: SPACING.lg }} />
-          <SectionLabel>예약 규칙</SectionLabel>
-          <PillInput
-            label="취소 마감 (수업 시작 N시간 전)"
-            placeholder="시간을 입력해주세요 (비우면 제한 없음)"
-            value={cancelCutoff}
-            onChangeText={setCancelCutoff}
-            keyboardType="numeric"
-          />
-          <ImageRow
-            url={rulesImage}
-            uploading={uploading === "rules"}
-            onPick={() => pickSingle("rules")}
-            onRemove={() => setRulesImage(null)}
-          />
+          <Text style={styles.stepperLabel}>취소 마감 (수업 시작 전)</Text>
+          <View style={styles.stepperRow}>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() => setCancelCutoff((v) => Math.max(0, v - 1))}
+              disabled={cancelCutoff <= 0}
+            >
+              <Ionicons
+                name="remove"
+                size={22}
+                color={cancelCutoff <= 0 ? COLORS.textMuted : COLORS.text}
+              />
+            </TouchableOpacity>
+            <View style={styles.stepperValue}>
+              <Text style={styles.stepperValueText}>
+                {cancelCutoff === 0 ? "제한 없음" : `${cancelCutoff}시간 전`}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.stepperBtn}
+              onPress={() => setCancelCutoff((v) => Math.min(48, v + 1))}
+              disabled={cancelCutoff >= 48}
+            >
+              <Ionicons
+                name="add"
+                size={22}
+                color={cancelCutoff >= 48 ? COLORS.textMuted : COLORS.text}
+              />
+            </TouchableOpacity>
+          </View>
 
           <View style={{ height: SPACING.lg }} />
           <SectionLabel>등록/예약 안내</SectionLabel>
@@ -397,7 +492,67 @@ export default function TeacherStudioFormScreen() {
           <View style={{ height: SPACING.xxl }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Sheet
+        visible={picker !== null}
+        onClose={() => setPicker(null)}
+        title={picker?.which === "close" ? "마감 시간" : "오픈 시간"}
+      >
+        {TIMES.map((t) => {
+          const selected =
+            picker != null && hours[picker.key]?.[picker.which] === t;
+          return (
+            <TouchableOpacity
+              key={t}
+              style={[styles.timeOption, selected && styles.timeOptionOn]}
+              onPress={() => {
+                if (picker)
+                  updateDay(
+                    picker.key,
+                    picker.which === "open"
+                      ? { open: t, closed: false }
+                      : { close: t, closed: false },
+                  );
+                setPicker(null);
+              }}
+            >
+              <Text
+                style={[
+                  styles.timeOptionText,
+                  selected && { color: COLORS.primary, fontWeight: "800" },
+                ]}
+              >
+                {t}
+              </Text>
+              {selected ? (
+                <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </Sheet>
     </SafeAreaView>
+  );
+}
+
+function TimeChip({
+  value,
+  onPress,
+}: {
+  value?: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.timeChip} onPress={onPress} activeOpacity={0.85}>
+      <Ionicons
+        name="time-outline"
+        size={14}
+        color={value ? COLORS.primary : COLORS.textMuted}
+      />
+      <Text style={[styles.timeChipText, !value && { color: COLORS.textMuted }]}>
+        {value ?? "시간"}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -502,6 +657,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   dayBadge: {
     width: 40,
@@ -512,9 +668,79 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: SPACING.md,
   },
-  dayBadgeText: { color: COLORS.text, fontSize: 14, fontWeight: "700" },
+  dayBadgeText: { fontSize: 14, fontWeight: "700" },
+  timeChips: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
+  tilde: { color: COLORS.textMuted, fontSize: 14 },
+  timeChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  timeChipText: { color: COLORS.text, fontSize: 14, fontWeight: "700" },
+  closedChip: {
+    flex: 1,
+    height: 44,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closedChipText: { color: COLORS.textMuted, fontSize: 14, fontWeight: "700" },
+  dayToggle: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  dayToggleText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "700" },
+  timeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  timeOptionOn: { backgroundColor: "rgba(139, 92, 246, 0.08)" },
+  timeOptionText: { color: COLORS.text, fontSize: 16, fontWeight: "600" },
+  stepperLabel: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  stepperRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
+  stepperBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperValue: {
+    flex: 1,
+    height: 48,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperValueText: { color: COLORS.text, fontSize: 15, fontWeight: "700" },
   galleryRow: { gap: SPACING.sm, paddingVertical: 2 },
   thumbWrap: { position: "relative" },
   thumb: {
