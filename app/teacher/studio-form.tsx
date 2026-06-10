@@ -552,17 +552,19 @@ export default function TeacherStudioFormScreen() {
             />
           ) : null}
 
-          <Button
-            title={editing ? "변경 저장" : "요가원 추가"}
-            onPress={handleSubmit}
-            disabled={!canSubmit}
-            loading={submitting}
-            size="large"
-            style={{ marginTop: SPACING.lg }}
-          />
-          <View style={{ height: SPACING.xxl }} />
+          <View style={{ height: 96 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <View style={styles.submitWrap}>
+        <Button
+          title={editing ? "변경 저장" : "요가원 추가"}
+          onPress={handleSubmit}
+          disabled={!canSubmit}
+          loading={submitting}
+          size="large"
+        />
+      </View>
 
       <Sheet
         visible={picker !== null}
@@ -723,6 +725,12 @@ function ImageRow({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  submitWrap: {
+    position: "absolute",
+    left: SPACING.lg,
+    right: SPACING.lg,
+    bottom: SPACING.lg,
+  },
   bigLabel: {
     fontSize: 16,
     fontWeight: "700",

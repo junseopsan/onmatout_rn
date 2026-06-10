@@ -116,7 +116,7 @@ export default function TeacherStudioListScreen() {
                     activeOpacity={0.85}
                   >
                     <Ionicons name="ticket-outline" size={14} color={COLORS.primary} />
-                    <Text style={styles.actionGhostText}>수업권</Text>
+                    <Text style={styles.actionGhostText}>수업권 관리</Text>
                   </TouchableOpacity>
                 </View>
                 {!isActive ? (
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(139, 92, 246, 0.4)",
   },
-  activeBadgeText: { color: COLORS.primary, fontSize: 11, fontWeight: "700" },
+  activeBadgeText: { color: COLORS.primary, fontSize: 11, fontWeight: "700", marginTop: 1 },
   metaRow: { gap: 4 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   metaText: { ...TEXT.caption, color: COLORS.textSecondary, flex: 1 },
