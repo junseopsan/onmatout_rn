@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StudentRow } from "../../components/teacher/StudentRow";
 import { StudioSwitcher } from "../../components/teacher/StudioSwitcher";
+import { Chip } from "../../components/ui/Chip";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FabButton } from "../../components/ui/FabButton";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
@@ -21,6 +22,7 @@ import { COLORS } from "../../constants/Colors";
 import { SPACING } from "../../constants/Design";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
+import { pivotStudioApi } from "../../lib/api/pivotStudio";
 import { teacherApi } from "../../lib/api/teacher";
 import { RootStackParamList } from "../../navigation/types";
 import type { StudentProfile } from "../../types/teacher";
@@ -32,6 +34,10 @@ export default function TeacherMembersTabScreen() {
   const { user } = useAuth();
   const { activeStudio } = usePivotStudios();
   const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [teacherIds, setTeacherIds] = useState<Set<string>>(new Set());
+  const [roleFilter, setRoleFilter] = useState<"all" | "student" | "teacher">(
+    "all",
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
@@ -44,12 +50,29 @@ export default function TeacherMembersTabScreen() {
         activeStudio?.id ?? null,
       );
       setStudents(data);
+      if (activeStudio?.id) {
+        const tRows = await pivotStudioApi.listStudioTeachers(activeStudio.id);
+        setTeacherIds(
+          new Set(
+            tRows
+              .filter((r: any) => r.status === "active")
+              .map((r: any) => r.teacher_id as string),
+          ),
+        );
+      } else {
+        setTeacherIds(new Set());
+      }
     } catch (e) {
       console.warn("[MembersTab] load failed", e);
     } finally {
       setLoading(false);
     }
   }, [user?.id, activeStudio?.id]);
+
+  const isTeacher = useCallback(
+    (s: StudentProfile) => !!s.user_id && teacherIds.has(s.user_id),
+    [teacherIds],
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -73,15 +96,27 @@ export default function TeacherMembersTabScreen() {
     );
   }, [students, query]);
 
+  const teacherCount = useMemo(
+    () => filtered.filter(isTeacher).length,
+    [filtered, isTeacher],
+  );
+  const studentCount = filtered.length - teacherCount;
+
+  const roleFiltered = useMemo(() => {
+    if (roleFilter === "teacher") return filtered.filter(isTeacher);
+    if (roleFilter === "student") return filtered.filter((s) => !isTeacher(s));
+    return filtered;
+  }, [filtered, roleFilter, isTeacher]);
+
   const hasCustom = (s: StudentProfile) =>
     !!((s as any).custom_status as string | null | undefined)?.trim();
-  const activeMembers = filtered.filter(
+  const activeMembers = roleFiltered.filter(
     (s) => !hasCustom(s) && s.status === "active",
   );
-  const pausedMembers = filtered.filter(
+  const pausedMembers = roleFiltered.filter(
     (s) => !hasCustom(s) && s.status !== "active",
   );
-  const customMembers = filtered.filter(hasCustom);
+  const customMembers = roleFiltered.filter(hasCustom);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -94,7 +129,26 @@ export default function TeacherMembersTabScreen() {
             onChangeText={setQuery}
             placeholder="이름 또는 전화번호로 검색"
           />
-          <Text style={styles.countText}>총 {students.length}명</Text>
+          <View style={styles.filterRow}>
+            <Chip
+              label={`전체 ${filtered.length}`}
+              size="sm"
+              active={roleFilter === "all"}
+              onPress={() => setRoleFilter("all")}
+            />
+            <Chip
+              label={`수련생 ${studentCount}`}
+              size="sm"
+              active={roleFilter === "student"}
+              onPress={() => setRoleFilter("student")}
+            />
+            <Chip
+              label={`선생님 ${teacherCount}`}
+              size="sm"
+              active={roleFilter === "teacher"}
+              onPress={() => setRoleFilter("teacher")}
+            />
+          </View>
         </View>
       ) : null}
 
@@ -135,6 +189,7 @@ export default function TeacherMembersTabScreen() {
                 <StudentRow
                   key={s.id}
                   student={s}
+                  isTeacher={isTeacher(s)}
                   onPress={() =>
                     navigation.navigate("TeacherMemberDetail", {
                       studentProfileId: s.id,
@@ -154,6 +209,7 @@ export default function TeacherMembersTabScreen() {
                 <StudentRow
                   key={s.id}
                   student={s}
+                  isTeacher={isTeacher(s)}
                   onPress={() =>
                     navigation.navigate("TeacherMemberDetail", {
                       studentProfileId: s.id,
@@ -178,6 +234,7 @@ export default function TeacherMembersTabScreen() {
                 <StudentRow
                   key={s.id}
                   student={s}
+                  isTeacher={isTeacher(s)}
                   onPress={() =>
                     navigation.navigate("TeacherMemberDetail", {
                       studentProfileId: s.id,
@@ -202,12 +259,10 @@ export default function TeacherMembersTabScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   searchWrap: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
-  countText: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontWeight: "600",
+  filterRow: {
+    flexDirection: "row",
+    gap: SPACING.sm,
     marginTop: SPACING.sm,
-    paddingHorizontal: 4,
   },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   fab: {

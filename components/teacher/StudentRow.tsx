@@ -10,9 +10,15 @@ interface StudentRowProps {
   student: StudentProfile;
   onPress?: (student: StudentProfile) => void;
   rightSlot?: React.ReactNode;
+  isTeacher?: boolean;
 }
 
-export function StudentRow({ student, onPress, rightSlot }: StudentRowProps) {
+export function StudentRow({
+  student,
+  onPress,
+  rightSlot,
+  isTeacher,
+}: StudentRowProps) {
   const customStatus = (student as any).custom_status as
     | string
     | null
@@ -42,6 +48,11 @@ export function StudentRow({ student, onPress, rightSlot }: StudentRowProps) {
               color={COLORS.primary}
               style={{ marginLeft: 2 }}
             />
+          ) : null}
+          {isTeacher ? (
+            <View style={styles.teacherBadge}>
+              <Text style={styles.teacherBadgeText}>선생님</Text>
+            </View>
           ) : null}
         </View>
         {student.memo ? (
@@ -92,4 +103,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
+  teacherBadge: {
+    backgroundColor: "rgba(139, 92, 246, 0.16)",
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginLeft: 2,
+  },
+  teacherBadgeText: { color: COLORS.primary, fontSize: 10, fontWeight: "800" },
 });
