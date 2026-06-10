@@ -462,7 +462,7 @@ export const storageAPI = {
         const fileName = `${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 6)}.${ext}`;
-        const path = `studios/${userId}/${fileName}`;
+        const path = `${userId}/studios/${fileName}`;
         const { error: upErr } = await supabase.storage
           .from("avatars")
           .upload(path, bytes, { cacheControl: "3600", upsert: false, contentType });
@@ -554,7 +554,7 @@ export const storageAPI = {
       const fileName = `${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 6)}.${ext}`;
-      const path = `studios/${userId}/${fileName}`;
+      const path = `${userId}/studios/${fileName}`;
 
       const { error: upErr } = await supabase.storage
         .from("avatars")
