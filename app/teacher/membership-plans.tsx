@@ -372,10 +372,10 @@ function PlanFormSheet({
           variant="outline"
           onPress={pickImage}
           loading={uploadingImg}
+          style={{ marginBottom: SPACING.md }}
         />
       )}
 
-      <View style={{ height: SPACING.md }} />
       <PillInput
         label="수업명"
         value={name}
@@ -383,9 +383,7 @@ function PlanFormSheet({
         placeholder="수업명을 입력해주세요"
       />
 
-      <Text style={[styles.fieldLabel, { marginTop: SPACING.md }]}>
-        수업 유형
-      </Text>
+      <Text style={styles.fieldLabel}>수업 유형</Text>
       <View style={styles.chipRow}>
         {TYPES.map((t) => (
           <Chip
@@ -397,7 +395,6 @@ function PlanFormSheet({
         ))}
       </View>
 
-      <View style={{ height: SPACING.md }} />
       {type === "count" ? (
         <>
           <Text style={styles.fieldLabel}>총 횟수</Text>
@@ -463,7 +460,6 @@ function PlanFormSheet({
         </>
       )}
 
-      <View style={{ height: SPACING.md }} />
       <View style={styles.fieldRow}>
         <View style={{ flex: 1 }}>
           <NumberSelect
@@ -589,7 +585,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 13,
     fontWeight: "600",
-    marginTop: SPACING.md,
     marginBottom: SPACING.sm,
     paddingHorizontal: 4,
   },
@@ -597,10 +592,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   fieldRow: { flexDirection: "row", gap: SPACING.md, alignItems: "flex-start" },
-  planImageWrap: { marginBottom: SPACING.sm },
+  planImageWrap: { marginBottom: SPACING.md },
   planImage: {
     width: "100%",
     height: 160,
@@ -614,7 +609,12 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     marginTop: SPACING.sm,
   },
-  stepperRow: { flexDirection: "row", alignItems: "center", gap: SPACING.sm },
+  stepperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
   stepperBtn: {
     width: 48,
     height: 48,
@@ -644,6 +644,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
     justifyContent: "center",
+    marginBottom: SPACING.md,
   },
   infoBoxText: { color: COLORS.textSecondary, fontSize: 14 },
   activeToggle: {
