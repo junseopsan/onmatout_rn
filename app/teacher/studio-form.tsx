@@ -306,7 +306,6 @@ export default function TeacherStudioFormScreen() {
           />
 
           <View style={{ height: SPACING.lg }} />
-          <SectionLabel>기본 정보</SectionLabel>
           <PillInput
             label="상호명"
             required
@@ -357,6 +356,38 @@ export default function TeacherStudioFormScreen() {
             value={bankAccount}
             onChangeText={setBankAccount}
           />
+
+          <View style={{ height: SPACING.lg }} />
+          <SectionLabel
+            textStyle={styles.bigLabel}
+            trailing={
+              !descriptionImage ? (
+                <Button
+                  title="이미지로 등록"
+                  variant="outline"
+                  size="small"
+                  onPress={() => pickSingle("description")}
+                  loading={uploading === "description"}
+                />
+              ) : null
+            }
+          >
+            소개
+          </SectionLabel>
+          <PillInput
+            placeholder="요가원 소개를 입력해주세요"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+          {descriptionImage ? (
+            <ImageRow
+              url={descriptionImage}
+              uploading={uploading === "description"}
+              onPick={() => pickSingle("description")}
+              onRemove={() => setDescriptionImage(null)}
+            />
+          ) : null}
 
           <View style={{ height: SPACING.lg }} />
           <SectionLabel>운영 시간</SectionLabel>
@@ -424,21 +455,6 @@ export default function TeacherStudioFormScreen() {
               </View>
             );
           })}
-
-          <View style={{ height: SPACING.lg }} />
-          <SectionLabel>소개</SectionLabel>
-          <PillInput
-            placeholder="요가원 소개를 입력해주세요"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-          />
-          <ImageRow
-            url={descriptionImage}
-            uploading={uploading === "description"}
-            onPick={() => pickSingle("description")}
-            onRemove={() => setDescriptionImage(null)}
-          />
 
           <View style={{ height: SPACING.lg }} />
           <Text style={styles.stepperLabel}>취소 마감 (수업 시작 전)</Text>
@@ -673,6 +689,13 @@ function ImageRow({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  bigLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+    letterSpacing: 0,
+    textTransform: "none",
+  },
   dayRow: {
     flexDirection: "row",
     alignItems: "center",
