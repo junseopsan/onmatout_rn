@@ -14,11 +14,13 @@ import { Input } from "../../components/ui/Input";
 import { COLORS } from "../../constants/Colors";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
+import { useRoleStore } from "../../stores/roleStore";
 
 export default function NicknameScreen() {
   const [nickname, setNickname] = useState("");
   const [nicknameError, setNicknameError] = useState("");
-  const { loading, clearError, saveUserProfile } = useAuthStore();
+  const { loading, clearError, saveUserProfile, user } = useAuthStore();
+  const { addRole } = useRoleStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -99,8 +101,12 @@ export default function NicknameScreen() {
       const success = await saveUserProfile(nickname.trim());
 
       if (success) {
+        // 기본 역할 = 수련생 (지도자는 설정 > 요가원 등록 신청으로 추가)
+        if (user?.id) {
+          await addRole(user.id, "student").catch(() => undefined);
+        }
         Alert.alert(
-          "환영합니다! 🧘‍♀️",
+          "환영합니다!",
           `${nickname}님, ONMATOUT에 가입해주셔서 감사합니다.\n요가를 일상의 습관으로 만들어보세요!`,
           [
             {
