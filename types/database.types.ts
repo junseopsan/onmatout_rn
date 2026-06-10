@@ -459,6 +459,7 @@ export type Database = {
           class_id: string | null
           created_at: string
           end_date: string
+          hold_started_at: string | null
           id: string
           start_date: string
           status: string
@@ -473,6 +474,7 @@ export type Database = {
           class_id?: string | null
           created_at?: string
           end_date: string
+          hold_started_at?: string | null
           id?: string
           start_date: string
           status?: string
@@ -487,6 +489,7 @@ export type Database = {
           class_id?: string | null
           created_at?: string
           end_date?: string
+          hold_started_at?: string | null
           id?: string
           start_date?: string
           status?: string

@@ -48,6 +48,7 @@ export type StudioFullInfo = {
   description: string | null;
   policy_text: string | null;
   pricing_text: string | null;
+  cancel_cutoff_hours: number;
   ownerName: string | null;
 };
 
@@ -68,7 +69,7 @@ export const studentBookingApi = {
     const { data: studio, error } = await supabase
       .from("pivot_studios")
       .select(
-        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, owner_id",
+        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, cancel_cutoff_hours, owner_id",
       )
       .eq("id", studioId)
       .maybeSingle();
@@ -95,6 +96,7 @@ export const studentBookingApi = {
       description: (studio.description as string | null) ?? null,
       policy_text: (studio.policy_text as string | null) ?? null,
       pricing_text: (studio.pricing_text as string | null) ?? null,
+      cancel_cutoff_hours: (studio.cancel_cutoff_hours as number | null) ?? 0,
       ownerName,
     };
   },

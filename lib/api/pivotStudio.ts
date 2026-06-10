@@ -13,6 +13,7 @@ export type PivotStudio = {
   description: string | null;
   policy_text: string | null;
   pricing_text: string | null;
+  cancel_cutoff_hours: number;
   created_at: string;
   updated_at: string;
 };
@@ -28,6 +29,7 @@ export type PivotStudioInput = {
   description?: string | null;
   policy_text?: string | null;
   pricing_text?: string | null;
+  cancel_cutoff_hours?: number;
 };
 
 export const pivotStudioApi = {
@@ -153,6 +155,7 @@ export const pivotStudioApi = {
         description: rest.description ?? null,
         policy_text: rest.policy_text ?? null,
         pricing_text: rest.pricing_text ?? null,
+        cancel_cutoff_hours: rest.cancel_cutoff_hours ?? 0,
       })
       .select()
       .single();
@@ -176,6 +179,8 @@ export const pivotStudioApi = {
     if (input.policy_text !== undefined) patch.policy_text = input.policy_text;
     if (input.pricing_text !== undefined)
       patch.pricing_text = input.pricing_text;
+    if (input.cancel_cutoff_hours !== undefined)
+      patch.cancel_cutoff_hours = input.cancel_cutoff_hours;
     const { data, error } = await supabase
       .from("pivot_studios")
       .update(patch)

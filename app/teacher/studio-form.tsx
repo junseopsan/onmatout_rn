@@ -48,6 +48,7 @@ export default function TeacherStudioFormScreen() {
   const [description, setDescription] = useState("");
   const [policy, setPolicy] = useState("");
   const [pricing, setPricing] = useState("");
+  const [cancelCutoff, setCancelCutoff] = useState("");
 
   useEffect(() => {
     if (!editing || !studioId) return;
@@ -66,6 +67,9 @@ export default function TeacherStudioFormScreen() {
           setDescription(s.description ?? "");
           setPolicy(s.policy_text ?? "");
           setPricing(s.pricing_text ?? "");
+          setCancelCutoff(
+            s.cancel_cutoff_hours ? String(s.cancel_cutoff_hours) : "",
+          );
         }
       } catch (e) {
         console.warn("[StudioForm] load failed", e);
@@ -95,6 +99,7 @@ export default function TeacherStudioFormScreen() {
         description: description.trim() || null,
         policy_text: policy.trim() || null,
         pricing_text: pricing.trim() || null,
+        cancel_cutoff_hours: parseInt(cancelCutoff.replace(/[^\d]/g, ""), 10) || 0,
       };
       if (editing && studioId) {
         const updated = await pivotStudioApi.updateStudio(studioId, payload);
@@ -221,11 +226,21 @@ export default function TeacherStudioFormScreen() {
           />
 
           <View style={{ height: SPACING.lg }} />
+          <SectionLabel>예약 규칙 (선택)</SectionLabel>
+          <Field
+            label="취소 마감 (수업 시작 N시간 전)"
+            placeholder="예) 3, 비우면 당일 취소까지 허용"
+            value={cancelCutoff}
+            onChangeText={setCancelCutoff}
+            keyboardType="numeric"
+          />
+
+          <View style={{ height: SPACING.lg }} />
           <SectionLabel>등록 / 예약 안내 (선택)</SectionLabel>
           <Field
-            label="등록 · 예약 안내"
+            label="등록/예약 안내"
             placeholder={
-              "수련생이 보게 될 등록/예약 정책을 적어주세요.\n예) 모든 수련은 예약제, 당일 취소·변경 불가, 보강은 수련 3시간 전 연락 시 차주 가능 등"
+              "수련생이 보게 될 등록/예약 정책을 적어주세요.\n예) 모든 수련은 예약제, 당일 취소/변경 불가, 보강은 수련 3시간 전 연락 시 차주 가능 등"
             }
             value={policy}
             onChangeText={setPolicy}

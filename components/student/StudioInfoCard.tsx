@@ -86,7 +86,10 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
   const hasContact =
     !!studio.phone || !!studio.instagram_url || !!studio.kakao_url;
   const hasGuide =
-    plans.length > 0 || !!studio.pricing_text || !!studio.policy_text;
+    plans.length > 0 ||
+    !!studio.pricing_text ||
+    !!studio.policy_text ||
+    studio.cancel_cutoff_hours > 0;
 
   if (memberships.length === 0 && !hasContact && !hasGuide) return null;
 
@@ -178,10 +181,31 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
           </View>
         ) : null}
 
-        {studio.policy_text ? (
+        {studio.cancel_cutoff_hours > 0 || studio.policy_text ? (
           <View style={styles.guideSection}>
             <Text style={styles.guideTitle}>등록 / 예약 안내</Text>
-            <Text style={styles.guideBody}>{studio.policy_text}</Text>
+            {studio.cancel_cutoff_hours > 0 ? (
+              <View style={styles.ruleLine}>
+                <Ionicons
+                  name="time-outline"
+                  size={14}
+                  color={COLORS.warning}
+                />
+                <Text style={styles.ruleText}>
+                  수업 시작 {studio.cancel_cutoff_hours}시간 전까지 취소 가능
+                </Text>
+              </View>
+            ) : null}
+            {studio.policy_text ? (
+              <Text
+                style={[
+                  styles.guideBody,
+                  studio.cancel_cutoff_hours > 0 && { marginTop: 8 },
+                ]}
+              >
+                {studio.policy_text}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 
@@ -366,6 +390,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
   },
+  ruleLine: { flexDirection: "row", alignItems: "center", gap: 6 },
+  ruleText: { color: COLORS.warning, fontSize: 12, fontWeight: "700" },
   actionsRow: {
     flexDirection: "row",
     flexWrap: "wrap",

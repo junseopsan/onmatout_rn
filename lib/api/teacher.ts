@@ -88,11 +88,13 @@ export const teacherApi = {
   },
 
   async getStudentMembership(studentProfileId: string) {
+    // 활성 + 일시정지 모두 대상 (정지된 수업권도 선생님이 재개할 수 있도록)
     const { data, error } = await supabase
       .from("memberships")
       .select("*")
       .eq("student_id", studentProfileId)
-      .eq("status", "active")
+      .in("status", ["active", "paused"])
+      .order("status", { ascending: true }) // active < paused
       .order("end_date", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -178,6 +180,54 @@ export const teacherApi = {
     const { data, error } = await supabase
       .from("memberships")
       .insert(input)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Membership;
+  },
+
+  // 수업권 일시정지: status=paused + 시작일 기록
+  async holdMembership(id: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from("memberships")
+      .update({
+        status: "paused",
+        hold_started_at: today,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Membership;
+  },
+
+  // 수업권 재개: 정지 기간만큼 종료일 연장 + status=active
+  async resumeMembership(m: Membership) {
+    const DAY = 86400000;
+    const today = new Date();
+    let endDate = m.end_date;
+    if (m.hold_started_at && endDate) {
+      const heldDays = Math.max(
+        0,
+        Math.round(
+          (today.getTime() - new Date(m.hold_started_at).getTime()) / DAY,
+        ),
+      );
+      endDate = new Date(new Date(endDate).getTime() + heldDays * DAY)
+        .toISOString()
+        .slice(0, 10);
+    }
+    const { data, error } = await supabase
+      .from("memberships")
+      .update({
+        status: "active",
+        hold_started_at: null,
+        end_date: endDate,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", m.id)
       .select()
       .single();
     if (error) throw error;

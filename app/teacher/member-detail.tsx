@@ -199,6 +199,34 @@ export default function TeacherMemberDetailScreen() {
     }
   };
 
+  const toggleHold = async () => {
+    if (!membership) return;
+    const paused = membership.status === "paused";
+    Alert.alert(
+      paused ? "수업권 재개" : "수업권 일시정지",
+      paused
+        ? "정지된 기간만큼 종료일이 자동으로 연장돼요."
+        : "정지하는 동안 사용기한이 멈추고, 재개 시 그만큼 연장돼요.",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: paused ? "재개" : "일시정지",
+          style: paused ? "default" : "destructive",
+          onPress: async () => {
+            try {
+              const updated = paused
+                ? await teacherApi.resumeMembership(membership)
+                : await teacherApi.holdMembership(membership.id);
+              setMembership(updated);
+            } catch (e: any) {
+              Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const demoteFromTeacher = async () => {
     if (!student?.user_id || !activeStudio?.id) return;
 
@@ -449,6 +477,38 @@ export default function TeacherMemberDetailScreen() {
                 </Text>
               </View>
               <MembershipBlock m={membership} />
+
+              {isDirectorOfActive ? (
+                <View style={styles.holdRow}>
+                  {membership.status === "paused" ? (
+                    <View style={styles.pausedChip}>
+                      <Ionicons name="pause" size={12} color={COLORS.warning} />
+                      <Text style={styles.pausedChipText}>일시정지됨</Text>
+                    </View>
+                  ) : (
+                    <View />
+                  )}
+                  <TouchableOpacity
+                    style={styles.holdBtn}
+                    onPress={toggleHold}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons
+                      name={
+                        membership.status === "paused"
+                          ? "play-outline"
+                          : "pause-outline"
+                      }
+                      size={14}
+                      color={COLORS.text}
+                    />
+                    <Text style={styles.holdBtnText}>
+                      {membership.status === "paused" ? "재개" : "일시정지"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
               <TouchableOpacity
                 style={styles.mAttendanceLink}
                 onPress={() =>
@@ -774,6 +834,34 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     flex: 1,
   },
+  holdRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  pausedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(245, 158, 11, 0.16)",
+  },
+  pausedChipText: { color: COLORS.warning, fontSize: 11, fontWeight: "700" },
+  holdBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  holdBtnText: { color: COLORS.text, fontSize: 12, fontWeight: "700" },
   mAttendanceLink: {
     flexDirection: "row",
     alignItems: "center",

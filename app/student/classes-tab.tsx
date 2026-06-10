@@ -259,6 +259,22 @@ export default function StudentClassesTabScreen() {
     const isCanceling =
       stats?.my_status === "booked" || stats?.my_status === "waitlisted";
 
+    // 취소 마감 규칙: 수업 시작 N시간 전까지만 취소 허용
+    if (isCanceling) {
+      const cutoff = studioInfo?.cancel_cutoff_hours ?? 0;
+      if (cutoff > 0) {
+        const start = new Date(`${slot.date}T${slot.startTime}`);
+        const hoursUntil = (start.getTime() - Date.now()) / 3600000;
+        if (hoursUntil < cutoff) {
+          Alert.alert(
+            "취소할 수 없어요",
+            `이 요가원은 수업 시작 ${cutoff}시간 전까지만 취소할 수 있어요.\n변경이 필요하면 요가원에 직접 문의해 주세요.`,
+          );
+          return;
+        }
+      }
+    }
+
     // 취소 확인 다이얼로그
     if (isCanceling) {
       const dateLabel = fmtDateLabel(slot.date);
