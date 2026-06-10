@@ -65,17 +65,10 @@ export default function TeacherStudioListScreen() {
             const isActive = activeStudio?.id === s.id;
             return (
               <SurfaceCard key={s.id} style={styles.card}>
-                <View style={styles.headerRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.name} numberOfLines={1}>
-                      {s.name}
-                    </Text>
-                    {s.location ? (
-                      <Text style={styles.location} numberOfLines={1}>
-                        {s.location}
-                      </Text>
-                    ) : null}
-                  </View>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {s.name}
+                  </Text>
                   {isActive ? (
                     <View style={styles.activeBadge}>
                       <Ionicons name="checkmark" size={12} color={COLORS.primary} />
@@ -83,6 +76,11 @@ export default function TeacherStudioListScreen() {
                     </View>
                   ) : null}
                 </View>
+                {s.location ? (
+                  <Text style={styles.location} numberOfLines={1}>
+                    {s.location}
+                  </Text>
+                ) : null}
 
                 <View style={styles.metaRow}>
                   {s.phone ? (
@@ -97,15 +95,6 @@ export default function TeacherStudioListScreen() {
                 </View>
 
                 <View style={styles.actionRow}>
-                  {!isActive ? (
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.actionPrimary]}
-                      onPress={() => setActiveStudio(s)}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.actionPrimaryText}>활성으로 전환</Text>
-                    </TouchableOpacity>
-                  ) : null}
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.actionGhost]}
                     onPress={() =>
@@ -130,6 +119,15 @@ export default function TeacherStudioListScreen() {
                     <Text style={styles.actionGhostText}>수업권</Text>
                   </TouchableOpacity>
                 </View>
+                {!isActive ? (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.actionPrimary, styles.switchBtn]}
+                    onPress={() => setActiveStudio(s)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.actionPrimaryText}>활성으로 전환</Text>
+                  </TouchableOpacity>
+                ) : null}
               </SurfaceCard>
             );
           })}
@@ -165,7 +163,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: SPACING.md,
   },
-  name: { ...TEXT.bodyLg, color: COLORS.text },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  name: { ...TEXT.bodyLg, color: COLORS.text, flexShrink: 1 },
   location: { ...TEXT.caption, color: COLORS.textSecondary, marginTop: 2 },
   activeBadge: {
     flexDirection: "row",
@@ -194,7 +193,9 @@ const styles = StyleSheet.create({
   },
   actionPrimary: { backgroundColor: COLORS.primary, flex: 1 },
   actionPrimaryText: { color: COLORS.white, fontSize: 13, fontWeight: "700" },
+  switchBtn: { marginTop: SPACING.sm },
   actionGhost: {
+    flex: 1,
     backgroundColor: "rgba(139, 92, 246, 0.10)",
     borderWidth: 1,
     borderColor: "rgba(139, 92, 246, 0.35)",

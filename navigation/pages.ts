@@ -22,7 +22,6 @@ import TeacherProfileEditScreen from "../app/teacher/profile-edit";
 import TeacherRoutineCreateScreen from "../app/teacher/routine-create";
 import TeacherRoutineDetailScreen from "../app/teacher/routine-detail";
 import TeacherRoutineListScreen from "../app/teacher/routine-list";
-import TeacherStudioApplyScreen from "../app/teacher/studio-apply";
 import TeacherStudioFormScreen from "../app/teacher/studio-form";
 import TeacherStudioListScreen from "../app/teacher/studio-list";
 import YogaAiAssistantScreen from "../app/yoga-talk/ai-assistant";
@@ -368,11 +367,6 @@ export const pageList: PageConfig[] = [
   {
     name: "TeacherStudioForm",
     component: TeacherStudioFormScreen,
-    options: { headerShown: false },
-  },
-  {
-    name: "TeacherStudioApply",
-    component: TeacherStudioApplyScreen,
     options: { headerShown: false },
   },
   {

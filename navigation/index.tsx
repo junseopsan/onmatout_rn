@@ -345,13 +345,6 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="TeacherStudioApply"
-        component={
-          pageList.find((p) => p.name === "TeacherStudioApply")?.component!
-        }
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
         name="YogaTalkThreadList"
         component={
           pageList.find((p) => p.name === "YogaTalkThreadList")?.component!

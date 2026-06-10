@@ -597,41 +597,6 @@ export default function SettingsScreen() {
                 </View>
                 <Text style={styles.arrowText}>›</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={() => navigation.navigate("TeacherStudioApply" as any)}
-              >
-                <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>+ 새 요가원 등록 신청</Text>
-                  <Text style={styles.settingDescription}>
-                    한 번의 신청으로 자동 승인돼요. 추가 요가원도 같은 흐름으로
-                    등록할 수 있어요.
-                  </Text>
-                </View>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
-            </>
-          ) : null}
-
-          {/* 수련생 → 원장 전환 진입점: 아직 선생님 역할이 없을 때만 */}
-          {user && !roles.includes("teacher") ? (
-            <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>요가원</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={() => navigation.navigate("TeacherStudioApply" as any)}
-              >
-                <View style={styles.settingContent}>
-                  <Text style={styles.settingText}>요가원 등록 신청</Text>
-                  <Text style={styles.settingDescription}>
-                    내 요가원을 운영하시나요? 신청 즉시 원장으로 전환돼요 (자동
-                    승인, 후속 검토).
-                  </Text>
-                </View>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
             </>
           ) : null}
 
@@ -761,8 +726,8 @@ export default function SettingsScreen() {
             </View>
 
             <Text style={styles.tInfoNote}>
-              요가원을 운영하신다면 설정의 "요가원 등록 신청"으로 원장이 될 수도
-              있어요.
+              선생님이 되면 "내 요가원"에서 요가원 정보를 등록하고 클래스, 수업권을
+              관리할 수 있어요.
             </Text>
 
             <View style={styles.tInfoActions}>
