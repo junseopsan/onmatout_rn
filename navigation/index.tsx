@@ -175,6 +175,11 @@ export default function AppNavigator() {
         options={pageList.find((p) => p.name === "Settings")?.options}
       />
       <Stack.Screen
+        name="Notifications"
+        component={pageList.find((p) => p.name === "Notifications")?.component!}
+        options={pageList.find((p) => p.name === "Notifications")?.options}
+      />
+      <Stack.Screen
         name="EditNickname"
         component={pageList.find((p) => p.name === "EditNickname")?.component!}
         options={pageList.find((p) => p.name === "EditNickname")?.options}

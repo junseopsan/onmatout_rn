@@ -46,6 +46,7 @@ export type RootStackParamList = {
   Studios: undefined;
   Profile: undefined;
   Settings: undefined;
+  Notifications: undefined;
   ProfileInfo: undefined;
   EditNickname: undefined;
   AsanaDetail: { id: string };

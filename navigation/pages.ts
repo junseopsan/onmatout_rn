@@ -48,6 +48,7 @@ import TeacherMembershipCreateScreen from "../app/teacher/membership-create";
 import AppContainer from "../app/screens/AppContainer";
 import SplashScreen from "../app/screens/SplashScreen";
 import SettingsScreen from "../app/settings";
+import NotificationsScreen from "../app/notifications";
 import CreateSupportRequestScreen from "../app/support/create-request";
 
 export interface PageConfig {
@@ -226,6 +227,13 @@ export const pageList: PageConfig[] = [
     component: SettingsScreen,
     options: {
       headerShown: false, // 커스텀 헤더 사용
+    },
+  },
+  {
+    name: "Notifications",
+    component: NotificationsScreen,
+    options: {
+      headerShown: false,
     },
   },
   {

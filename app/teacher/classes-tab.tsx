@@ -17,6 +17,7 @@ import { StudioSwitcher } from "../../components/teacher/StudioSwitcher";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FabButton } from "../../components/ui/FabButton";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
+import { NotificationBell } from "../../components/ui/NotificationBell";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
@@ -95,7 +96,10 @@ export default function TeacherClassesTabScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <PageHeader eyebrowSlot={<StudioSwitcher />} />
+      <PageHeader
+        eyebrowSlot={<StudioSwitcher />}
+        trailingSlot={<NotificationBell />}
+      />
 
       {loading ? (
         <ListSkeleton count={4} rowHeight={110} />
