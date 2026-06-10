@@ -456,30 +456,33 @@ function PlanFormSheet({
         </>
       )}
 
-      <NumberSelect
-        label="사용기한"
-        value={validDays}
-        onChangeValue={setValidDays}
-        suffix="일"
-        width={150}
-        placeholder="선택/입력"
-        options={[
-          { label: "1개월 (30일)", value: 30 },
-          { label: "2개월 (60일)", value: 60 },
-          { label: "3개월 (90일)", value: 90 },
-          { label: "6개월 (180일)", value: 180 },
-          { label: "1년 (365일)", value: 365 },
-        ]}
-      />
-
-      <PillInput
-        label="가격"
-        value={price ? Number(price).toLocaleString("en-US") : ""}
-        onChangeText={(t) => setPrice(t.replace(/[^\d]/g, ""))}
-        placeholder="가격을 입력해주세요"
-        keyboardType="number-pad"
-        suffix={price ? "원" : undefined}
-      />
+      <View style={styles.fieldRow}>
+        <NumberSelect
+          label="사용기한"
+          value={validDays}
+          onChangeValue={setValidDays}
+          suffix="일"
+          width={150}
+          placeholder="선택/입력"
+          options={[
+            { label: "1개월 (30일)", value: 30 },
+            { label: "2개월 (60일)", value: 60 },
+            { label: "3개월 (90일)", value: 90 },
+            { label: "6개월 (180일)", value: 180 },
+            { label: "1년 (365일)", value: 365 },
+          ]}
+        />
+        <View style={{ flex: 1 }}>
+          <PillInput
+            label="가격"
+            value={price ? Number(price).toLocaleString("en-US") : ""}
+            onChangeText={(t) => setPrice(t.replace(/[^\d]/g, ""))}
+            placeholder="가격을 입력해주세요"
+            keyboardType="number-pad"
+            suffix={price ? "원" : undefined}
+          />
+        </View>
+      </View>
 
       {plan ? (
         <TouchableOpacity
@@ -572,6 +575,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: SPACING.md,
   },
+  fieldRow: { flexDirection: "row", gap: SPACING.md, alignItems: "flex-start" },
   planImageWrap: { marginBottom: SPACING.md },
   planImage: {
     width: "100%",
