@@ -30,6 +30,7 @@ import {
   type MembershipPlanType,
 } from "../../lib/api/membershipPlans";
 import { storageAPI } from "../../lib/api/storage";
+import { formatValidDays } from "../../lib/format";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -52,7 +53,7 @@ function planSummary(p: MembershipPlan): string {
   if (p.type === "period_weekly" && p.weekly_limit)
     parts.push(`주 ${p.weekly_limit}회`);
   if (p.type === "period_unlimited") parts.push("무제한");
-  if (p.valid_days) parts.push(`사용기한 ${p.valid_days}일`);
+  if (p.valid_days) parts.push(`사용기한 ${formatValidDays(p.valid_days)}`);
   return parts.join(", ");
 }
 

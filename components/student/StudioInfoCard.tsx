@@ -16,6 +16,7 @@ import type {
   MyMembershipInfo,
   StudioFullInfo,
 } from "../../lib/api/studentBooking";
+import { formatValidDays } from "../../lib/format";
 import { haptics } from "../../lib/haptics";
 import { Sheet } from "../ui/Sheet";
 
@@ -32,7 +33,7 @@ function planSummary(p: MembershipPlan): string {
   if (p.type === "period_weekly" && p.weekly_limit)
     parts.push(`주 ${p.weekly_limit}회`);
   if (p.type === "period_unlimited") parts.push("무제한");
-  if (p.valid_days) parts.push(`사용기한 ${p.valid_days}일`);
+  if (p.valid_days) parts.push(`사용기한 ${formatValidDays(p.valid_days)}`);
   return parts.join(", ");
 }
 

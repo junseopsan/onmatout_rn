@@ -1,3 +1,12 @@
+// 사용기한(일)을 "3개월(90일)", "1년(365일)" 형식으로 표기.
+// 30의 배수면 N개월, 365의 배수면 N년, 그 외는 일 단위로만.
+export function formatValidDays(days: number): string {
+  if (days <= 0) return `${days}일`;
+  if (days % 365 === 0) return `${days / 365}년(${days}일)`;
+  if (days % 30 === 0) return `${days / 30}개월(${days}일)`;
+  return `${days}일`;
+}
+
 // 한국 전화번호 표기 포맷 (010-1234-5678, 02-123-4567 등)
 export function formatPhone(raw: string): string {
   const d = raw.replace(/[^\d]/g, "");
