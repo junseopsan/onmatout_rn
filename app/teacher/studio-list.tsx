@@ -113,7 +113,7 @@ export default function TeacherStudioListScreen() {
                     }
                     activeOpacity={0.85}
                   >
-                    <Ionicons name="create-outline" size={14} color={COLORS.text} />
+                    <Ionicons name="create-outline" size={14} color={COLORS.primary} />
                     <Text style={styles.actionGhostText}>정보 수정</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -126,7 +126,7 @@ export default function TeacherStudioListScreen() {
                     }
                     activeOpacity={0.85}
                   >
-                    <Ionicons name="ticket-outline" size={14} color={COLORS.text} />
+                    <Ionicons name="ticket-outline" size={14} color={COLORS.primary} />
                     <Text style={styles.actionGhostText}>수업권</Text>
                   </TouchableOpacity>
                 </View>
@@ -195,9 +195,9 @@ const styles = StyleSheet.create({
   actionPrimary: { backgroundColor: COLORS.primary, flex: 1 },
   actionPrimaryText: { color: COLORS.white, fontSize: 13, fontWeight: "700" },
   actionGhost: {
-    backgroundColor: COLORS.surfaceDark,
+    backgroundColor: "rgba(139, 92, 246, 0.10)",
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "rgba(139, 92, 246, 0.35)",
   },
-  actionGhostText: { color: COLORS.text, fontSize: 13, fontWeight: "600" },
+  actionGhostText: { color: COLORS.primary, fontSize: 13, fontWeight: "700" },
 });
