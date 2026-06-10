@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
+import { DetailHeader } from "../../components/ui/DetailHeader";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { studentApi, type MatchCandidate } from "../../lib/api/student";
@@ -116,13 +117,17 @@ export default function AuthMatchScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <DetailHeader
+        onBack={() => (navigation.canGoBack() ? navigation.goBack() : finish())}
+        title="선생님과 연결"
+        serif={false}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>선생님과 연결</Text>
           <Text style={styles.subtitle}>
             선생님의 초대 QR을 스캔하면 가장 빠르게 연결돼요.
           </Text>

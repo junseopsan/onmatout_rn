@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ConnectTeacherSheet } from "../components/student/ConnectTeacherSheet";
 import { AlertDialog } from "../components/ui/AlertDialog";
 import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
@@ -49,6 +50,7 @@ export default function SettingsScreen() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [teacherInfoOpen, setTeacherInfoOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
   const [discoverable, setDiscoverable] = useState(false);
 
   useEffect(() => {
@@ -539,15 +541,13 @@ export default function SettingsScreen() {
                 <>
                   <TouchableOpacity
                     style={styles.settingItem}
-                    onPress={() => navigation.navigate("AuthMatch" as any)}
+                    onPress={() => setConnectOpen(true)}
                   >
                     <View style={styles.settingContent}>
-                      <Text style={styles.settingText}>
-                        선생님과 연결 / 초대 코드
-                      </Text>
+                      <Text style={styles.settingText}>선생님과 연결</Text>
                       <Text style={styles.settingDescription}>
-                        선생님이 수련생으로 등록했거나 초대 코드(ONM-XXXX)를
-                        받았다면 여기서 연결하세요.
+                        선생님의 초대 QR을 스캔해 연결하세요. 선생님이 미리
+                        등록했다면 여기서 바로 수락할 수 있어요.
                       </Text>
                     </View>
                     <Text style={styles.arrowText}>›</Text>
@@ -703,6 +703,11 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <ConnectTeacherSheet
+        visible={connectOpen}
+        onClose={() => setConnectOpen(false)}
+      />
 
       {/* 선생님 역할 안내 모달 */}
       <Modal
