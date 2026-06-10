@@ -25,7 +25,6 @@ import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
-import { useRoleSwitch } from "../hooks/useRoleSwitch";
 import { nearbyApi } from "../lib/api/nearby";
 import { userAPI } from "../lib/api/user";
 import { getCurrentCoords } from "../lib/location";
@@ -36,7 +35,6 @@ export default function SettingsScreen() {
   const { user } = useAuth();
   const { roles, activeRole, addRole, removeRole, hasMultipleRoles } =
     useRoles();
-  const { switchTo } = useRoleSwitch();
   const { getUserProfile, clearSession, signOut } = useAuthStore();
   const { showSnackbar } = useNotification();
   const navigation =
@@ -446,26 +444,7 @@ export default function SettingsScreen() {
                 <Text style={styles.sectionTitle}>역할</Text>
               </View>
 
-              {hasMultipleRoles ? (
-                <TouchableOpacity
-                  style={styles.settingItem}
-                  onPress={() =>
-                    switchTo(activeRole === "teacher" ? "student" : "teacher")
-                  }
-                >
-                  <View style={styles.settingContent}>
-                    <Text style={styles.settingText}>
-                      {activeRole === "teacher"
-                        ? "수련생 모드로 전환"
-                        : "선생님 모드로 전환"}
-                    </Text>
-                    <Text style={styles.settingDescription}>
-                      다중 역할 — 언제든 전환할 수 있어요.
-                    </Text>
-                  </View>
-                  <Text style={styles.arrowText}>›</Text>
-                </TouchableOpacity>
-              ) : roles.length > 0 ? (
+              {!hasMultipleRoles && roles.length > 0 ? (
                 <TouchableOpacity
                   style={styles.settingItem}
                   onPress={async () => {
@@ -537,7 +516,7 @@ export default function SettingsScreen() {
               ) : null}
 
               {/* 수련생 모드일 때만 — 선생님 연결 진입점 */}
-              {roles.includes("student") ? (
+              {activeRole === "student" ? (
                 <>
                   <TouchableOpacity
                     style={styles.settingItem}
