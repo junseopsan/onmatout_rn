@@ -400,6 +400,7 @@ function PlanFormSheet({
         value={duration}
         onChangeValue={setDuration}
         suffix="분"
+        width={180}
         placeholder="선택 또는 입력"
         options={[
           { label: "50분", value: 50 },
@@ -479,6 +480,7 @@ function PlanFormSheet({
         value={validDays}
         onChangeValue={setValidDays}
         suffix="일"
+        width={180}
         placeholder="선택 또는 입력"
         options={[
           { label: "1개월 (30일)", value: 30 },

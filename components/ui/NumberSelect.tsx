@@ -25,6 +25,8 @@ interface NumberSelectProps {
   /** 숫자 뒤 단위 (분, 일 등) */
   suffix?: string;
   placeholder?: string;
+  /** 입력 박스 너비 (미지정 시 전체 너비) */
+  width?: number;
 }
 
 /**
@@ -38,6 +40,7 @@ export function NumberSelect({
   options,
   suffix,
   placeholder,
+  width,
 }: NumberSelectProps) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -45,7 +48,13 @@ export function NumberSelect({
   return (
     <View style={styles.wrap}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={[styles.box, focused && styles.boxFocused]}>
+      <View
+        style={[
+          styles.box,
+          focused && styles.boxFocused,
+          width != null && { width },
+        ]}
+      >
         <TextInput
           style={styles.input}
           value={value}

@@ -98,7 +98,29 @@ export default function TeacherClassesTabScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <PageHeader
         eyebrowSlot={<StudioSwitcher />}
-        trailingSlot={<NotificationBell />}
+        trailingSlot={
+          <View style={styles.headerActions}>
+            {isDirectorOfActive && activeStudio ? (
+              <TouchableOpacity
+                style={styles.headerIconBtn}
+                onPress={() =>
+                  navigation.navigate("TeacherMembershipPlans", {
+                    studioId: activeStudio.id,
+                    studioName: activeStudio.name,
+                  })
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="ticket-outline"
+                  size={22}
+                  color={COLORS.text}
+                />
+              </TouchableOpacity>
+            ) : null}
+            <NotificationBell />
+          </View>
+        }
       />
 
       {loading ? (
@@ -208,6 +230,13 @@ export default function TeacherClassesTabScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   todayCardWrap: { marginBottom: SPACING.md },
   attendBtn: {
