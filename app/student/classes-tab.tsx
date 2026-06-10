@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ConnectTeacherSheet } from "../../components/student/ConnectTeacherSheet";
 import { StudentStudioSwitcher } from "../../components/student/StudentStudioSwitcher";
 import { StudioInfoCard } from "../../components/student/StudioInfoCard";
 import { WeekDayStrip } from "../../components/student/WeekDayStrip";
@@ -87,6 +88,7 @@ export default function StudentClassesTabScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [connectOpen, setConnectOpen] = useState(false);
   const [studioInfo, setStudioInfo] = useState<StudioFullInfo | null>(null);
   const [activeMemberships, setActiveMemberships] = useState<
     MyMembershipInfo[]
@@ -354,10 +356,14 @@ export default function StudentClassesTabScreen() {
       {!studio ? (
         <EmptyState
           icon="🏠"
-          title="등록된 요가원이 없어요"
+          title="아직 연결된 선생님이 없어요"
           description={
-            "선생님이 보낸 초대 코드로 가입하면\n해당 요가원의 수업을 신청할 수 있어요."
+            "선생님과 연결하면\n수업 일정을 확인하고 신청할 수 있어요."
           }
+          action={{
+            label: "선생님과 연결",
+            onPress: () => setConnectOpen(true),
+          }}
         />
       ) : (
         <>
@@ -524,6 +530,11 @@ export default function StudentClassesTabScreen() {
           />
         </>
       )}
+
+      <ConnectTeacherSheet
+        visible={connectOpen}
+        onClose={() => setConnectOpen(false)}
+      />
     </SafeAreaView>
   );
 }
