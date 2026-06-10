@@ -10,7 +10,8 @@ export type RootStackParamList = {
     toastType?: "success" | "error" | "info" | "warning";
   };
   Nickname: undefined;
-  AuthMatch: undefined;
+  AuthMatch: { inviteCode?: string } | undefined;
+  ScanInvite: undefined;
   TabNavigator: undefined;
   RoleSelect: undefined;
   TeacherTabNavigator: undefined;

@@ -270,6 +270,11 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="ScanInvite"
+        component={pageList.find((p) => p.name === "ScanInvite")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="StudentTeacherDetail"
         component={
           pageList.find((p) => p.name === "StudentTeacherDetail")?.component!

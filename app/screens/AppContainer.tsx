@@ -101,6 +101,40 @@ export default function AppContainer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, rolesLoaded]);
 
+  // 초대 딥링크 (onmatout://invite?code=ONM-XXXX)
+  const pendingInviteRef = useRef<string | null>(null);
+  const handleInviteUrl = (url: string | null) => {
+    if (!url || !url.includes("invite")) return;
+    const m = url.match(/[?&]code=([^&]+)/);
+    if (!m) return;
+    const code = decodeURIComponent(m[1]).toUpperCase();
+    if (isAuthenticated) {
+      navigation.navigate("AuthMatch", { inviteCode: code });
+    } else {
+      pendingInviteRef.current = code;
+    }
+  };
+
+  useEffect(() => {
+    Linking.getInitialURL()
+      .then(handleInviteUrl)
+      .catch(() => undefined);
+    const sub = Linking.addEventListener("url", ({ url }) =>
+      handleInviteUrl(url),
+    );
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // 미로그인 상태로 받은 초대 코드: 로그인 완료 후 자동 적용
+  useEffect(() => {
+    if (isAuthenticated && rolesLoaded && pendingInviteRef.current) {
+      const code = pendingInviteRef.current;
+      pendingInviteRef.current = null;
+      navigation.navigate("AuthMatch", { inviteCode: code });
+    }
+  }, [isAuthenticated, rolesLoaded, navigation]);
+
   // 이미 초기화되었는지 추적
   const hasInitializedRef = useRef(false);
 

@@ -10,6 +10,7 @@ import StudiosScreen from "../app/(tabs)/studios";
 import AsanaDetailScreen from "../app/asanas/[id]";
 import AuthScreen from "../app/auth/index";
 import AuthMatchScreen from "../app/auth/match";
+import ScanInviteScreen from "../app/auth/scan-invite";
 import NicknameScreen from "../app/auth/nickname";
 import StudentClassScheduleScreen from "../app/student/class-schedule";
 import StudentRoutineDetailScreen from "../app/student/routine-detail";
@@ -311,6 +312,11 @@ export const pageList: PageConfig[] = [
   {
     name: "AuthMatch",
     component: AuthMatchScreen,
+    options: { headerShown: false },
+  },
+  {
+    name: "ScanInvite",
+    component: ScanInviteScreen,
     options: { headerShown: false },
   },
   {

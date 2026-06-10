@@ -1,4 +1,5 @@
-import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
@@ -24,11 +25,13 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AuthMatchScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<RouteProp<RootStackParamList, "AuthMatch">>();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(route.params?.inviteCode ?? "");
+  const autoTriedRef = React.useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -55,6 +58,15 @@ export default function AuthMatchScreen() {
     navigation.reset({ index: 0, routes: [{ name: "TabNavigator" }] });
   };
 
+  // 초대 링크로 들어온 경우: 코드 자동 연결 시도 (1회)
+  useEffect(() => {
+    const c = route.params?.inviteCode?.trim();
+    if (!c || autoTriedRef.current || loading || !user?.id) return;
+    autoTriedRef.current = true;
+    handleCodeSubmit(c);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.inviteCode, loading, user?.id]);
+
   const handleAccept = async (c: MatchCandidate) => {
     if (!user?.id) return;
     setSubmitting(true);
@@ -72,11 +84,12 @@ export default function AuthMatchScreen() {
     }
   };
 
-  const handleCodeSubmit = async () => {
-    if (!user?.id || !code.trim()) return;
+  const handleCodeSubmit = async (override?: string) => {
+    const value = (override ?? code).trim();
+    if (!user?.id || !value) return;
     setSubmitting(true);
     try {
-      const linked = await studentApi.linkByInviteCode(user.id, code);
+      const linked = await studentApi.linkByInviteCode(user.id, value);
       if (!linked) {
         Alert.alert(
           "코드 확인",
@@ -155,11 +168,20 @@ export default function AuthMatchScreen() {
           </View>
           <Button
             title="코드로 연결"
-            onPress={handleCodeSubmit}
+            onPress={() => handleCodeSubmit()}
             disabled={submitting || code.trim().length < 5}
             variant="outline"
             style={{ marginTop: 12 }}
           />
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ScanInvite")}
+            style={styles.scanBtn}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="qr-code-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.scanText}>QR 스캔으로 연결</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity onPress={finish} style={styles.skipBtn}>
             <Text style={styles.skipText}>나중에 할게요</Text>
@@ -233,4 +255,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   skipText: { color: COLORS.textSecondary, fontSize: 14 },
+  scanBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
+  },
+  scanText: { color: COLORS.primary, fontSize: 14, fontWeight: "800" },
 });

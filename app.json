@@ -2,6 +2,7 @@
   "expo": {
     "name": "OnMatOut",
     "slug": "onmatout_rn",
+    "scheme": "onmatout",
     "version": "1.0.20",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,6 +22,7 @@
         },
         "NSUserNotificationUsageDescription": "요가 수련 리마인더와 중요 알림을 받기 위해 알림 권한이 필요합니다.",
         "NSLocationWhenInUseUsageDescription": "근처 수련생을 찾아 초대하거나, 가까운 선생님에게 나를 보이기 위해 위치 정보를 사용합니다.",
+        "NSCameraUsageDescription": "선생님 초대 QR을 스캔해 연결하기 위해 카메라를 사용합니다.",
         "UIBackgroundModes": ["remote-notification"]
       },
       "config": {
@@ -50,6 +52,15 @@
       "supabasePublishableKey": "sb_publishable_1n2sJmqBwQBzzQ3siXqYcg_kr9bUF1W"
     },
     "owner": "jujoland",
-    "plugins": ["expo-font", "expo-web-browser"]
+    "plugins": [
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "선생님 초대 QR을 스캔해 연결하기 위해 카메라를 사용합니다."
+        }
+      ]
+    ]
   }
 }

@@ -21,6 +21,7 @@ import { IconBadge } from "../../components/ui/IconBadge";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { StatusChip } from "../../components/ui/StatusChip";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
+import QRCode from "react-native-qrcode-svg";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
@@ -267,8 +268,9 @@ export default function TeacherMemberDetailScreen() {
   const shareInvite = async () => {
     if (!student) return;
     const studio = studioName ? `\n요가원: ${studioName}` : "";
+    const link = `onmatout://invite?code=${student.invite_code}`;
     await Share.share({
-      message: `${student.name}님, 온매트아웃에서 함께해요 🧘${studio}\n\n초대 코드: ${student.invite_code}\n앱에서 가입 후 코드를 입력하시면 연결됩니다.`,
+      message: `${student.name}님, 온매트아웃에서 함께해요${studio}\n\n초대 코드: ${student.invite_code}\n아래 링크를 누르면 바로 연결돼요 (앱 설치/로그인 필요)\n${link}`,
     }).catch(() => undefined);
   };
 
@@ -504,6 +506,20 @@ export default function TeacherMemberDetailScreen() {
                   <Text style={styles.inviteShareBtnText}>공유</Text>
                 </TouchableOpacity>
               </View>
+
+              <View style={styles.qrWrap}>
+                <View style={styles.qrBox}>
+                  <QRCode
+                    value={`onmatout://invite?code=${student.invite_code}`}
+                    size={132}
+                    backgroundColor="#FFFFFF"
+                    color="#0A0A0A"
+                  />
+                </View>
+                <Text style={styles.qrHint}>
+                  수련생이 이 QR을 스캔하면 바로 연결돼요.
+                </Text>
+              </View>
             </SurfaceCard>
           </View>
         ) : null}
@@ -644,6 +660,23 @@ const styles = StyleSheet.create({
   inviteCard: {
     marginBottom: SPACING.md,
     gap: 8,
+  },
+  qrWrap: {
+    alignItems: "center",
+    gap: 8,
+    marginTop: 6,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+  },
+  qrBox: {
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  qrHint: {
+    color: COLORS.textMuted,
+    fontSize: 11,
   },
   inviteHead: {
     flexDirection: "row",
