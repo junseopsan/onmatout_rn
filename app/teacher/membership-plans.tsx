@@ -343,8 +343,7 @@ function PlanFormSheet({
           placeholder="예) 10"
           keyboardType="number-pad"
         />
-      ) : null}
-      {type === "period_weekly" ? (
+      ) : type === "period_weekly" ? (
         <PillInput
           label="주당 횟수"
           value={weekly}
@@ -352,7 +351,14 @@ function PlanFormSheet({
           placeholder="예) 3"
           keyboardType="number-pad"
         />
-      ) : null}
+      ) : (
+        <>
+          <Text style={styles.fieldLabel}>출석</Text>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoBoxText}>기간 내 무제한 출석</Text>
+          </View>
+        </>
+      )}
 
       <Text style={styles.fieldLabel}>사용기한</Text>
       <View style={styles.chipRow}>
@@ -475,6 +481,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: SPACING.sm },
+  infoBox: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 14,
+    justifyContent: "center",
+  },
+  infoBoxText: { color: COLORS.textSecondary, fontSize: 14 },
   activeToggle: {
     flexDirection: "row",
     alignItems: "center",
