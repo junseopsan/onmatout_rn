@@ -41,22 +41,6 @@ import type {
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "TeacherMemberDetail">;
 
-// 출석/결석 두 가지로만 표시
-const STATUS_LABEL: Record<Attendance["status"], string> = {
-  present: "출석",
-  late: "출석",
-  makeup: "출석",
-  absent: "결석",
-  canceled: "결석",
-};
-const STATUS_COLOR: Record<Attendance["status"], string> = {
-  present: COLORS.success,
-  late: COLORS.success,
-  makeup: COLORS.success,
-  absent: COLORS.error,
-  canceled: COLORS.error,
-};
-
 export default function TeacherMemberDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();

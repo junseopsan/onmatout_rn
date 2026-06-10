@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
-import { RADIUS, SPACING } from "../../constants/Design";
+import { SPACING } from "../../constants/Design";
 
 interface PillInputProps extends Omit<TextInputProps, "style"> {
   label?: string;

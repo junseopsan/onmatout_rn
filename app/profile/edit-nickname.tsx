@@ -28,7 +28,7 @@ export default function EditNicknameScreen() {
   const [loading, setLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const { user, getUserProfile, saveUserProfile } = useAuthStore();
-  const { showSnackbar, showDialog } = useNotification();
+  const { showSnackbar } = useNotification();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -42,7 +42,7 @@ export default function EditNicknameScreen() {
           setOriginal(profile.name);
         }
         setIsLoaded(true);
-      } catch (error) {
+      } catch {
         setIsLoaded(true);
       }
     };
@@ -184,7 +184,7 @@ export default function EditNicknameScreen() {
       } else {
         showSnackbar("닉네임 변경에 실패했습니다.", "error");
       }
-    } catch (error) {
+    } catch {
       showSnackbar("닉네임 변경 중 오류가 발생했습니다.", "error");
     } finally {
       setLoading(false);

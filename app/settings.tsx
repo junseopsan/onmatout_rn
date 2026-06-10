@@ -345,7 +345,7 @@ export default function SettingsScreen() {
               "error",
             );
           }
-        } catch (error) {
+        } catch {
           showSnackbar("계정 삭제 중 오류가 발생했습니다.", "error");
         } finally {
           setIsDeletingAccount(false);

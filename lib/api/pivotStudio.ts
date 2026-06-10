@@ -210,38 +210,6 @@ export const pivotStudioApi = {
     return data as PivotStudio;
   },
 
-  async applyForStudio(input: { applicantUserId: string } & PivotStudioInput) {
-    const { data, error } = await supabase
-      .from("studio_applications")
-      .insert({
-        applicant_user_id: input.applicantUserId,
-        name: input.name,
-        location: input.location ?? null,
-        phone: input.phone ?? null,
-        hours_text: input.hours_text ?? null,
-        website_url: input.website_url ?? null,
-        description: input.description ?? null,
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    return data as {
-      id: string;
-      status: "pending" | "auto_approved" | "approved" | "rejected" | "suspended";
-      studio_id: string | null;
-    };
-  },
-
-  async listMyApplications(applicantUserId: string) {
-    const { data, error } = await supabase
-      .from("studio_applications")
-      .select("id, name, status, studio_id, created_at")
-      .eq("applicant_user_id", applicantUserId)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return data ?? [];
-  },
-
   async getMyStudentStudio(userId: string): Promise<PivotStudio | null> {
     const { data: sp } = await supabase
       .from("student_profiles")
