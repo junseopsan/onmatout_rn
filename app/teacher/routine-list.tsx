@@ -22,6 +22,7 @@ import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { haptics } from "../../lib/haptics";
 import { teacherApi } from "../../lib/api/teacher";
+import { studentRoutinesApi } from "../../lib/api/routines-student";
 import { RootStackParamList } from "../../navigation/types";
 import type { Routine } from "../../types/teacher";
 import { getAsanaThumbnailSource } from "../../lib/asanaImages";
@@ -43,21 +44,34 @@ type RoutineWithCount = Routine & {
   is_draft: boolean;
 };
 
-type Tab = "public" | "private" | "drafts";
+type Tab = "all" | "mine" | "drafts";
+
+// 공개 루틴(RoutineSummary) → 카드(RoutineWithCount) 형태로 정규화
+function adaptPublic(r: any): RoutineWithCount {
+  return {
+    ...r,
+    routine_items: [{ count: r.item_count ?? 0 }],
+  } as RoutineWithCount;
+}
 
 export default function TeacherRoutineListScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
   const [routines, setRoutines] = useState<RoutineWithCount[]>([]);
+  const [publicRoutines, setPublicRoutines] = useState<RoutineWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<Tab>("public");
+  const [tab, setTab] = useState<Tab>("all");
 
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const data = await teacherApi.listMyRoutines(user.id);
-      setRoutines(data as RoutineWithCount[]);
+      const [mine, pub] = await Promise.all([
+        teacherApi.listMyRoutines(user.id),
+        studentRoutinesApi.listPublicRoutines(user.id),
+      ]);
+      setRoutines(mine as RoutineWithCount[]);
+      setPublicRoutines(pub.map(adaptPublic));
     } catch (e) {
       console.warn("[RoutineList] failed", e);
     } finally {
@@ -77,12 +91,9 @@ export default function TeacherRoutineListScreen() {
     }, [load]),
   );
 
-  const published = routines.filter((r) => !r.is_draft);
-  const publicR = published.filter((r) => r.visibility === "public");
-  const privateR = published.filter((r) => r.visibility !== "public");
+  const mineR = routines.filter((r) => !r.is_draft);
   const drafts = routines.filter((r) => r.is_draft);
-  const data =
-    tab === "public" ? publicR : tab === "private" ? privateR : drafts;
+  const data = tab === "all" ? publicRoutines : tab === "mine" ? mineR : drafts;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -91,21 +102,21 @@ export default function TeacherRoutineListScreen() {
       {tab !== "drafts" ? (
         <View style={styles.tabsRow}>
           <SegmentTab
-            label={`공개${publicR.length ? ` ${publicR.length}` : ""}`}
+            label="전체"
             icon="earth"
-            active={tab === "public"}
+            active={tab === "all"}
             onPress={() => {
               haptics.select();
-              setTab("public");
+              setTab("all");
             }}
           />
           <SegmentTab
-            label={`비공개${privateR.length ? ` ${privateR.length}` : ""}`}
-            icon="lock-closed"
-            active={tab === "private"}
+            label={`내 시퀀스${mineR.length ? ` ${mineR.length}` : ""}`}
+            icon="bookmark"
+            active={tab === "mine"}
             onPress={() => {
               haptics.select();
-              setTab("private");
+              setTab("mine");
             }}
           />
           {drafts.length > 0 ? (
@@ -133,7 +144,7 @@ export default function TeacherRoutineListScreen() {
           activeOpacity={0.7}
           onPress={() => {
             haptics.select();
-            setTab("public");
+            setTab("mine");
           }}
         >
           <Ionicons name="chevron-back" size={20} color={COLORS.text} />
@@ -150,24 +161,18 @@ export default function TeacherRoutineListScreen() {
             title="임시저장된 시퀀스가 없어요"
             description="만들기 도중 임시저장하면 여기에 보관돼요."
           />
-        ) : tab === "public" ? (
+        ) : tab === "all" ? (
           <EmptyState
             icon="🌿"
-            title="공개한 시퀀스가 없어요"
-            description={
-              "시퀀스를 발행하고 공개로 전환하면\n둘러보기에서 다른 사람도 볼 수 있어요."
-            }
-            action={{
-              label: "+ 시퀀스 만들기",
-              onPress: () => navigation.navigate("TeacherRoutineCreate"),
-            }}
+            title="공개된 시퀀스가 없어요"
+            description="다른 지도자와 요가인들이 공개한 시퀀스가 여기에 모여요."
           />
         ) : (
           <EmptyState
             icon="📋"
-            title="비공개 시퀀스가 없어요"
+            title="내 시퀀스가 없어요"
             description={
-              "아사나를 순서대로 묶어 첫 시퀀스를 발행해 보세요.\n클래스 단위 또는 특정 회원에게 공유할 수 있어요."
+              "아사나를 순서대로 묶어 첫 시퀀스를 만들어 보세요.\n클래스 단위 또는 특정 회원에게 공유할 수 있어요."
             }
             action={{
               label: "+ 시퀀스 만들기",
@@ -192,6 +197,7 @@ export default function TeacherRoutineListScreen() {
               key={r.id}
               routine={r}
               currentUserId={user?.id}
+              shared={tab === "mine" && r.teacher_id !== user?.id}
               delay={idx * 40}
               onPress={() =>
                 tab === "drafts"
@@ -249,11 +255,13 @@ function RoutineCard({
   routine,
   onPress,
   currentUserId,
+  shared = false,
   delay = 0,
 }: {
   routine: RoutineWithCount;
   onPress: () => void;
   currentUserId?: string;
+  shared?: boolean;
   delay?: number;
 }) {
   const count = routine.routine_items?.[0]?.count ?? 0;
@@ -352,9 +360,17 @@ function RoutineCard({
             {count > 0 ? `${count}개 아사나` : "아사나 없음"}
           </Text>
         </View>
-        <Text style={styles.title} numberOfLines={1}>
-          {routine.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { flexShrink: 1 }]} numberOfLines={1}>
+            {routine.title}
+          </Text>
+          {shared ? (
+            <View style={styles.sharedChip}>
+              <Ionicons name="share-social" size={10} color={COLORS.info} />
+              <Text style={styles.sharedChipText}>공유받음</Text>
+            </View>
+          ) : null}
+        </View>
         {routine.description ? (
           <Text style={styles.desc} numberOfLines={2}>
             {routine.description}
@@ -522,11 +538,30 @@ const styles = StyleSheet.create({
   body: {
     gap: 4,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   title: {
     color: COLORS.text,
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: -0.1,
+  },
+  sharedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(96, 165, 250, 0.16)",
+  },
+  sharedChipText: {
+    color: COLORS.info,
+    fontSize: 10,
+    fontWeight: "800",
   },
   desc: {
     color: COLORS.textSecondary,

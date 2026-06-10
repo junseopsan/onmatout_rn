@@ -15,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
@@ -35,7 +34,7 @@ type Tab = "shared" | "discover";
 export default function StudentRoutineListScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>("shared");
+  const [tab, setTab] = useState<Tab>("discover");
   const [shared, setShared] = useState<RoutineSummary[]>([]);
   const [discover, setDiscover] = useState<RoutineSummary[]>([]);
   const [loadingShared, setLoadingShared] = useState(true);
@@ -79,16 +78,16 @@ export default function StudentRoutineListScreen() {
 
       <View style={styles.tabsRow}>
         <SegmentTab
+          label="전체"
+          icon="earth"
+          active={tab === "discover"}
+          onPress={() => { haptics.select(); setTab("discover"); }}
+        />
+        <SegmentTab
           label={`내 시퀀스${shared.length ? ` ${shared.length}` : ""}`}
           icon="bookmark"
           active={tab === "shared"}
           onPress={() => { haptics.select(); setTab("shared"); }}
-        />
-        <SegmentTab
-          label="둘러보기"
-          icon="compass"
-          active={tab === "discover"}
-          onPress={() => { haptics.select(); setTab("discover"); }}
         />
       </View>
 
@@ -98,19 +97,19 @@ export default function StudentRoutineListScreen() {
         tab === "shared" ? (
           <EmptyState
             icon="📥"
-            title="공유받은 시퀀스이 없어요"
+            title="내 시퀀스가 없어요"
             description={
-              "선생님이 클래스 또는 회원에게 시퀀스을 보내면 여기에 모입니다.\n둘러보기에서 공개 시퀀스을 가져올 수도 있어요."
+              "선생님이 클래스 또는 회원에게 시퀀스를 보내면 여기에 모입니다.\n전체에서 공개 시퀀스를 둘러볼 수도 있어요."
             }
             action={{
-              label: "둘러보기로 이동",
+              label: "전체 보기",
               onPress: () => setTab("discover"),
             }}
           />
         ) : (
           <EmptyState
             icon="🌱"
-            title="아직 공개 시퀀스이 없어요"
+            title="아직 공개된 시퀀스가 없어요"
             description="다른 선생님과 요가인들이 곧 공유할 예정이에요."
           />
         )
@@ -126,14 +125,12 @@ export default function StudentRoutineListScreen() {
             />
           }
         >
-          {tab === "discover" ? (
-            <SectionLabel>새 공개 시퀀스 ({data.length})</SectionLabel>
-          ) : null}
           {data.map((r, idx) => (
             <RoutineCard
               key={r.id}
               routine={r}
               currentUserId={user?.id}
+              shared={tab === "shared" && r.teacher_id !== user?.id}
               delay={idx * 40}
               onPress={() =>
                 navigation.navigate("StudentRoutineDetail", { routineId: r.id })
@@ -179,11 +176,13 @@ function RoutineCard({
   routine,
   onPress,
   currentUserId,
+  shared = false,
   delay = 0,
 }: {
   routine: RoutineSummary;
   onPress: () => void;
   currentUserId?: string;
+  shared?: boolean;
   delay?: number;
 }) {
   const previewItems = (routine.preview ?? [])
@@ -280,9 +279,17 @@ function RoutineCard({
           <Ionicons name="layers-outline" size={12} color={COLORS.textMuted} />
           <Text style={styles.metaText}>{routine.item_count}개 아사나</Text>
         </View>
-        <Text style={styles.title} numberOfLines={1}>
-          {routine.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { flexShrink: 1 }]} numberOfLines={1}>
+            {routine.title}
+          </Text>
+          {shared ? (
+            <View style={styles.sharedChip}>
+              <Ionicons name="share-social" size={10} color={COLORS.info} />
+              <Text style={styles.sharedChipText}>공유받음</Text>
+            </View>
+          ) : null}
+        </View>
         {routine.description ? (
           <Text style={styles.desc} numberOfLines={2}>
             {routine.description}
@@ -413,12 +420,23 @@ const styles = StyleSheet.create({
   body: {
     gap: 4,
   },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   title: {
     color: COLORS.text,
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: -0.1,
   },
+  sharedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(96, 165, 250, 0.16)",
+  },
+  sharedChipText: { color: COLORS.info, fontSize: 10, fontWeight: "800" },
   desc: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 18 },
   countRow: {
     flexDirection: "row",
