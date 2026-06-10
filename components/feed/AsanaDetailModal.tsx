@@ -65,6 +65,8 @@ export default function AsanaDetailModal({
         imageScrollRef.current?.scrollTo({ x: 0, animated: false });
       }, 0);
     }
+    // asana.id 변경 시에만 초기화 (객체 동일성 변화 무시) — asana 본문은 존재 체크에만 사용
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, asana?.id]);
 
   if (!asana) return null;

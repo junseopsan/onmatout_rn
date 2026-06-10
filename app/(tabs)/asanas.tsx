@@ -122,23 +122,6 @@ export default function AsanasScreen() {
       result = sortAsanasByName(flat);
     }
 
-    // 디버깅: 카테고리별 개수 로그
-    const basicCount = result.filter(
-      (a) => a.category_name_en?.trim() === "Basic"
-    ).length;
-    const countsByCategory: Record<string, number> = {};
-    result.forEach((a) => {
-      const key = (a.category_name_en || "").trim() || "(empty)";
-      countsByCategory[key] = (countsByCategory[key] || 0) + 1;
-    });
-
-    console.log("[Asanas] allAsanas 계산 결과", {
-      total: result.length,
-      basicCount,
-      selectedCategories,
-      countsByCategory,
-    });
-
     return result;
   }, [
     asanasData,
@@ -255,15 +238,19 @@ export default function AsanasScreen() {
     }, [isAuthenticated, refetch, refetchFavorites])
   );
 
-  const handleAsanaPress = (asana: any) => {
-    // 상세 화면으로 이동할 때 플래그 설정
-    isReturningFromDetail.current = true;
-    navigation.navigate("AsanaDetail", { id: asana.id });
-  };
+  const handleAsanaPress = useCallback(
+    (asana: any) => {
+      // 상세 화면으로 이동할 때 플래그 설정
+      isReturningFromDetail.current = true;
+      navigation.navigate("AsanaDetail", { id: asana.id });
+    },
+    [navigation]
+  );
 
-  const handleFavoriteToggle = (asanaId: string, isFavorite: boolean) => {
-    // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
-    console.log("즐겨찾기 토글:", asanaId, isFavorite);
+  const handleFavoriteToggle = useCallback(
+    (asanaId: string, isFavorite: boolean) => {
+      // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
+      console.log("즐겨찾기 토글:", asanaId, isFavorite);
 
     // 즐겨찾기 해제 시 ID 목록에서만 제거 (목록에는 남아있고 하트만 비어있는 상태로 표시)
     if (!isFavorite) {
@@ -282,7 +269,9 @@ export default function AsanasScreen() {
 
     // 즐겨찾기 상세 목록은 무효화하지 않음 (목록에 남아있도록)
     // 즐겨찾기 모드가 활성화된 경우 아사나 목록도 새로고침하지 않음
-  };
+    },
+    [queryClient]
+  );
 
   // 즐겨찾기 필터 토글
   const handleFavoriteFilterToggle = () => {

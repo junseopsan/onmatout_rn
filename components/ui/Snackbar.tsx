@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Animated,
   StyleSheet,
@@ -31,6 +31,16 @@ export default function Snackbar({
 }: SnackbarProps) {
   const [animation] = useState(new Animated.Value(0));
 
+  const hideSnackbar = useCallback(() => {
+    Animated.timing(animation, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      onHide?.();
+    });
+  }, [animation, onHide]);
+
   useEffect(() => {
     if (visible) {
       Animated.timing(animation, {
@@ -49,17 +59,7 @@ export default function Snackbar({
     } else {
       hideSnackbar();
     }
-  }, [visible, duration]);
-
-  const hideSnackbar = () => {
-    Animated.timing(animation, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      onHide?.();
-    });
-  };
+  }, [visible, duration, animation, hideSnackbar]);
 
   const getTypeStyles = () => {
     switch (type) {
