@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
@@ -21,7 +22,6 @@ import { IconBadge } from "../../components/ui/IconBadge";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { StatusChip } from "../../components/ui/StatusChip";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
-import QRCode from "react-native-qrcode-svg";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
@@ -29,6 +29,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { pivotStudioApi } from "../../lib/api/pivotStudio";
 import { teacherApi } from "../../lib/api/teacher";
+import { formatPhone } from "../../lib/format";
 import { yogaTalkApi } from "../../lib/api/yogaTalk";
 import { RootStackParamList } from "../../navigation/types";
 import type {
@@ -63,7 +64,9 @@ export default function TeacherMemberDetailScreen() {
       teacherApi.getStudent(studentProfileId),
       teacherApi.getStudentMembership(studentProfileId),
       teacherApi.listStudentAttendance(studentProfileId, 20),
-      user?.id ? teacherApi.getMyTeacherProfile(user.id) : Promise.resolve(null),
+      user?.id
+        ? teacherApi.getMyTeacherProfile(user.id)
+        : Promise.resolve(null),
     ]);
     setStudent(s);
     setMembership(m);
@@ -86,9 +89,7 @@ export default function TeacherMemberDetailScreen() {
       try {
         const list = await pivotStudioApi.listStudioTeachers(activeStudio.id);
         setIsTeacherOfStudio(
-          list.some(
-            (r) => r.teacher_id === s.user_id && r.status === "active",
-          ),
+          list.some((r) => r.teacher_id === s.user_id && r.status === "active"),
         );
       } catch {
         setIsTeacherOfStudio(false);
@@ -131,18 +132,18 @@ export default function TeacherMemberDetailScreen() {
   const promoteToTeacher = async () => {
     if (!student?.user_id || !activeStudio?.id) {
       Alert.alert(
-        "승급 불가",
+        "등록 불가",
         "수련생이 아직 앱에 가입하지 않았거나 활성 요가원이 없습니다.",
       );
       return;
     }
     Alert.alert(
-      "선생님으로 승급",
+      "선생님으로 등록",
       `${student.name} 님을 ${activeStudio.name} 요가원의 선생님으로 등록할까요? 클래스는 만들 수 없지만 수련생 관리, 출석을 도와줄 수 있어요.`,
       [
         { text: "취소", style: "cancel" },
         {
-          text: "승급",
+          text: "등록",
           style: "default",
           onPress: async () => {
             setPromoting(true);
@@ -152,12 +153,9 @@ export default function TeacherMemberDetailScreen() {
                 teacherUserId: student.user_id!,
               });
               setIsTeacherOfStudio(true);
-              Alert.alert("완료", "선생님으로 승급됐어요.");
+              Alert.alert("완료", "선생님으로 등록됐어요.");
             } catch (e: any) {
-              Alert.alert(
-                "실패",
-                e?.message ?? "잠시 후 다시 시도해 주세요.",
-              );
+              Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
             } finally {
               setPromoting(false);
             }
@@ -247,34 +245,27 @@ export default function TeacherMemberDetailScreen() {
       return;
     }
 
-    Alert.alert(
-      "선생님 해제",
-      `${student.name} 님을 선생님에서 해제할까요?`,
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "해제",
-          style: "destructive",
-          onPress: async () => {
-            setPromoting(true);
-            try {
-              await pivotStudioApi.removeStudioTeacher({
-                studioId: activeStudio.id,
-                teacherUserId: student.user_id!,
-              });
-              setIsTeacherOfStudio(false);
-            } catch (e: any) {
-              Alert.alert(
-                "실패",
-                e?.message ?? "잠시 후 다시 시도해 주세요.",
-              );
-            } finally {
-              setPromoting(false);
-            }
-          },
+    Alert.alert("선생님 해제", `${student.name} 님을 선생님에서 해제할까요?`, [
+      { text: "취소", style: "cancel" },
+      {
+        text: "해제",
+        style: "destructive",
+        onPress: async () => {
+          setPromoting(true);
+          try {
+            await pivotStudioApi.removeStudioTeacher({
+              studioId: activeStudio.id,
+              teacherUserId: student.user_id!,
+            });
+            setIsTeacherOfStudio(false);
+          } catch (e: any) {
+            Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+          } finally {
+            setPromoting(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const shareInvite = async () => {
@@ -289,7 +280,11 @@ export default function TeacherMemberDetailScreen() {
   if (loading || !student) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <DetailHeader onBack={() => navigation.goBack()} title="수련생" />
+        <DetailHeader
+          onBack={() => navigation.goBack()}
+          title="수련생"
+          serif={false}
+        />
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
@@ -335,7 +330,9 @@ export default function TeacherMemberDetailScreen() {
               </Text>
               <StatusChip
                 status={student.status as "active" | "paused" | "archived"}
-                customLabel={(student as any).custom_status as string | null | undefined}
+                customLabel={
+                  (student as any).custom_status as string | null | undefined
+                }
                 size="md"
               />
             </View>
@@ -373,9 +370,13 @@ export default function TeacherMemberDetailScreen() {
             )}
           </View>
           <View style={styles.contactRow}>
-            <Ionicons name="call-outline" size={14} color={COLORS.textSecondary} />
+            <Ionicons
+              name="call-outline"
+              size={14}
+              color={COLORS.textSecondary}
+            />
             <Text style={styles.contactText}>
-              {student.phone ?? "전화번호 미수집"}
+              {student.phone ? formatPhone(student.phone) : "전화번호 미수집"}
             </Text>
           </View>
           {student.memo ? (
@@ -396,12 +397,12 @@ export default function TeacherMemberDetailScreen() {
             <View style={styles.promoteRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.promoteTitle}>
-                  {isTeacherOfStudio ? "선생님으로 등록됨" : "선생님으로 승급"}
+                  {isTeacherOfStudio ? "선생님으로 등록됨" : "선생님으로 등록"}
                 </Text>
                 <Text style={styles.promoteDesc}>
                   {isTeacherOfStudio
-                    ? "이 수련생은 현재 요가원의 선생님이에요. 출석, 수련생 관리를 도와줄 수 있어요."
-                    : "이 수련생을 현재 요가원의 선생님으로 등록하면 출석, 수련생 관리를 함께 할 수 있어요."}
+                    ? "이 수련생은 현재 요가원의 선생님이에요.\n출석, 수련생 관리를 도와줄 수 있어요."
+                    : "이 수련생을 현재 요가원의 선생님으로 등록하면\n출석, 수련생 관리를 함께 할 수 있어요."}
                 </Text>
               </View>
               <Button
@@ -457,7 +458,8 @@ export default function TeacherMemberDetailScreen() {
                   {membershipClass ? membershipClass.title : "전체 클래스 공통"}
                 </Text>
                 <Text style={styles.mDateRange}>
-                  {membership.start_date.slice(5)} ~ {membership.end_date.slice(5)}
+                  {membership.start_date.slice(5)} ~{" "}
+                  {membership.end_date.slice(5)}
                 </Text>
               </View>
               <MembershipBlock m={membership} />
@@ -502,7 +504,11 @@ export default function TeacherMemberDetailScreen() {
                 }
                 activeOpacity={0.7}
               >
-                <IconBadge name="list-outline" size={26} color={COLORS.primary} />
+                <IconBadge
+                  name="list-outline"
+                  size={26}
+                  color={COLORS.primary}
+                />
                 <Text style={styles.mAttendanceLinkText}>
                   {attendance.length > 0
                     ? `이 수련권 출석 ${attendance.length}건 보기`
@@ -609,7 +615,11 @@ function MembershipBlock({ m }: { m: Membership }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.xxl },
+  content: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xxl,
+  },
   card: { marginBottom: SPACING.md },
   section: { marginTop: SPACING.lg },
   hero: {
