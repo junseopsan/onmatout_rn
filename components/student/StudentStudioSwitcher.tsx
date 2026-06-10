@@ -88,7 +88,10 @@ export function StudentStudioSwitcher() {
           style={styles.addBtn}
           onPress={() => {
             setOpen(false);
-            navigation.navigate("AuthMatch" as never);
+            navigation.navigate(
+              "AuthMatch" as never,
+              { title: "요가원 등록" } as never,
+            );
           }}
           activeOpacity={0.85}
         >

@@ -120,7 +120,7 @@ export default function AuthMatchScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => (navigation.canGoBack() ? navigation.goBack() : finish())}
-        title="선생님과 연결"
+        title={route.params?.title ?? "선생님과 연결"}
         serif={false}
       />
       <KeyboardAvoidingView
