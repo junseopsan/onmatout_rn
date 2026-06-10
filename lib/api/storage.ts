@@ -368,7 +368,7 @@ export const storageAPI = {
         const fileName = `${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 6)}.${ext}`;
-        const path = `records/${userId}/${fileName}`;
+        const path = `${userId}/records/${fileName}`;
 
         const { error: upErr } = await supabase.storage
           .from("avatars")
