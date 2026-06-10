@@ -36,6 +36,8 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   ...initialState,
 
   loadStudios: async (ownerId: string) => {
+    // 이미 로딩 중이면 중복 호출 무시 (리렌더 폭주 방지)
+    if (get().loading) return;
     set({ loading: true, error: null });
     try {
       const studios = await pivotStudioApi.listMyStudios(ownerId);

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { type PivotStudioInput } from "../lib/api/pivotStudio";
 import { useStudioStore } from "../stores/studioStore";
 import { useAuth } from "./useAuth";
@@ -32,6 +32,19 @@ export function usePivotStudios() {
     activeStudio && user?.id && activeStudio.owner_id === user.id
   );
 
+  // 함수 identity를 안정화해야 함 (useFocusEffect 등에서 의존성으로 쓰일 때 무한 루프 방지)
+  const reloadStudios = useCallback(
+    () => (user?.id ? loadStudios(user.id) : Promise.resolve()),
+    [user?.id, loadStudios],
+  );
+  const createStudioCb = useCallback(
+    (input: PivotStudioInput) =>
+      user?.id
+        ? createStudio({ ownerId: user.id, ...input })
+        : Promise.resolve(null),
+    [user?.id, createStudio],
+  );
+
   return {
     studios,
     activeStudio,
@@ -40,11 +53,8 @@ export function usePivotStudios() {
     error,
     isDirectorOfActive,
     setActiveStudio,
-    createStudio: (input: PivotStudioInput) =>
-      user?.id
-        ? createStudio({ ownerId: user.id, ...input })
-        : Promise.resolve(null),
+    createStudio: createStudioCb,
     updateStudioLocal,
-    reloadStudios: () => (user?.id ? loadStudios(user.id) : Promise.resolve()),
+    reloadStudios,
   };
 }
