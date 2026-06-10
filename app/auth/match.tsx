@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -30,7 +29,6 @@ export default function AuthMatchScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
-  const [code, setCode] = useState(route.params?.inviteCode ?? "");
   const autoTriedRef = React.useRef(false);
 
   useEffect(() => {
@@ -84,8 +82,8 @@ export default function AuthMatchScreen() {
     }
   };
 
-  const handleCodeSubmit = async (override?: string) => {
-    const value = (override ?? code).trim();
+  const handleCodeSubmit = async (rawCode: string) => {
+    const value = (rawCode ?? "").trim();
     if (!user?.id || !value) return;
     setSubmitting(true);
     try {
@@ -161,35 +159,12 @@ export default function AuthMatchScreen() {
             </View>
           ) : null}
 
-          {/* 3) 초대 코드 직접 입력 — 폴백 */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>또는 코드로</Text>
-            <View style={styles.dividerLine} />
-          </View>
-          <View style={styles.codeRow}>
-            <TextInput
-              value={code}
-              onChangeText={(v) =>
-                setCode(v.toUpperCase().replace(/[^A-Z0-9-]/g, ""))
-              }
-              placeholder="ONM-XXXX"
-              placeholderTextColor={COLORS.textSecondary}
-              style={styles.codeInput}
-              autoCapitalize="characters"
-              maxLength={9}
-            />
-            <TouchableOpacity
-              style={[
-                styles.codeBtn,
-                code.trim().length < 5 && { opacity: 0.4 },
-              ]}
-              onPress={() => handleCodeSubmit()}
-              disabled={submitting || code.trim().length < 5}
-            >
-              <Text style={styles.codeBtnText}>연결</Text>
-            </TouchableOpacity>
-          </View>
+          {submitting ? (
+            <View style={styles.connecting}>
+              <ActivityIndicator color={COLORS.primary} size="small" />
+              <Text style={styles.connectingText}>연결 중…</Text>
+            </View>
+          ) : null}
 
           <TouchableOpacity onPress={finish} style={styles.skipBtn}>
             <Text style={styles.skipText}>나중에 할게요</Text>
@@ -254,37 +229,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 10,
   },
-  dividerRow: {
+  connecting: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginTop: 28,
-    marginBottom: 14,
-  },
-  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: COLORS.border },
-  dividerText: { color: COLORS.textMuted, fontSize: 12, fontWeight: "600" },
-  codeRow: { flexDirection: "row", gap: 8 },
-  codeInput: {
-    flex: 1,
-    color: COLORS.text,
-    fontSize: 16,
-    letterSpacing: 1,
-    textAlign: "center",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    backgroundColor: COLORS.surface,
-    paddingVertical: 12,
-  },
-  codeBtn: {
-    paddingHorizontal: 20,
     justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: COLORS.surfaceDark,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    gap: 8,
+    marginTop: 24,
   },
-  codeBtnText: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
+  connectingText: { color: COLORS.textSecondary, fontSize: 14 },
   skipBtn: {
     alignItems: "center",
     paddingVertical: 16,
