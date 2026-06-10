@@ -11,6 +11,8 @@ export type PivotStudio = {
   instagram_url: string | null;
   kakao_url: string | null;
   description: string | null;
+  policy_text: string | null;
+  pricing_text: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -24,6 +26,8 @@ export type PivotStudioInput = {
   instagram_url?: string | null;
   kakao_url?: string | null;
   description?: string | null;
+  policy_text?: string | null;
+  pricing_text?: string | null;
 };
 
 export const pivotStudioApi = {
@@ -147,6 +151,8 @@ export const pivotStudioApi = {
         instagram_url: rest.instagram_url ?? null,
         kakao_url: rest.kakao_url ?? null,
         description: rest.description ?? null,
+        policy_text: rest.policy_text ?? null,
+        pricing_text: rest.pricing_text ?? null,
       })
       .select()
       .single();
@@ -167,6 +173,9 @@ export const pivotStudioApi = {
       patch.instagram_url = input.instagram_url;
     if (input.kakao_url !== undefined) patch.kakao_url = input.kakao_url;
     if (input.description !== undefined) patch.description = input.description;
+    if (input.policy_text !== undefined) patch.policy_text = input.policy_text;
+    if (input.pricing_text !== undefined)
+      patch.pricing_text = input.pricing_text;
     const { data, error } = await supabase
       .from("pivot_studios")
       .update(patch)

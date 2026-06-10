@@ -46,6 +46,8 @@ export default function TeacherStudioFormScreen() {
   const [instagram, setInstagram] = useState("");
   const [kakao, setKakao] = useState("");
   const [description, setDescription] = useState("");
+  const [policy, setPolicy] = useState("");
+  const [pricing, setPricing] = useState("");
 
   useEffect(() => {
     if (!editing || !studioId) return;
@@ -62,6 +64,8 @@ export default function TeacherStudioFormScreen() {
           setInstagram(s.instagram_url ?? "");
           setKakao(s.kakao_url ?? "");
           setDescription(s.description ?? "");
+          setPolicy(s.policy_text ?? "");
+          setPricing(s.pricing_text ?? "");
         }
       } catch (e) {
         console.warn("[StudioForm] load failed", e);
@@ -89,6 +93,8 @@ export default function TeacherStudioFormScreen() {
         instagram_url: instagram.trim() || null,
         kakao_url: kakao.trim() || null,
         description: description.trim() || null,
+        policy_text: policy.trim() || null,
+        pricing_text: pricing.trim() || null,
       };
       if (editing && studioId) {
         const updated = await pivotStudioApi.updateStudio(studioId, payload);
@@ -211,6 +217,27 @@ export default function TeacherStudioFormScreen() {
             placeholder="요가원의 분위기, 수업 컨셉 등을 짧게 적어주세요."
             value={description}
             onChangeText={setDescription}
+            multiline
+          />
+
+          <View style={{ height: SPACING.lg }} />
+          <SectionLabel>등록 / 예약 안내 (선택)</SectionLabel>
+          <Field
+            label="등록 · 예약 안내"
+            placeholder={
+              "수련생이 보게 될 등록/예약 정책을 적어주세요.\n예) 모든 수련은 예약제, 당일 취소·변경 불가, 보강은 수련 3시간 전 연락 시 차주 가능 등"
+            }
+            value={policy}
+            onChangeText={setPolicy}
+            multiline
+          />
+          <Field
+            label="수업권 가격 안내"
+            placeholder={
+              "수업권 종류와 가격을 적어주세요.\n예) 10회권 25만원 (사용기한 3개월), 1회권 36,000원"
+            }
+            value={pricing}
+            onChangeText={setPricing}
             multiline
           />
 

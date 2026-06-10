@@ -72,8 +72,9 @@ export function StudioInfoCard({ studio, memberships }: Props) {
   const [open, setOpen] = useState(false);
   const hasContact =
     !!studio.phone || !!studio.instagram_url || !!studio.kakao_url;
+  const hasGuide = !!studio.pricing_text || !!studio.policy_text;
 
-  if (memberships.length === 0 && !hasContact) return null;
+  if (memberships.length === 0 && !hasContact && !hasGuide) return null;
 
   return (
     <>
@@ -95,7 +96,10 @@ export function StudioInfoCard({ studio, memberships }: Props) {
         <Ionicons name="chevron-forward" size={15} color={COLORS.textMuted} />
       </Pressable>
 
-      <Sheet visible={open} onClose={() => setOpen(false)} title="내 수강권">
+      <Sheet visible={open} onClose={() => setOpen(false)} title={studio.name}>
+        {memberships.length > 0 ? (
+          <Text style={styles.sectionLabel}>내 수강권</Text>
+        ) : null}
         {memberships.length === 0 ? (
           <Text style={styles.empty}>보유한 수강권이 없어요.</Text>
         ) : (
@@ -130,6 +134,20 @@ export function StudioInfoCard({ studio, memberships }: Props) {
             );
           })
         )}
+
+        {studio.pricing_text ? (
+          <View style={styles.guideSection}>
+            <Text style={styles.guideTitle}>수업권 안내</Text>
+            <Text style={styles.guideBody}>{studio.pricing_text}</Text>
+          </View>
+        ) : null}
+
+        {studio.policy_text ? (
+          <View style={styles.guideSection}>
+            <Text style={styles.guideTitle}>등록 / 예약 안내</Text>
+            <Text style={styles.guideBody}>{studio.policy_text}</Text>
+          </View>
+        ) : null}
 
         {hasContact ? (
           <View style={styles.actionsRow}>
@@ -218,6 +236,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  sectionLabel: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
   empty: {
     color: COLORS.textSecondary,
     fontSize: 14,
@@ -267,6 +291,25 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   statValueHi: { color: COLORS.primary, fontSize: 16, fontWeight: "800" },
+  guideSection: {
+    backgroundColor: COLORS.surfaceDark,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    marginBottom: 10,
+  },
+  guideTitle: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  guideBody: {
+    color: COLORS.text,
+    fontSize: 13,
+    lineHeight: 20,
+  },
   actionsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
