@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -19,6 +19,8 @@ import { useRoleStore } from "../../stores/roleStore";
 export default function NicknameScreen() {
   const [nickname, setNickname] = useState("");
   const [nicknameError, setNicknameError] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(false);
   const { loading, clearError, saveUserProfile, user } = useAuthStore();
   const { addRole } = useRoleStore();
   const navigation =
@@ -27,13 +29,61 @@ export default function NicknameScreen() {
   const handleNicknameChange = (text: string) => {
     // 한글 입력 조합을 방해하지 않도록 입력값을 그대로 저장
     setNickname(text);
-
-    // 에러 메시지 초기화 (실시간 검증은 하지 않음)
-    if (nicknameError) {
-      setNicknameError("");
-    }
     clearError();
   };
+
+  // 실시간 닉네임 검증 + 중복 확인 (디바운스)
+  useEffect(() => {
+    const value = nickname.trim();
+    setIsAvailable(false);
+
+    if (!value) {
+      setNicknameError("");
+      setChecking(false);
+      return;
+    }
+    if (value.length < 2) {
+      setNicknameError("닉네임은 2자 이상 입력해주세요.");
+      setChecking(false);
+      return;
+    }
+    if (value.length > 20) {
+      setNicknameError("닉네임은 20자 이하로 입력해주세요.");
+      setChecking(false);
+      return;
+    }
+    if (!/^[가-힣a-zA-Z0-9\s]+$/.test(value)) {
+      setNicknameError("닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.");
+      setChecking(false);
+      return;
+    }
+
+    setNicknameError("");
+    setChecking(true);
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const { userAPI } = await import("../../lib/api/user");
+        const res = await userAPI.checkNicknameDuplicate(value);
+        if (cancelled) return;
+        if (!res.success) {
+          setNicknameError(res.message || "닉네임 확인 중 오류가 발생했습니다.");
+        } else if (res.isDuplicate) {
+          setNicknameError("이미 사용 중인 닉네임입니다.");
+        } else {
+          setIsAvailable(true);
+        }
+      } catch {
+        if (!cancelled) setNicknameError("닉네임 확인 중 오류가 발생했습니다.");
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [nickname]);
 
   const handleNicknameBlur = () => {
     // 포커스 해제 시 허용되지 않은 문자 제거 및 검증
@@ -187,8 +237,8 @@ export default function NicknameScreen() {
             <Button
               title="시작하기"
               onPress={handleSubmit}
-              loading={loading}
-              disabled={!nickname.trim()}
+              loading={loading || checking}
+              disabled={!isAvailable || checking || loading}
               style={{ marginBottom: 16 }}
             />
           </View>

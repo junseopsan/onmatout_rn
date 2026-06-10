@@ -55,7 +55,8 @@ export const Input: React.FC<InputProps> = ({
     borderRadius: 8,
     backgroundColor: disabled ? COLORS.surface : COLORS.background,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: 48,
+    justifyContent: "center",
   };
 
   const textInputStyle: TextStyle = {
@@ -66,8 +67,10 @@ export const Input: React.FC<InputProps> = ({
 
   const errorStyle: TextStyle = {
     fontSize: 12,
+    lineHeight: 16,
     color: COLORS.error,
     marginTop: 4,
+    minHeight: 20, // 에러 유무와 상관없이 높이 고정 (레이아웃 점프 방지)
   };
 
   return (
@@ -91,7 +94,9 @@ export const Input: React.FC<InputProps> = ({
           }}
         />
       </View>
-      {error && <Text style={errorStyle}>{error}</Text>}
+      <Text style={errorStyle} numberOfLines={1}>
+        {error || ""}
+      </Text>
     </View>
   );
 };
