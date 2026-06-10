@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +15,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { COLORS } from "../../constants/Colors";
 import { useNotification } from "../../contexts/NotificationContext";
+import { useNicknameAvailability } from "../../hooks/useNicknameAvailability";
 import { userAPI } from "../../lib/api/user";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
@@ -22,12 +23,20 @@ import { useAuthStore } from "../../stores/authStore";
 export default function EditNicknameScreen() {
   const [nickname, setNickname] = useState("");
   const [original, setOriginal] = useState("");
-  const [nicknameError, setNicknameError] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const { user, getUserProfile, saveUserProfile } = useAuthStore();
+  const {
+    error: nicknameError,
+    checking,
+    isAvailable,
+    setError: setNicknameError,
+  } = useNicknameAvailability(nickname, {
+    maxLength: 15,
+    excludeUserId: user?.id,
+    original,
+    enabled: isLoaded,
+  });
   const { showSnackbar } = useNotification();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -54,66 +63,6 @@ export default function EditNicknameScreen() {
     // 한글 입력 조합을 방해하지 않도록 입력값을 그대로 저장
     setNickname(text);
   };
-
-  // 실시간 닉네임 검증 + 중복 확인 (디바운스, 본인 닉네임은 제외)
-  useEffect(() => {
-    if (!isLoaded) return;
-    const value = nickname.trim();
-    setIsAvailable(false);
-
-    if (!value) {
-      setNicknameError("");
-      setChecking(false);
-      return;
-    }
-    if (value.length < 2) {
-      setNicknameError("닉네임은 2자 이상이어야 합니다.");
-      setChecking(false);
-      return;
-    }
-    if (value.length > 15) {
-      setNicknameError("닉네임은 15자 이하여야 합니다.");
-      setChecking(false);
-      return;
-    }
-    if (!/^[가-힣a-zA-Z0-9\s]+$/.test(value)) {
-      setNicknameError("닉네임은 한글, 영문, 숫자만 사용 가능합니다.");
-      setChecking(false);
-      return;
-    }
-    // 기존 닉네임과 동일하면 통과(중복 조회 불필요)
-    if (value.toLowerCase() === original.trim().toLowerCase()) {
-      setNicknameError("");
-      setChecking(false);
-      setIsAvailable(true);
-      return;
-    }
-
-    setNicknameError("");
-    setChecking(true);
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      try {
-        const res = await userAPI.checkNicknameDuplicate(value, user?.id);
-        if (cancelled) return;
-        if (!res.success) {
-          setNicknameError(res.message || "닉네임 확인 중 오류가 발생했습니다.");
-        } else if (res.isDuplicate) {
-          setNicknameError("이미 사용 중인 닉네임입니다.");
-        } else {
-          setIsAvailable(true);
-        }
-      } catch {
-        if (!cancelled) setNicknameError("닉네임 확인 중 오류가 발생했습니다.");
-      } finally {
-        if (!cancelled) setChecking(false);
-      }
-    }, 400);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [nickname, original, isLoaded, user?.id]);
 
   const handleNicknameBlur = () => {
     // 포커스 해제 시 허용되지 않은 문자 제거 및 검증
