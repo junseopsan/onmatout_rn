@@ -484,34 +484,18 @@ export default function TeacherMemberDetailScreen() {
             <SurfaceCard style={styles.inviteCard}>
               <View style={styles.inviteHead}>
                 <Ionicons
-                  name="mail-outline"
+                  name="qr-code-outline"
                   size={14}
                   color={COLORS.primary}
                 />
-                <Text style={styles.inviteCardLabel}>초대 코드</Text>
-              </View>
-              <View style={styles.inviteCodeRow}>
-                <Text style={styles.inviteCardCode}>{student.invite_code}</Text>
-                <TouchableOpacity
-                  style={styles.inviteShareBtn}
-                  onPress={shareInvite}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons
-                    name="share-outline"
-                    size={13}
-                    color={COLORS.primary}
-                  />
-                  <Text style={styles.inviteShareBtnText}>공유</Text>
-                </TouchableOpacity>
+                <Text style={styles.inviteCardLabel}>수련생 초대</Text>
               </View>
 
               <View style={styles.qrWrap}>
                 <View style={styles.qrBox}>
                   <QRCode
                     value={`onmatout://invite?code=${student.invite_code}`}
-                    size={132}
+                    size={150}
                     backgroundColor="#FFFFFF"
                     color="#0A0A0A"
                   />
@@ -520,6 +504,19 @@ export default function TeacherMemberDetailScreen() {
                   수련생이 이 QR을 스캔하면 바로 연결돼요.
                 </Text>
               </View>
+
+              <TouchableOpacity
+                style={styles.inviteShareFull}
+                onPress={shareInvite}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={16}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.inviteShareFullText}>초대 링크 공유</Text>
+              </TouchableOpacity>
             </SurfaceCard>
           </View>
         ) : null}
@@ -690,33 +687,22 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
-  inviteCardCode: {
-    color: COLORS.text,
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 3,
-    paddingVertical: 2,
-    flex: 1,
-  },
-  inviteCodeRow: {
+  inviteShareFull: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-  },
-  inviteShareBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
   },
-  inviteShareBtnText: {
+  inviteShareFullText: {
     color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
   },
   metaLabel: { ...TEXT.caption, color: COLORS.textSecondary, width: 90 },
   promoteRow: { flexDirection: "row", alignItems: "center", gap: SPACING.md },
