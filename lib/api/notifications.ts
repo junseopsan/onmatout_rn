@@ -3,7 +3,12 @@ import { supabase } from "../supabase";
 export type AppNotification = {
   id: string;
   user_id: string;
-  type: "yoga_talk" | "booking_confirmed" | "waitlist_promoted" | "general";
+  type:
+    | "yoga_talk"
+    | "booking_confirmed"
+    | "waitlist_promoted"
+    | "student_invite"
+    | "general";
   title: string;
   body: string | null;
   data: Record<string, any> | null;

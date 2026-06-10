@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -13,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DetailHeader } from "../components/ui/DetailHeader";
+import { nearbyApi } from "../lib/api/nearby";
 import { EmptyState } from "../components/ui/EmptyState";
 import { IconBadge } from "../components/ui/IconBadge";
 import { COLORS } from "../constants/Colors";
@@ -33,6 +35,7 @@ const TYPE_META: Record<
   yoga_talk: { icon: "chatbubble-ellipses-outline", color: COLORS.primary },
   booking_confirmed: { icon: "checkmark-circle-outline", color: COLORS.success },
   waitlist_promoted: { icon: "arrow-up-circle-outline", color: COLORS.warning },
+  student_invite: { icon: "person-add-outline", color: COLORS.primary },
   general: { icon: "notifications-outline", color: COLORS.textSecondary },
 };
 
@@ -99,9 +102,34 @@ export default function NotificationsScreen() {
       );
       notificationsApi.markRead(n.id).catch(() => undefined);
     }
-    // 딥링크
+    // 딥링크 / 액션
     if (n.type === "yoga_talk" && n.data?.thread_id) {
       navigation.navigate("YogaTalkThread", { threadId: n.data.thread_id });
+    } else if (n.type === "student_invite" && n.data?.invite_id) {
+      Alert.alert(
+        "선생님 초대",
+        `${n.body ?? "선생님이 초대했어요"}\n\n수락하면 선생님과 연결됩니다.`,
+        [
+          { text: "나중에", style: "cancel" },
+          {
+            text: "거절",
+            style: "destructive",
+            onPress: () =>
+              nearbyApi.declineInvite(n.data!.invite_id).catch(() => undefined),
+          },
+          {
+            text: "수락",
+            onPress: async () => {
+              try {
+                await nearbyApi.acceptInvite(n.data!.invite_id);
+                Alert.alert("연결 완료", "선생님과 연결됐어요.");
+              } catch (e: any) {
+                Alert.alert("실패", e?.message ?? "다시 시도해 주세요.");
+              }
+            },
+          },
+        ],
+      );
     }
   };
 

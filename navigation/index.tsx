@@ -251,6 +251,13 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="TeacherNearby"
+        component={
+          pageList.find((p) => p.name === "TeacherNearby")?.component!
+        }
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="TeacherClassAttendance"
         component={
           pageList.find((p) => p.name === "TeacherClassAttendance")?.component!

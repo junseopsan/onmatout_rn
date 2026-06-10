@@ -128,13 +128,23 @@ export default function TeacherHomeScreen() {
 
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>수련생</Text>
-              <TouchableOpacity
-                style={styles.primaryAction}
-                onPress={() => navigation.navigate("TeacherMemberCreate")}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.primaryActionText}>+ 등록</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TouchableOpacity
+                  style={styles.nearbyAction}
+                  onPress={() => navigation.navigate("TeacherNearby")}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="location" size={13} color={COLORS.primary} />
+                  <Text style={styles.nearbyActionText}>근처 초대</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.primaryAction}
+                  onPress={() => navigation.navigate("TeacherMemberCreate")}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.primaryActionText}>+ 등록</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {students.length === 0 ? (
@@ -331,6 +341,18 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   primaryActionText: { color: COLORS.white, fontSize: 13, fontWeight: "600" },
+  nearbyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+  },
+  nearbyActionText: { color: COLORS.primary, fontSize: 13, fontWeight: "700" },
   routineBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,

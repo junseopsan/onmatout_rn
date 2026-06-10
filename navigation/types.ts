@@ -18,6 +18,7 @@ export type RootStackParamList = {
   TeacherMemberCreate: undefined;
   TeacherMemberDetail: { studentProfileId: string };
   TeacherMemberAttendance: { studentProfileId: string };
+  TeacherNearby: undefined;
   TeacherClassCreate: undefined;
   TeacherClassDetail: { classId: string };
   TeacherMembershipCreate: { studentProfileId: string };

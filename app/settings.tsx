@@ -26,6 +26,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
 import { useRoleSwitch } from "../hooks/useRoleSwitch";
 import { userAPI } from "../lib/api/user";
+import { nearbyApi } from "../lib/api/nearby";
+import { getCurrentCoords } from "../lib/location";
 import { RootStackParamList } from "../navigation/types";
 import { useAuthStore } from "../stores/authStore";
 
@@ -47,6 +49,33 @@ export default function SettingsScreen() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [teacherInfoOpen, setTeacherInfoOpen] = useState(false);
+  const [discoverable, setDiscoverable] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id || !roles.includes("student")) return;
+    nearbyApi
+      .getDiscoverable(user.id)
+      .then(setDiscoverable)
+      .catch(() => undefined);
+  }, [user?.id, roles]);
+
+  const toggleDiscoverable = async (on: boolean) => {
+    setDiscoverable(on);
+    try {
+      await nearbyApi.setDiscoverable(on);
+      if (on) {
+        const coords = await getCurrentCoords();
+        if (coords) {
+          await nearbyApi.updateLocation(coords.lat, coords.lng);
+        } else {
+          showSnackbar("위치 권한을 허용하면 더 잘 찾을 수 있어요.", "warning");
+        }
+      }
+    } catch {
+      setDiscoverable(!on);
+      showSnackbar("변경하지 못했어요. 다시 시도해 주세요.", "error");
+    }
+  };
 
   const startTeacherRole = async () => {
     setTeacherInfoOpen(false);
@@ -492,21 +521,38 @@ export default function SettingsScreen() {
 
               {/* 수련생 모드일 때만 — 선생님 연결 진입점 */}
               {roles.includes("student") ? (
-                <TouchableOpacity
-                  style={styles.settingItem}
-                  onPress={() => navigation.navigate("AuthMatch" as any)}
-                >
-                  <View style={styles.settingContent}>
-                    <Text style={styles.settingText}>
-                      선생님과 연결 / 초대 코드
-                    </Text>
-                    <Text style={styles.settingDescription}>
-                      선생님이 수련생으로 등록했거나 초대 코드(ONM-XXXX)를
-                      받았다면 여기서 연결하세요.
-                    </Text>
+                <>
+                  <TouchableOpacity
+                    style={styles.settingItem}
+                    onPress={() => navigation.navigate("AuthMatch" as any)}
+                  >
+                    <View style={styles.settingContent}>
+                      <Text style={styles.settingText}>
+                        선생님과 연결 / 초대 코드
+                      </Text>
+                      <Text style={styles.settingDescription}>
+                        선생님이 수련생으로 등록했거나 초대 코드(ONM-XXXX)를
+                        받았다면 여기서 연결하세요.
+                      </Text>
+                    </View>
+                    <Text style={styles.arrowText}>›</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.settingItem}>
+                    <View style={styles.settingContent}>
+                      <Text style={styles.settingText}>근처 선생님에게 보이기</Text>
+                      <Text style={styles.settingDescription}>
+                        켜면 가까이 있는 선생님이 나를 찾아 바로 초대할 수 있어요.
+                      </Text>
+                    </View>
+                    <Switch
+                      value={discoverable}
+                      onValueChange={toggleDiscoverable}
+                      trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                      thumbColor={COLORS.white}
+                    />
                   </View>
-                  <Text style={styles.arrowText}>›</Text>
-                </TouchableOpacity>
+                </>
               ) : null}
             </>
           ) : null}
