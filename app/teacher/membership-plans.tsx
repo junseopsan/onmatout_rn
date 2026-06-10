@@ -270,7 +270,7 @@ function PlanFormSheet({
     if (!user?.id) return Alert.alert("로그인이 필요해요");
     setUploadingImg(true);
     try {
-      const res = await storageAPI.uploadStudioImage(user.id);
+      const res = await storageAPI.uploadStudioImage(user.id, [1, 1]);
       if (res.success && res.url) setImage(res.url);
       else if (!res.canceled)
         Alert.alert("업로드 실패", res.message ?? "잠시 후 다시 시도해 주세요.");

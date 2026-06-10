@@ -485,9 +485,11 @@ export const storageAPI = {
     }
   },
 
-  // 요가원 안내 이미지(가격표/정책 등) 단일 업로드 → publicUrl 반환
+  // 요가원/수업권 이미지 단일 업로드 (영역 크롭 가능) → publicUrl 반환
+  // aspect 지정 시 Android는 해당 비율, iOS는 정사각형 크롭(네이티브 제약)
   uploadStudioImage: async (
     userId: string,
+    aspect?: [number, number],
   ): Promise<{
     success: boolean;
     url?: string;
@@ -503,7 +505,8 @@ export const storageAPI = {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
+        allowsEditing: true,
+        aspect,
         quality: 0.85,
         base64: false,
         exif: false,

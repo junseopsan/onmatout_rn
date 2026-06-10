@@ -195,9 +195,9 @@ export default function TeacherStudioFormScreen() {
       return Alert.alert(`대표 사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있어요.`);
     setUploading("gallery");
     try {
-      const res = await storageAPI.uploadStudioPhotos(user.id, remaining);
-      if (res.success && res.urls)
-        setPhotos((prev) => [...prev, ...res.urls!].slice(0, MAX_PHOTOS));
+      const res = await storageAPI.uploadStudioImage(user.id, [4, 3]);
+      if (res.success && res.url)
+        setPhotos((prev) => [...prev, res.url!].slice(0, MAX_PHOTOS));
       else if (!res.canceled)
         Alert.alert("업로드 실패", res.message ?? "잠시 후 다시 시도해 주세요.");
     } finally {
