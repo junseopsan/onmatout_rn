@@ -378,14 +378,15 @@ export default function StudentClassesTabScreen() {
         eyebrowSlot={hasMemberships ? <StudentStudioSwitcher /> : undefined}
         trailingSlot={
           <View style={styles.headerActions}>
-            {studioInfo?.qna_enabled && activeMembership ? (
+            {activeMembership ? (
               <TouchableOpacity
                 style={styles.headerIconBtn}
                 onPress={() =>
-                  navigation.navigate("StudioQna", {
+                  navigation.navigate("ChatRooms", {
                     studioId: activeMembership.studio.id,
                     studioName: activeMembership.studio.name,
                     asTeacher: false,
+                    qnaEnabled: studioInfo?.qna_enabled ?? false,
                   })
                 }
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

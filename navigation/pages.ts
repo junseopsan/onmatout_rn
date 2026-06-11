@@ -27,7 +27,9 @@ import TeacherStudioListScreen from "../app/teacher/studio-list";
 import YogaAiAssistantScreen from "../app/yoga-talk/ai-assistant";
 import YogaTalkThreadListScreen from "../app/yoga-talk/thread-list";
 import YogaTalkThreadScreen from "../app/yoga-talk/thread";
-import StudioQnaScreen from "../app/yoga-talk/studio-qna";
+import ChatRoomsScreen from "../app/yoga-talk/chat-rooms";
+import ChatRoomScreen from "../app/yoga-talk/chat-room";
+import ChatGroupCreateScreen from "../app/yoga-talk/chat-group-create";
 import PhoneLoginScreen from "../app/auth/phone-login";
 import VerifyScreen from "../app/auth/verify";
 import EditNicknameScreen from "../app/profile/edit-nickname";
@@ -376,8 +378,18 @@ export const pageList: PageConfig[] = [
     options: { headerShown: false },
   },
   {
-    name: "StudioQna",
-    component: StudioQnaScreen,
+    name: "ChatRooms",
+    component: ChatRoomsScreen,
+    options: { headerShown: false },
+  },
+  {
+    name: "ChatRoom",
+    component: ChatRoomScreen,
+    options: { headerShown: false },
+  },
+  {
+    name: "ChatGroupCreate",
+    component: ChatGroupCreateScreen,
     options: { headerShown: false },
   },
   {

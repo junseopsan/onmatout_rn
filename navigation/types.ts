@@ -36,7 +36,14 @@ export type RootStackParamList = {
   TeacherStudioForm: { studioId?: string } | undefined;
   YogaTalkThreadList: undefined;
   YogaTalkThread: { threadId: string };
-  StudioQna: { studioId: string; studioName?: string; asTeacher: boolean };
+  ChatRooms: {
+    studioId: string;
+    studioName?: string;
+    asTeacher: boolean;
+    qnaEnabled: boolean;
+  };
+  ChatRoom: { roomId: string; title?: string; asTeacher: boolean };
+  ChatGroupCreate: { studioId: string };
   YogaAiAssistant: { initialQuestion?: string } | undefined;
   StudentRoutineList: undefined;
   StudentRoutineDetail: { routineId: string };

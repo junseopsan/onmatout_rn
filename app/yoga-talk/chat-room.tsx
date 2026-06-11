@@ -19,11 +19,11 @@ import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
-import { studioQnaApi, type StudioQnaMessage } from "../../lib/api/studioQna";
+import { chatApi, type ChatMessage } from "../../lib/api/chat";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-type R = RouteProp<RootStackParamList, "StudioQna">;
+type R = RouteProp<RootStackParamList, "ChatRoom">;
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -34,13 +34,13 @@ function formatTime(iso: string) {
   return `${ampm} ${h12}:${mm}`;
 }
 
-export default function StudioQnaScreen() {
+export default function ChatRoomScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { user } = useAuth();
-  const { studioId, studioName, asTeacher } = route.params;
+  const { roomId, title, asTeacher } = route.params;
 
-  const [messages, setMessages] = useState<StudioQnaMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [names, setNames] = useState<Map<string, string>>(new Map());
   const [helpful, setHelpful] = useState<
     Record<string, { count: number; mine: boolean }>
@@ -48,17 +48,17 @@ export default function StudioQnaScreen() {
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const listRef = useRef<FlatList<StudioQnaMessage>>(null);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const load = async () => {
     try {
-      const msgs = await studioQnaApi.listMessages(studioId);
+      const msgs = await chatApi.listMessages(roomId);
       setMessages(msgs);
-      setNames(await studioQnaApi.senderNames(msgs.map((m) => m.sender_id)));
+      setNames(await chatApi.senderNames(msgs.map((m) => m.sender_id)));
       const teacherMsgIds = msgs
         .filter((m) => m.sender_role === "teacher")
         .map((m) => m.id);
-      const rows = await studioQnaApi.listHelpful(teacherMsgIds);
+      const rows = await chatApi.listHelpful(teacherMsgIds);
       const map: Record<string, { count: number; mine: boolean }> = {};
       for (const r of rows) {
         const cur = map[r.message_id] ?? { count: 0, mine: false };
@@ -68,7 +68,7 @@ export default function StudioQnaScreen() {
       }
       setHelpful(map);
     } catch (e) {
-      console.warn("[StudioQna] load failed", e);
+      console.warn("[ChatRoom] load failed", e);
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function StudioQnaScreen() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studioId]);
+  }, [roomId]);
 
   const send = async () => {
     if (!user?.id || !input.trim() || sending) return;
@@ -85,8 +85,8 @@ export default function StudioQnaScreen() {
     const body = input.trim();
     setInput("");
     try {
-      await studioQnaApi.sendMessage({
-        studioId,
+      await chatApi.sendMessage({
+        roomId,
         senderId: user.id,
         role: asTeacher ? "teacher" : "student",
         body,
@@ -111,7 +111,7 @@ export default function StudioQnaScreen() {
       },
     }));
     try {
-      await studioQnaApi.toggleHelpful(messageId, user.id);
+      await chatApi.toggleHelpful(messageId, user.id);
     } catch {
       setHelpful((h) => ({ ...h, [messageId]: prev }));
     }
@@ -121,7 +121,7 @@ export default function StudioQnaScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title={studioName ? `${studioName} Q&A` : "요가원 Q&A"}
+        title={title || "대화"}
         serif={false}
       />
       <KeyboardAvoidingView
@@ -135,8 +135,8 @@ export default function StudioQnaScreen() {
             title="아직 대화가 없어요"
             description={
               asTeacher
-                ? "수련생들의 질문에 답해보세요. 도움된 답변은 다른 분께도 보여질 수 있어요."
-                : "궁금한 점을 자유롭게 물어보세요. 선생님과 다른 수련생이 함께 봅니다."
+                ? "수련생들의 질문에 답해보세요. 도움된 답변은 다른 분께도 보일 수 있어요."
+                : "궁금한 점을 자유롭게 물어보세요."
             }
           />
         ) : (
@@ -263,10 +263,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 16,
   },
-  bubbleOther: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 4,
-  },
+  bubbleOther: { backgroundColor: COLORS.surface, borderTopLeftRadius: 4 },
   bubbleTeacher: { borderWidth: 1, borderColor: "rgba(139, 92, 246, 0.4)" },
   bubbleMe: { backgroundColor: COLORS.primary, borderTopRightRadius: 4 },
   bubbleText: { ...TEXT.body, lineHeight: 21 },

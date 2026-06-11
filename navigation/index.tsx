@@ -359,8 +359,20 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="StudioQna"
-        component={pageList.find((p) => p.name === "StudioQna")?.component!}
+        name="ChatRooms"
+        component={pageList.find((p) => p.name === "ChatRooms")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ChatRoom"
+        component={pageList.find((p) => p.name === "ChatRoom")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ChatGroupCreate"
+        component={
+          pageList.find((p) => p.name === "ChatGroupCreate")?.component!
+        }
         options={{ headerShown: false }}
       />
       <Stack.Screen

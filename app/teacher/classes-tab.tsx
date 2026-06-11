@@ -104,10 +104,11 @@ export default function TeacherClassesTabScreen() {
               <TouchableOpacity
                 style={styles.headerIconBtn}
                 onPress={() =>
-                  navigation.navigate("StudioQna", {
+                  navigation.navigate("ChatRooms", {
                     studioId: activeStudio.id,
                     studioName: activeStudio.name,
                     asTeacher: true,
+                    qnaEnabled: activeStudio.qna_enabled,
                   })
                 }
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
