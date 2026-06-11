@@ -204,6 +204,11 @@ export default function AppNavigator() {
         options={{ headerShown: false, gestureEnabled: false }}
       />
       <Stack.Screen
+        name="Onboarding"
+        component={pageList.find((p) => p.name === "Onboarding")?.component!}
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen
         name="TeacherHome"
         component={pageList.find((p) => p.name === "TeacherHome")?.component!}
         options={{ headerShown: false }}

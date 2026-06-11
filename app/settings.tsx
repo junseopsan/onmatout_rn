@@ -52,12 +52,17 @@ export default function SettingsScreen() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [discoverable, setDiscoverable] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
     kbApi
       .isAdmin()
       .then(setIsAdmin)
+      .catch(() => undefined);
+    kbApi
+      .isSuperAdmin()
+      .then(setIsSuperAdmin)
       .catch(() => undefined);
   }, [user?.id]);
 
@@ -608,6 +613,21 @@ export default function SettingsScreen() {
                 </View>
                 <Text style={styles.arrowText}>›</Text>
               </TouchableOpacity>
+
+              {isSuperAdmin ? (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={() => navigation.navigate("Onboarding")}
+                >
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingText}>온보딩 다시 보기</Text>
+                    <Text style={styles.settingDescription}>
+                      가입 시 보이는 온보딩 화면을 다시 확인합니다.
+                    </Text>
+                  </View>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+              ) : null}
             </>
           ) : null}
 

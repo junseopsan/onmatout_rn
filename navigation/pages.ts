@@ -41,6 +41,7 @@ import TermsOfServiceScreen from "../app/profile/terms-of-service";
 import RecordDetailScreen from "../app/record/detail";
 import EditRecordScreen from "../app/record/edit";
 import NewRecordScreen from "../app/record/new";
+import OnboardingScreen from "../app/onboarding";
 import RoleSelectScreen from "../app/role-select";
 import TeacherClassAttendanceScreen from "../app/teacher/class-attendance";
 import TeacherClassCreateScreen from "../app/teacher/class-create";
@@ -268,6 +269,11 @@ export const pageList: PageConfig[] = [
     name: "RoleSelect",
     component: RoleSelectScreen,
     options: { headerShown: false },
+  },
+  {
+    name: "Onboarding",
+    component: OnboardingScreen,
+    options: { headerShown: false, gestureEnabled: false },
   },
   {
     name: "TeacherHome",

@@ -28,6 +28,12 @@ export const kbApi = {
     return !!data;
   },
 
+  async isSuperAdmin(): Promise<boolean> {
+    const { data, error } = await supabase.rpc("is_super_admin");
+    if (error) return false;
+    return !!data;
+  },
+
   async listPending(): Promise<KbCandidate[]> {
     const { data, error } = await supabase
       .from("kb_candidates")

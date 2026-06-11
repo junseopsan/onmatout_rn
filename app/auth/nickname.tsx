@@ -106,23 +106,11 @@ export default function NicknameScreen() {
         if (user?.id) {
           await addRole(user.id, "student").catch(() => undefined);
         }
-        Alert.alert(
-          "환영합니다!",
-          `${nickname}님, ONMATOUT에 가입해주셔서 감사합니다.\n요가를 일상의 습관으로 만들어보세요!`,
-          [
-            {
-              text: "환영해요!",
-              onPress: () => {
-                // 회원가입 완료 후에는 닉네임/인증 화면으로 되돌아갈 수 없도록
-                // 네비게이션 스택을 탭 네비게이터만 남기도록 초기화
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "TabNavigator" }],
-                });
-              },
-            },
-          ]
-        );
+        // 가입 완료 → 온보딩으로. 인증/닉네임 화면으로 되돌아갈 수 없도록 스택 초기화.
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Onboarding" }],
+        });
       } else {
         Alert.alert(
           "오류",
