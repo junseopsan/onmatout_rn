@@ -1,10 +1,11 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,18 +25,87 @@ import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
+import { useRoles } from "../../hooks/useRoles";
 import { yogaAIApi, type YogaAskResponse } from "../../lib/api/yogaAI";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "YogaAiAssistant">;
 
-const SUGGESTIONS = [
-  "다운독 자세 정렬 팁이 궁금해요",
-  "초보자에게 좋은 호흡법은?",
-  "허리 통증이 있을 때 피해야 할 자세는?",
-  "30분 모닝 시퀀스 추천",
+// 추천 질문 풀 — 테마 다양성 + 시간대(time) / 선생님 전용(role) 가중
+type Suggestion = {
+  q: string;
+  theme: "align" | "breath" | "safety" | "sequence" | "calm" | "teach";
+  time?: "morning" | "evening";
+  role?: "teacher";
+};
+
+const SUGGESTION_POOL: Suggestion[] = [
+  // 정렬
+  { q: "다운독 자세 정렬 팁이 궁금해요", theme: "align" },
+  { q: "전사 자세에서 무릎 정렬은 어떻게 하나요?", theme: "align" },
+  { q: "어깨서기를 안전하게 하는 법", theme: "align" },
+  { q: "거북목 완화에 좋은 자세 알려줘", theme: "align" },
+  // 호흡
+  { q: "초보자에게 좋은 호흡법은?", theme: "breath" },
+  { q: "우짜이 호흡은 어떻게 하나요?", theme: "breath" },
+  { q: "긴장될 때 진정되는 호흡법", theme: "breath", time: "evening" },
+  // 통증/안전
+  { q: "허리 통증이 있을 때 피해야 할 자세는?", theme: "safety" },
+  { q: "손목이 아플 때 대체 동작이 있을까요?", theme: "safety" },
+  { q: "무릎이 약한데 할 수 있는 자세 추천", theme: "safety" },
+  // 시퀀스
+  { q: "30분 모닝 시퀀스 추천", theme: "sequence", time: "morning" },
+  { q: "활력을 주는 아침 플로우 알려줘", theme: "sequence", time: "morning" },
+  { q: "자기 전 이완 시퀀스 추천", theme: "sequence", time: "evening" },
+  { q: "하루를 마무리하는 스트레칭", theme: "sequence", time: "evening" },
+  { q: "굳은 햄스트링을 푸는 시퀀스", theme: "sequence" },
+  // 이완/명상
+  { q: "수면에 도움되는 호흡과 자세", theme: "calm", time: "evening" },
+  { q: "5분 짧은 명상 가이드", theme: "calm" },
+  { q: "집중이 안 될 때 도움되는 명상", theme: "calm" },
+  // 선생님 전용
+  { q: "초급반 60분 시퀀스 설계 팁", theme: "teach", role: "teacher" },
+  { q: "다운독 정렬을 쉽게 설명하는 큐잉", theme: "teach", role: "teacher" },
+  { q: "부상 있는 수련생에게 줄 대체 동작", theme: "teach", role: "teacher" },
+  {
+    q: "수업 분위기를 차분하게 만드는 법",
+    theme: "teach",
+    role: "teacher",
+    time: "evening",
+  },
+  { q: "수련생에게 좋은 호흡 안내 표현", theme: "teach", role: "teacher" },
 ];
+
+// 역할 필터 + 시간대 가중 + 셔플 → 테마가 겹치지 않게 4개
+function pickSuggestions(isTeacher: boolean, hour: number): string[] {
+  const slot: "morning" | "evening" | null =
+    hour < 11 ? "morning" : hour >= 18 ? "evening" : null;
+  const scored = SUGGESTION_POOL.filter((p) =>
+    p.role === "teacher" ? isTeacher : true,
+  )
+    .map((p) => ({
+      p,
+      score: (slot && p.time === slot ? 1 : 0) + Math.random(),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  const picked: Suggestion[] = [];
+  const themes = new Set<string>();
+  // 1차: 테마 중복 없이
+  for (const { p } of scored) {
+    if (picked.length >= 4) break;
+    if (themes.has(p.theme)) continue;
+    picked.push(p);
+    themes.add(p.theme);
+  }
+  // 2차: 모자라면 채우기
+  for (const { p } of scored) {
+    if (picked.length >= 4) break;
+    if (!picked.includes(p)) picked.push(p);
+  }
+  return picked.map((p) => p.q);
+}
 
 type Turn = {
   question: string;
@@ -88,7 +158,13 @@ export default function YogaTalkAiAssistantScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { user } = useAuth();
+  const { isTeacher } = useRoles();
   const initialQuestion = route.params?.initialQuestion;
+  // 진입할 때마다 시간대/역할 기반으로 셔플된 추천 질문 4개
+  const suggestions = useMemo(
+    () => pickSuggestions(isTeacher, new Date().getHours()),
+    [isTeacher],
+  );
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
@@ -140,10 +216,7 @@ export default function YogaTalkAiAssistantScreen() {
     try {
       const logs = await yogaAIApi.listLogsForThread(user.id, threadId);
       setTurns(logsToTurns(logs));
-      setTimeout(
-        () => scrollRef.current?.scrollToEnd({ animated: false }),
-        80,
-      );
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 80);
     } catch (e) {
       console.warn("[AI] open session failed", e);
     } finally {
@@ -224,6 +297,19 @@ export default function YogaTalkAiAssistantScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuestion]);
 
+  // 대화 중 뒤로가기 → 옴톡 홈(추천 질문 화면)으로. 홈에서 뒤로가기 → 요가톡으로.
+  // 단, 아사나 등에서 질문을 들고 진입한 경우(initialQuestion)는 기존대로 빠져나감.
+  useEffect(() => {
+    if (initialQuestion) return;
+    const unsub = navigation.addListener("beforeRemove", (e) => {
+      if (turns.length === 0) return;
+      (e as unknown as { preventDefault: () => void }).preventDefault();
+      setTurns([]);
+      setCurrentThreadId(uuid());
+    });
+    return unsub;
+  }, [navigation, turns.length, initialQuestion]);
+
   const handleAskWith = async (q: string) => {
     if (!q || busy) return;
     setBusy(true);
@@ -276,7 +362,7 @@ export default function YogaTalkAiAssistantScreen() {
       return copy;
     });
     try {
-      await yogaAIApi.rateAnswer(t.response.log_id, newRating ?? 0 as any);
+      await yogaAIApi.rateAnswer(t.response.log_id, newRating ?? (0 as any));
     } catch {
       // 실패 시 롤백 — 사용자엔 알리지 않음
       setTurns((prev) => {
@@ -291,9 +377,9 @@ export default function YogaTalkAiAssistantScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title="옴"
+        title="OM"
         serif={false}
-        eyebrow="AI Talk Beta"
+        eyebrow="AL TALK Beta"
         trailingSlot={
           <TouchableOpacity
             onPress={() => {
@@ -324,22 +410,28 @@ export default function YogaTalkAiAssistantScreen() {
           {turns.length === 0 && !historyLoading ? (
             <View style={styles.intro}>
               <View style={styles.introIcon}>
-                <Ionicons name="sparkles" size={26} color={COLORS.primary} />
+                <Image
+                  source={require("../../assets/images/om_icon.png")}
+                  style={styles.introOmIcon}
+                />
               </View>
-              <Text style={styles.introTitle}>옴</Text>
               <Text style={styles.introText}>
                 자세, 호흡, 시퀀스에 대해 자유롭게 물어보세요.{"\n"}
                 등록된 요가 자료를 기반으로 답해드립니다.
               </Text>
               <View style={styles.suggestionList}>
-                {SUGGESTIONS.map((q) => (
+                {suggestions.map((q) => (
                   <TouchableOpacity
                     key={q}
                     style={styles.suggestion}
                     onPress={() => handleAskWith(q)}
                     activeOpacity={0.7}
                   >
-                    <IconBadge name="bulb-outline" size={28} color={COLORS.primary} />
+                    <IconBadge
+                      name="bulb-outline"
+                      size={28}
+                      color={COLORS.primary}
+                    />
                     <Text style={styles.suggestionText}>{q}</Text>
                     <Ionicons
                       name="chevron-forward"
@@ -353,7 +445,7 @@ export default function YogaTalkAiAssistantScreen() {
                 <Ionicons
                   name="information-circle-outline"
                   size={12}
-                  color={COLORS.textMuted}
+                  color={COLORS.textSecondary}
                 />
                 <Text style={styles.disclaimerText}>
                   통증, 부상, 임신 관련 질문엔 선생님/의료진 상담을 권유해요.
@@ -373,10 +465,9 @@ export default function YogaTalkAiAssistantScreen() {
               {t.response ? (
                 <View style={styles.aRow}>
                   <View style={styles.aAvatar}>
-                    <Ionicons
-                      name="sparkles"
-                      size={14}
-                      color={COLORS.primary}
+                    <Image
+                      source={require("../../assets/images/om_icon.png")}
+                      style={styles.avatarOmIcon}
                     />
                   </View>
                   <View style={styles.aContent}>
@@ -429,9 +520,7 @@ export default function YogaTalkAiAssistantScreen() {
                             name="thumbs-up"
                             size={13}
                             color={
-                              t.rating === 1
-                                ? COLORS.success
-                                : COLORS.textMuted
+                              t.rating === 1 ? COLORS.success : COLORS.textMuted
                             }
                           />
                         </TouchableOpacity>
@@ -447,9 +536,7 @@ export default function YogaTalkAiAssistantScreen() {
                             name="thumbs-down"
                             size={13}
                             color={
-                              t.rating === -1
-                                ? COLORS.error
-                                : COLORS.textMuted
+                              t.rating === -1 ? COLORS.error : COLORS.textMuted
                             }
                           />
                         </TouchableOpacity>
@@ -460,11 +547,7 @@ export default function YogaTalkAiAssistantScreen() {
               ) : t.error ? (
                 <View style={styles.aRow}>
                   <View style={styles.aAvatar}>
-                    <Ionicons
-                      name="alert"
-                      size={14}
-                      color={COLORS.error}
-                    />
+                    <Ionicons name="alert" size={14} color={COLORS.error} />
                   </View>
                   <View style={[styles.aContent, styles.errorBubble]}>
                     <Text style={styles.errorText}>{t.error}</Text>
@@ -473,10 +556,9 @@ export default function YogaTalkAiAssistantScreen() {
               ) : (
                 <View style={styles.aRow}>
                   <View style={styles.aAvatar}>
-                    <Ionicons
-                      name="sparkles"
-                      size={14}
-                      color={COLORS.primary}
+                    <Image
+                      source={require("../../assets/images/om_icon.png")}
+                      style={styles.avatarOmIcon}
                     />
                   </View>
                   <View style={styles.aLoading}>
@@ -501,7 +583,10 @@ export default function YogaTalkAiAssistantScreen() {
             editable={!busy}
           />
           <TouchableOpacity
-            style={[styles.sendBtn, (!input.trim() || busy) && { opacity: 0.4 }]}
+            style={[
+              styles.sendBtn,
+              (!input.trim() || busy) && { opacity: 0.4 },
+            ]}
             onPress={handleAsk}
             disabled={!input.trim() || busy}
             activeOpacity={0.85}
@@ -569,20 +654,24 @@ const styles = StyleSheet.create({
   introIcon: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(139, 92, 246, 0.16)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
   },
-  introTitle: {
-    color: COLORS.text,
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: -0.3,
+  introOmIcon: {
+    width: 52,
+    height: 52,
+    resizeMode: "contain",
+    tintColor: COLORS.white,
+  },
+  avatarOmIcon: {
+    width: 18,
+    height: 18,
+    resizeMode: "contain",
+    tintColor: COLORS.primary,
   },
   introText: {
-    color: COLORS.textSecondary,
+    color: COLORS.white,
     fontSize: 13,
     lineHeight: 20,
     textAlign: "center",
@@ -618,7 +707,7 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     flex: 1,
-    color: COLORS.textMuted,
+    color: COLORS.textSecondary,
     fontSize: 11,
     lineHeight: 16,
   },
@@ -695,7 +784,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceDark,
     maxWidth: 160,
   },
-  sourceChipText: { color: COLORS.textSecondary, fontSize: 11, fontWeight: "600" },
+  sourceChipText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: "600",
+  },
   feedbackRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -13,7 +13,6 @@
 // 모델: Embedding = text-embedding-3-small (1536-dim)
 //      LLM       = gpt-4o-mini
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
@@ -47,26 +46,27 @@ const SAFETY_KEYWORDS = [
   "약",
 ];
 
-const SYSTEM_PROMPT = `당신은 ONMATOUT 의 요가 학습 도우미입니다. 한국 사용자에게 한국어로 답하세요.
-반드시 검색 결과 (CONTEXT) 만 근거로 답하세요. CONTEXT 에 없는 내용은 솔직히 "모르겠다" 고 말하세요.
+const SYSTEM_PROMPT = `당신은 ONMATOUT 의 요가 학습 도우미 '옴' 입니다. 한국 사용자에게 한국어로 친절하고 차분하게 답하세요.
 
-답변 가이드:
-- 친절하고 차분한 톤. 짧은 단락 1~3개.
-- 출처는 UI 에서 자동으로 칩으로 표시되므로 본문에 [출처: ...] 같은 인용 표기를 절대 넣지 마세요.
-- 통증/부상/임신/만성질환 관련 질문이면 의학적 판단을 하지 말고 "지도자나 의료진과 상담" 을 권유하세요.
-- 자세 안내가 위험할 수 있다면 안전 주의문을 짧게 덧붙이세요.
-- 마케팅·과장 금지.`;
+근거 사용 원칙:
+- 제공된 검색 결과(CONTEXT)가 질문과 관련 있으면 그것을 우선 근거로 삼으세요.
+- CONTEXT 가 비어 있거나 질문을 충분히 다루지 못하면, 당신의 일반적인 요가 지식으로 도움이 되게 답하세요. "모르겠다" 로 끝내지 말고 실질적인 안내를 주세요.
+- 다만 사실이 아닌 내용을 지어내지 말고, 불확실하면 일반적인 범위에서 안내하세요.
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+안전/형식:
+- 통증·부상·임신·만성질환·수술 관련 질문이면 의학적 단정 대신 "지도자나 의료진과 상담" 을 권유하세요.
+- 자세 안내가 위험할 수 있으면 짧은 안전 주의문을 덧붙이세요.
+- 출처는 UI 에서 칩으로 표시되므로 본문에 [출처: ...] 같은 인용 표기를 절대 넣지 마세요.
+- 친절하고 차분한 톤, 짧은 단락 1~3개. 마케팅·과장 금지.`;
 
-async function embed(text: string): Promise<number[]> {
+const corsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+});
+
+const embed = async (text: string): Promise<number[]> => {
   const r = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
@@ -88,7 +88,7 @@ async function embed(text: string): Promise<number[]> {
     throw new Error(`unexpected embedding shape: len=${v?.length}`);
   }
   return v;
-}
+};
 
 type RetrievedDoc = {
   id: string;
@@ -99,10 +99,10 @@ type RetrievedDoc = {
   similarity: number;
 };
 
-async function generateAnswer(
+const generateAnswer = async (
   question: string,
   docs: RetrievedDoc[],
-): Promise<string> {
+): Promise<string> => {
   const context = docs
     .map((d, i) => `[${i + 1}] ${d.title}\n${d.content}`)
     .join("\n\n---\n\n");
@@ -132,18 +132,18 @@ async function generateAnswer(
   const text = j?.choices?.[0]?.message?.content ?? "";
   if (!text) throw new Error("empty answer");
   return text;
-}
+};
 
-function detectSafetyFlags(question: string, answer: string) {
-  const blob = (question + " " + answer).toLowerCase();
+const detectSafetyFlags = (question: string, answer: string) => {
+  const blob = `${question} ${answer}`.toLowerCase();
   const matched = SAFETY_KEYWORDS.some((k) => blob.includes(k));
   return {
     safety_notice_required: matched,
     should_recommend_teacher: matched,
   };
-}
+};
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders() });
   }
