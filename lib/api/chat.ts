@@ -175,6 +175,13 @@ export const chatApi = {
     await supabase.rpc("mark_room_read", { p_room_id: roomId });
   },
 
+  // 안읽은 그룹/요가원 방 수 (탭 배지용)
+  async unreadCount(): Promise<number> {
+    const { data, error } = await supabase.rpc("chat_unread_count");
+    if (error) return 0;
+    return typeof data === "number" ? data : 0;
+  },
+
   // 방별 최신 메시지 + 안읽음 여부 (목록 미리보기/정렬용)
   async roomDigest(
     roomIds: string[],

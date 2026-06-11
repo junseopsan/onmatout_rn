@@ -33,6 +33,7 @@ import {
 } from "../../lib/api/yogaTalk";
 import { supabase } from "../../lib/supabase";
 import { RootStackParamList } from "../../navigation/types";
+import { notifyYogaTalkRead } from "../../stores/yogaTalkBadgeStore";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "YogaTalkThread">;
@@ -144,7 +145,10 @@ export default function YogaTalkThreadScreen() {
     setLoading(true);
     load();
     // 읽음 표시
-    yogaTalkApi.markThreadRead(threadId).catch(() => undefined);
+    yogaTalkApi
+      .markThreadRead(threadId)
+      .then(() => notifyYogaTalkRead())
+      .catch(() => undefined);
     // threadId 변경 시에만 로드 (load는 매 렌더 재생성되어 의존성에서 의도적으로 제외)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);

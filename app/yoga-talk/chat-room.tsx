@@ -25,6 +25,7 @@ import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { chatApi, type ChatMessage, type ChatRoom } from "../../lib/api/chat";
+import { notifyYogaTalkRead } from "../../stores/yogaTalkBadgeStore";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -82,7 +83,10 @@ export default function ChatRoomScreen() {
 
   useEffect(() => {
     load();
-    chatApi.markRoomRead(roomId).catch(() => undefined);
+    chatApi
+      .markRoomRead(roomId)
+      .then(() => notifyYogaTalkRead())
+      .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
