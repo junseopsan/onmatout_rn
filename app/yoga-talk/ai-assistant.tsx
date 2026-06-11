@@ -665,10 +665,10 @@ const styles = StyleSheet.create({
     tintColor: COLORS.white,
   },
   avatarOmIcon: {
-    width: 18,
-    height: 18,
+    width: 22,
+    height: 22,
     resizeMode: "contain",
-    tintColor: COLORS.primary,
+    tintColor: COLORS.white,
   },
   introText: {
     color: COLORS.white,
