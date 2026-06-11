@@ -100,26 +100,6 @@ export default function TeacherClassesTabScreen() {
         eyebrowSlot={<StudioSwitcher />}
         trailingSlot={
           <View style={styles.headerActions}>
-            {activeStudio ? (
-              <TouchableOpacity
-                style={styles.headerIconBtn}
-                onPress={() =>
-                  navigation.navigate("ChatRooms", {
-                    studioId: activeStudio.id,
-                    studioName: activeStudio.name,
-                    asTeacher: true,
-                    qnaEnabled: activeStudio.qna_enabled,
-                  })
-                }
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name="chatbubbles-outline"
-                  size={22}
-                  color={COLORS.text}
-                />
-              </TouchableOpacity>
-            ) : null}
             {isDirectorOfActive && activeStudio ? (
               <TouchableOpacity
                 style={styles.headerIconBtn}

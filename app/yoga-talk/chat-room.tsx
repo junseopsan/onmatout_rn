@@ -1,7 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -19,7 +24,7 @@ import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
-import { chatApi, type ChatMessage } from "../../lib/api/chat";
+import { chatApi, type ChatMessage, type ChatRoom } from "../../lib/api/chat";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -40,6 +45,7 @@ export default function ChatRoomScreen() {
   const { user } = useAuth();
   const { roomId, title, asTeacher } = route.params;
 
+  const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [names, setNames] = useState<Map<string, string>>(new Map());
   const [helpful, setHelpful] = useState<
@@ -76,8 +82,23 @@ export default function ChatRoomScreen() {
 
   useEffect(() => {
     load();
+    chatApi.markRoomRead(roomId).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
+
+  // 방 정보(이름/사진) — 편집 후 돌아오면 갱신되도록 포커스마다 로드
+  useFocusEffect(
+    useCallback(() => {
+      chatApi
+        .getRoom(roomId)
+        .then(setRoom)
+        .catch(() => undefined);
+    }, [roomId]),
+  );
+
+  const isOwner =
+    !!room && room.scope === "group" && room.created_by === user?.id;
+  const headerTitle = room?.title || title || "대화";
 
   const send = async () => {
     if (!user?.id || !input.trim() || sending) return;
@@ -121,8 +142,22 @@ export default function ChatRoomScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
         onBack={() => navigation.goBack()}
-        title={title || "대화"}
+        title={headerTitle}
         serif={false}
+        avatarUrl={room?.scope === "group" ? room?.image_url : undefined}
+        avatarIcon={room?.scope ? "chatbubbles" : undefined}
+        trailingSlot={
+          isOwner ? (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ChatRoomEdit", { roomId })}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.editBtn}
+              accessibilityLabel="그룹방 수정"
+            >
+              <Ionicons name="settings-outline" size={20} color={COLORS.text} />
+            </TouchableOpacity>
+          ) : undefined
+        }
       />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -244,6 +279,12 @@ export default function ChatRoomScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  editBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   list: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
   msgLeft: { alignItems: "flex-start", marginBottom: SPACING.sm },
   msgRight: { alignItems: "flex-end", marginBottom: SPACING.sm },

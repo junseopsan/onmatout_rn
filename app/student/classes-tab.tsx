@@ -378,26 +378,6 @@ export default function StudentClassesTabScreen() {
         eyebrowSlot={hasMemberships ? <StudentStudioSwitcher /> : undefined}
         trailingSlot={
           <View style={styles.headerActions}>
-            {activeMembership ? (
-              <TouchableOpacity
-                style={styles.headerIconBtn}
-                onPress={() =>
-                  navigation.navigate("ChatRooms", {
-                    studioId: activeMembership.studio.id,
-                    studioName: activeMembership.studio.name,
-                    asTeacher: false,
-                    qnaEnabled: studioInfo?.qna_enabled ?? false,
-                  })
-                }
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name="chatbubbles-outline"
-                  size={22}
-                  color={COLORS.text}
-                />
-              </TouchableOpacity>
-            ) : null}
             <NotificationBell />
           </View>
         }

@@ -11,7 +11,6 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { FabButton } from "../../components/ui/FabButton";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { chatApi, type ChatRoom } from "../../lib/api/chat";
@@ -131,16 +130,6 @@ export default function ChatRoomsScreen() {
           <View style={{ height: SPACING.xxl }} />
         </ScrollView>
       )}
-
-      {asTeacher ? (
-        <FabButton
-          label="그룹"
-          onPress={() =>
-            navigation.navigate("ChatGroupCreate", { studioId })
-          }
-          style={styles.fab}
-        />
-      ) : null}
     </SafeAreaView>
   );
 }
@@ -205,5 +194,4 @@ const styles = StyleSheet.create({
   },
   rowTitle: { color: COLORS.text, fontSize: 15, fontWeight: "700" },
   rowDesc: { color: COLORS.textSecondary, fontSize: 12, marginTop: 2 },
-  fab: { position: "absolute", right: SPACING.lg, bottom: SPACING.lg + 8 },
 });

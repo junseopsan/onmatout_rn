@@ -501,6 +501,104 @@ export const storageAPI = {
     }
   },
 
+  // 그룹 채팅방 대표 사진 업로드 (정사각형 크롭) → publicUrl 반환
+  uploadChatGroupImage: async (
+    userId: string,
+  ): Promise<{
+    success: boolean;
+    url?: string;
+    message?: string;
+    canceled?: boolean;
+  }> => {
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return { success: false, message: "갤러리 접근 권한이 필요합니다." };
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+        base64: false,
+        exif: false,
+        allowsMultipleSelection: false,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return { success: false, canceled: true, message: "취소되었습니다." };
+      }
+
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      if (!uri) return { success: false, message: "이미지를 읽지 못했어요." };
+
+      const ext = (asset.fileName?.split(".").pop() || "jpg").toLowerCase();
+      const contentType = asset.mimeType || `image/${ext}`;
+
+      const encoding =
+        (FileSystem as any).EncodingType?.Base64 ||
+        (FileSystem as any).EncodingType?.base64 ||
+        "base64";
+      let normalized = (
+        await FileSystem.readAsStringAsync(uri, { encoding } as any)
+      ).trim();
+      if (normalized.startsWith("data:")) {
+        const commaIdx = normalized.indexOf(",");
+        normalized =
+          commaIdx >= 0 ? normalized.slice(commaIdx + 1) : normalized;
+      }
+      normalized = normalized.replace(/\s/g, "");
+      const padLen = normalized.length % 4;
+      if (padLen > 0) {
+        normalized = normalized.padEnd(normalized.length + (4 - padLen), "=");
+      }
+
+      let bytes: Uint8Array;
+      try {
+        bytes = toByteArray(normalized);
+      } catch {
+        return { success: false, message: "이미지를 처리하지 못했어요." };
+      }
+      if (bytes.length > 8 * 1024 * 1024) {
+        return {
+          success: false,
+          message: "8MB 이하의 이미지만 업로드할 수 있어요.",
+        };
+      }
+
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 6)}.${ext}`;
+      const path = `${userId}/chat/${fileName}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, bytes, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType,
+        });
+      if (upErr) {
+        return { success: false, message: `업로드 실패: ${upErr.message}` };
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+      return { success: true, url: urlData.publicUrl };
+    } catch (e) {
+      return {
+        success: false,
+        message: `업로드 중 오류: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      };
+    }
+  },
+
   // 수련기록 사진 단일 삭제 (best-effort)
   deleteRecordPhoto: async (publicUrl: string): Promise<boolean> => {
     try {

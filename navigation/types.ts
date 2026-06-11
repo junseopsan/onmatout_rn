@@ -43,6 +43,7 @@ export type RootStackParamList = {
     qnaEnabled: boolean;
   };
   ChatRoom: { roomId: string; title?: string; asTeacher: boolean };
+  ChatRoomEdit: { roomId: string };
   ChatGroupCreate: { studioId: string };
   KbReview: undefined;
   YogaAiAssistant: { initialQuestion?: string } | undefined;

@@ -1,6 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
@@ -17,6 +24,8 @@ interface DetailHeaderProps {
   serif?: boolean;
   trailing?: Trailing;
   trailingSlot?: React.ReactNode;
+  avatarUrl?: string | null;
+  avatarIcon?: keyof typeof Ionicons.glyphMap;
   style?: ViewStyle;
 }
 
@@ -28,8 +37,20 @@ export function DetailHeader({
   serif = true,
   trailing,
   trailingSlot,
+  avatarUrl,
+  avatarIcon,
   style,
 }: DetailHeaderProps) {
+  const hasAvatar = !!avatarUrl || !!avatarIcon;
+  const titleNode = serif ? (
+    <SerifTitle size="title" numberOfLines={1} style={styles.titleSerif}>
+      {title}
+    </SerifTitle>
+  ) : (
+    <Text style={styles.titleSans} numberOfLines={1}>
+      {title}
+    </Text>
+  );
   return (
     <View style={[styles.wrap, style]}>
       <View style={styles.side}>
@@ -46,14 +67,23 @@ export function DetailHeader({
 
       <View style={styles.center}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-        {serif ? (
-          <SerifTitle size="title" numberOfLines={1} style={styles.titleSerif}>
-            {title}
-          </SerifTitle>
+        {hasAvatar ? (
+          <View style={styles.titleRow}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar}>
+                <Ionicons
+                  name={avatarIcon!}
+                  size={16}
+                  color={COLORS.primary}
+                />
+              </View>
+            )}
+            {titleNode}
+          </View>
         ) : (
-          <Text style={styles.titleSans} numberOfLines={1}>
-            {title}
-          </Text>
+          titleNode
         )}
       </View>
 
@@ -128,6 +158,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: SPACING.sm,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    maxWidth: "100%",
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(139, 92, 246, 0.14)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   eyebrow: {
     ...TEXT.eyebrow,

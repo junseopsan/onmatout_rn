@@ -5,6 +5,7 @@ export type ChatRoom = {
   studio_id: string;
   scope: "studio" | "group";
   title: string | null;
+  image_url: string | null;
   created_by: string;
   created_at: string;
   last_activity_at: string;
@@ -44,14 +45,60 @@ export const chatApi = {
     studioId: string;
     title: string;
     memberUserIds: string[];
+    imageUrl?: string | null;
   }): Promise<string> {
     const { data, error } = await supabase.rpc("create_group_room", {
       p_studio_id: input.studioId,
       p_title: input.title,
       p_member_user_ids: input.memberUserIds,
+      p_image_url: input.imageUrl ?? null,
     });
     if (error) throw error;
     return data as string;
+  },
+
+  // 그룹방 정보 수정 (방장만)
+  async updateGroupRoom(input: {
+    roomId: string;
+    title: string;
+    imageUrl?: string | null;
+  }): Promise<void> {
+    const { error } = await supabase.rpc("update_group_room", {
+      p_room_id: input.roomId,
+      p_title: input.title,
+      p_image_url: input.imageUrl ?? null,
+    });
+    if (error) throw error;
+  },
+
+  async listRoomMembers(
+    roomId: string,
+  ): Promise<{ user_id: string; role: string; name: string | null }[]> {
+    const { data, error } = await supabase.rpc("list_room_members", {
+      p_room_id: roomId,
+    });
+    if (error) throw error;
+    return (data ?? []) as {
+      user_id: string;
+      role: string;
+      name: string | null;
+    }[];
+  },
+
+  async addGroupMember(roomId: string, userId: string): Promise<void> {
+    const { error } = await supabase.rpc("add_group_member", {
+      p_room_id: roomId,
+      p_user_id: userId,
+    });
+    if (error) throw error;
+  },
+
+  async removeGroupMember(roomId: string, userId: string): Promise<void> {
+    const { error } = await supabase.rpc("remove_group_member", {
+      p_room_id: roomId,
+      p_user_id: userId,
+    });
+    if (error) throw error;
   },
 
   async getRoom(roomId: string): Promise<ChatRoom | null> {
@@ -121,6 +168,57 @@ export const chatApi = {
       map.set(r.room_id, (map.get(r.room_id) ?? 0) + 1);
     }
     return map;
+  },
+
+  // 방 진입 시 읽음 처리
+  async markRoomRead(roomId: string): Promise<void> {
+    await supabase.rpc("mark_room_read", { p_room_id: roomId });
+  },
+
+  // 방별 최신 메시지 + 안읽음 여부 (목록 미리보기/정렬용)
+  async roomDigest(
+    roomIds: string[],
+    userId: string,
+  ): Promise<
+    Map<
+      string,
+      { body: string; created_at: string; sender_id: string; unread: boolean }
+    >
+  > {
+    const result = new Map<
+      string,
+      { body: string; created_at: string; sender_id: string; unread: boolean }
+    >();
+    if (roomIds.length === 0) return result;
+    const [{ data: members }, { data: msgs }] = await Promise.all([
+      supabase
+        .from("chat_room_members")
+        .select("room_id, last_read_at")
+        .in("room_id", roomIds)
+        .eq("user_id", userId),
+      supabase
+        .from("chat_messages")
+        .select("room_id, sender_id, body, created_at")
+        .in("room_id", roomIds)
+        .order("created_at", { ascending: false }),
+    ]);
+    const readMap = new Map<string, string | null>(
+      (members ?? []).map((m: any) => [m.room_id, m.last_read_at]),
+    );
+    // room별 최신 메시지 1건
+    for (const m of (msgs ?? []) as any[]) {
+      if (result.has(m.room_id)) continue;
+      const readAt = readMap.get(m.room_id) ?? null;
+      const unread =
+        m.sender_id !== userId && (!readAt || m.created_at > readAt);
+      result.set(m.room_id, {
+        body: m.body,
+        created_at: m.created_at,
+        sender_id: m.sender_id,
+        unread,
+      });
+    }
+    return result;
   },
 
   async listHelpful(
