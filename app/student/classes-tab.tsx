@@ -376,7 +376,30 @@ export default function StudentClassesTabScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <PageHeader
         eyebrowSlot={hasMemberships ? <StudentStudioSwitcher /> : undefined}
-        trailingSlot={<NotificationBell />}
+        trailingSlot={
+          <View style={styles.headerActions}>
+            {studioInfo?.qna_enabled && activeMembership ? (
+              <TouchableOpacity
+                style={styles.headerIconBtn}
+                onPress={() =>
+                  navigation.navigate("StudioQna", {
+                    studioId: activeMembership.studio.id,
+                    studioName: activeMembership.studio.name,
+                    asTeacher: false,
+                  })
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={22}
+                  color={COLORS.text}
+                />
+              </TouchableOpacity>
+            ) : null}
+            <NotificationBell />
+          </View>
+        }
       />
 
       {!studio ? (
@@ -568,6 +591,13 @@ export default function StudentClassesTabScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  headerIconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
   slot: {
     flexDirection: "row",

@@ -56,6 +56,7 @@ export type StudioFullInfo = {
   hours_by_day: Record<string, string> | null;
   bank_account: string | null;
   cancel_cutoff_hours: number;
+  qna_enabled: boolean;
   ownerName: string | null;
 };
 
@@ -76,7 +77,7 @@ export const studentBookingApi = {
     const { data: studio, error } = await supabase
       .from("pivot_studios")
       .select(
-        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, pricing_image_url, policy_image_url, description_image_url, rules_image_url, photos, hours_by_day, bank_account, cancel_cutoff_hours, owner_id",
+        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, pricing_image_url, policy_image_url, description_image_url, rules_image_url, photos, hours_by_day, bank_account, cancel_cutoff_hours, qna_enabled, owner_id",
       )
       .eq("id", studioId)
       .maybeSingle();
@@ -113,6 +114,7 @@ export const studentBookingApi = {
         (studio.hours_by_day as Record<string, string> | null) ?? null,
       bank_account: (studio.bank_account as string | null) ?? null,
       cancel_cutoff_hours: (studio.cancel_cutoff_hours as number | null) ?? 0,
+      qna_enabled: (studio.qna_enabled as boolean | null) ?? false,
       ownerName,
     };
   },

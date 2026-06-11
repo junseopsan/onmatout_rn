@@ -21,6 +21,7 @@ export type PivotStudio = {
   hours_by_day: Record<string, string> | null;
   bank_account: string | null;
   cancel_cutoff_hours: number;
+  qna_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -44,6 +45,7 @@ export type PivotStudioInput = {
   hours_by_day?: Record<string, string> | null;
   bank_account?: string | null;
   cancel_cutoff_hours?: number;
+  qna_enabled?: boolean;
 };
 
 export const pivotStudioApi = {
@@ -200,6 +202,7 @@ export const pivotStudioApi = {
       patch.bank_account = input.bank_account;
     if (input.cancel_cutoff_hours !== undefined)
       patch.cancel_cutoff_hours = input.cancel_cutoff_hours;
+    if (input.qna_enabled !== undefined) patch.qna_enabled = input.qna_enabled;
     const { data, error } = await supabase
       .from("pivot_studios")
       .update(patch)

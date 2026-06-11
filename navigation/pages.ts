@@ -27,6 +27,7 @@ import TeacherStudioListScreen from "../app/teacher/studio-list";
 import YogaAiAssistantScreen from "../app/yoga-talk/ai-assistant";
 import YogaTalkThreadListScreen from "../app/yoga-talk/thread-list";
 import YogaTalkThreadScreen from "../app/yoga-talk/thread";
+import StudioQnaScreen from "../app/yoga-talk/studio-qna";
 import PhoneLoginScreen from "../app/auth/phone-login";
 import VerifyScreen from "../app/auth/verify";
 import EditNicknameScreen from "../app/profile/edit-nickname";
@@ -372,6 +373,11 @@ export const pageList: PageConfig[] = [
   {
     name: "YogaTalkThreadList",
     component: YogaTalkThreadListScreen,
+    options: { headerShown: false },
+  },
+  {
+    name: "StudioQna",
+    component: StudioQnaScreen,
     options: { headerShown: false },
   },
   {

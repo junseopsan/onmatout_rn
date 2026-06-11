@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -119,12 +120,15 @@ export default function TeacherStudioFormScreen() {
   const [policy, setPolicy] = useState("");
   const [pricing, setPricing] = useState("");
   const [cancelCutoff, setCancelCutoff] = useState(0);
+  const [qnaEnabled, setQnaEnabled] = useState(false);
 
   const [photos, setPhotos] = useState<string[]>([]);
   const [descriptionImage, setDescriptionImage] = useState<string | null>(null);
   const [policyImage, setPolicyImage] = useState<string | null>(null);
   const [pricingImage, setPricingImage] = useState<string | null>(null);
-  const [uploading, setUploading] = useState<ImageKind | "gallery" | null>(null);
+  const [uploading, setUploading] = useState<ImageKind | "gallery" | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!editing || !studioId) return;
@@ -150,6 +154,7 @@ export default function TeacherStudioFormScreen() {
           setPolicy(s.policy_text ?? "");
           setPricing(s.pricing_text ?? "");
           setCancelCutoff(s.cancel_cutoff_hours ?? 0);
+          setQnaEnabled(s.qna_enabled ?? false);
           setPhotos(s.photos ?? []);
           setDescriptionImage(s.description_image_url ?? null);
           setPolicyImage(s.policy_image_url ?? null);
@@ -182,7 +187,10 @@ export default function TeacherStudioFormScreen() {
       const res = await storageAPI.uploadStudioImage(user.id);
       if (res.success && res.url) setterFor(kind)(res.url);
       else if (!res.canceled)
-        Alert.alert("업로드 실패", res.message ?? "잠시 후 다시 시도해 주세요.");
+        Alert.alert(
+          "업로드 실패",
+          res.message ?? "잠시 후 다시 시도해 주세요.",
+        );
     } finally {
       setUploading(null);
     }
@@ -192,14 +200,19 @@ export default function TeacherStudioFormScreen() {
     if (!user?.id) return Alert.alert("로그인이 필요해요");
     const remaining = MAX_PHOTOS - photos.length;
     if (remaining <= 0)
-      return Alert.alert(`대표 사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있어요.`);
+      return Alert.alert(
+        `대표 사진은 최대 ${MAX_PHOTOS}장까지 등록할 수 있어요.`,
+      );
     setUploading("gallery");
     try {
       const res = await storageAPI.uploadStudioImage(user.id, [4, 3]);
       if (res.success && res.url)
         setPhotos((prev) => [...prev, res.url!].slice(0, MAX_PHOTOS));
       else if (!res.canceled)
-        Alert.alert("업로드 실패", res.message ?? "잠시 후 다시 시도해 주세요.");
+        Alert.alert(
+          "업로드 실패",
+          res.message ?? "잠시 후 다시 시도해 주세요.",
+        );
     } finally {
       setUploading(null);
     }
@@ -235,6 +248,7 @@ export default function TeacherStudioFormScreen() {
         policy_image_url: policyImage,
         pricing_image_url: pricingImage,
         cancel_cutoff_hours: cancelCutoff,
+        qna_enabled: qnaEnabled,
       };
       if (editing && studioId) {
         const updated = await pivotStudioApi.updateStudio(studioId, payload);
@@ -393,7 +407,9 @@ export default function TeacherStudioFormScreen() {
                 <View
                   style={[
                     styles.dayBadge,
-                    color ? { backgroundColor: `${color}22`, borderColor: color } : null,
+                    color
+                      ? { backgroundColor: `${color}22`, borderColor: color }
+                      : null,
                   ]}
                 >
                   <Text
@@ -430,10 +446,7 @@ export default function TeacherStudioFormScreen() {
                 )}
 
                 <TouchableOpacity
-                  style={[
-                    styles.dayToggle,
-                    dh.closed && styles.dayToggleOn,
-                  ]}
+                  style={[styles.dayToggle, dh.closed && styles.dayToggleOn]}
                   onPress={() => updateDay(d.key, { closed: !dh.closed })}
                   activeOpacity={0.85}
                 >
@@ -480,6 +493,23 @@ export default function TeacherStudioFormScreen() {
                 color={cancelCutoff >= 48 ? COLORS.textMuted : COLORS.text}
               />
             </TouchableOpacity>
+          </View>
+
+          <View style={{ height: SPACING.lg }} />
+          <View style={styles.qnaRow}>
+            <View style={{ flex: 1, paddingRight: SPACING.md }}>
+              <Text style={styles.qnaTitle}>요가원 Q&A 채널</Text>
+              <Text style={styles.qnaDesc}>
+                수련생과 함께 쓰는 공개 질문 채널을 켭니다. 도움된 답변은 다른
+                수련생에게도 보일 수 있어요.
+              </Text>
+            </View>
+            <Switch
+              value={qnaEnabled}
+              onValueChange={setQnaEnabled}
+              trackColor={{ false: COLORS.border, true: COLORS.primary }}
+              thumbColor={COLORS.white}
+            />
           </View>
 
           <View style={{ height: SPACING.lg }} />
@@ -601,21 +631,21 @@ export default function TeacherStudioFormScreen() {
   );
 }
 
-function TimeChip({
-  value,
-  onPress,
-}: {
-  value?: string;
-  onPress: () => void;
-}) {
+function TimeChip({ value, onPress }: { value?: string; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.timeChip} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={styles.timeChip}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       <Ionicons
         name="time-outline"
         size={14}
         color={value ? COLORS.primary : COLORS.textMuted}
       />
-      <Text style={[styles.timeChipText, !value && { color: COLORS.textMuted }]}>
+      <Text
+        style={[styles.timeChipText, !value && { color: COLORS.textMuted }]}
+      >
         {value ?? "시간"}
       </Text>
     </TouchableOpacity>
@@ -659,7 +689,7 @@ function PhotoGallery({
         title={
           photos.length > 0
             ? `사진 추가 (${photos.length}/${MAX_PHOTOS})`
-            : "대표 사진 등록"
+            : "대표 사진"
         }
         variant="outline"
         onPress={onAdd}
@@ -793,7 +823,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(139, 92, 246, 0.12)",
     borderColor: COLORS.primary,
   },
-  dayToggleText: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "700" },
+  dayToggleText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   dayToggleTextOn: { color: COLORS.primary },
   timeGrid: {
     flexDirection: "row",
@@ -844,6 +878,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   stepperValueText: { color: COLORS.text, fontSize: 15, fontWeight: "700" },
+  qnaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.lg,
+  },
+  qnaTitle: { color: COLORS.text, fontSize: 15, fontWeight: "700" },
+  qnaDesc: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
+  },
   galleryRow: { gap: SPACING.sm, paddingVertical: 2 },
   thumbWrap: { position: "relative" },
   thumb: {
@@ -874,5 +924,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     backgroundColor: COLORS.surface,
   },
-  imageActions: { flexDirection: "row", gap: SPACING.sm, marginTop: SPACING.sm },
+  imageActions: {
+    flexDirection: "row",
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
 });
