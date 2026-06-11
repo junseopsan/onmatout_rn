@@ -7,7 +7,7 @@ export default function PrivacyPolicyScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.contentText}>
-          온매트아웃 (이하 &quot;회사&quot;)는 사용자의 개인정보를 소중히 여기며,
+          온매아웃 (이하 &quot;회사&quot;)는 사용자의 개인정보를 소중히 여기며,
           「개인정보 보호법」 및 「위치정보의 보호 및 이용 등에 관한 법률」 등
           관련 법령을 준수합니다. 본 개인정보처리방침은 회사가 제공하는 ONMATOUT
           모바일 앱(이하 &quot;서비스&quot;) 이용과 관련하여 사용자의 개인정보가
@@ -150,7 +150,7 @@ export default function PrivacyPolicyScreen() {
           있을 경우 앱 내 공지사항 또는 이메일을 통해 고지합니다.
         </Text>
 
-        <Text style={styles.footer}>시행일자: 2026년 6월 11일</Text>
+        <Text style={styles.footer}>시행일자: 2025년 8월 27일</Text>
       </ScrollView>
     </View>
   );

@@ -138,7 +138,7 @@ export default function TermsOfServiceScreen() {
 
         <Text style={styles.sectionTitle}>부칙</Text>
         <Text style={styles.contentText}>
-          이 약관은 2026년 6월 11일부터 적용됩니다.
+          이 약관은 2024년 1월 1일부터 적용됩니다.
         </Text>
       </ScrollView>
     </View>
