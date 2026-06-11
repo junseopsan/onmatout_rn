@@ -18,12 +18,12 @@ import { DetailHeader } from "../../components/ui/DetailHeader";
 import { PillInput } from "../../components/ui/PillInput";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
+import { usePivotStudios } from "../../hooks/usePivotStudios";
 import {
   membershipPlansApi,
   type MembershipPlan,
 } from "../../lib/api/membershipPlans";
 import { teacherApi } from "../../lib/api/teacher";
-import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { RootStackParamList } from "../../navigation/types";
 import type { MembershipType, StudentProfile } from "../../types/teacher";
 
@@ -45,13 +45,13 @@ const TYPE_OPTIONS: {
   {
     value: "period_weekly",
     icon: "calendar",
-    title: "기간권 (주 N회)",
+    title: "주 N회",
     description: "기간 내 주당 횟수 제한",
   },
   {
     value: "period_unlimited",
     icon: "infinite",
-    title: "기간권 (무제한)",
+    title: "무제한",
     description: "기간 내 무제한 출석",
   },
 ];
@@ -131,7 +131,8 @@ export default function TeacherMembershipCreateScreen() {
       return "종료일은 시작일 이후여야 해요.";
     if (type === "count") {
       const n = parseInt(totalCount, 10);
-      if (!Number.isFinite(n) || n <= 0) return "횟수를 1 이상으로 입력해 주세요.";
+      if (!Number.isFinite(n) || n <= 0)
+        return "횟수를 1 이상으로 입력해 주세요.";
     }
     if (type === "period_weekly") {
       const w = parseInt(weeklyLimit, 10);
@@ -202,7 +203,10 @@ export default function TeacherMembershipCreateScreen() {
                       activeOpacity={0.85}
                     >
                       <Text
-                        style={[styles.planChipName, on && { color: COLORS.primary }]}
+                        style={[
+                          styles.planChipName,
+                          on && { color: COLORS.primary },
+                        ]}
                       >
                         {p.name}
                       </Text>
@@ -233,7 +237,10 @@ export default function TeacherMembershipCreateScreen() {
                   activeOpacity={0.85}
                 >
                   <View
-                    style={[styles.typeIconWrap, active && styles.typeIconWrapActive]}
+                    style={[
+                      styles.typeIconWrap,
+                      active && styles.typeIconWrapActive,
+                    ]}
                   >
                     <Ionicons
                       name={opt.icon}

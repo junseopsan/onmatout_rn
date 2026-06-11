@@ -39,9 +39,8 @@ function planSummary(p: MembershipPlan): string {
 
 function typeLabel(m: MyMembershipInfo): string {
   if (m.type === "count") return "횟수권";
-  if (m.type === "period_weekly")
-    return `기간권 주${m.weekly_limit ?? ""}회`;
-  if (m.type === "period_unlimited") return "기간권 무제한";
+  if (m.type === "period_weekly") return `주${m.weekly_limit ?? ""}회`;
+  if (m.type === "period_unlimited") return "무제한";
   return "수강권";
 }
 
@@ -69,9 +68,7 @@ function chipLabel(memberships: MyMembershipInfo[]): string {
   const m = memberships[0];
   const rem = remainingText(m);
   const base = rem ? `${typeLabel(m)} 잔여 ${rem}` : typeLabel(m);
-  return memberships.length > 1
-    ? `${base} 외 ${memberships.length - 1}`
-    : base;
+  return memberships.length > 1 ? `${base} 외 ${memberships.length - 1}` : base;
 }
 
 function callPhone(num: string) {
@@ -126,9 +123,7 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
           <Ionicons name="ticket" size={13} color={COLORS.primary} />
         </View>
         <Text style={styles.chipText} numberOfLines={1}>
-          {memberships.length > 0
-            ? chipLabel(memberships)
-            : "요가원 정보"}
+          {memberships.length > 0 ? chipLabel(memberships) : "요가원 정보"}
         </Text>
         <Ionicons name="chevron-forward" size={15} color={COLORS.textMuted} />
       </Pressable>
@@ -142,7 +137,11 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
             style={{ marginBottom: 14 }}
           >
             {studio.photos.map((url) => (
-              <Image key={url} source={{ uri: url }} style={styles.galleryImg} />
+              <Image
+                key={url}
+                source={{ uri: url }}
+                style={styles.galleryImg}
+              />
             ))}
           </ScrollView>
         ) : null}
@@ -213,7 +212,9 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
               </View>
             ))}
             {studio.bank_account ? (
-              <View style={[styles.hourRow, { marginTop: hourRows.length ? 8 : 0 }]}>
+              <View
+                style={[styles.hourRow, { marginTop: hourRows.length ? 8 : 0 }]}
+              >
                 <Text style={styles.hourDay}>계좌</Text>
                 <Text style={styles.hourVal}>{studio.bank_account}</Text>
               </View>

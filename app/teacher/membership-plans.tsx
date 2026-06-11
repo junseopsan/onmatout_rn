@@ -38,8 +38,8 @@ type R = RouteProp<RootStackParamList, "TeacherMembershipPlans">;
 
 const TYPES: { value: MembershipPlanType; label: string }[] = [
   { value: "count", label: "횟수권" },
-  { value: "period_weekly", label: "기간권 주N회" },
-  { value: "period_unlimited", label: "기간권 무제한" },
+  { value: "period_weekly", label: "주N회" },
+  { value: "period_unlimited", label: "무제한" },
 ];
 
 function typeLabel(t: MembershipPlanType): string {

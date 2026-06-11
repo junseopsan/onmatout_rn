@@ -1,7 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { useRoles } from "../../hooks/useRoles";
@@ -100,9 +106,9 @@ function describeMembership(m: any): string {
     return `횟수권, ${remaining}/${m.total_count}회 남음`;
   }
   if (m.type === "period_weekly") {
-    return `기간권 주${m.weekly_limit}회, ~${m.end_date}`;
+    return `주${m.weekly_limit}회, ~${m.end_date}`;
   }
-  return `기간권 무제한, ~${m.end_date}`;
+  return `무제한, ~${m.end_date}`;
 }
 
 const styles = StyleSheet.create({
@@ -131,7 +137,12 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     marginRight: 10,
   },
-  studio: { color: COLORS.text, fontSize: 14, fontWeight: "600", marginBottom: 4 },
+  studio: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
   meta: { color: COLORS.primary, fontSize: 13 },
   muted: { color: COLORS.textSecondary, fontSize: 13 },
 });

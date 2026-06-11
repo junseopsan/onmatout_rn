@@ -29,8 +29,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { pivotStudioApi } from "../../lib/api/pivotStudio";
 import { teacherApi } from "../../lib/api/teacher";
-import { formatPhone } from "../../lib/format";
 import { yogaTalkApi } from "../../lib/api/yogaTalk";
+import { formatPhone } from "../../lib/format";
 import { RootStackParamList } from "../../navigation/types";
 import type {
   Attendance,
@@ -582,10 +582,10 @@ function MembershipTypePill({ m }: { m: Membership }) {
   let label = "횟수권";
   if (m.type === "period_weekly") {
     icon = "calendar";
-    label = `기간권, 주 ${m.weekly_limit}회`;
+    label = `주 ${m.weekly_limit}회`;
   } else if (m.type === "period_unlimited") {
     icon = "infinite";
-    label = "기간권, 무제한";
+    label = "무제한";
   }
   return (
     <View style={styles.mTypePill}>

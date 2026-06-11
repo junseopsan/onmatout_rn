@@ -160,7 +160,14 @@ export default function StudentTeacherDetailScreen() {
 function ActiveMembership({
   m,
 }: {
-  m: { type: string; total_count: number | null; used_count: number; weekly_limit: number | null; start_date: string; end_date: string };
+  m: {
+    type: string;
+    total_count: number | null;
+    used_count: number;
+    weekly_limit: number | null;
+    start_date: string;
+    end_date: string;
+  };
 }) {
   if (m.type === "count") {
     const remaining = (m.total_count ?? 0) - m.used_count;
@@ -176,7 +183,7 @@ function ActiveMembership({
   if (m.type === "period_weekly") {
     return (
       <View>
-        <Text style={styles.bigNumber}>기간권 (주 {m.weekly_limit}회)</Text>
+        <Text style={styles.bigNumber}>주 {m.weekly_limit}회</Text>
         <Text style={styles.muted}>
           {m.start_date} ~ {m.end_date}
         </Text>
@@ -195,8 +202,8 @@ function ActiveMembership({
 
 function labelType(type: string): string {
   if (type === "count") return "횟수권";
-  if (type === "period_weekly") return "기간권 주N회";
-  return "기간권 무제한";
+  if (type === "period_weekly") return "주N회";
+  return "무제한";
 }
 
 const styles = StyleSheet.create({
