@@ -9,7 +9,6 @@
 //
 // 필요 env: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
@@ -22,16 +21,14 @@ const EMBED_MODEL = "text-embedding-3-small";
 const EMBED_DIM = 1536;
 const MAX_CONTENT = 8000; // embedding 한 번에 보낼 수 있는 안전 길이 (대략)
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+const corsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+});
 
-async function embed(text: string): Promise<number[]> {
+const embed = async (text: string): Promise<number[]> => {
   const r = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
@@ -49,9 +46,9 @@ async function embed(text: string): Promise<number[]> {
     throw new Error(`unexpected embedding shape`);
   }
   return v;
-}
+};
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders() });
   }

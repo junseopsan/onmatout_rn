@@ -1,5 +1,4 @@
 // supabase/functions/send-sms/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import CryptoJS from "https://esm.sh/crypto-js@4.2.0";
 
 interface SmsHookPayload {
@@ -7,7 +6,7 @@ interface SmsHookPayload {
   sms: { otp: string };
 }
 
-function makeSensSignature({
+const makeSensSignature = ({
   method,
   urlPath,
   timestamp,
@@ -19,7 +18,7 @@ function makeSensSignature({
   timestamp: string;
   accessKey: string;
   secretKey: string;
-}) {
+}) => {
   const space = " ";
   const newLine = "\n";
 
@@ -35,9 +34,9 @@ function makeSensSignature({
 
   const hmac = CryptoJS.HmacSHA256(message, secretKey);
   return CryptoJS.enc.Base64.stringify(hmac);
-}
+};
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   try {
     if (req.method !== "POST") {
       return new Response("Method Not Allowed", { status: 405 });

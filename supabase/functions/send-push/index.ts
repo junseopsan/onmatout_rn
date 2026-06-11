@@ -4,22 +4,19 @@
 // 동작: 해당 user_id 의 모든 user_push_tokens 에 Expo Push API 로 전송.
 // 인증: verify_jwt: false (pg_net 트리거에서 호출). 외부 호출 차단 위해 origin 체크는 추후.
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const EXPO_ACCESS_TOKEN = Deno.env.get("EXPO_ACCESS_TOKEN") ?? ""; // 선택
 
-function cors() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, content-type, apikey",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
+const cors = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+});
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors() });
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "method not allowed" }), {
