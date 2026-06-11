@@ -376,6 +376,11 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="KbReview"
+        component={pageList.find((p) => p.name === "KbReview")?.component!}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="YogaAiAssistant"
         component={
           pageList.find((p) => p.name === "YogaAiAssistant")?.component!

@@ -44,6 +44,7 @@ export type RootStackParamList = {
   };
   ChatRoom: { roomId: string; title?: string; asTeacher: boolean };
   ChatGroupCreate: { studioId: string };
+  KbReview: undefined;
   YogaAiAssistant: { initialQuestion?: string } | undefined;
   StudentRoutineList: undefined;
   StudentRoutineDetail: { routineId: string };

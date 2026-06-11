@@ -30,6 +30,7 @@ import YogaTalkThreadScreen from "../app/yoga-talk/thread";
 import ChatRoomsScreen from "../app/yoga-talk/chat-rooms";
 import ChatRoomScreen from "../app/yoga-talk/chat-room";
 import ChatGroupCreateScreen from "../app/yoga-talk/chat-group-create";
+import KbReviewScreen from "../app/admin/kb-review";
 import PhoneLoginScreen from "../app/auth/phone-login";
 import VerifyScreen from "../app/auth/verify";
 import EditNicknameScreen from "../app/profile/edit-nickname";
@@ -390,6 +391,11 @@ export const pageList: PageConfig[] = [
   {
     name: "ChatGroupCreate",
     component: ChatGroupCreateScreen,
+    options: { headerShown: false },
+  },
+  {
+    name: "KbReview",
+    component: KbReviewScreen,
     options: { headerShown: false },
   },
   {

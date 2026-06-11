@@ -25,6 +25,7 @@ import { COLORS } from "../constants/Colors";
 import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
+import { kbApi } from "../lib/api/kb";
 import { nearbyApi } from "../lib/api/nearby";
 import { userAPI } from "../lib/api/user";
 import { getCurrentCoords } from "../lib/location";
@@ -50,6 +51,15 @@ export default function SettingsScreen() {
   const [teacherInfoOpen, setTeacherInfoOpen] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
   const [discoverable, setDiscoverable] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    kbApi
+      .isAdmin()
+      .then(setIsAdmin)
+      .catch(() => undefined);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id || !roles.includes("student")) return;
@@ -572,6 +582,28 @@ export default function SettingsScreen() {
                   <Text style={styles.settingDescription}>
                     상호명, 연락처, 운영시간, 홈페이지 등 정보를 추가/수정하고
                     여러 요가원을 전환하세요.
+                  </Text>
+                </View>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
+          {/* 관리자 — 앱 어드민에게만 노출 */}
+          {isAdmin ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>관리자</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => navigation.navigate("KbReview")}
+              >
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingText}>지식베이스 검수</Text>
+                  <Text style={styles.settingDescription}>
+                    수련생이 도움됐어요를 누른 선생님 답변을 익명·일반화해
+                    지식베이스에 적재합니다.
                   </Text>
                 </View>
                 <Text style={styles.arrowText}>›</Text>
