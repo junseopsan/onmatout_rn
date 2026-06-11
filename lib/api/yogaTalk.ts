@@ -223,6 +223,43 @@ export const yogaTalkApi = {
     return (data ?? []) as YogaTalkMessage[];
   },
 
+  // 메시지별 도움됐어요(👍) 반응 조회 — 카운트와 내가 눌렀는지
+  async listHelpful(
+    messageIds: string[],
+  ): Promise<{ message_id: string; user_id: string }[]> {
+    if (messageIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from("yoga_talk_message_helpful")
+      .select("message_id, user_id")
+      .in("message_id", messageIds);
+    if (error) throw error;
+    return (data ?? []) as { message_id: string; user_id: string }[];
+  },
+
+  // 도움됐어요 토글 (수련생만 — RLS로 강제). 반환: 토글 후 내 반응 여부
+  async toggleHelpful(messageId: string, userId: string): Promise<boolean> {
+    const { data: existing } = await supabase
+      .from("yoga_talk_message_helpful")
+      .select("message_id")
+      .eq("message_id", messageId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabase
+        .from("yoga_talk_message_helpful")
+        .delete()
+        .eq("message_id", messageId)
+        .eq("user_id", userId);
+      if (error) throw error;
+      return false;
+    }
+    const { error } = await supabase
+      .from("yoga_talk_message_helpful")
+      .insert({ message_id: messageId, user_id: userId });
+    if (error) throw error;
+    return true;
+  },
+
   async sendMessage(input: {
     threadId: string;
     senderUserId: string;

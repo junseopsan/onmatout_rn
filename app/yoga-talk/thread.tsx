@@ -61,6 +61,10 @@ export default function YogaTalkThreadScreen() {
 
   const [thread, setThread] = useState<YogaTalkThread | null>(null);
   const [messages, setMessages] = useState<YogaTalkMessage[]>([]);
+  // 메시지별 도움됐어요: { [messageId]: { count, mine } }
+  const [helpful, setHelpful] = useState<
+    Record<string, { count: number; mine: boolean }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [input, setInput] = useState("");
@@ -87,10 +91,52 @@ export default function YogaTalkThreadScreen() {
       ]);
       if (threadRes.data) setThread(threadRes.data as YogaTalkThread);
       setMessages(msgs);
+      await loadHelpful(msgs);
     } catch (e) {
       console.warn("[YogaTalk thread] failed", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHelpful = async (msgs: YogaTalkMessage[]) => {
+    const teacherIds = msgs
+      .filter((m) => m.sender_type === "teacher")
+      .map((m) => m.id);
+    if (teacherIds.length === 0) {
+      setHelpful({});
+      return;
+    }
+    try {
+      const rows = await yogaTalkApi.listHelpful(teacherIds);
+      const map: Record<string, { count: number; mine: boolean }> = {};
+      for (const r of rows) {
+        const cur = map[r.message_id] ?? { count: 0, mine: false };
+        cur.count += 1;
+        if (r.user_id === user?.id) cur.mine = true;
+        map[r.message_id] = cur;
+      }
+      setHelpful(map);
+    } catch {
+      // 무시 (반응은 보조 기능)
+    }
+  };
+
+  const toggleHelpful = async (messageId: string) => {
+    if (!user?.id) return;
+    const prev = helpful[messageId] ?? { count: 0, mine: false };
+    // 낙관적 업데이트
+    setHelpful((h) => ({
+      ...h,
+      [messageId]: {
+        count: prev.count + (prev.mine ? -1 : 1),
+        mine: !prev.mine,
+      },
+    }));
+    try {
+      await yogaTalkApi.toggleHelpful(messageId, user.id);
+    } catch {
+      setHelpful((h) => ({ ...h, [messageId]: prev })); // 롤백
     }
   };
 
@@ -287,31 +333,59 @@ export default function YogaTalkThreadScreen() {
             const fromMe =
               (isTeacher && m.sender_type === "teacher") ||
               (!isTeacher && m.sender_type === "student");
+            const h = helpful[m.id] ?? { count: 0, mine: false };
+            // 선생님 메시지에만 노출: 수련생은 항상(누를 수 있게), 선생님은 카운트 있을 때만
+            const showHelpful =
+              m.sender_type === "teacher" && (!isTeacher || h.count > 0);
             return (
-              <View
-                style={[
-                  styles.bubbleRow,
-                  fromMe ? styles.bubbleRight : styles.bubbleLeft,
-                ]}
-              >
+              <View style={fromMe ? styles.msgRight : styles.msgLeft}>
                 <View
                   style={[
-                    styles.bubble,
-                    fromMe ? styles.bubbleMe : styles.bubbleOther,
+                    styles.bubbleRow,
+                    fromMe ? styles.bubbleRight : styles.bubbleLeft,
                   ]}
                 >
-                  <Text
+                  <View
                     style={[
-                      styles.bubbleText,
-                      fromMe ? styles.bubbleTextMe : styles.bubbleTextOther,
+                      styles.bubble,
+                      fromMe ? styles.bubbleMe : styles.bubbleOther,
                     ]}
                   >
-                    {m.body}
+                    <Text
+                      style={[
+                        styles.bubbleText,
+                        fromMe ? styles.bubbleTextMe : styles.bubbleTextOther,
+                      ]}
+                    >
+                      {m.body}
+                    </Text>
+                  </View>
+                  <Text style={styles.bubbleTime}>
+                    {formatTime(m.created_at)}
                   </Text>
                 </View>
-                <Text style={styles.bubbleTime}>
-                  {formatTime(m.created_at)}
-                </Text>
+                {showHelpful ? (
+                  <TouchableOpacity
+                    style={[styles.helpfulChip, h.mine && styles.helpfulChipOn]}
+                    onPress={isTeacher ? undefined : () => toggleHelpful(m.id)}
+                    disabled={isTeacher}
+                    activeOpacity={isTeacher ? 1 : 0.7}
+                  >
+                    <Ionicons
+                      name="thumbs-up"
+                      size={11}
+                      color={h.mine ? COLORS.primary : COLORS.textMuted}
+                    />
+                    <Text
+                      style={[
+                        styles.helpfulText,
+                        h.mine && { color: COLORS.primary },
+                      ]}
+                    >
+                      도움됐어요{h.count > 0 ? ` ${h.count}` : ""}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             );
           }}
@@ -424,6 +498,26 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: RADIUS.pill,
   },
+  msgLeft: { alignItems: "flex-start" },
+  msgRight: { alignItems: "flex-end" },
+  helpfulChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: 2,
+    marginHorizontal: 4,
+  },
+  helpfulChipOn: {
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderColor: COLORS.primary,
+  },
+  helpfulText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "700" },
   bubbleRow: {
     flexDirection: "row",
     alignItems: "flex-end",
