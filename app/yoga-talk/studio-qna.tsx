@@ -93,7 +93,7 @@ export default function StudioQnaScreen() {
       });
       await load();
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-    } catch (e: any) {
+    } catch {
       setInput(body);
     } finally {
       setSending(false);
