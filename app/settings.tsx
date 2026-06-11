@@ -373,6 +373,24 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.settingsContainer}>
+          {/* 고객지원 섹션 */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>고객지원</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => navigation.navigate("CreateSupportRequest")}
+          >
+            <View style={styles.settingContent}>
+              <Text style={styles.settingText}>건의사항</Text>
+              <Text style={styles.settingDescription}>
+                버그 신고, 기능 제안, 문의사항을 남겨주세요
+              </Text>
+            </View>
+            <Text style={styles.arrowText}>›</Text>
+          </TouchableOpacity>
+
           {/* 알림 설정 섹션 */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>알림 설정</Text>
@@ -414,24 +432,6 @@ export default function SettingsScreen() {
               <Text style={styles.settingText}>앱 설정 열기</Text>
               <Text style={styles.settingDescription}>
                 알림, 권한 등 기기의 앱 설정으로 이동해요.
-              </Text>
-            </View>
-            <Text style={styles.arrowText}>›</Text>
-          </TouchableOpacity>
-
-          {/* 고객지원 섹션 */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>고객지원</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={() => navigation.navigate("CreateSupportRequest")}
-          >
-            <View style={styles.settingContent}>
-              <Text style={styles.settingText}>건의사항</Text>
-              <Text style={styles.settingDescription}>
-                버그 신고, 기능 제안, 문의사항을 남겨주세요
               </Text>
             </View>
             <Text style={styles.arrowText}>›</Text>
