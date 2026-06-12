@@ -16,6 +16,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { RoutineCommentsPreview } from "../../components/routine/RoutineCommentsPreview";
+import { RoutineCommentsSheet } from "../../components/routine/RoutineCommentsSheet";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { IconBadge } from "../../components/ui/IconBadge";
@@ -78,6 +80,8 @@ export default function TeacherRoutineDetailScreen() {
   const [shareOpen, setShareOpen] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentRefresh, setCommentRefresh] = useState(0);
 
   const load = useCallback(async () => {
     const [{ routine: r, items: it }, sh] = await Promise.all([
@@ -97,7 +101,7 @@ export default function TeacherRoutineDetailScreen() {
     return () => {
       mounted = false;
     };
-  }, [load]);
+  }, [load, routineId]);
 
   const isOwner = routine?.teacher_id === user?.id;
   const isPublic = (routine as any)?.visibility === "public";
@@ -170,14 +174,36 @@ export default function TeacherRoutineDetailScreen() {
         onBack={() => navigation.goBack()}
         title={routine.title}
         serif={false}
-        trailing={
-          isOwner
-            ? {
-                kind: "icon",
-                icon: "ellipsis-horizontal",
-                onPress: () => setMenuOpen(true),
-              }
-            : { kind: "icon", icon: "copy-outline", onPress: cloneToMyRoutines }
+        trailingSlot={
+          <View style={styles.headerActions}>
+            {isOwner ? (
+              <TouchableOpacity
+                onPress={() => setShareOpen(true)}
+                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                style={styles.headerShareBtn}
+              >
+                <Ionicons
+                  name="share-social-outline"
+                  size={21}
+                  color={COLORS.text}
+                />
+                {shares.length > 0 ? (
+                  <Text style={styles.headerShareCount}>{shares.length}</Text>
+                ) : null}
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              onPress={isOwner ? () => setMenuOpen(true) : cloneToMyRoutines}
+              hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+              style={styles.headerIconBtn}
+            >
+              <Ionicons
+                name={isOwner ? "ellipsis-horizontal" : "copy-outline"}
+                size={22}
+                color={COLORS.text}
+              />
+            </TouchableOpacity>
+          </View>
         }
       />
 
@@ -351,60 +377,14 @@ export default function TeacherRoutineDetailScreen() {
 
         {isOwner ? <View style={styles.flexSpacer} /> : null}
 
-        {isOwner ? (
-          <View style={styles.shareMini}>
-            <Text style={styles.shareMiniHeader}>
-              공유 내역 {shares.length}
-            </Text>
-            {shares.length === 0 ? (
-              <Text style={styles.shareEmpty}>
-                아직 공유한 곳이 없어요. 아래 공유하기로 클래스나 수련생에게 보내보세요.
-              </Text>
-            ) : null}
-            {shares.map((s) => (
-              <View key={s.id} style={styles.shareMiniRow}>
-                <IconBadge
-                  name={s.classes ? "library-outline" : "person-outline"}
-                  size={22}
-                  color={s.classes ? COLORS.primary : COLORS.info}
-                />
-                <Text style={styles.shareMiniText} numberOfLines={1}>
-                  {s.classes
-                    ? s.classes.title
-                    : s.student_profiles?.name ?? "공유 대상"}
-                </Text>
-                <Text style={styles.shareMiniDate}>
-                  {s.shared_at.slice(5, 10).replace("-", ".")}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        <RoutineCommentsPreview
+          routineId={routineId}
+          refreshKey={commentRefresh}
+          onOpen={() => setCommentsOpen(true)}
+        />
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
-
-      {isOwner ? (
-        <View
-          style={[
-            styles.bottomBar,
-            { paddingBottom: Math.max(insets.bottom, SPACING.md) },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.shareBtn}
-            onPress={() => setShareOpen(true)}
-            activeOpacity={0.85}
-          >
-            <Ionicons
-              name="share-social-outline"
-              size={18}
-              color={COLORS.white}
-            />
-            <Text style={styles.shareBtnText}>공유하기</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
 
       {/* 더보기 메뉴 (수정 / 삭제) */}
       <Modal
@@ -459,6 +439,17 @@ export default function TeacherRoutineDetailScreen() {
           await load();
           setShareOpen(false);
         }}
+      />
+
+      <RoutineCommentsSheet
+        visible={commentsOpen}
+        onClose={() => {
+          setCommentsOpen(false);
+          setCommentRefresh((n) => n + 1);
+        }}
+        routineId={routineId}
+        currentUserId={user?.id}
+        ownerId={routine.teacher_id}
       />
     </SafeAreaView>
   );
@@ -606,6 +597,13 @@ function ShareSheet({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 2 },
+  headerIconBtn: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.lg },
   contentGrow: { flexGrow: 1 },
   flexSpacer: { flex: 1, minHeight: SPACING.lg },
@@ -730,37 +728,24 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     gap: 10,
   },
-  shareMini: {
-    marginTop: SPACING.lg,
-    paddingHorizontal: 4,
-  },
-  shareMiniHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
   shareMiniHeader: {
     fontSize: 13,
     fontWeight: "700",
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
-  shareEmpty: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  bottomBar: {
+  headerShareBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.background,
+    gap: 3,
+    minWidth: 32,
+    height: 32,
+    justifyContent: "center",
+  },
+  headerShareCount: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: "700",
   },
   menuBackdrop: {
     flex: 1,
@@ -797,36 +782,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: COLORS.border,
     marginHorizontal: 8,
-  },
-  shareBtn: {
-    flex: 1,
-    height: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
-  },
-  shareBtnText: {
-    color: COLORS.white,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  shareMiniRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 4,
-  },
-  shareMiniText: {
-    flex: 1,
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  shareMiniDate: {
-    fontSize: 10,
-    color: COLORS.textMuted,
   },
   segWrap: {
     flexDirection: "row",

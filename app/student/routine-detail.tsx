@@ -14,6 +14,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RoutineCommentsPreview } from "../../components/routine/RoutineCommentsPreview";
+import { RoutineCommentsSheet } from "../../components/routine/RoutineCommentsSheet";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { Button } from "../../components/ui/Button";
 import { SectionLabel } from "../../components/ui/SectionLabel";
@@ -58,6 +60,8 @@ export default function StudentRoutineDetailScreen() {
   const [items, setItems] = useState<ItemWithAsana[]>([]);
   const [loading, setLoading] = useState(true);
   const [cloning, setCloning] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentRefresh, setCommentRefresh] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -265,8 +269,25 @@ export default function StudentRoutineDetailScreen() {
           </View>
         </View>
 
+        <RoutineCommentsPreview
+          routineId={routineId}
+          refreshKey={commentRefresh}
+          onOpen={() => setCommentsOpen(true)}
+        />
+
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+
+      <RoutineCommentsSheet
+        visible={commentsOpen}
+        onClose={() => {
+          setCommentsOpen(false);
+          setCommentRefresh((n) => n + 1);
+        }}
+        routineId={routineId}
+        currentUserId={user?.id}
+        ownerId={routine.teacher_id}
+      />
     </SafeAreaView>
   );
 }

@@ -16,6 +16,7 @@ export type RoutineSummary = Routine & {
   preview: RoutinePreviewItem[];
   like_count: number;
   liked_by_me: boolean;
+  comment_count: number;
 };
 
 async function withTeacherStudio(
@@ -40,6 +41,7 @@ async function withTeacherStudio(
       preview: (r.preview ?? []) as RoutinePreviewItem[],
       like_count: likes.length,
       liked_by_me: !!currentUserId && likes.some((l) => l.user_id === currentUserId),
+      comment_count: r.routine_comments?.[0]?.count ?? 0,
     };
   }) as RoutineSummary[];
 }
@@ -50,7 +52,7 @@ export const studentRoutinesApi = {
     let query = supabase
       .from("routines")
       .select(
-        "*, routine_items(count), routine_likes(user_id), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
+        "*, routine_items(count), routine_likes(user_id), routine_comments(count), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
       )
       .eq("is_draft", false)
       .order("created_at", { ascending: false });
@@ -62,22 +64,20 @@ export const studentRoutinesApi = {
     return withTeacherStudio(routines ?? [], userId);
   },
 
-  async listPublicRoutines(excludeUserId?: string): Promise<RoutineSummary[]> {
-    let query = supabase
+  // 전체 공개 시퀀스 — 내가 만든 공개 시퀀스도 포함.
+  // currentUserId 는 좋아요(liked_by_me) 표시에만 사용.
+  async listPublicRoutines(currentUserId?: string): Promise<RoutineSummary[]> {
+    const { data: routines, error } = await supabase
       .from("routines")
       .select(
-        "*, routine_items(count), routine_likes(user_id), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
+        "*, routine_items(count), routine_likes(user_id), routine_comments(count), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
       )
       .eq("visibility", "public")
       .eq("is_draft", false)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (excludeUserId) {
-      query = query.neq("teacher_id", excludeUserId);
-    }
-    const { data: routines, error } = await query;
     if (error) throw error;
-    return withTeacherStudio(routines ?? [], excludeUserId);
+    return withTeacherStudio(routines ?? [], currentUserId);
   },
 
   async toggleRoutineLike(

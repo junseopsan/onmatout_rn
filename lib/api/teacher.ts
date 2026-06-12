@@ -291,7 +291,7 @@ export const teacherApi = {
       supabase
         .from("routines")
         .select(
-          "*, routine_items(count), routine_likes(user_id), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
+          "*, routine_items(count), routine_likes(user_id), routine_comments(count), preview:routine_items(order_index, asanas(id, sanskrit_name_kr, image_number))",
         )
         .eq("teacher_id", teacherId)
         .order("created_at", { ascending: false }),
@@ -310,6 +310,7 @@ export const teacherApi = {
         teacher_studio_name: studioName,
         like_count: likes.length,
         liked_by_me: likes.some((l) => l.user_id === teacherId),
+        comment_count: r.routine_comments?.[0]?.count ?? 0,
       };
     }) as (Routine & {
       routine_items: { count: number }[];
@@ -324,6 +325,7 @@ export const teacherApi = {
       teacher_studio_name: string | null;
       like_count: number;
       liked_by_me: boolean;
+      comment_count: number;
       is_draft: boolean;
       visibility: string;
     })[];
