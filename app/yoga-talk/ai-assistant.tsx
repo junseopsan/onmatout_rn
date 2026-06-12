@@ -5,7 +5,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { IconBadge } from "../../components/ui/IconBadge";
+import { OmIcon } from "../../components/ui/OmIcon";
 import { RenameDialog } from "../../components/ui/RenameDialog";
 import { SessionRow } from "../../components/ui/SessionRow";
 import { SideSheet } from "../../components/ui/SideSheet";
@@ -410,10 +410,7 @@ export default function YogaTalkAiAssistantScreen() {
           {turns.length === 0 && !historyLoading ? (
             <View style={styles.intro}>
               <View style={styles.introIcon}>
-                <Image
-                  source={require("../../assets/images/om_icon.png")}
-                  style={styles.introOmIcon}
-                />
+                <OmIcon size={52} color={COLORS.white} />
               </View>
               <Text style={styles.introText}>
                 자세, 호흡, 시퀀스에 대해 자유롭게 물어보세요.{"\n"}
@@ -465,10 +462,7 @@ export default function YogaTalkAiAssistantScreen() {
               {t.response ? (
                 <View style={styles.aRow}>
                   <View style={styles.aAvatar}>
-                    <Image
-                      source={require("../../assets/images/om_icon.png")}
-                      style={styles.avatarOmIcon}
-                    />
+                    <OmIcon size={22} color={COLORS.white} />
                   </View>
                   <View style={styles.aContent}>
                     {t.response.safety_notice_required ? (
@@ -556,10 +550,7 @@ export default function YogaTalkAiAssistantScreen() {
               ) : (
                 <View style={styles.aRow}>
                   <View style={styles.aAvatar}>
-                    <Image
-                      source={require("../../assets/images/om_icon.png")}
-                      style={styles.avatarOmIcon}
-                    />
+                    <OmIcon size={22} color={COLORS.white} />
                   </View>
                   <View style={styles.aLoading}>
                     <ActivityIndicator color={COLORS.primary} size="small" />
@@ -657,18 +648,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
-  },
-  introOmIcon: {
-    width: 52,
-    height: 52,
-    resizeMode: "contain",
-    tintColor: COLORS.white,
-  },
-  avatarOmIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: "contain",
-    tintColor: COLORS.white,
   },
   introText: {
     color: COLORS.white,

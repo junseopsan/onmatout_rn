@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../../components/ui/Avatar";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { OmIcon } from "../../components/ui/OmIcon";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { RenameDialog } from "../../components/ui/RenameDialog";
 import { Sheet } from "../../components/ui/Sheet";
@@ -955,10 +956,7 @@ export default function YogaTalkThreadListScreen() {
         activeOpacity={0.85}
         accessibilityLabel="옴"
       >
-        <Image
-          source={require("../../assets/images/om_icon.png")}
-          style={styles.omFabIcon}
-        />
+        <OmIcon size={26} color={COLORS.white} />
         <Text style={styles.omFabLabel}>OM</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -1197,12 +1195,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.28,
     shadowRadius: 10,
     elevation: 5,
-  },
-  omFabIcon: {
-    width: 26,
-    height: 26,
-    resizeMode: "contain",
-    tintColor: COLORS.white,
   },
   omFabLabel: {
     color: COLORS.white,

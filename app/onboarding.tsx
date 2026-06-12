@@ -3,7 +3,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useRef, useState } from "react";
 import {
   Dimensions,
-  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -14,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../components/ui/Button";
+import { OmIcon } from "../components/ui/OmIcon";
 import { COLORS } from "../constants/Colors";
 import { SPACING } from "../constants/Design";
 import { RootStackParamList } from "../navigation/types";
@@ -25,7 +25,7 @@ const { width } = Dimensions.get("window");
 type Slide = {
   key: string;
   emoji?: string;
-  image?: any;
+  om?: boolean;
   title: string;
   desc: string;
 };
@@ -45,7 +45,7 @@ const SLIDES: Slide[] = [
   },
   {
     key: "om",
-    image: require("../assets/images/om_icon.png"),
+    om: true,
     title: "요가톡, 그리고 옴",
     desc: "선생님께 바로 질문하고\n옴에게 자세·호흡·시퀀스를 물어보세요.",
   },
@@ -100,8 +100,8 @@ export default function OnboardingScreen() {
         {SLIDES.map((s) => (
           <View key={s.key} style={[styles.slide, { width }]}>
             <View style={styles.iconCircle}>
-              {s.image ? (
-                <Image source={s.image} style={styles.iconImage} />
+              {s.om ? (
+                <OmIcon size={72} color={COLORS.primary} />
               ) : (
                 <Text style={styles.emoji}>{s.emoji}</Text>
               )}
@@ -157,7 +157,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: SPACING.lg,
   },
-  iconImage: { width: 72, height: 72, resizeMode: "contain", tintColor: COLORS.primary },
   emoji: { fontSize: 60 },
   title: {
     color: COLORS.text,
