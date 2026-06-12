@@ -1,7 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StudentRow } from "../../components/teacher/StudentRow";
 import { StudioSwitcher } from "../../components/teacher/StudioSwitcher";
@@ -18,6 +26,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { pivotStudioApi } from "../../lib/api/pivotStudio";
 import { teacherApi } from "../../lib/api/teacher";
+import { yogaTalkApi } from "../../lib/api/yogaTalk";
 import { RootStackParamList } from "../../navigation/types";
 import type { StudentProfile } from "../../types/teacher";
 
@@ -29,6 +38,8 @@ export default function TeacherMembersTabScreen() {
   const { activeStudio } = usePivotStudios();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [teacherIds, setTeacherIds] = useState<Set<string>>(new Set());
+  // 안읽은 요가톡이 있는 수련생 프로필 id
+  const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
   const [roleFilter, setRoleFilter] = useState<"all" | "student" | "teacher">(
     "all",
   );
@@ -60,6 +71,24 @@ export default function TeacherMembersTabScreen() {
       console.warn("[MembersTab] load failed", e);
     } finally {
       setLoading(false);
+    }
+
+    // 수련생별 안읽음 요가톡 — 스레드 마지막 메시지가 상대(수련생) 발신이고
+    // 내 읽음 시각보다 이후면 안읽음 (thread-list 와 동일 판정)
+    try {
+      const threads = await yogaTalkApi.listAsTeacher(user.id);
+      const ids = new Set<string>();
+      for (const t of threads) {
+        const lm = t.last_message;
+        if (!lm || lm.sender_type === "teacher") continue;
+        const lastTs = lm.created_at ?? null;
+        if (!(t.my_read_at && lastTs && t.my_read_at >= lastTs)) {
+          ids.add(t.student_id);
+        }
+      }
+      setUnreadIds(ids);
+    } catch {
+      // 안읽음 표시는 부가 기능이므로 실패해도 목록은 그대로 유지
     }
   }, [user?.id, activeStudio?.id]);
 
@@ -101,6 +130,50 @@ export default function TeacherMembersTabScreen() {
     if (roleFilter === "student") return filtered.filter((s) => !isTeacher(s));
     return filtered;
   }, [filtered, roleFilter, isTeacher]);
+
+  const openYogaTalk = async (s: StudentProfile) => {
+    if (!user?.id) return;
+    try {
+      const thread = await yogaTalkApi.getOrCreateThread({
+        teacherUserId: user.id,
+        studentProfileId: s.id,
+        classId: null,
+        title: `${s.name} 님과의 대화`,
+        category: "general",
+      });
+      navigation.navigate("YogaTalkThread", { threadId: thread.id });
+    } catch (e: any) {
+      Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+    }
+  };
+
+  const renderRow = (s: StudentProfile) => (
+    <StudentRow
+      key={s.id}
+      student={s}
+      isTeacher={isTeacher(s)}
+      onPress={() =>
+        navigation.navigate("TeacherMemberDetail", {
+          studentProfileId: s.id,
+        })
+      }
+      rightSlot={
+        <TouchableOpacity
+          onPress={() => openYogaTalk(s)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.talkBtn}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={20}
+            color={COLORS.text}
+          />
+          {unreadIds.has(s.id) ? <View style={styles.talkUnreadDot} /> : null}
+        </TouchableOpacity>
+      }
+    />
+  );
 
   const hasCustom = (s: StudentProfile) =>
     !!((s as any).custom_status as string | null | undefined)?.trim();
@@ -180,18 +253,7 @@ export default function TeacherMembersTabScreen() {
           {activeMembers.length > 0 ? (
             <>
               <SectionLabel>수련중 ({activeMembers.length})</SectionLabel>
-              {activeMembers.map((s) => (
-                <StudentRow
-                  key={s.id}
-                  student={s}
-                  isTeacher={isTeacher(s)}
-                  onPress={() =>
-                    navigation.navigate("TeacherMemberDetail", {
-                      studentProfileId: s.id,
-                    })
-                  }
-                />
-              ))}
+              {activeMembers.map(renderRow)}
             </>
           ) : null}
 
@@ -200,18 +262,7 @@ export default function TeacherMembersTabScreen() {
               style={{ marginTop: activeMembers.length > 0 ? SPACING.xl : 0 }}
             >
               <SectionLabel>휴식중 ({pausedMembers.length})</SectionLabel>
-              {pausedMembers.map((s) => (
-                <StudentRow
-                  key={s.id}
-                  student={s}
-                  isTeacher={isTeacher(s)}
-                  onPress={() =>
-                    navigation.navigate("TeacherMemberDetail", {
-                      studentProfileId: s.id,
-                    })
-                  }
-                />
-              ))}
+              {pausedMembers.map(renderRow)}
             </View>
           ) : null}
 
@@ -225,18 +276,7 @@ export default function TeacherMembersTabScreen() {
               }}
             >
               <SectionLabel>커스텀 ({customMembers.length})</SectionLabel>
-              {customMembers.map((s) => (
-                <StudentRow
-                  key={s.id}
-                  student={s}
-                  isTeacher={isTeacher(s)}
-                  onPress={() =>
-                    navigation.navigate("TeacherMemberDetail", {
-                      studentProfileId: s.id,
-                    })
-                  }
-                />
-              ))}
+              {customMembers.map(renderRow)}
             </View>
           ) : null}
         </ScrollView>
@@ -260,6 +300,23 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
   },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
+  talkBtn: {
+    width: 26,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  talkUnreadDot: {
+    position: "absolute",
+    right: 2,
+    bottom: 5,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: COLORS.error,
+    borderWidth: 1.5,
+    borderColor: COLORS.background,
+  },
   fab: {
     position: "absolute",
     right: SPACING.lg,

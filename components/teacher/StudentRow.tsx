@@ -63,7 +63,7 @@ export function StudentRow({
         customLabel={customStatus}
         size="sm"
       />
-      {rightSlot ? <View style={{ marginLeft: 6 }}>{rightSlot}</View> : null}
+      {rightSlot ? <View style={{ marginLeft: -4 }}>{rightSlot}</View> : null}
     </TouchableOpacity>
   );
 }
