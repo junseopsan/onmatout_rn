@@ -68,6 +68,39 @@ export const routineCommentsApi = {
     if (error) throw error;
   },
 
+  // @멘션 후보 — 시퀀스 소유자(선생님) + 그와 연결된 수련생
+  // (RLS 로 접근 불가한 경우 빈 배열로 graceful 처리)
+  async listMentionTargets(
+    ownerId: string,
+  ): Promise<{ key: string; name: string; userId: string | null }[]> {
+    const targets: { key: string; name: string; userId: string | null }[] = [];
+    const { data: owner } = await supabase
+      .from("user_profiles")
+      .select("user_id, name")
+      .eq("user_id", ownerId)
+      .maybeSingle();
+    if (owner?.name) {
+      targets.push({
+        key: owner.user_id as string,
+        name: owner.name as string,
+        userId: owner.user_id as string,
+      });
+    }
+    const { data: students } = await supabase
+      .from("student_profiles")
+      .select("id, name, user_id")
+      .eq("teacher_id", ownerId);
+    for (const s of students ?? []) {
+      if (!s.name) continue;
+      targets.push({
+        key: s.id as string,
+        name: s.name as string,
+        userId: (s.user_id as string | null) ?? null,
+      });
+    }
+    return targets;
+  },
+
   async count(routineId: string): Promise<number> {
     const { count } = await supabase
       .from("routine_comments")

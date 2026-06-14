@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -34,6 +34,24 @@ function ago(ts: string) {
   return new Date(ts).toISOString().slice(0, 10);
 }
 
+// 본문의 @닉네임 토큰을 강조 색으로 분리 렌더 (멘션 표시)
+function CommentBody({ content }: { content: string }) {
+  const parts = content.split(/(@\S+)/g);
+  return (
+    <Text style={styles.content}>
+      {parts.map((p, i) =>
+        p.startsWith("@") ? (
+          <Text key={i} style={styles.mention}>
+            {p}
+          </Text>
+        ) : (
+          p
+        ),
+      )}
+    </Text>
+  );
+}
+
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -49,6 +67,7 @@ export function RoutineCommentsSheet({
   onClose,
   routineId,
   currentUserId,
+  ownerId,
   onCountChange,
 }: Props) {
   const [comments, setComments] = useState<RoutineComment[]>([]);
@@ -57,6 +76,12 @@ export function RoutineCommentsSheet({
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [replyTo, setReplyTo] = useState<RoutineComment | null>(null);
+  // @멘션 후보: 시퀀스 소유자(선생님) + 연결된 수련생
+  const [mentionTargets, setMentionTargets] = useState<
+    { key: string; name: string; userId: string | null }[]
+  >([]);
+  const inputRef = useRef<TextInput>(null);
 
   const load = useCallback(async () => {
     try {
@@ -75,9 +100,25 @@ export function RoutineCommentsSheet({
       setLoading(true);
       setEditingId(null);
       setInput("");
+      setReplyTo(null);
       load();
     }
   }, [visible, load]);
+
+  useEffect(() => {
+    if (!visible || !ownerId) {
+      setMentionTargets([]);
+      return;
+    }
+    let mounted = true;
+    routineCommentsApi
+      .listMentionTargets(ownerId)
+      .then((t) => mounted && setMentionTargets(t))
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, [visible, ownerId]);
 
   const send = async () => {
     const body = input.trim();
@@ -87,9 +128,26 @@ export function RoutineCommentsSheet({
       return;
     }
     setSending(true);
+    // 답글에 답글(=대상이 이미 답글)이면 본문 앞에 `@닉네임 ` prefix (중복 방지)
+    const replyingToReply = !!(
+      replyTo &&
+      replyTo.parent_id &&
+      comments.some((c) => c.id === replyTo.parent_id)
+    );
+    let content = body;
+    if (
+      replyingToReply &&
+      replyTo &&
+      !content.startsWith(`@${replyTo.author_name} `)
+    ) {
+      content = `@${replyTo.author_name} ${content}`;
+    }
+    // parent_id 는 "실제 답글 대상" 댓글 id 로 저장 (표시 그룹핑은 루트로 묶음)
+    const parentId = replyTo ? replyTo.id : null;
     setInput("");
     try {
-      await routineCommentsApi.add(routineId, body);
+      await routineCommentsApi.add(routineId, content, parentId);
+      setReplyTo(null);
       await load();
     } catch (e: any) {
       setInput(body);
@@ -97,6 +155,12 @@ export function RoutineCommentsSheet({
     } finally {
       setSending(false);
     }
+  };
+
+  const startReply = (c: RoutineComment) => {
+    setEditingId(null);
+    setReplyTo(c);
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const startEdit = (c: RoutineComment) => {
@@ -138,12 +202,16 @@ export function RoutineCommentsSheet({
     ]);
   };
 
-  const renderComment = (c: RoutineComment) => {
+  const renderComment = (c: RoutineComment, isReply = false) => {
     const mine = c.user_id === currentUserId;
     const editing = editingId === c.id;
     return (
       <View style={styles.row}>
-        <Avatar name={c.author_name} colorKey={c.user_id} size={32} />
+        <Avatar
+          name={c.author_name}
+          colorKey={c.user_id}
+          size={isReply ? 26 : 32}
+        />
         <View style={styles.rowMain}>
           <View style={styles.rowTop}>
             <Text style={styles.author} numberOfLines={1}>
@@ -177,23 +245,83 @@ export function RoutineCommentsSheet({
             </View>
           ) : (
             <>
-              <Text style={styles.content}>{c.content}</Text>
-              {mine ? (
-                <View style={styles.actions}>
+              <CommentBody content={c.content} />
+              <View style={styles.actions}>
+                <TouchableOpacity onPress={() => startReply(c)}>
+                  <Text style={styles.actionText}>답글</Text>
+                </TouchableOpacity>
+                {/* 답글은 수정 대신 삭제만 (hilly 정책과 동일) */}
+                {mine && !isReply ? (
                   <TouchableOpacity onPress={() => startEdit(c)}>
                     <Text style={styles.actionText}>수정</Text>
                   </TouchableOpacity>
+                ) : null}
+                {mine ? (
                   <TouchableOpacity onPress={() => remove(c)}>
                     <Text style={styles.actionText}>삭제</Text>
                   </TouchableOpacity>
-                </View>
-              ) : null}
+                ) : null}
+              </View>
             </>
           )}
         </View>
       </View>
     );
   };
+
+  // @멘션 자동완성 — 입력 끝의 @토큰을 질의로 보고 대화 참여자 목록을 제안
+  const mentionMatch = /(?:^|\s)@(\S*)$/.exec(input);
+  const mentionQuery = mentionMatch ? mentionMatch[1] : null;
+  const mentionList = (() => {
+    if (mentionQuery == null) return [];
+    // 후보 풀: 대화 참여자 + (선생님 + 연결 수련생). 본인 제외, 이름/유저로 중복 제거.
+    const seen = new Map<string, { key: string; name: string }>();
+    for (const c of comments) {
+      if (c.user_id && c.user_id !== currentUserId) {
+        seen.set(c.user_id, { key: c.user_id, name: c.author_name });
+      }
+    }
+    for (const t of mentionTargets) {
+      if (t.userId && t.userId === currentUserId) continue;
+      const key = t.userId ?? `name:${t.name}`;
+      if (!seen.has(key)) seen.set(key, { key, name: t.name });
+    }
+    const q = mentionQuery.toLowerCase();
+    return Array.from(seen.values())
+      .filter((u) => !q || u.name.toLowerCase().includes(q))
+      .slice(0, 6);
+  })();
+
+  const applyMention = (name: string) => {
+    setInput((prev) => prev.replace(/(^|\s)@(\S*)$/, `$1@${name} `));
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  // 평면 목록 → 2단 스레드 구성. parent_id 는 실제 대상이지만, 표시는 항상
+  // 최상위(루트) 아래로 묶어 2단 깊이로 평탄화한다.
+  const byId = new Map(comments.map((c) => [c.id, c]));
+  const rootIdOf = (c: RoutineComment): string => {
+    let cur = c;
+    const seen = new Set<string>();
+    while (cur.parent_id && byId.has(cur.parent_id) && !seen.has(cur.id)) {
+      seen.add(cur.id);
+      cur = byId.get(cur.parent_id)!;
+    }
+    return cur.id;
+  };
+  const roots: RoutineComment[] = [];
+  const repliesByRoot = new Map<string, RoutineComment[]>();
+  for (const c of comments) {
+    const isRoot = !c.parent_id || !byId.has(c.parent_id);
+    if (isRoot) {
+      roots.push(c);
+    } else {
+      const rid = rootIdOf(c);
+      const arr = repliesByRoot.get(rid) ?? [];
+      arr.push(c);
+      repliesByRoot.set(rid, arr);
+    }
+  }
 
   return (
     <Modal
@@ -229,7 +357,7 @@ export function RoutineCommentsSheet({
               />
             ) : (
               <FlatList
-                data={comments}
+                data={roots}
                 keyExtractor={(c) => c.id}
                 contentContainerStyle={styles.list}
                 keyboardShouldPersistTaps="handled"
@@ -238,15 +366,60 @@ export function RoutineCommentsSheet({
                     아직 댓글이 없어요.{"\n"}첫 댓글을 남겨보세요.
                   </Text>
                 }
-                renderItem={({ item }) => renderComment(item)}
+                renderItem={({ item }) => {
+                  const replies = repliesByRoot.get(item.id) ?? [];
+                  return (
+                    <View>
+                      {renderComment(item)}
+                      {replies.map((r) => (
+                        <View key={r.id} style={styles.replyWrap}>
+                          {renderComment(r, true)}
+                        </View>
+                      ))}
+                    </View>
+                  );
+                }}
               />
             )}
 
+            {replyTo ? (
+              <View style={styles.replyBanner}>
+                <Text style={styles.replyBannerText} numberOfLines={1}>
+                  {replyTo.author_name}님에게 답글 남기는 중
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setReplyTo(null)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={16} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {mentionList.length > 0 ? (
+              <View style={styles.mentionBar}>
+                {mentionList.map((u) => (
+                  <TouchableOpacity
+                    key={u.key}
+                    style={styles.mentionItem}
+                    onPress={() => applyMention(u.name)}
+                    activeOpacity={0.6}
+                  >
+                    <Avatar name={u.name} colorKey={u.key} size={26} />
+                    <Text style={styles.mentionItemText} numberOfLines={1}>
+                      {u.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null}
+
             <View style={styles.inputBar}>
               <TextInput
+                ref={inputRef}
                 value={input}
                 onChangeText={setInput}
-                placeholder="댓글 달기"
+                placeholder={replyTo ? "답글 달기" : "댓글 달기"}
                 placeholderTextColor={COLORS.textMuted}
                 style={styles.input}
                 multiline
@@ -317,11 +490,43 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   row: { flexDirection: "row", alignItems: "flex-start", gap: SPACING.md },
+  replyWrap: { marginLeft: 40, marginTop: SPACING.md },
+  replyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 8,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  replyBannerText: { flex: 1, color: COLORS.textSecondary, fontSize: 12 },
+  mentionBar: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.surface,
+    backgroundColor: COLORS.background,
+  },
+  mentionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 8,
+  },
+  mentionItemText: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   rowMain: { flex: 1, gap: 2 },
   rowTop: { flexDirection: "row", alignItems: "center", gap: 6 },
   author: { color: COLORS.text, fontSize: 13, fontWeight: "700", flexShrink: 1 },
   time: { color: COLORS.textMuted, fontSize: 11 },
   content: { color: COLORS.text, fontSize: 14, lineHeight: 20 },
+  mention: { color: COLORS.primary, fontWeight: "600" },
   actions: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 5 },
   actionText: { color: COLORS.textMuted, fontSize: 12, fontWeight: "700" },
   editBox: { gap: 8, marginTop: 2 },
