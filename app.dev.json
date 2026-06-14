@@ -19,7 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.onmatout.dev",
-      "versionCode": 8
+      "versionCode": 9
     },
     "web": {
       "bundler": "metro",
