@@ -274,6 +274,34 @@ export default function TeacherStudioFormScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!editing || !studioId) return;
+    Alert.alert(
+      "요가원 삭제",
+      "이 요가원을 삭제할까요? 클래스, 수업권, 수련생 연결 등 관련 데이터가 함께 사라지며 되돌릴 수 없어요.",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await pivotStudioApi.deleteStudio(studioId);
+              await reloadStudios();
+              Alert.alert("삭제 완료", "요가원을 삭제했어요.");
+              navigation.goBack();
+            } catch (e: any) {
+              Alert.alert(
+                "삭제 실패",
+                e?.message ?? "잠시 후 다시 시도해 주세요.",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -291,6 +319,16 @@ export default function TeacherStudioFormScreen() {
       <DetailHeader
         onBack={() => navigation.goBack()}
         title={editing ? "요가원 정보" : "새 요가원"}
+        trailingSlot={
+          editing ? (
+            <TouchableOpacity
+              onPress={handleDelete}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={22} color={COLORS.error} />
+            </TouchableOpacity>
+          ) : undefined
+        }
       />
 
       <KeyboardAvoidingView

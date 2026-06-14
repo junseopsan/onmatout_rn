@@ -164,6 +164,7 @@ export const pivotStudioApi = {
         hours_by_day: rest.hours_by_day ?? null,
         bank_account: rest.bank_account ?? null,
         cancel_cutoff_hours: rest.cancel_cutoff_hours ?? 0,
+        qna_enabled: rest.qna_enabled ?? false,
       })
       .select()
       .single();
@@ -211,6 +212,14 @@ export const pivotStudioApi = {
       .single();
     if (error) throw error;
     return data as PivotStudio;
+  },
+
+  async deleteStudio(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("pivot_studios")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
   },
 
   async getMyStudentStudio(userId: string): Promise<PivotStudio | null> {
