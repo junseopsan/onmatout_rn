@@ -30,7 +30,14 @@
     "build:android:dev": "npx eas build --platform android --profile development",
     "build:android:dev-dev": "npx eas build --platform android --profile development-dev",
     "install:android:release": "npm run android:install:release",
-    "gen:asana-images": "node scripts/gen-asana-images.js"
+    "gen:asana-images": "node scripts/gen-asana-images.js",
+    "bump:ios": "eas build:version --platform ios",
+    "bump:android": "eas build:version --platform android",
+    "bump:all": "eas build:version --platform all",
+    "device:add": "eas device:create",
+    "ios:pods": "npx pod-install",
+    "ios:open": "open ios/*.xcworkspace",
+    "ios:prebuild": "npx expo prebuild --platform ios --clean"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

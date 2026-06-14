@@ -1,36 +1,41 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
+    "base": {
+      "node": "20.19.4",
       "ios": {
-        "resourceClass": "m-medium"
-      },
-      "android": {
-        "resourceClass": "medium"
-      }
-    },
-    "preview": {
-      "channel": "preview",
-      "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
+        "image": "latest",
+        "resourceClass": "m-medium",
+        "autoIncrement": true,
+        "cache": {
+          "disabled": true
+        }
       },
       "android": {
         "resourceClass": "medium",
+        "autoIncrement": true
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "extends": "base",
+      "channel": "preview",
+      "distribution": "internal",
+      "android": {
         "gradleCommand": ":app:assembleRelease"
       }
     },
     "production": {
+      "extends": "base",
       "channel": "production",
-      "ios": {
-        "resourceClass": "m-medium"
-      },
       "android": {
-        "resourceClass": "medium",
         "buildType": "app-bundle"
       },
       "env": {
@@ -43,7 +48,6 @@
       "channel": "production",
       "distribution": "store",
       "ios": {
-        "resourceClass": "m-medium",
         "buildConfiguration": "Release"
       },
       "env": {
@@ -52,37 +56,22 @@
       }
     },
     "development-dev": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
-      },
-      "android": {
-        "resourceClass": "medium"
-      },
       "env": {
         "APP_CONFIG": "development"
       }
     },
     "preview-dev": {
+      "extends": "base",
       "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
-      },
-      "android": {
-        "resourceClass": "medium"
-      },
       "env": {
         "APP_CONFIG": "development"
       }
     },
     "production-dev": {
-      "ios": {
-        "resourceClass": "m-medium"
-      },
-      "android": {
-        "resourceClass": "medium"
-      },
+      "extends": "base",
       "env": {
         "APP_CONFIG": "development"
       }
