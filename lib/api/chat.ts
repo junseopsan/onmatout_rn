@@ -9,6 +9,10 @@ export type ChatRoom = {
   created_by: string;
   created_at: string;
   last_activity_at: string;
+  // 사용자별 설정 (chat_room_members)
+  muted: boolean;
+  favorite: boolean;
+  pinned: boolean;
 };
 
 export type ChatMessage = {
@@ -21,16 +25,78 @@ export type ChatMessage = {
 };
 
 export const chatApi = {
-  // 내가 속한 방 목록 (RLS가 멤버 방만 반환). studio 방 + 내 그룹방
+  // 내가 속한 방 목록 (RLS가 멤버 방만 반환). studio 방 + 내 그룹방.
+  // 사용자별 설정(muted/favorite/pinned)을 합치고, 고정·즐겨찾기·최근활동 순 정렬.
   async listRooms(studioId: string): Promise<ChatRoom[]> {
     const { data, error } = await supabase
       .from("chat_rooms")
       .select("*")
-      .eq("studio_id", studioId)
-      .order("scope", { ascending: true })
-      .order("created_at", { ascending: true });
+      .eq("studio_id", studioId);
     if (error) throw error;
-    return (data ?? []) as ChatRoom[];
+    const rooms = (data ?? []) as any[];
+    if (rooms.length === 0) return [];
+
+    const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
+    const prefs = new Map<
+      string,
+      { muted: boolean; favorite: boolean; pinned: boolean }
+    >();
+    if (uid) {
+      const { data: mems } = await supabase
+        .from("chat_room_members")
+        .select("room_id, muted, favorite, pinned")
+        .eq("user_id", uid)
+        .in(
+          "room_id",
+          rooms.map((r) => r.id),
+        );
+      for (const m of mems ?? []) {
+        prefs.set(m.room_id, {
+          muted: !!m.muted,
+          favorite: !!m.favorite,
+          pinned: !!m.pinned,
+        });
+      }
+    }
+
+    return rooms
+      .map((r) => ({
+        ...r,
+        muted: prefs.get(r.id)?.muted ?? false,
+        favorite: prefs.get(r.id)?.favorite ?? false,
+        pinned: prefs.get(r.id)?.pinned ?? false,
+      }))
+      .sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+        return a.last_activity_at < b.last_activity_at ? 1 : -1;
+      }) as ChatRoom[];
+  },
+
+  // 사용자별 방 설정 변경 (pref 컬럼만 안전하게 — SECURITY DEFINER RPC)
+  async setRoomPrefs(
+    roomId: string,
+    prefs: { muted?: boolean; favorite?: boolean; pinned?: boolean },
+  ): Promise<void> {
+    const { error } = await supabase.rpc("set_room_member_prefs", {
+      p_room_id: roomId,
+      p_muted: prefs.muted ?? null,
+      p_favorite: prefs.favorite ?? null,
+      p_pinned: prefs.pinned ?? null,
+    });
+    if (error) throw error;
+  },
+
+  // 방 나가기 (그룹방만 — 호출부에서 제한). 본인 멤버 행 삭제.
+  async leaveRoom(roomId: string): Promise<void> {
+    const uid = (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) throw new Error("로그인이 필요해요.");
+    const { error } = await supabase
+      .from("chat_room_members")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", uid);
+    if (error) throw error;
   },
 
   async getOrCreateStudioRoom(studioId: string): Promise<string> {
