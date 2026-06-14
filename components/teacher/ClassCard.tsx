@@ -11,6 +11,8 @@ import {
 interface ClassCardProps {
   cls: Class & { class_schedules?: ClassSchedule[] };
   onPress?: () => void;
+  // 카드 본문 하단에 들어가는 액션 영역 (예: 오늘 출석 체크)
+  footer?: React.ReactNode;
 }
 
 function formatTime(t?: string | null) {
@@ -18,7 +20,7 @@ function formatTime(t?: string | null) {
   return t.slice(0, 5);
 }
 
-export function ClassCard({ cls, onPress }: ClassCardProps) {
+export function ClassCard({ cls, onPress, footer }: ClassCardProps) {
   const schedules = (cls.class_schedules ?? []).slice().sort(
     (a, b) => a.day_of_week - b.day_of_week,
   );
@@ -133,6 +135,8 @@ export function ClassCard({ cls, onPress }: ClassCardProps) {
             </View>
           ) : null}
         </View>
+
+        {footer ? <View style={styles.footer}>{footer}</View> : null}
       </View>
     </TouchableOpacity>
   );
@@ -233,5 +237,11 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 12,
     fontWeight: "600",
+  },
+  footer: {
+    marginTop: 2,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
   },
 });

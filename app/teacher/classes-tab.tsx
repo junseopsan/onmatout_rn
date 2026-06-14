@@ -57,7 +57,10 @@ export default function TeacherClassesTabScreen() {
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const data = await teacherApi.listMyClasses(user.id, activeStudio?.id ?? null);
+      const data = await teacherApi.listMyClasses(
+        user.id,
+        activeStudio?.id ?? null,
+      );
       setClasses(data as ClassWithSchedules[]);
     } catch (e) {
       console.warn("[ClassesTab] failed", e);
@@ -111,11 +114,7 @@ export default function TeacherClassesTabScreen() {
                 }
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons
-                  name="ticket-outline"
-                  size={22}
-                  color={COLORS.text}
-                />
+                <Ionicons name="ticket-outline" size={22} color={COLORS.text} />
               </TouchableOpacity>
             ) : null}
             <NotificationBell />
@@ -174,28 +173,33 @@ export default function TeacherClassesTabScreen() {
             </View>
           ) : (
             todayClasses.map((c) => (
-              <View key={c.id} style={styles.todayCardWrap}>
-                <ClassCard
-                  cls={c}
-                  onPress={() =>
-                    navigation.navigate("TeacherClassDetail", { classId: c.id })
-                  }
-                />
-                <TouchableOpacity
-                  style={styles.attendBtn}
-                  activeOpacity={0.9}
-                  onPress={() => setAttendanceClassId(c.id)}
-                >
-                  <Ionicons name="checkmark-done" size={18} color={COLORS.white} />
-                  <Text style={styles.attendBtnText}>오늘 출석 체크</Text>
-                </TouchableOpacity>
-              </View>
+              <ClassCard
+                key={c.id}
+                cls={c}
+                onPress={() =>
+                  navigation.navigate("TeacherClassDetail", { classId: c.id })
+                }
+                footer={
+                  <TouchableOpacity
+                    style={styles.attendBtn}
+                    activeOpacity={0.9}
+                    onPress={() => setAttendanceClassId(c.id)}
+                  >
+                    <Ionicons
+                      name="checkmark-done"
+                      size={18}
+                      color={COLORS.white}
+                    />
+                    <Text style={styles.attendBtnText}>출석 체크</Text>
+                  </TouchableOpacity>
+                }
+              />
             ))
           )}
 
           {otherClasses.length > 0 ? (
             <View style={{ marginTop: SPACING.xl }}>
-              <SectionLabel>전체 클래스 ({activeCount} 활성)</SectionLabel>
+              <SectionLabel>전체 클래스 {activeCount}</SectionLabel>
               {otherClasses.map((c) => (
                 <ClassCard
                   key={c.id}
@@ -238,22 +242,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
-  todayCardWrap: { marginBottom: SPACING.md },
   attendBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORS.primary,
-    marginTop: -SPACING.xs,
-    marginHorizontal: SPACING.sm,
-    paddingVertical: SPACING.md,
+    paddingVertical: 10,
     borderRadius: RADIUS.pill,
     gap: 8,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 5,
   },
   attendBtnText: { color: COLORS.white, fontSize: 14, fontWeight: "700" },
   muted: {

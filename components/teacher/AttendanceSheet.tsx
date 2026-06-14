@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +15,7 @@ import { Avatar } from "../ui/Avatar";
 import { Sheet } from "../ui/Sheet";
 import { COLORS } from "../../constants/Colors";
 import { teacherApi } from "../../lib/api/teacher";
+import { RootStackParamList } from "../../navigation/types";
 import type {
   Attendance,
   AttendanceStatus,
@@ -65,6 +68,8 @@ export function AttendanceSheet({
   classId,
   initialDate,
 }: AttendanceSheetProps) {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [date, setDate] = useState(initialDate ?? todayISO());
   const [cls, setCls] = useState<
     (Class & { class_schedules?: ClassSchedule[] }) | null
@@ -164,6 +169,12 @@ export function AttendanceSheet({
     } finally {
       setSavingStudentId(null);
     }
+  };
+
+  // 이름 탭 → 시트를 닫고 수련생 상세로 이동 (Sheet 이 Modal 이라 먼저 닫음)
+  const openMember = (studentProfileId: string) => {
+    onClose();
+    navigation.navigate("TeacherMemberDetail", { studentProfileId });
   };
 
   const stats = useMemo(() => {
@@ -321,14 +332,20 @@ export function AttendanceSheet({
             const name = m.student_profiles.name;
             return (
               <View key={m.id} style={styles.row}>
-                <Avatar
-                  name={name}
-                  colorKey={m.student_profiles.id || name}
-                  size={32}
-                />
-                <Text style={styles.name} numberOfLines={1}>
-                  {name}
-                </Text>
+                <TouchableOpacity
+                  style={styles.profileTap}
+                  activeOpacity={0.6}
+                  onPress={() => openMember(m.student_profiles.id)}
+                >
+                  <Avatar
+                    name={name}
+                    colorKey={m.student_profiles.id || name}
+                    size={32}
+                  />
+                  <Text style={styles.name} numberOfLines={1}>
+                    {name}
+                  </Text>
+                </TouchableOpacity>
                 <View style={styles.optionsRow}>
                   {STATUS_OPTIONS.map((opt) => {
                     const active = current?.status === opt.value;
@@ -440,6 +457,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: COLORS.border,
+  },
+  profileTap: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   name: {
     color: COLORS.text,

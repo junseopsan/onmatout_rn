@@ -224,7 +224,7 @@ export default function TeacherClassDetailScreen() {
             </Text>
             <View style={{ flexDirection: "row", gap: 8 }}>
               <Button
-                title="오늘 출석"
+                title="출석 체크"
                 size="small"
                 variant="outline"
                 onPress={() => setAttendanceOpen(true)}
