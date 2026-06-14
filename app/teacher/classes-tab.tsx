@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RoleSheet } from "../../components/role/RoleSheet";
 import { AttendanceSheet } from "../../components/teacher/AttendanceSheet";
 import { ClassCard } from "../../components/teacher/ClassCard";
 import { StudioSwitcher } from "../../components/teacher/StudioSwitcher";
@@ -46,10 +47,12 @@ function dowToday() {
 export default function TeacherClassesTabScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
-  const { activeStudio, isDirectorOfActive } = usePivotStudios();
+  const { studios, activeStudio, isDirectorOfActive } = usePivotStudios();
+  const hasNoStudio = studios.length === 0;
   const [classes, setClasses] = useState<ClassWithSchedules[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [roleSheetOpen, setRoleSheetOpen] = useState(false);
   const [attendanceClassId, setAttendanceClassId] = useState<string | null>(
     null,
   );
@@ -103,6 +106,16 @@ export default function TeacherClassesTabScreen() {
         eyebrowSlot={<StudioSwitcher />}
         trailingSlot={
           <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => setRoleSheetOpen(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={22}
+                color={COLORS.text}
+              />
+            </TouchableOpacity>
             {isDirectorOfActive && activeStudio ? (
               <TouchableOpacity
                 style={styles.headerIconBtn}
@@ -126,20 +139,29 @@ export default function TeacherClassesTabScreen() {
         <ListSkeleton count={4} rowHeight={110} />
       ) : classes.length === 0 ? (
         <EmptyState
-          icon="🗓️"
-          title="아직 클래스가 없어요"
+          icon={hasNoStudio ? "🏠" : "🗓️"}
+          title={
+            hasNoStudio ? "요가원을 만들어 시작하세요" : "아직 클래스가 없어요"
+          }
           description={
-            isDirectorOfActive
-              ? "첫 클래스를 만들고 요일, 시간 스케줄을 묶어 보세요.\n오늘 출석 체크가 한 번에 해결됩니다."
-              : "원장이 클래스를 등록하면 여기에 표시돼요.\n선생님은 출석 체크와 수련생 관리를 도와줄 수 있어요."
+            hasNoStudio
+              ? "직접 요가원을 만들면 클래스, 수련생\n수업권을 관리할 수 있어요.\n또는 요가원을 만든 원장님의 초대를 받아 \n선생님으로 합류할 수도 있어요."
+              : isDirectorOfActive
+                ? "첫 클래스를 만들고 요일, 시간 스케줄을 묶어 보세요.\n오늘 출석 체크가 한 번에 해결됩니다."
+                : "원장이 클래스를 등록하면 여기에 표시돼요.\n선생님은 출석 체크와 수련생 관리를 도와줄 수 있어요."
           }
           action={
-            isDirectorOfActive
+            hasNoStudio
               ? {
-                  label: "클래스 만들기",
-                  onPress: () => navigation.navigate("TeacherClassCreate"),
+                  label: "요가원 만들기",
+                  onPress: () => navigation.navigate("TeacherStudioForm"),
                 }
-              : undefined
+              : isDirectorOfActive
+                ? {
+                    label: "클래스 만들기",
+                    onPress: () => navigation.navigate("TeacherClassCreate"),
+                  }
+                : undefined
           }
         />
       ) : (
@@ -227,6 +249,11 @@ export default function TeacherClassesTabScreen() {
         onClose={() => setAttendanceClassId(null)}
         classId={attendanceClassId}
         initialDate={todayISO()}
+      />
+
+      <RoleSheet
+        visible={roleSheetOpen}
+        onClose={() => setRoleSheetOpen(false)}
       />
     </SafeAreaView>
   );

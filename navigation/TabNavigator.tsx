@@ -46,7 +46,7 @@ export default function TabNavigator() {
   return (
     <Tab.Navigator
         id={undefined}
-        initialRouteName="Classes"
+        initialRouteName="Asanas"
         screenOptions={({ route }: any) => ({
           tabBarIcon: ({ focused, color, size }: any) => {
             let iconName: keyof typeof Ionicons.glyphMap;

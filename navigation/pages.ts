@@ -42,7 +42,6 @@ import RecordDetailScreen from "../app/record/detail";
 import EditRecordScreen from "../app/record/edit";
 import NewRecordScreen from "../app/record/new";
 import OnboardingScreen from "../app/onboarding";
-import RoleSelectScreen from "../app/role-select";
 import TeacherClassAttendanceScreen from "../app/teacher/class-attendance";
 import TeacherClassCreateScreen from "../app/teacher/class-create";
 import TeacherClassDetailScreen from "../app/teacher/class-detail";
@@ -264,11 +263,6 @@ export const pageList: PageConfig[] = [
     options: {
       headerShown: false, // 커스텀 헤더 사용
     },
-  },
-  {
-    name: "RoleSelect",
-    component: RoleSelectScreen,
-    options: { headerShown: false },
   },
   {
     name: "Onboarding",

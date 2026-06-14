@@ -44,7 +44,25 @@ export default function AppContainer() {
     isTeacher,
     needsRoleSelection,
     loaded: rolesLoaded,
+    addRole,
   } = useRoles();
+  // 역할이 없는 신규 계정은 자동으로 '수련생'으로 시작 (역할 선택 화면 없음)
+  const defaultingRoleRef = useRef(false);
+
+  // 역할 미배정 → 기본값 student 자동 부여 (한 번만)
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      rolesLoaded &&
+      needsRoleSelection &&
+      !defaultingRoleRef.current
+    ) {
+      defaultingRoleRef.current = true;
+      addRole("student").catch(() => {
+        defaultingRoleRef.current = false;
+      });
+    }
+  }, [isAuthenticated, rolesLoaded, needsRoleSelection, addRole]);
 
   // 로그인 후 푸시 토큰 등록 (한 번만)
   const pushRegisteredRef = useRef(false);
@@ -101,13 +119,23 @@ export default function AppContainer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, rolesLoaded]);
 
-  // 초대 딥링크 (onmatout://invite?code=ONM-XXXX)
+  // 초대 딥링크
+  //  - 유니버설 링크: https://onmatout.com/a/ONM-XXXX
+  //  - 커스텀 스킴(레거시): onmatout://invite?code=ONM-XXXX
   const pendingInviteRef = useRef<string | null>(null);
   const handleInviteUrl = (url: string | null) => {
-    if (!url || !url.includes("invite")) return;
-    const m = url.match(/[?&]code=([^&]+)/);
-    if (!m) return;
-    const code = decodeURIComponent(m[1]).toUpperCase();
+    if (!url) return;
+    let raw: string | null = null;
+    // 1) https 도메인 경로 형식: onmatout.com/a/CODE
+    const pathM = url.match(/onmatout\.com\/a\/([^/?#\s]+)/i);
+    if (pathM) raw = pathM[1];
+    // 2) 쿼리 형식: ...?code=CODE (커스텀 스킴 등)
+    if (!raw) {
+      const qM = url.match(/[?&]code=([^&\s]+)/i);
+      if (qM) raw = qM[1];
+    }
+    if (!raw) return;
+    const code = decodeURIComponent(raw).toUpperCase();
     if (isAuthenticated) {
       navigation.navigate("AuthMatch", { inviteCode: code });
     } else {
@@ -323,16 +351,12 @@ export default function AppContainer() {
     ) {
       // 인증되지 않았거나 역할 정보 로딩 중이면 기존 TabNavigator (게스트 + nickname 흐름)
       // 인증된 사용자는 역할 분기:
-      //   - user_roles 비어있음 → RoleSelect
       //   - teacher 활성 → TeacherHome
-      //   - 그 외 → TabNavigator (기존 student 시점)
+      //   - 그 외(역할 없음 포함) → TabNavigator. 역할 없으면 위 useEffect 가
+      //     자동으로 student 를 부여하므로 별도 선택 화면은 띄우지 않는다.
       let targetRoute: keyof RootStackParamList = "TabNavigator";
-      if (isAuthenticated && rolesLoaded) {
-        if (needsRoleSelection) {
-          targetRoute = "RoleSelect";
-        } else if (isTeacher) {
-          targetRoute = "TeacherTabNavigator";
-        }
+      if (isAuthenticated && rolesLoaded && isTeacher) {
+        targetRoute = "TeacherTabNavigator";
       }
 
       // 중복 리다이렉트 방지

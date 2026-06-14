@@ -441,7 +441,7 @@ export default function SettingsScreen() {
                 <Text style={styles.sectionTitle}>역할</Text>
               </View>
 
-              {!hasMultipleRoles && roles.length > 0 ? (
+              {!hasMultipleRoles ? (
                 <TouchableOpacity
                   style={styles.settingItem}
                   onPress={async () => {
@@ -490,6 +490,11 @@ export default function SettingsScreen() {
                                 "선생님 역할을 해제했어요",
                                 "success",
                               );
+                              // 선생님 모드 화면에 남지 않도록 수련생 탭으로 전환
+                              navigation.reset({
+                                index: 0,
+                                routes: [{ name: "TabNavigator" }],
+                              });
                             } else {
                               showSnackbar(
                                 "해제하지 못했어요. 다시 시도해 주세요.",
@@ -757,7 +762,8 @@ export default function SettingsScreen() {
             </View>
 
             <Text style={styles.tInfoNote}>
-              선생님이 되면 &quot;내 요가원&quot;에서 요가원 정보를 등록하고 클래스, 수업권을
+              선생님이 되면 &quot;내 요가원&quot;에서 요가원 정보를 등록하고
+              클래스, 수업권을<Text style={{ fontSize: 12 }}>{"\n"}</Text>{" "}
               관리할 수 있어요.
             </Text>
 

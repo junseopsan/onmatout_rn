@@ -14,7 +14,6 @@ export type RootStackParamList = {
   AuthMatch: { inviteCode?: string; title?: string } | undefined;
   ScanInvite: undefined;
   TabNavigator: undefined;
-  RoleSelect: undefined;
   TeacherTabNavigator: undefined;
   TeacherHome: undefined;
   TeacherMemberCreate: undefined;

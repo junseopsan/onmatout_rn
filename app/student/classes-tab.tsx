@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RoleSheet } from "../../components/role/RoleSheet";
 import { ConnectTeacherSheet } from "../../components/student/ConnectTeacherSheet";
 import { StudentStudioSwitcher } from "../../components/student/StudentStudioSwitcher";
 import { StudioInfoCard } from "../../components/student/StudioInfoCard";
@@ -93,6 +94,7 @@ export default function StudentClassesTabScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [connectOpen, setConnectOpen] = useState(false);
+  const [roleSheetOpen, setRoleSheetOpen] = useState(false);
   const [studioInfo, setStudioInfo] = useState<StudioFullInfo | null>(null);
   const [studioPlans, setStudioPlans] = useState<MembershipPlan[]>([]);
   const [activeMemberships, setActiveMemberships] = useState<
@@ -168,10 +170,11 @@ export default function StudentClassesTabScreen() {
     }, [loadClasses, studiosLoaded]),
   );
 
-  // studiosLoaded가 늦게 true가 되면 useFocusEffect는 다시 트리거 안 되므로 보강
+  // studiosLoaded가 늦게 true가 되면 useFocusEffect는 다시 트리거 안 되므로 보강.
+  // membership 이 없어도(연결된 선생님 없음) loadClasses 가 빈 목록으로 처리하므로
+  // 항상 loading 을 풀어준다 — 안 그러면 빈 계정에서 스켈레톤이 멈춰 보인다.
   useEffect(() => {
     if (!studiosLoaded) return;
-    if (!activeMembership) return;
     setLoading(true);
     loadClasses()
       .catch((e) => console.warn("[ClassesTab] load failed", e))
@@ -378,6 +381,16 @@ export default function StudentClassesTabScreen() {
         eyebrowSlot={hasMemberships ? <StudentStudioSwitcher /> : undefined}
         trailingSlot={
           <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => setRoleSheetOpen(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={22}
+                color={COLORS.text}
+              />
+            </TouchableOpacity>
             <NotificationBell />
           </View>
         }
@@ -565,6 +578,11 @@ export default function StudentClassesTabScreen() {
       <ConnectTeacherSheet
         visible={connectOpen}
         onClose={() => setConnectOpen(false)}
+      />
+
+      <RoleSheet
+        visible={roleSheetOpen}
+        onClose={() => setRoleSheetOpen(false)}
       />
     </SafeAreaView>
   );
