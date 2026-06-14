@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
@@ -71,7 +72,7 @@ export default function TeacherMemberCreateScreen() {
   const handleShareInvite = async (student: StudentProfile) => {
     try {
       await Share.share({
-        message: `${student.name}님, 온매트아웃에서 함께해요 🧘\n\n초대 코드: ${student.invite_code}\n앱에서 가입 후 코드를 입력하시면 연결됩니다.`,
+        message: `${student.name}님, 온매트아웃에서 함께해요\n\n아래 링크를 누르면 선생님과 바로 연결돼요. (앱 설치/로그인 필요)\nhttps://onmatout.com/a/${student.invite_code}\n\n초대 코드: ${student.invite_code}`,
       });
     } catch {
       // canceled
@@ -99,8 +100,15 @@ export default function TeacherMemberCreateScreen() {
           </View>
 
           <Button
-            title="📤 카톡 / 메시지로 공유"
+            title="초대 링크 보내기"
             size="large"
+            prefix={
+              <Ionicons
+                name="share-social-outline"
+                size={18}
+                color={COLORS.white}
+              />
+            }
             onPress={() => handleShareInvite(createdStudent)}
           />
 
@@ -182,8 +190,14 @@ export default function TeacherMemberCreateScreen() {
           />
 
           <View style={styles.notice}>
+            <Ionicons
+              name="bulb-outline"
+              size={16}
+              color={COLORS.primary}
+              style={styles.noticeIcon}
+            />
             <Text style={styles.noticeText}>
-              💡 등록 시{" "}
+              등록 시{" "}
               <Text style={styles.noticeBold}>고유 초대 코드</Text>가 자동
               생성됩니다.
             </Text>
@@ -229,12 +243,17 @@ const styles = StyleSheet.create({
   },
   consentText: { color: COLORS.text, fontSize: 13, flex: 1 },
   notice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
     backgroundColor: COLORS.surface,
     padding: SPACING.lg,
     borderRadius: RADIUS.md,
     marginTop: SPACING.sm,
   },
+  noticeIcon: { marginTop: 1 },
   noticeText: {
+    flex: 1,
     color: COLORS.textSecondary,
     fontSize: 13,
     lineHeight: 19,
