@@ -104,18 +104,6 @@ export const useAllAsanasForFeed = () => {
 export const normalizeText = (text: string | undefined | null) =>
   (text ?? "").toString().normalize("NFC").toLowerCase().trim();
 
-export const sortAsanasByName = (list: any[]) => {
-  return [...(list || [])].sort((a, b) => {
-    const aKr = normalizeText(a?.sanskrit_name_kr);
-    const bKr = normalizeText(b?.sanskrit_name_kr);
-    const primary = aKr.localeCompare(bKr, "ko", { sensitivity: "base" });
-    if (primary !== 0) return primary;
-    const aEn = normalizeText(a?.sanskrit_name_en);
-    const bEn = normalizeText(b?.sanskrit_name_en);
-    return aEn.localeCompare(bEn, "en", { sensitivity: "base" });
-  });
-};
-
 export const filterAsanasByQuery = (list: any[], query: string) => {
   const normalizedQuery = normalizeText(query);
   if (!normalizedQuery) return list ?? [];

@@ -31,25 +31,6 @@ export const useStudiosWithPagination = (pageSize: number = 100) => {
   });
 };
 
-// 모든 요가원 데이터 조회 (검색용 - 전체 개수 확인용)
-export const useAllStudios = () => {
-  return useQuery({
-    queryKey: ["studios", "all"],
-    queryFn: async () => {
-      const result = await studioAPI.getAllStudios();
-      if (!result.success) {
-        throw new Error(
-          result.message || "요가원 데이터를 불러오는데 실패했습니다."
-        );
-      }
-      return result.data || [];
-    },
-    staleTime: 10 * 60 * 1000, // 10분
-    gcTime: 30 * 60 * 1000, // 30분
-    retry: 2,
-  });
-};
-
 // 요가원 검색 (서버 사이드 - 전체 데이터에서 검색)
 export const useStudioSearch = (query: string) => {
   const trimmedQuery = query.trim();

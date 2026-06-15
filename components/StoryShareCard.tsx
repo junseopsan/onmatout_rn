@@ -11,8 +11,6 @@ import { Record } from "../types/record";
 export const STORY_CARD_WIDTH = 360;
 export const STORY_CARD_HEIGHT = 720;
 
-export type StoryCardMode = "stats" | "record";
-
 export type StoryStatsData = {
   totalCount: number;
   weekCount: number;

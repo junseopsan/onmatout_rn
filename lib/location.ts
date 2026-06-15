@@ -15,13 +15,3 @@ export async function getCurrentCoords(): Promise<Coords | null> {
     return null;
   }
 }
-
-/** 권한 상태만 확인 (요청 없이) */
-export async function hasLocationPermission(): Promise<boolean> {
-  try {
-    const { status } = await Location.getForegroundPermissionsAsync();
-    return status === "granted";
-  } catch {
-    return false;
-  }
-}

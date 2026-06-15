@@ -117,39 +117,3 @@ export const useProfileStats = (userId?: string) => {
     },
   };
 };
-
-// 대시보드 전체 데이터 조회 (병렬 처리)
-export const useDashboardData = (userId?: string) => {
-  const todayRecordsQuery = useTodayRecords();
-  const recentRecordsQuery = useRecentRecords();
-  const allRecordsQuery = useAllRecords(userId);
-  const favoriteAsanasQuery = useFavoriteAsanasDetail();
-
-  return {
-    todayRecords: (todayRecordsQuery.data || []) as Record[],
-    recentRecords: (recentRecordsQuery.data || []) as Record[],
-    allRecords: (allRecordsQuery.data || []) as Record[], // 전체 기록 추가
-    favoriteAsanas: (favoriteAsanasQuery.data || []) as Asana[],
-    isLoading:
-      todayRecordsQuery.isLoading ||
-      recentRecordsQuery.isLoading ||
-      allRecordsQuery.isLoading ||
-      favoriteAsanasQuery.isLoading,
-    isError:
-      todayRecordsQuery.isError ||
-      recentRecordsQuery.isError ||
-      allRecordsQuery.isError ||
-      favoriteAsanasQuery.isError,
-    error:
-      todayRecordsQuery.error ||
-      recentRecordsQuery.error ||
-      allRecordsQuery.error ||
-      favoriteAsanasQuery.error,
-    refetch: () => {
-      todayRecordsQuery.refetch();
-      recentRecordsQuery.refetch();
-      allRecordsQuery.refetch();
-      favoriteAsanasQuery.refetch();
-    },
-  };
-};

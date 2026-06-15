@@ -273,6 +273,3 @@ export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
   return { error };
 };
-
-export const SUPABASE_URL = supabaseUrl;
-export const SUPABASE_PUBLISHABLE_KEY = supabasePublishableKey;
