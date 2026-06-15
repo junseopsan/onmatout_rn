@@ -24,6 +24,14 @@ export type ChatMessage = {
   created_at: string;
 };
 
+// 방별 최신 메시지 + 안읽음 여부 (목록 미리보기/정렬용)
+export type RoomDigest = {
+  body: string;
+  created_at: string;
+  sender_id: string;
+  unread: boolean;
+};
+
 export const chatApi = {
   // 내가 속한 방 목록 (RLS가 멤버 방만 반환). studio 방 + 내 그룹방.
   // 사용자별 설정(muted/favorite/pinned)을 합치고, 고정·즐겨찾기·최근활동 순 정렬.
@@ -252,16 +260,8 @@ export const chatApi = {
   async roomDigest(
     roomIds: string[],
     userId: string,
-  ): Promise<
-    Map<
-      string,
-      { body: string; created_at: string; sender_id: string; unread: boolean }
-    >
-  > {
-    const result = new Map<
-      string,
-      { body: string; created_at: string; sender_id: string; unread: boolean }
-    >();
+  ): Promise<Map<string, RoomDigest>> {
+    const result = new Map<string, RoomDigest>();
     if (roomIds.length === 0) return result;
     const [{ data: members }, { data: msgs }] = await Promise.all([
       supabase
