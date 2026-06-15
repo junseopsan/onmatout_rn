@@ -14,7 +14,6 @@
     "android:prod": "NODE_ENV=production expo run:android",
     "web": "expo start --web",
     "lint": "expo lint",
-
     "build:ios:dev": "eas build --platform ios --profile production-dev",
     "build:ios:prod": "eas build --platform ios --profile production",
     "build:ios:preview:dev": "eas build --platform ios --profile preview-dev",
@@ -23,30 +22,24 @@
     "build:android:prod": "eas build --platform android --profile production",
     "build:android:preview:dev": "eas build --platform android --profile preview-dev",
     "build:android:preview": "eas build --platform android --profile preview",
-
     "submit:ios:dev": "eas submit --platform ios --profile production-dev --latest",
     "submit:ios:prod": "eas submit --platform ios --profile production --latest",
     "submit:android:dev": "eas submit --platform android --profile production-dev --latest",
     "submit:android:prod": "eas submit --platform android --profile production --latest",
-
     "update:prod": "eas update --channel production --message",
     "update:preview": "eas update --channel preview --message",
-
     "bump:ios": "eas build:version --platform ios",
     "bump:android": "eas build:version --platform android",
     "bump:all": "eas build:version --platform all",
     "device:add": "eas device:create",
-
     "prebuild": "expo prebuild --clean",
     "ios:prebuild": "expo prebuild --platform ios --clean",
     "ios:pods": "npx pod-install",
     "ios:open": "open ios/*.xcworkspace",
-
     "build:android:local": "cd android && ./gradlew assembleRelease && cd ..",
     "build:android:bundle": "cd android && ./gradlew bundleRelease && cd ..",
     "android:install:release": "cd android && ./gradlew assembleRelease && cd .. && adb install -r android/app/build/outputs/apk/release/app-release.apk",
     "install:android:release": "npm run android:install:release",
-
     "reset-project": "node ./scripts/reset-project.js",
     "gen:asana-images": "node scripts/gen-asana-images.js"
   },
@@ -61,7 +54,6 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/native-stack": "^7.2.0",
-    "@shopify/react-native-skia": "2.2.12",
     "@supabase/supabase-js": "^2.52.0",
     "@tamagui/animations-css": "^1.132.13",
     "@tamagui/animations-react-native": "^1.132.13",
@@ -75,12 +67,8 @@
     "ajv": "^8.17.1",
     "axios": "^1.12.2",
     "babel-plugin-transform-inline-environment-variables": "^0.4.4",
-    "better-sqlite3": "^12.4.1",
-    "crypto-js": "^4.2.0",
-    "dayjs": "^1.11.18",
     "dotenv": "^17.2.3",
     "expo": "^54.0.30",
-    "expo-blur": "~15.0.8",
     "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.12",
     "expo-device": "~8.0.10",
@@ -95,11 +83,9 @@
     "expo-sharing": "^14.0.8",
     "expo-splash-screen": "~31.0.12",
     "expo-status-bar": "~3.0.9",
-    "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-updates": "~29.0.16",
     "expo-web-browser": "~15.0.10",
-    "fast-csv": "^5.0.5",
     "metro": "^0.83.1",
     "metro-cache": "^0.82.5",
     "metro-config": "^0.82.0",
@@ -110,7 +96,6 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-chart-kit": "^6.12.0",
     "react-native-draggable-flatlist": "^4.0.3",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-qrcode-svg": "^6.3.21",
@@ -123,7 +108,6 @@
     "react-native-webview": "13.15.0",
     "react-native-worklets": "0.5.1",
     "tamagui": "^1.132.13",
-    "victory-native": "^41.17.4",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
