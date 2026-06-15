@@ -10,6 +10,9 @@ import {
   User,
   VerifyCredentials,
 } from "../types/auth";
+import { useRoleStore } from "./roleStore";
+import { useStudentStudioStore } from "./studentStudioStore";
+import { useStudioStore } from "./studioStore";
 
 interface AuthStore extends AuthState {
   // Additional state
@@ -386,6 +389,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         error: null,
         phoneNumber: null,
       });
+      useRoleStore.getState().reset();
+      useStudioStore.getState().reset();
+      useStudentStudioStore.getState().reset();
       console.log("세션 초기화 완료");
     } catch (error) {
       set({
@@ -701,7 +707,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log("로그아웃 중 Storage 정리 실패:", storageError);
       }
 
-      // 상태 초기화
+      // 상태 초기화 (계정 전환 시 이전 사용자 데이터 잔존 방지)
       set({
         user: null,
         session: null,
@@ -709,6 +715,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         error: null,
         phoneNumber: null,
       });
+      useRoleStore.getState().reset();
+      useStudioStore.getState().reset();
+      useStudentStudioStore.getState().reset();
     } catch (error) {
       console.log("로그아웃 실패:", error);
       set({
