@@ -22,6 +22,7 @@ export type PivotStudio = {
   bank_account: string | null;
   cancel_cutoff_hours: number;
   qna_enabled: boolean;
+  invite_code: string | null;
   created_at: string;
   updated_at: string;
 };

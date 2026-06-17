@@ -19,8 +19,10 @@ import { AttendanceSheet } from "../../components/teacher/AttendanceSheet";
 import { StudentRow } from "../../components/teacher/StudentRow";
 import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
+import { PillInput } from "../../components/ui/PillInput";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
+import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { teacherApi } from "../../lib/api/teacher";
 import { RootStackParamList } from "../../navigation/types";
 import {
@@ -39,6 +41,7 @@ export default function TeacherClassDetailScreen() {
   const route = useRoute<R>();
   const { classId } = route.params;
   const { user } = useAuth();
+  const { activeStudio } = usePivotStudios();
 
   const [cls, setCls] = useState<
     (Class & { class_schedules: ClassSchedule[] }) | null
@@ -268,6 +271,7 @@ export default function TeacherClassDetailScreen() {
       <AssignStudentsModal
         visible={pickerOpen}
         teacherId={user?.id ?? null}
+        studioId={activeStudio?.id ?? null}
         excludeIds={members.map((m) => m.student_profiles.id)}
         onClose={() => setPickerOpen(false)}
         onSubmit={handleAssign}
@@ -285,12 +289,14 @@ export default function TeacherClassDetailScreen() {
 function AssignStudentsModal({
   visible,
   teacherId,
+  studioId,
   excludeIds,
   onClose,
   onSubmit,
 }: {
   visible: boolean;
   teacherId: string | null;
+  studioId: string | null;
   excludeIds: string[];
   onClose: () => void;
   onSubmit: (ids: string[]) => void;
@@ -298,11 +304,16 @@ function AssignStudentsModal({
   const [all, setAll] = useState<StudentProfile[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [newName, setNewName] = useState("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (!visible || !teacherId) return;
     setLoading(true);
     setPicked(new Set());
+    setQuery("");
+    setNewName("");
     teacherApi
       .listMyStudents(teacherId)
       .then((data) => setAll(data))
@@ -310,7 +321,13 @@ function AssignStudentsModal({
       .finally(() => setLoading(false));
   }, [visible, teacherId]);
 
-  const available = all.filter((s) => !excludeIds.includes(s.id));
+  const q = query.trim().toLowerCase();
+  const available = all
+    .filter((s) => !excludeIds.includes(s.id))
+    .filter(
+      (s) =>
+        !q || s.name.toLowerCase().includes(q) || (s.phone ?? "").includes(q),
+    );
 
   const toggle = (id: string) => {
     setPicked((prev) => {
@@ -319,6 +336,27 @@ function AssignStudentsModal({
       else next.add(id);
       return next;
     });
+  };
+
+  // 미가입자: 이름만 입력해 즉시 명단 추가 + 배정
+  const handleQuickAdd = async () => {
+    const name = newName.trim();
+    if (!teacherId || !name || adding) return;
+    setAdding(true);
+    try {
+      const created = await teacherApi.createStudent({
+        teacher_id: teacherId,
+        studio_id: studioId,
+        name,
+        invite_code: "",
+      } as any);
+      setNewName("");
+      onSubmit([created.id]);
+    } catch (e: any) {
+      Alert.alert("추가 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -337,12 +375,44 @@ function AssignStudentsModal({
           </TouchableOpacity>
         </View>
 
+        {/* 미가입자 빠른 추가 */}
+        <View style={styles.quickAddRow}>
+          <View style={{ flex: 1 }}>
+            <PillInput
+              value={newName}
+              onChangeText={setNewName}
+              placeholder="이름으로 바로 추가 (미가입 회원)"
+              onSubmitEditing={handleQuickAdd}
+              returnKeyType="done"
+            />
+          </View>
+          <Button
+            title="추가"
+            size="medium"
+            variant="secondary"
+            disabled={!newName.trim() || adding}
+            loading={adding}
+            onPress={handleQuickAdd}
+          />
+        </View>
+
+        {/* 가입 수련생 검색 */}
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <PillInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="이름 또는 전화번호로 검색"
+          />
+        </View>
+
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 24 }} />
         ) : available.length === 0 ? (
-          <Text style={styles.muted}>배정 가능한 수련생이 없어요.</Text>
+          <Text style={styles.muted}>
+            {q ? "검색 결과가 없어요." : "배정 가능한 수련생이 없어요."}
+          </Text>
         ) : (
-          <ScrollView style={{ maxHeight: 360 }}>
+          <ScrollView style={{ maxHeight: 300 }}>
             {available.map((s) => {
               const checked = picked.has(s.id);
               return (
@@ -360,7 +430,8 @@ function AssignStudentsModal({
                   <View style={{ flex: 1 }}>
                     <Text style={styles.pickName}>{s.name}</Text>
                     <Text style={styles.pickMeta}>
-                      {s.phone ?? "전화번호 미수집"}, {s.invite_code}
+                      {s.phone ?? "전화번호 미수집"}
+                      {s.user_id ? "" : ", 미가입"}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -533,6 +604,13 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: COLORS.text, fontSize: 17, fontWeight: "600" },
   modalCancel: { color: COLORS.textSecondary, fontSize: 14 },
+  quickAddRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
   pickRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -268,12 +268,15 @@ export default function TeacherMemberDetailScreen() {
     ]);
   };
 
+  // 요가원 단위 초대 링크 공유 (가입 시 전화번호로 자동 매칭)
   const shareInvite = async () => {
-    if (!student) return;
-    const studio = studioName ? `\n요가원: ${studioName}` : "";
-    const link = `onmatout://invite?code=${student.invite_code}`;
+    const code = activeStudio?.invite_code;
+    if (!code) {
+      Alert.alert("초대 링크 없음", "요가원 정보를 먼저 만들어 주세요.");
+      return;
+    }
     await Share.share({
-      message: `${student.name}님, 온매트아웃에서 함께해요${studio}\n\n초대 코드: ${student.invite_code}\n아래 링크를 누르면 바로 연결돼요 (앱 설치/로그인 필요)\n${link}`,
+      message: `${activeStudio?.name ?? "요가원"}에 초대합니다.\n\n아래 링크를 누르면 바로 연결돼요. (앱 설치/로그인 필요)\nhttps://onmatout.com/a/${code}`,
     }).catch(() => undefined);
   };
 
@@ -528,8 +531,8 @@ export default function TeacherMemberDetailScreen() {
           )}
         </View>
 
-        {/* 초대 코드 카드 (앱 미가입 시만) - 화면 최하단 */}
-        {!student.user_id ? (
+        {/* 요가원 초대 카드 (앱 미가입 시만) - 화면 최하단 */}
+        {!student.user_id && activeStudio?.invite_code ? (
           <View style={styles.section}>
             <SurfaceCard style={styles.inviteCard}>
               <View style={styles.inviteHead}>
@@ -538,20 +541,20 @@ export default function TeacherMemberDetailScreen() {
                   size={14}
                   color={COLORS.primary}
                 />
-                <Text style={styles.inviteCardLabel}>수련생 초대</Text>
+                <Text style={styles.inviteCardLabel}>요가원 초대</Text>
               </View>
 
               <View style={styles.qrWrap}>
                 <View style={styles.qrBox}>
                   <QRCode
-                    value={`onmatout://invite?code=${student.invite_code}`}
+                    value={`https://onmatout.com/a/${activeStudio.invite_code}`}
                     size={150}
                     backgroundColor="#FFFFFF"
                     color="#0A0A0A"
                   />
                 </View>
                 <Text style={styles.qrHint}>
-                  수련생이 이 QR을 스캔하면 바로 연결돼요.
+                  이 회원이 QR이나 링크로 가입하면 전화번호로 자동 연결돼요.
                 </Text>
               </View>
 

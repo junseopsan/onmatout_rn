@@ -18,7 +18,11 @@ import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import { studentApi, type MatchCandidate } from "../../lib/api/student";
+import {
+  isStudioInviteCode,
+  studentApi,
+  type MatchCandidate,
+} from "../../lib/api/student";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -88,6 +92,22 @@ export default function AuthMatchScreen() {
     if (!user?.id || !value) return;
     setSubmitting(true);
     try {
+      // 요가원 단위 초대(OMS-): 전화 자동매칭 또는 신규 수련생 생성
+      if (isStudioInviteCode(value)) {
+        const res = await studentApi.joinStudioByCode(
+          value,
+          user.id,
+          user.phone ?? null,
+        );
+        Alert.alert(
+          "연결 완료",
+          `${res.studioName || "요가원"}에 연결되었어요.`,
+          [{ text: "확인", onPress: finish }],
+        );
+        return;
+      }
+
+      // 레거시 회원 코드(ONM-)
       const linked = await studentApi.linkByInviteCode(user.id, value);
       if (!linked) {
         Alert.alert(
@@ -102,7 +122,11 @@ export default function AuthMatchScreen() {
         [{ text: "확인", onPress: finish }],
       );
     } catch (e: any) {
-      Alert.alert("연결 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+      const msg =
+        e?.message === "STUDIO_NOT_FOUND"
+          ? "유효하지 않은 초대 링크예요. 선생님께 다시 받아주세요."
+          : (e?.message ?? "잠시 후 다시 시도해 주세요.");
+      Alert.alert("연결 실패", msg);
     } finally {
       setSubmitting(false);
     }

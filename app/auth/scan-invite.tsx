@@ -28,7 +28,7 @@ function extractCode(data: string): string | null {
   const m = data.match(/[?&]code=([^&\s]+)/i);
   if (m) return decodeURIComponent(m[1]).toUpperCase();
   const raw = data.trim().toUpperCase();
-  if (/^ONM-[A-Z0-9]+$/.test(raw)) return raw;
+  if (/^(ONM|OMS)-[A-Z0-9]+$/.test(raw)) return raw;
   return null;
 }
 

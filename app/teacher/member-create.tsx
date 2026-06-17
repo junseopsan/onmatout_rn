@@ -69,10 +69,16 @@ export default function TeacherMemberCreateScreen() {
     }
   };
 
-  const handleShareInvite = async (student: StudentProfile) => {
+  // 요가원 단위 초대 링크 공유 (가입 시 전화번호로 자동 매칭)
+  const handleShareStudioInvite = async () => {
+    const code = activeStudio?.invite_code;
+    if (!code) {
+      Alert.alert("초대 링크 없음", "요가원 정보를 먼저 만들어 주세요.");
+      return;
+    }
     try {
       await Share.share({
-        message: `${student.name}님, 온매트아웃에서 함께해요\n\n아래 링크를 누르면 선생님과 바로 연결돼요. (앱 설치/로그인 필요)\nhttps://onmatout.com/a/${student.invite_code}\n\n초대 코드: ${student.invite_code}`,
+        message: `${activeStudio?.name ?? "요가원"}에 초대합니다.\n\n아래 링크를 누르면 바로 연결돼요. (앱 설치/로그인 필요)\nhttps://onmatout.com/a/${code}`,
       });
     } catch {
       // canceled
@@ -91,16 +97,12 @@ export default function TeacherMemberCreateScreen() {
           <Text style={styles.successEmoji}>🎉</Text>
           <Text style={styles.successTitle}>{createdStudent.name} 님 등록</Text>
           <Text style={styles.successSubtitle}>
-            초대 코드를 카톡/메시지로 보내 가입을 유도하세요.
+            요가원 초대 링크를 보내 가입을 안내하세요. 가입하면 전화번호로
+            자동 연결돼요.
           </Text>
 
-          <View style={styles.codeCard}>
-            <Text style={styles.codeLabel}>초대 코드</Text>
-            <Text style={styles.codeValue}>{createdStudent.invite_code}</Text>
-          </View>
-
           <Button
-            title="초대 링크 보내기"
+            title="요가원 초대 링크 보내기"
             size="large"
             prefix={
               <Ionicons
@@ -109,7 +111,7 @@ export default function TeacherMemberCreateScreen() {
                 color={COLORS.white}
               />
             }
-            onPress={() => handleShareInvite(createdStudent)}
+            onPress={handleShareStudioInvite}
           />
 
           <View style={styles.secondaryRow}>
@@ -197,9 +199,9 @@ export default function TeacherMemberCreateScreen() {
               style={styles.noticeIcon}
             />
             <Text style={styles.noticeText}>
-              등록 시{" "}
-              <Text style={styles.noticeBold}>고유 초대 코드</Text>가 자동
-              생성됩니다.
+              전화번호를 입력하면, 회원이{" "}
+              <Text style={styles.noticeBold}>요가원 초대 링크</Text>로 가입할 때
+              자동으로 연결돼요.
             </Text>
           </View>
 

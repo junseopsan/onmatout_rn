@@ -187,7 +187,14 @@ export default function TeacherMembersTabScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <PageHeader eyebrowSlot={<StudioSwitcher />} />
+      <PageHeader
+        eyebrowSlot={<StudioSwitcher />}
+        trailing={{
+          label: "초대",
+          variant: "ghost",
+          onPress: () => navigation.navigate("TeacherStudioInvite"),
+        }}
+      />
 
       {students.length > 0 ? (
         <View style={styles.searchWrap}>
@@ -226,7 +233,7 @@ export default function TeacherMembersTabScreen() {
         <EmptyState
           icon="📒"
           title="아직 수련생이 없어요"
-          description={"+ 등록으로 첫 수련생을 추가하면\n자동으로 초대 코드가 생성됩니다."}
+          description={"등록으로 첫 수련생을 추가하거나,\n우측 상단 초대로 요가원 링크를 보내보세요."}
           action={{
             label: "수련생 등록",
             onPress: () => navigation.navigate("TeacherMemberCreate"),

@@ -18,6 +18,20 @@ export type MatchCandidate = {
   inviteCode: string;
 };
 
+export type StudioJoinResult = {
+  studioId: string;
+  studioName: string;
+  studentProfileId: string;
+  matched: boolean; // 미가입 명단과 전화 매칭으로 연결됨
+  already: boolean; // 이미 이 요가원 멤버였음
+  created: boolean; // 신규 수련생으로 생성됨
+};
+
+// 요가원 단위 초대코드(OMS-) 와 레거시 회원 코드(ONM-) 구분
+export function isStudioInviteCode(code: string): boolean {
+  return /^OMS-/i.test(code.trim());
+}
+
 export type StudentTeacherDetail = StudentTeacherLink & {
   attendance: {
     id: string;
@@ -197,6 +211,30 @@ export const studentApi = {
       })
       .eq("id", studentProfileId);
     if (error) throw error;
+  },
+
+  // 요가원 단위 초대코드(OMS-)로 가입: 서버에서 전화 자동매칭 또는 신규 수련생 생성
+  async joinStudioByCode(
+    code: string,
+    userId: string,
+    phone: string | null,
+  ): Promise<StudioJoinResult> {
+    const variants = phone ? phonePatterns(phone) : [];
+    const { data, error } = await supabase.rpc("join_studio_by_code", {
+      p_code: code.trim(),
+      p_user_id: userId,
+      p_phone_variants: variants,
+    });
+    if (error) throw error;
+    const r = data as Record<string, unknown>;
+    return {
+      studioId: String(r.studio_id),
+      studioName: String(r.studio_name ?? ""),
+      studentProfileId: String(r.student_profile_id),
+      matched: !!r.matched,
+      already: !!r.already,
+      created: !!r.created,
+    };
   },
 };
 
