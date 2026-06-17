@@ -342,7 +342,7 @@ export default function SettingsScreen() {
   const confirmDeleteAccount = () => {
     AlertDialog.confirm(
       "회원 탈퇴",
-      "탈퇴하면 회원님의 프로필과 데이터가 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
+      "탈퇴하면 프로필, 역할, 수련 기록, 수련생 연결, 채팅 등 회원님의 모든 데이터와 계정이 영구 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
       async () => {
         setIsDeletingAccount(true);
         try {

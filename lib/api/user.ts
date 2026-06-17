@@ -327,63 +327,30 @@ export const userAPI = {
   deleteAccount: async (): Promise<{
     success: boolean;
     message?: string;
+    code?: string;
   }> => {
     try {
-      const auth = await ensureAuthenticated();
-      if (!auth) {
-        return {
-          success: false,
-          message: "로그인이 필요합니다. 다시 시도해주세요.",
-        };
-      }
-
-      const { userId, session } = auth;
-
-      // 세션 및 사용자 확인
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user || user.id !== userId) {
-        return {
-          success: false,
-          message: "세션이 만료되었습니다. 다시 로그인해주세요.",
-        };
-      }
-
-      // 사용자 데이터 삭제 (연관 테이블)
-      // user_profiles에는 사용자 정보와 설정이 모두 포함되어 있음
-      const tablesToClean = [
-        "practice_records",
-        "user_favorite_asanas",
-        "user_profiles",
-      ];
-
-      for (const table of tablesToClean) {
-        const { error } = await supabase
-          .from(table)
-          .delete()
-          .eq("user_id", userId);
-
-        if (error) {
-          logger.error(`테이블 ${table} 데이터 삭제 실패:`, error);
+      // 서버에서 본인 데이터 + auth 계정을 트랜잭션으로 완전 삭제
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) {
+        if (error.message?.includes("STUDIO_EXISTS")) {
           return {
             success: false,
-            message: "계정 데이터를 삭제하는 중 오류가 발생했습니다.",
+            code: "STUDIO_EXISTS",
+            message:
+              "운영 중인 요가원을 먼저 삭제하거나 다른 원장에게 넘긴 뒤 탈퇴할 수 있어요.",
           };
         }
+        logger.error("계정 삭제 실패:", error);
+        return {
+          success: false,
+          message: "계정을 삭제하는 중 오류가 발생했습니다.",
+        };
       }
 
-      // Supabase Auth 사용자 삭제는 관리자 권한이 필요하므로
-      // 사용자 데이터만 삭제하고 로그아웃 처리
-      // auth.users는 CASCADE로 자동 삭제되거나 관리자가 삭제해야 함
-      logger.log("사용자 데이터 삭제 완료. 로그아웃 처리 중...");
-      await supabase.auth.signOut();
-
-      return {
-        success: true,
-      };
+      // 계정이 삭제됐으므로 로컬 세션 정리
+      await supabase.auth.signOut().catch(() => undefined);
+      return { success: true };
     } catch (error) {
       logger.error("계정 삭제 중 오류:", error);
       return {
