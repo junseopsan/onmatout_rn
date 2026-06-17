@@ -40,8 +40,6 @@ PODS:
     - Yoga
   - ExpoAsset (12.0.12):
     - ExpoModulesCore
-  - ExpoBlur (15.0.8):
-    - ExpoModulesCore
   - ExpoCamera (17.0.10):
     - ExpoModulesCore
     - ZXingObjC/OneD
@@ -97,8 +95,6 @@ PODS:
   - ExpoSharing (14.0.8):
     - ExpoModulesCore
   - ExpoSplashScreen (31.0.12):
-    - ExpoModulesCore
-  - ExpoSymbols (1.0.8):
     - ExpoModulesCore
   - ExpoSystemUI (6.0.9):
     - ExpoModulesCore
@@ -1505,30 +1501,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - react-native-skia (2.2.12):
-    - hermes-engine
-    - RCTRequired
-    - RCTTypeSafety
-    - React
-    - React-callinvoker
-    - React-Core
-    - React-Core-prebuilt
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - ReactNativeDependencies
-    - Yoga
   - react-native-view-shot (4.0.3):
     - hermes-engine
     - RCTRequired
@@ -2232,7 +2204,6 @@ DEPENDENCIES:
   - EXNotifications (from `../node_modules/expo-notifications/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
-  - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCamera (from `../node_modules/expo-camera/ios`)
   - ExpoDevice (from `../node_modules/expo-device/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
@@ -2247,7 +2218,6 @@ DEPENDENCIES:
   - ExpoNetwork (from `../node_modules/expo-network/ios`)
   - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
-  - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - ExpoWebBrowser (from `../node_modules/expo-web-browser/ios`)
   - EXStructuredHeaders (from `../node_modules/expo-structured-headers/ios`)
@@ -2290,7 +2260,6 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
-  - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - react-native-webview (from `../node_modules/react-native-webview`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
@@ -2363,8 +2332,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
-  ExpoBlur:
-    :path: "../node_modules/expo-blur/ios"
   ExpoCamera:
     :path: "../node_modules/expo-camera/ios"
   ExpoDevice:
@@ -2393,8 +2360,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-sharing/ios"
   ExpoSplashScreen:
     :path: "../node_modules/expo-splash-screen/ios"
-  ExpoSymbols:
-    :path: "../node_modules/expo-symbols/ios"
   ExpoSystemUI:
     :path: "../node_modules/expo-system-ui/ios"
   ExpoWebBrowser:
@@ -2478,8 +2443,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
-  react-native-skia:
-    :path: "../node_modules/@shopify/react-native-skia"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
   react-native-webview:
@@ -2571,7 +2534,6 @@ SPEC CHECKSUMS:
   EXNotifications: 983f04ad4ad879b181179e326bf220541e478386
   Expo: 60c21ba34593688a2a6e8445c1f8b44abb0e3fae
   ExpoAsset: f867e55ceb428aab99e1e8c082b5aee7c159ea18
-  ExpoBlur: b90747a3f22a8b6ceffd9cb0dc41a4184efdc656
   ExpoCamera: 6a326deb45ba840749652e4c15198317aa78497e
   ExpoDevice: 6327c3c200816795708885adf540d26ecab83d1a
   ExpoFileSystem: 858a44267a3e6e9057e0888ad7c7cfbf55d52063
@@ -2586,7 +2548,6 @@ SPEC CHECKSUMS:
   ExpoNetwork: ee1fb67b0de59ab7f36794caf8242955dd8ae046
   ExpoSharing: 0d983394ed4a80334bab5a0d5384f75710feb7e8
   ExpoSplashScreen: 76af87337650d06926aa7d0157fe98b4fddca336
-  ExpoSymbols: 349ee2b4d7d5ff3ea8436467914f8a67635aa354
   ExpoSystemUI: 2ad325f361a2fcd96a464e8574e19935c461c9cc
   ExpoWebBrowser: 17b064c621789e41d4816c95c93f429b84971f52
   EXStructuredHeaders: c951e77f2d936f88637421e9588c976da5827368
@@ -2632,7 +2593,6 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 9050ee10c19f4f7fca8963d0211b2854d624973e
   React-microtasksnativemodule: f775db9e991c6f3b8ccbc02bfcde22770f96e23b
   react-native-safe-area-context: 37e680fc4cace3c0030ee46e8987d24f5d3bdab2
-  react-native-skia: 05327e7acee05e7c27b68a5da0bc80d65f5d790c
   react-native-view-shot: fb3c0774edb448f42705491802a455beac1502a2
   react-native-webview: b29007f4723bca10872028067b07abacfa1cb35a
   React-NativeModulesApple: 8969913947d5b576de4ed371a939455a8daf28aa
