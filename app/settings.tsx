@@ -341,8 +341,8 @@ export default function SettingsScreen() {
 
   const confirmDeleteAccount = () => {
     AlertDialog.confirm(
-      "수련생 탈퇴",
-      "탈퇴 시 모든 수련 기록과 즐겨찾기 정보가 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
+      "회원 탈퇴",
+      "탈퇴하면 회원님의 프로필과 데이터가 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
       async () => {
         setIsDeletingAccount(true);
         try {
