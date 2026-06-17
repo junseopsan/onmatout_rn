@@ -11,7 +11,8 @@ export interface UserProfile {
   id: string;
   user_id: string;
   name?: string;
-  email?: string;
+  email?: string | null;
+  phone?: string | null;
   avatar_url?: string;
   bio?: string | null;
   created_at: string;
