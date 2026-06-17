@@ -131,14 +131,14 @@ export default function ProfileInfoScreen() {
         } else {
           Alert.alert(
             "오류",
-            updateResult.message || "프로필 사진 저장에 실패했습니다."
+            updateResult.message || "프로필 사진 저장에 실패했습니다.",
           );
         }
       } else {
         const isCanceled = result.canceled || result.message?.includes("취소");
         Alert.alert(
           isCanceled ? "알림" : "오류",
-          result.message || "이미지 업로드에 실패했습니다."
+          result.message || "이미지 업로드에 실패했습니다.",
         );
       }
     } catch (error) {
@@ -178,14 +178,14 @@ export default function ProfileInfoScreen() {
         } else {
           Alert.alert(
             "오류",
-            updateResult.message || "프로필 사진 저장에 실패했습니다."
+            updateResult.message || "프로필 사진 저장에 실패했습니다.",
           );
         }
       } else {
         const isCanceled = result.canceled || result.message?.includes("취소");
         Alert.alert(
           isCanceled ? "알림" : "오류",
-          result.message || "이미지 업로드에 실패했습니다."
+          result.message || "이미지 업로드에 실패했습니다.",
         );
       }
     } catch (error) {
@@ -229,7 +229,7 @@ export default function ProfileInfoScreen() {
       } else {
         Alert.alert(
           "오류",
-          result.message || "프로필 이미지 변경에 실패했습니다."
+          result.message || "프로필 이미지 변경에 실패했습니다.",
         );
       }
     } catch (error) {
@@ -254,10 +254,7 @@ export default function ProfileInfoScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.profileContainer}>
           {/* 프로필 사진 섹션 */}
           <View style={styles.avatarSection}>
@@ -290,7 +287,6 @@ export default function ProfileInfoScreen() {
                 <Ionicons name="camera" size={12} color="white" />
               </View>
             </TouchableOpacity>
-            <Text style={styles.avatarLabel}>프로필 사진</Text>
           </View>
 
           {/* 개인정보 섹션 */}
