@@ -54,8 +54,8 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.subTitle}>요가톡 AI 도우미 이용 시</Text>
         <Text style={styles.contentText}>
           • 사용자가 AI 도우미에게 입력한 질문 내용{"\n"}• 답변 생성을 위해 입력한
-          질문은 등록된 요가 자료(아사나 사전 등)와 함께 처리되며, 생성형 AI 처리를
-          위해 외부 AI 서비스로 전송될 수 있습니다.{"\n"}• AI 답변은 참고용 정보이며,
+          질문은 등록된 요가 자료(아사나 사전 등)와 함께 처리되며, 답변 생성을 위해
+          OpenAI(미국)로 전송될 수 있습니다.{"\n"}• AI 답변은 참고용 정보이며,
           통증, 부상, 임신 등 건강 관련 사항은 선생님 또는 의료진과 상담하시기 바랍니다.
         </Text>
 
@@ -123,7 +123,7 @@ export default function PrivacyPolicyScreen() {
         </Text>
         <Text style={styles.contentText}>
           • Supabase Inc.: 인증, 데이터베이스, 이미지 저장소 및 서버리스 함수 관리
-          {"\n"}• Expo (Expo Push): 푸시 알림 발송{"\n"}• 생성형 AI 서비스 제공업체:
+          {"\n"}• Expo (Expo Push): 푸시 알림 발송{"\n"}• OpenAI, L.L.C.(미국):
           요가톡 AI 도우미 답변 생성 처리
         </Text>
 
