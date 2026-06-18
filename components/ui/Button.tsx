@@ -2,7 +2,6 @@ import React from "react";
 import {
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   TextStyle,
   View,
@@ -64,9 +63,9 @@ function getContainerStyle(
     case "secondary":
       return {
         ...base,
-        backgroundColor: disabled ? "transparent" : COLORS.surfaceDark,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: COLORS.border,
+        backgroundColor: disabled ? "transparent" : COLORS.surface,
+        borderWidth: 1,
+        borderColor: COLORS.borderStrong,
       };
     case "outline":
       return {
