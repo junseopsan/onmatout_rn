@@ -53,7 +53,31 @@ export const teacherApi = {
     if (studioId) q = q.eq("studio_id", studioId);
     const { data, error } = await q.order("created_at", { ascending: false });
     if (error) throw error;
-    return (data ?? []) as StudentProfile[];
+    const students = (data ?? []) as StudentProfileWithSummary[];
+    if (students.length === 0) return students;
+
+    // 회원별 '활성 수련권' 부착 — status=active + 만료 전 (+ 횟수권은 잔여 있음).
+    // 이게 없으면 회원은 '수련권 없음'(미발급/만료)으로 분류된다.
+    const ids = students.map((s) => s.id);
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: mships } = await supabase
+      .from("memberships")
+      .select("*")
+      .in("student_id", ids)
+      .eq("status", "active")
+      .gte("end_date", today);
+    const usable = (m: Membership) =>
+      m.type === "count" ? (m.used_count ?? 0) < (m.total_count ?? 0) : true;
+    const byStudent = new Map<string, Membership>();
+    for (const m of (mships ?? []) as Membership[]) {
+      if (!usable(m)) continue;
+      const prev = byStudent.get(m.student_id);
+      if (!prev || m.end_date > prev.end_date) byStudent.set(m.student_id, m);
+    }
+    return students.map((s) => ({
+      ...s,
+      active_membership: byStudent.get(s.id) ?? null,
+    }));
   },
 
   async getStudent(studentProfileId: string) {

@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { COLORS } from "../../constants/Colors";
 
-export type StatusKind = "active" | "paused" | "archived";
+export type StatusKind = "active" | "paused" | "archived" | "no_pass";
 
 interface StatusChipProps {
   status: StatusKind;
@@ -16,12 +16,14 @@ const BASE_LABEL: Record<StatusKind, string> = {
   active: "수련중",
   paused: "휴식중",
   archived: "보관",
+  no_pass: "수련권 없음",
 };
 
 const BASE_COLOR: Record<StatusKind, string> = {
   active: COLORS.primary,
   paused: COLORS.warning,
   archived: COLORS.textSecondary,
+  no_pass: COLORS.textSecondary,
 };
 
 export function StatusChip({

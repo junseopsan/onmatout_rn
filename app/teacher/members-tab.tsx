@@ -27,7 +27,7 @@ import { SPACING } from "../../constants/Design";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { pivotStudioApi } from "../../lib/api/pivotStudio";
-import { teacherApi } from "../../lib/api/teacher";
+import { teacherApi, type StudentProfileWithSummary } from "../../lib/api/teacher";
 import { yogaTalkApi } from "../../lib/api/yogaTalk";
 import { RootStackParamList } from "../../navigation/types";
 import type { StudentProfile } from "../../types/teacher";
@@ -38,7 +38,7 @@ export default function TeacherMembersTabScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
   const { activeStudio } = usePivotStudios();
-  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [students, setStudents] = useState<StudentProfileWithSummary[]>([]);
   const [teacherIds, setTeacherIds] = useState<Set<string>>(new Set());
   // 안읽은 요가톡이 있는 수련생 프로필 id
   const [unreadIds, setUnreadIds] = useState<Set<string>>(new Set());
@@ -155,11 +155,12 @@ export default function TeacherMembersTabScreen() {
     }
   };
 
-  const renderRow = (s: StudentProfile) => (
+  const renderRow = (s: StudentProfileWithSummary) => (
     <StudentRow
       key={s.id}
       student={s}
       isTeacher={isTeacher(s)}
+      noActivePass={s.status === "active" && !s.active_membership}
       onPress={() =>
         navigation.navigate("TeacherMemberDetail", {
           studentProfileId: s.id,
@@ -186,7 +187,11 @@ export default function TeacherMembersTabScreen() {
   const hasCustom = (s: StudentProfile) =>
     !!((s as any).custom_status as string | null | undefined)?.trim();
   const activeMembers = roleFiltered.filter(
-    (s) => !hasCustom(s) && s.status === "active",
+    (s) => !hasCustom(s) && s.status === "active" && !!s.active_membership,
+  );
+  // status 는 active 지만 활성 수련권이 없는 회원 (미발급/만료)
+  const noPassMembers = roleFiltered.filter(
+    (s) => !hasCustom(s) && s.status === "active" && !s.active_membership,
   );
   const pausedMembers = roleFiltered.filter(
     (s) => !hasCustom(s) && s.status !== "active",
@@ -265,9 +270,23 @@ export default function TeacherMembersTabScreen() {
             </>
           ) : null}
 
-          {pausedMembers.length > 0 ? (
+          {noPassMembers.length > 0 ? (
             <View
               style={{ marginTop: activeMembers.length > 0 ? SPACING.xl : 0 }}
+            >
+              <SectionLabel>수련권 없음 ({noPassMembers.length})</SectionLabel>
+              {noPassMembers.map(renderRow)}
+            </View>
+          ) : null}
+
+          {pausedMembers.length > 0 ? (
+            <View
+              style={{
+                marginTop:
+                  activeMembers.length > 0 || noPassMembers.length > 0
+                    ? SPACING.xl
+                    : 0,
+              }}
             >
               <SectionLabel>휴식중 ({pausedMembers.length})</SectionLabel>
               {pausedMembers.map(renderRow)}
@@ -278,7 +297,9 @@ export default function TeacherMembersTabScreen() {
             <View
               style={{
                 marginTop:
-                  activeMembers.length > 0 || pausedMembers.length > 0
+                  activeMembers.length > 0 ||
+                  noPassMembers.length > 0 ||
+                  pausedMembers.length > 0
                     ? SPACING.xl
                     : 0,
               }}

@@ -4,13 +4,16 @@ import { COLORS } from "../../constants/Colors";
 import { formatPhone } from "../../lib/format";
 import type { StudentProfile } from "../../types/teacher";
 import { Avatar } from "../ui/Avatar";
-import { StatusChip } from "../ui/StatusChip";
+import { StatusChip, type StatusKind } from "../ui/StatusChip";
 
 interface StudentRowProps {
   student: StudentProfile;
   onPress?: (student: StudentProfile) => void;
   rightSlot?: React.ReactNode;
   isTeacher?: boolean;
+  /** status=active 이지만 활성 수련권이 없을 때 → '수련권 없음' 칩 표시.
+   *  호출부가 수련권 정보를 로드한 경우에만 넘긴다(미지정 시 기존 status 그대로). */
+  noActivePass?: boolean;
 }
 
 export function StudentRow({
@@ -18,12 +21,16 @@ export function StudentRow({
   onPress,
   rightSlot,
   isTeacher,
+  noActivePass,
 }: StudentRowProps) {
   const customStatus = (student as any).custom_status as
     | string
     | null
     | undefined;
   const hasLinkedUser = !!student.user_id;
+  const baseStatus = student.status as StatusKind;
+  const effectiveStatus: StatusKind =
+    noActivePass && baseStatus === "active" ? "no_pass" : baseStatus;
 
   return (
     <TouchableOpacity
@@ -59,7 +66,7 @@ export function StudentRow({
         ) : null}
       </View>
       <StatusChip
-        status={student.status as "active" | "paused" | "archived"}
+        status={effectiveStatus}
         customLabel={customStatus}
         size="sm"
       />

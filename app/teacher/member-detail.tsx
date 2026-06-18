@@ -20,7 +20,7 @@ import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { IconBadge } from "../../components/ui/IconBadge";
 import { SectionLabel } from "../../components/ui/SectionLabel";
-import { StatusChip } from "../../components/ui/StatusChip";
+import { StatusChip, type StatusKind } from "../../components/ui/StatusChip";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
@@ -293,6 +293,20 @@ export default function TeacherMemberDetailScreen() {
     );
   }
 
+  // 목록(members-tab)과 동일 기준: status=active 인데 활성 수련권이 없으면 '수련권 없음'
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const hasActivePass =
+    !!membership &&
+    membership.status === "active" &&
+    membership.end_date >= todayStr &&
+    (membership.type === "count"
+      ? (membership.used_count ?? 0) < (membership.total_count ?? 0)
+      : true);
+  const effectiveStatus: StatusKind =
+    student.status === "active" && !hasActivePass
+      ? "no_pass"
+      : (student.status as StatusKind);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
@@ -332,7 +346,7 @@ export default function TeacherMemberDetailScreen() {
                 {student.name}
               </Text>
               <StatusChip
-                status={student.status as "active" | "paused" | "archived"}
+                status={effectiveStatus}
                 customLabel={
                   (student as any).custom_status as string | null | undefined
                 }
@@ -526,7 +540,7 @@ export default function TeacherMemberDetailScreen() {
             </SurfaceCard>
           ) : (
             <SurfaceCard style={styles.card}>
-              <Text style={styles.empty}>활성 수련권이 없어요.</Text>
+              <Text style={styles.empty}>발급된 수련권이 없어요.</Text>
             </SurfaceCard>
           )}
         </View>
