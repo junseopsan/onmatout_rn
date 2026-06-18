@@ -20,6 +20,7 @@ import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
 import SimpleDatePicker from "../../components/SimpleDatePicker";
 import { AlertDialog } from "../../components/ui/AlertDialog";
 import { Button } from "../../components/ui/Button";
+import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
@@ -129,26 +130,23 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
       return;
     }
 
+    // 아사나만 필수 (메모/컨디션/사진은 선택)
     if (selectedAsanas.length === 0) {
-      Alert.alert("알림", "최소 1개의 아사나를 선택해주세요.");
-      return;
-    }
-
-    if (selectedStates.length === 0) {
-      Alert.alert("알림", "상태를 선택해주세요.");
-      return;
-    }
-
-    if (!memo.trim()) {
-      Alert.alert("알림", "메모를 입력해주세요.");
+      Alert.alert("알림", "수련한 아사나를 1개 이상 선택해주세요.");
       return;
     }
 
     try {
       setLoading(true);
 
+      // 메모가 없으면 아사나로 제목 자동 생성
+      const fallbackTitle =
+        selectedAsanas.length === 1
+          ? selectedAsanas[0].sanskrit_name_kr
+          : `${selectedAsanas[0].sanskrit_name_kr} 외 ${selectedAsanas.length - 1}개`;
+
       const recordData: RecordFormData = {
-        title: memo.trim(), // 메모 내용을 제목으로 사용
+        title: memo.trim() || fallbackTitle,
         asanas: selectedAsanas.map((asana) => asana.id),
         memo: memo.trim(),
         states: selectedStates,
@@ -195,8 +193,9 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* X 버튼 */}
-        <View style={styles.closeButtonContainer}>
+        {/* 헤더 */}
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>수련 기록</Text>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
@@ -204,16 +203,16 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
 
         {/* 수련 날짜 선택 */}
         <View style={styles.section}>
+          <SectionLabel>수련 날짜</SectionLabel>
           <SimpleDatePicker
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
           />
-          <Text style={styles.stateSubtitleText}>수련 날짜를 선택해주세요</Text>
         </View>
 
-        {/* 아사나 선택 */}
+        {/* 아사나 선택 (필수) */}
         <View style={styles.section}>
-          {/* 아사나 추가 버튼 */}
+          <SectionLabel>아사나 (필수)</SectionLabel>
           <Button
             title="+ 아사나"
             size="medium"
@@ -222,7 +221,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           />
 
           <Text style={styles.asanaCountText}>
-            최대 20개까지 선택 가능 ({selectedAsanas.length}/20)
+            오늘 수련한 자세를 추가하세요 ({selectedAsanas.length}/20)
           </Text>
 
           {/* 선택된 아사나 */}
@@ -237,8 +236,9 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           )}
         </View>
 
-        {/* 상태 선택 */}
+        {/* 오늘 컨디션 (선택) */}
         <View style={styles.section}>
+          <SectionLabel>오늘 컨디션 (선택)</SectionLabel>
           <View style={styles.statesContainer}>
             {STATES.map((state) => (
               <TouchableOpacity
@@ -270,13 +270,12 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.stateSubtitleText}>
-            수련 중 느낀 상태를 선택해주세요 (최대 3개)
-          </Text>
+          <Text style={styles.stateSubtitleText}>최대 3개까지 선택</Text>
         </View>
 
-        {/* 메모 작성 */}
+        {/* 메모 작성 (선택) */}
         <View style={styles.section}>
+          <SectionLabel>메모 (선택)</SectionLabel>
           <TextInput
             style={styles.memoInput}
             placeholder="오늘 수련에서 느낀 점을 자유롭게 기록해보세요..."
@@ -289,11 +288,11 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           <Text style={styles.characterCount}>{memo.length}/500</Text>
         </View>
 
-        {/* 사진 첨부 */}
+        {/* 사진 첨부 (선택) */}
         <View style={styles.section}>
-          <Text style={styles.stateSubtitleText}>
-            사진 ({photos.length}/{MAX_PHOTOS})
-          </Text>
+          <SectionLabel>
+            사진 (선택) {photos.length}/{MAX_PHOTOS}
+          </SectionLabel>
           <View style={styles.photoGrid}>
             {photos.map((url) => (
               <View key={url} style={styles.photoItem}>
@@ -334,11 +333,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           title="저장"
           size="large"
           loading={loading}
-          disabled={
-            selectedAsanas.length === 0 ||
-            selectedStates.length === 0 ||
-            memo.trim().length === 0
-          }
+          disabled={selectedAsanas.length === 0}
           onPress={handleSave}
         />
       </View>
@@ -377,6 +372,13 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontWeight: "300",
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  headerTitle: { color: COLORS.text, fontSize: 20, fontWeight: "700" },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
