@@ -292,9 +292,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: COLORS.surfaceDark,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.45)",
+    backgroundColor: "rgba(139, 92, 246, 0.14)",
   },
-  countChipText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: "700" },
+  countChipText: { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   title: {
     color: COLORS.text,
