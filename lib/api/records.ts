@@ -127,139 +127,20 @@ export const recordsAPI = {
         user_id = auth.userId;
       }
 
-      // 심사용 테스트 계정 user_id (01000000000)
-      // 실제 DB에 등록된 user_id: '7ec451a9-5895-40f5-bbc0-b6605c1407ed'
-      const TEST_ACCOUNT_USER_ID = "7ec451a9-5895-40f5-bbc0-b6605c1407ed";
-      const isTestAccount = user_id === TEST_ACCOUNT_USER_ID;
-
-      // 세션 관련 변수 선언 (테스트 계정이 아닐 때만 사용)
-      let session: any = null;
-      let verifyUser: any = null;
-
-      // 테스트 계정이 아닌 경우에만 세션 확인
-      if (!isTestAccount) {
-        // 세션 명시적으로 확인 및 갱신 (RLS 정책이 auth.uid()를 사용하므로 필수)
-        // getUser()를 호출하면 세션이 자동으로 갱신되고 검증됨
-        const {
-          data: { user: currentUser },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError || !currentUser) {
-          logger.error("세션 확인 실패:", userError);
-          return {
-            success: false,
-            message: "세션이 만료되었습니다. 다시 로그인해주세요.",
-          };
-        }
-
-        // 세션의 사용자 ID와 일치하는지 확인
-        if (currentUser.id !== user_id) {
-          logger.error("세션 사용자 ID와 요청 사용자 ID가 일치하지 않습니다.", {
-            sessionUserId: currentUser.id,
-            requestUserId: user_id,
-          });
-          return {
-            success: false,
-            message: "권한이 없습니다.",
-          };
-        }
-
-        // 세션 확인 및 갱신 (getUser() 후 세션을 다시 가져와서 최신 상태 확인)
-        const {
-          data: { session: currentSession },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        session = currentSession;
-
-        if (sessionError || !session) {
-          logger.error("세션 가져오기 실패:", sessionError);
-          return {
-            success: false,
-            message: "세션이 만료되었습니다. 다시 로그인해주세요.",
-          };
-        }
-
-        // 세션이 만료되었는지 확인
-        const now = Math.floor(Date.now() / 1000);
-        if (session.expires_at && session.expires_at < now) {
-          logger.error("세션이 만료되었습니다:", {
-            expiresAt: session.expires_at,
-            now: now,
-          });
-          return {
-            success: false,
-            message: "세션이 만료되었습니다. 다시 로그인해주세요.",
-          };
-        }
-
-        // access_token이 있는지 확인
-        if (!session.access_token) {
-          logger.error("세션에 access_token이 없습니다.");
-          return {
-            success: false,
-            message: "세션이 유효하지 않습니다. 다시 로그인해주세요.",
-          };
-        }
-
-        logger.log("세션 확인 완료:", {
-          userId: user_id,
-          sessionUserId: currentUser.id,
-          sessionExpiresAt: session.expires_at,
-          hasAccessToken: !!session.access_token,
-          accessTokenLength: session.access_token?.length || 0,
-        });
-      } else {
-        logger.log("테스트 계정으로 기록 생성 (세션 확인 건너뜀):", {
-          userId: user_id,
-        });
-      }
-
-      // 새로운 기록 생성 (하루에 여러 기록 허용)
+      // 기록 페이로드. 권한은 RLS(auth.uid())가 보장하고,
+      // 세션은 supabase 클라이언트가 요청에 자동 첨부하므로 별도 검증 불필요.
       const recordPayload = {
-        user_id: user_id,
+        user_id,
         practice_date: practiceDate,
-        practice_time: new Date().toISOString(), // 현재 시간으로 수련 시간 설정
-        title: recordData.title, // 기록 제목
-        asanas: recordData.asanas, // 아사나 ID 배열
+        practice_time: new Date().toISOString(),
+        title: recordData.title,
+        asanas: recordData.asanas,
         memo: recordData.memo,
-        states: recordData.states, // 상태 배열
-        photos: recordData.photos || [], // 사진 URL 배열
+        states: recordData.states,
+        photos: recordData.photos || [],
         updated_at: new Date().toISOString(),
       };
 
-      // 새 기록 생성 전에 세션 상태를 한 번 더 확인 (테스트 계정 제외)
-      // Supabase 클라이언트가 세션을 자동으로 포함하지만, 명시적으로 확인
-      if (!isTestAccount) {
-        const {
-          data: { user: currentVerifyUser },
-        } = await supabase.auth.getUser();
-
-        verifyUser = currentVerifyUser;
-
-        if (!verifyUser || verifyUser.id !== user_id) {
-          logger.error("최종 세션 검증 실패:", {
-            verifyUserId: verifyUser?.id,
-            expectedUserId: user_id,
-          });
-          return {
-            success: false,
-            message: "세션 검증에 실패했습니다. 다시 로그인해주세요.",
-          };
-        }
-      }
-
-      logger.log("기록 저장 시도:", {
-        userId: user_id,
-        payload: {
-          ...recordPayload,
-          asanas: recordPayload.asanas.length,
-          states: recordPayload.states.length,
-        },
-      });
-
-      // 새 기록 생성
       const { data, error } = await supabase
         .from("practice_records")
         .insert(recordPayload)
@@ -270,29 +151,17 @@ export const recordsAPI = {
         logger.error("기록 저장 실패:", {
           error: error.message,
           code: error.code,
-          details: error.details,
-          hint: error.hint,
           userId: user_id,
-          isTestAccount: isTestAccount,
-          hasSession: !!session,
-          sessionUserId: verifyUser?.id,
-          sessionExpiresAt: session?.expires_at,
         });
-
-        // RLS 정책 위반 에러인 경우 더 명확한 메시지
         if (
           error.code === "42501" ||
           error.message.includes("row-level security")
         ) {
-          // RLS 정책 위반은 보통 세션이 제대로 전달되지 않았을 때 발생
-          // 세션을 다시 확인하고 사용자에게 재로그인 안내
-          logger.error("RLS 정책 위반 - 세션 재확인 필요");
           return {
             success: false,
             message: "인증이 필요합니다. 다시 로그인해주세요.",
           };
         }
-
         return {
           success: false,
           message: error.message || "기록을 저장하는데 실패했습니다.",

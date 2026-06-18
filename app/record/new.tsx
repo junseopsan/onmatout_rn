@@ -166,16 +166,12 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         queryClient.invalidateQueries({ queryKey: ["recentRecords"] });
         queryClient.invalidateQueries({ queryKey: ["allRecords"] });
 
-        // 저장 후 클래스 탭으로 이동 (모달/스택 공통)
+        // 저장 후 원래 화면으로 복귀 (수련 탭에서 왔으면 수련 탭으로)
         if (onClose) {
           onClose();
+        } else {
+          navigation.goBack();
         }
-        navigation.reset({
-          index: 0,
-          routes: [
-            { name: "TabNavigator", params: { screen: "Classes" } as any },
-          ],
-        });
       } else {
         Alert.alert("오류", result.message || "기록 저장에 실패했습니다.");
       }
