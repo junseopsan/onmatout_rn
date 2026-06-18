@@ -1,4 +1,7 @@
-import { useFocusEffect } from "@react-navigation/native";
+import {
+  createNavigationContainerRef,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useCallback, useRef, useState } from "react";
 import { BackHandler, ToastAndroid } from "react-native";
@@ -9,6 +12,10 @@ import TeacherTabNavigator from "./TeacherTabNavigator";
 import { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+// NavigationContainer 에 연결되는 전역 ref.
+// 딥링크 같은 네비게이터 바깥(루트) 로직에서 reset 과 무관하게 항상 네비게이션할 수 있게 한다.
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function AppNavigator() {
   console.log("=== AppNavigator 렌더링 시작 ===");
