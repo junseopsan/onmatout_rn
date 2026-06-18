@@ -91,6 +91,13 @@ export function RoutineCard({
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.card}>
       <View style={styles.hero}>
+        {isPublic ? (
+          <View style={styles.publicBadgeRow}>
+            <View style={styles.publicBadge}>
+              <Text style={styles.publicBadgeText}>공개</Text>
+            </View>
+          </View>
+        ) : null}
         {hasItems ? (
           <View style={styles.heroRow}>
             {previewItems.map((p, idx) => {
@@ -124,11 +131,6 @@ export function RoutineCard({
             <Text style={styles.heroEmptyText}>아사나 없음</Text>
           </View>
         )}
-        {isPublic ? (
-          <View style={styles.publicBadge}>
-            <Text style={styles.publicBadgeText}>공개</Text>
-          </View>
-        ) : null}
       </View>
 
       <View style={styles.body}>
@@ -246,14 +248,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   heroEmptyText: { color: COLORS.textMuted, fontSize: 12, fontWeight: "700" },
+  publicBadgeRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 8,
+  },
   publicBadge: {
-    position: "absolute",
-    top: -12,
-    right: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
     backgroundColor: "rgba(139, 92, 246, 0.92)",
