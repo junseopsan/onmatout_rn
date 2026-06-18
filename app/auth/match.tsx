@@ -37,7 +37,7 @@ export default function AuthMatchScreen() {
   const autoTriedRef = React.useRef(false);
   // 가입/연결 결과 모달 (Alert 대신 공통 Dialog 로 예쁘게)
   const [result, setResult] = useState<{
-    type: "success" | "error";
+    type: "success" | "error" | "info";
     title: string;
     message: string;
   } | null>(null);
@@ -117,11 +117,20 @@ export default function AuthMatchScreen() {
         user.id,
         user.phone ?? null,
       );
-      setResult({
-        type: "success",
-        title: "요가원 연결 완료",
-        message: `${res.studioName || "요가원"}에 연결되었어요.\n이제 클래스와 일정을 받아볼 수 있어요.`,
-      });
+      if (res.already) {
+        // 이미 그 요가원에 연결돼 있던 경우 (멱등)
+        setResult({
+          type: "info",
+          title: "이미 연결된 요가원",
+          message: `${res.studioName || "요가원"}에 이미 연결되어 있어요.`,
+        });
+      } else {
+        setResult({
+          type: "success",
+          title: "요가원 연결 완료",
+          message: `${res.studioName || "요가원"}에 연결되었어요.\n이제 클래스와 일정을 받아볼 수 있어요.`,
+        });
+      }
     } catch (e: any) {
       const msg =
         e?.message === "STUDIO_NOT_FOUND"
@@ -208,13 +217,13 @@ export default function AuthMatchScreen() {
         title={result?.title}
         message={result?.message}
         onClose={() =>
-          result?.type === "success" ? finish() : setResult(null)
+          result?.type === "error" ? setResult(null) : finish()
         }
         buttons={[
           {
             text: "확인",
             onPress: () =>
-              result?.type === "success" ? finish() : setResult(null),
+              result?.type === "error" ? setResult(null) : finish(),
           },
         ]}
       />
