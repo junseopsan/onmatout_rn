@@ -4,7 +4,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
+import Dialog from "../../components/ui/Dialog";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import {
@@ -35,6 +35,12 @@ export default function AuthMatchScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const autoTriedRef = React.useRef(false);
+  // 가입/연결 결과 모달 (Alert 대신 공통 Dialog 로 예쁘게)
+  const [result, setResult] = useState<{
+    type: "success" | "error";
+    title: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -75,13 +81,17 @@ export default function AuthMatchScreen() {
     setSubmitting(true);
     try {
       await studentApi.acceptMatch(user.id, c.studentProfileId);
-      Alert.alert(
-        "연결 완료",
-        `${c.teacherStudioName ?? "선생님"} 님과 연결되었어요.`,
-        [{ text: "확인", onPress: finish }],
-      );
+      setResult({
+        type: "success",
+        title: "연결 완료",
+        message: `${c.teacherStudioName ?? "선생님"} 님과 연결되었어요.`,
+      });
     } catch (e: any) {
-      Alert.alert("연결 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+      setResult({
+        type: "error",
+        title: "연결 실패",
+        message: e?.message ?? "잠시 후 다시 시도해 주세요.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -99,34 +109,35 @@ export default function AuthMatchScreen() {
           user.id,
           user.phone ?? null,
         );
-        Alert.alert(
-          "연결 완료",
-          `${res.studioName || "요가원"}에 연결되었어요.`,
-          [{ text: "확인", onPress: finish }],
-        );
+        setResult({
+          type: "success",
+          title: "요가원 연결 완료",
+          message: `${res.studioName || "요가원"}에 연결되었어요.\n이제 클래스와 일정을 받아볼 수 있어요.`,
+        });
         return;
       }
 
       // 레거시 회원 코드(ONM-)
       const linked = await studentApi.linkByInviteCode(user.id, value);
       if (!linked) {
-        Alert.alert(
-          "코드 확인",
-          "사용 가능한 초대 코드가 아니에요. 다시 확인해 주세요.",
-        );
+        setResult({
+          type: "error",
+          title: "코드 확인",
+          message: "사용 가능한 초대 코드가 아니에요. 다시 확인해 주세요.",
+        });
         return;
       }
-      Alert.alert(
-        "연결 완료",
-        `${linked.teacherStudioName ?? "선생님"} 님과 연결되었어요.`,
-        [{ text: "확인", onPress: finish }],
-      );
+      setResult({
+        type: "success",
+        title: "연결 완료",
+        message: `${linked.teacherStudioName ?? "선생님"} 님과 연결되었어요.`,
+      });
     } catch (e: any) {
       const msg =
         e?.message === "STUDIO_NOT_FOUND"
           ? "유효하지 않은 초대 링크예요. 선생님께 다시 받아주세요."
           : (e?.message ?? "잠시 후 다시 시도해 주세요.");
-      Alert.alert("연결 실패", msg);
+      setResult({ type: "error", title: "연결 실패", message: msg });
     } finally {
       setSubmitting(false);
     }
@@ -200,6 +211,23 @@ export default function AuthMatchScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Dialog
+        visible={!!result}
+        type={result?.type}
+        title={result?.title}
+        message={result?.message}
+        onClose={() =>
+          result?.type === "success" ? finish() : setResult(null)
+        }
+        buttons={[
+          {
+            text: "확인",
+            onPress: () =>
+              result?.type === "success" ? finish() : setResult(null),
+          },
+        ]}
+      />
     </SafeAreaView>
   );
 }
