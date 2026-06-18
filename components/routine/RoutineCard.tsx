@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
   heroEmptyText: { color: COLORS.textMuted, fontSize: 12, fontWeight: "700" },
   publicBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: -12,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
