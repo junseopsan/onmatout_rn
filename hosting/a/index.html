@@ -23,18 +23,7 @@
         text-align: center;
       }
       h1 { font-size: 22px; margin: 0 0 8px; }
-      p { color: #a1a1aa; font-size: 14px; line-height: 1.5; margin: 0 0 20px; }
-      .code {
-        display: inline-block;
-        font-size: 20px;
-        font-weight: 800;
-        letter-spacing: 2px;
-        background: #1a1a1a;
-        border: 1px solid #2a2a2a;
-        border-radius: 12px;
-        padding: 12px 18px;
-        margin-bottom: 24px;
-      }
+      p { color: #a1a1aa; font-size: 14px; line-height: 1.5; margin: 0 0 24px; }
       .btn {
         display: block;
         text-decoration: none;
@@ -52,19 +41,15 @@
   <body>
     <div class="card">
       <h1>온매트아웃 초대</h1>
-      <p>아래 버튼으로 앱을 설치하고 열면<br />선생님과 자동으로 연결돼요.</p>
-      <div class="code" id="code">ONM-XXXX</div>
+      <p>아래 버튼으로 앱을 설치하고 열면<br />요가원과 자동으로 연결돼요.</p>
       <a class="btn" id="ios" href="https://apps.apple.com/app/id6746711838">App Store에서 받기</a>
       <a class="btn" id="android" href="https://play.google.com/store/apps/details?id=com.onmatout.app">Google Play에서 받기</a>
       <a class="btn secondary" id="open" href="#">이미 설치했어요 — 앱 열기</a>
     </div>
     <script>
-      // 경로 /a/CODE 에서 초대 코드 추출
+      // 경로 /a/CODE 에서 초대 코드 추출 (표시하지 않고 앱 열기 링크에만 사용)
       var parts = location.pathname.split("/").filter(Boolean);
       var code = (parts[parts.length - 1] || "").toUpperCase();
-      if (code && code !== "A") {
-        document.getElementById("code").textContent = code;
-      }
       // 커스텀 스킴으로 앱 직접 열기 (유니버설 링크가 안 잡힐 때 수동 진입)
       document.getElementById("open").setAttribute(
         "href",

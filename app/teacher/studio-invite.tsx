@@ -76,11 +76,6 @@ export default function TeacherStudioInviteScreen() {
               현장에서 이 QR을 보여주고 스캔하게 하세요.
             </Text>
 
-            <View style={styles.codeRow}>
-              <Text style={styles.codeLabel}>초대 코드</Text>
-              <Text style={styles.codeValue}>{code}</Text>
-            </View>
-
             <TouchableOpacity
               style={styles.shareBtn}
               onPress={handleShare}
@@ -116,19 +111,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: SPACING.md,
     textAlign: "center",
-  },
-  codeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.sm,
-    marginTop: SPACING.lg,
-  },
-  codeLabel: { color: COLORS.textSecondary, fontSize: 13 },
-  codeValue: {
-    color: COLORS.text,
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 1,
   },
   shareBtn: {
     flexDirection: "row",
