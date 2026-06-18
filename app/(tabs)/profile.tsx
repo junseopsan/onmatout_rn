@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import DatePickerModal from "../../components/DatePickerModal";
 import SimpleRecordCard from "../../components/SimpleRecordCard";
 import StoryShareModal from "../../components/StoryShareModal";
+import { FabButton } from "../../components/ui/FabButton";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
@@ -364,6 +365,12 @@ export default function ProfileScreen() {
           backgroundAsanaImageNumbers,
         }}
       />
+
+      <FabButton
+        label="기록"
+        onPress={() => navigation.navigate("NewRecord")}
+        style={styles.fab}
+      />
     </SafeAreaView>
   );
 }
@@ -372,6 +379,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  fab: {
+    position: "absolute",
+    right: SPACING.lg,
+    bottom: SPACING.lg + 8,
   },
   roleChip: {
     flexDirection: "row",
