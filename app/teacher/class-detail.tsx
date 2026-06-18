@@ -20,6 +20,7 @@ import { StudentRow } from "../../components/teacher/StudentRow";
 import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { PillInput } from "../../components/ui/PillInput";
+import { Sheet } from "../../components/ui/Sheet";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
@@ -53,6 +54,7 @@ export default function TeacherClassDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const load = useCallback(async () => {
     const [c, m] = await Promise.all([
@@ -165,22 +167,16 @@ export default function TeacherClassDetailScreen() {
         title={cls.title}
         serif={false}
         trailingSlot={
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={handleDelete}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Ionicons name="trash-outline" size={21} color={COLORS.error} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("TeacherClassEdit", { classId })
-              }
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={styles.headerEdit}>수정</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => setMenuOpen(true)}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={22}
+              color={COLORS.text}
+            />
+          </TouchableOpacity>
         }
       />
 
@@ -313,6 +309,36 @@ export default function TeacherClassDetailScreen() {
         onClose={() => setAttendanceOpen(false)}
         classId={classId}
       />
+
+      <Sheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        title={cls.title}
+        scrollable={false}
+      >
+        <TouchableOpacity
+          style={styles.menuRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setMenuOpen(false);
+            navigation.navigate("TeacherClassEdit", { classId });
+          }}
+        >
+          <Ionicons name="create-outline" size={20} color={COLORS.text} />
+          <Text style={styles.menuText}>수정</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setMenuOpen(false);
+            handleDelete();
+          }}
+        >
+          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+          <Text style={[styles.menuText, { color: COLORS.error }]}>삭제</Text>
+        </TouchableOpacity>
+      </Sheet>
     </SafeAreaView>
   );
 }
@@ -485,8 +511,13 @@ function AssignStudentsModal({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 18 },
-  headerEdit: { color: COLORS.primary, fontSize: 15, fontWeight: "600" },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+  },
+  menuText: { color: COLORS.text, fontSize: 16, fontWeight: "600" },
   header: {
     flexDirection: "row",
     alignItems: "center",
