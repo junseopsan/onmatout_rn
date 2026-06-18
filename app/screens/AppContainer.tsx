@@ -7,7 +7,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Alert, Linking, Platform, View } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useRoles } from "../../hooks/useRoles";
-import { extractInviteCode } from "../../lib/invite";
 import { registerPushTokenForUser } from "../../lib/pushTokens";
 import { supabase } from "../../lib/supabase";
 import { COLORS } from "../../constants/Colors";
@@ -120,36 +119,8 @@ export default function AppContainer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, rolesLoaded]);
 
-  // 초대 딥링크
-  //  - 유니버설 링크: https://onmatout.com/a/OMS-XXXX
-  //  - 커스텀 스킴(레거시): onmatout://invite?code=OMS-XXXX
-  // 받은 코드는 항상 state 에 저장하고, 실제 AuthMatch 이동은 아래 리다이렉트
-  // (navigation.reset) 와의 레이스를 피하려고 두 경로로 나눠 처리한다.
-  const [pendingInvite, setPendingInvite] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onUrl = (url: string | null) => {
-      const code = extractInviteCode(url);
-      if (code) setPendingInvite(code);
-    };
-    Linking.getInitialURL()
-      .then(onUrl)
-      .catch(() => undefined);
-    const sub = Linking.addEventListener("url", ({ url }) => onUrl(url));
-    return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 앱 사용 중(리다이렉트 완료 후) 도착한 초대코드 → 바로 AuthMatch 로 이동.
-  // 최초 실행(cold start) 초대코드는 아래 리다이렉트 useEffect 가 reset 에
-  // AuthMatch 를 함께 실어 처리하므로 여기서는 hasRedirected 일 때만 다룬다.
-  useEffect(() => {
-    if (pendingInvite && hasRedirected && isAuthenticated && rolesLoaded) {
-      const code = pendingInvite;
-      setPendingInvite(null);
-      navigation.navigate("AuthMatch", { inviteCode: code });
-    }
-  }, [pendingInvite, hasRedirected, isAuthenticated, rolesLoaded, navigation]);
+  // 초대 딥링크 처리는 루트 InviteLinkListener(app/index.tsx)가 전담한다.
+  // (AppContainer 는 reset 으로 언마운트되므로 초대 코드를 보관할 수 없음)
 
   // 이미 초기화되었는지 추적
   const hasInitializedRef = useRef(false);
@@ -347,11 +318,6 @@ export default function AppContainer() {
         targetRoute = "TeacherTabNavigator";
       }
 
-      // cold start 로 받은 초대코드는 reset 라우트에 AuthMatch 를 함께 실어
-      // 리다이렉트가 초대 화면을 덮어쓰지 않게 한다. (위 useEffect 와 중복 방지 위해 즉시 비움)
-      const invite = isAuthenticated ? pendingInvite : null;
-      if (invite) setPendingInvite(null);
-
       // 중복 리다이렉트 방지
       setHasRedirected(true);
 
@@ -362,20 +328,10 @@ export default function AppContainer() {
       setTimeout(() => {
         try {
           console.log("[AppContainer] navigation.reset 시도");
-          navigation.reset(
-            invite
-              ? {
-                  index: 1,
-                  routes: [
-                    { name: targetRoute },
-                    { name: "AuthMatch", params: { inviteCode: invite } },
-                  ],
-                }
-              : {
-                  index: 0,
-                  routes: [{ name: targetRoute }],
-                },
-          );
+          navigation.reset({
+            index: 0,
+            routes: [{ name: targetRoute }],
+          });
           console.log("[AppContainer] navigation.reset 성공");
           // 초기화 완료 표시
           hasInitializedRef.current = true;
@@ -410,7 +366,6 @@ export default function AppContainer() {
     rolesLoaded,
     isTeacher,
     needsRoleSelection,
-    pendingInvite,
   ]);
 
   // 안전장치: 5초 후에도 리다이렉트가 안 되면 강제로 TabNavigator로 이동 (필수 업데이트 중이면 제외)
