@@ -17,10 +17,10 @@ import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-// 코드 추출:
-//  - https://onmatout.com/a/ONM-XXXX (유니버설 링크)
-//  - onmatout://invite?code=ONM-XXXX (커스텀 스킴)
-//  - ONM-XXXX (코드 원문)
+// 코드 추출 (요가원 단위 초대 OMS- 만):
+//  - https://onmatout.com/a/OMS-XXXX (유니버설 링크)
+//  - onmatout://invite?code=OMS-XXXX (커스텀 스킴)
+//  - OMS-XXXX (코드 원문)
 function extractCode(data: string): string | null {
   if (!data) return null;
   const pathM = data.match(/onmatout\.com\/a\/([^/?#\s]+)/i);
@@ -28,7 +28,7 @@ function extractCode(data: string): string | null {
   const m = data.match(/[?&]code=([^&\s]+)/i);
   if (m) return decodeURIComponent(m[1]).toUpperCase();
   const raw = data.trim().toUpperCase();
-  if (/^(ONM|OMS)-[A-Z0-9]+$/.test(raw)) return raw;
+  if (/^OMS-[A-Z0-9]+$/.test(raw)) return raw;
   return null;
 }
 

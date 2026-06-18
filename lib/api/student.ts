@@ -27,7 +27,7 @@ export type StudioJoinResult = {
   created: boolean; // 신규 수련생으로 생성됨
 };
 
-// 요가원 단위 초대코드(OMS-) 와 레거시 회원 코드(ONM-) 구분
+// 요가원 단위 초대코드(OMS-) 형식 확인. 초대는 QR/링크로만 들어오며 코드는 항상 OMS- 다.
 export function isStudioInviteCode(code: string): boolean {
   return /^OMS-/i.test(code.trim());
 }
@@ -160,46 +160,6 @@ export const studentApi = {
       teacherStudioName: studioMap.get(d.teacher_id) ?? null,
       inviteCode: d.invite_code,
     }));
-  },
-
-  // 초대 코드로 연결: ONM-XXXX 형식
-  async linkByInviteCode(
-    userId: string,
-    code: string,
-  ): Promise<MatchCandidate | null> {
-    const normalized = code.trim().toUpperCase();
-    const { data, error } = await supabase
-      .from("student_profiles")
-      .select("id, name, phone, teacher_id, invite_code, user_id")
-      .eq("invite_code", normalized)
-      .is("user_id", null)
-      .limit(1);
-    if (error) throw error;
-    if (!data || data.length === 0) return null;
-    const row = data[0];
-
-    const { error: updateErr } = await supabase
-      .from("student_profiles")
-      .update({
-        user_id: userId,
-        invite_code_used_at: new Date().toISOString(),
-      })
-      .eq("id", row.id);
-    if (updateErr) throw updateErr;
-
-    const { data: t } = await supabase
-      .from("teacher_profiles")
-      .select("studio_name")
-      .eq("user_id", row.teacher_id)
-      .maybeSingle();
-
-    return {
-      studentProfileId: row.id,
-      studentName: row.name,
-      teacherUserId: row.teacher_id,
-      teacherStudioName: t?.studio_name ?? null,
-      inviteCode: row.invite_code,
-    };
   },
 
   async acceptMatch(userId: string, studentProfileId: string) {

@@ -100,37 +100,27 @@ export default function AuthMatchScreen() {
   const handleCodeSubmit = async (rawCode: string) => {
     const value = (rawCode ?? "").trim();
     if (!user?.id || !value) return;
+    // 초대는 QR/링크로만 들어오며 코드는 항상 요가원 단위(OMS-) 다.
+    if (!isStudioInviteCode(value)) {
+      setResult({
+        type: "error",
+        title: "코드 확인",
+        message: "유효하지 않은 초대 링크예요. 선생님께 다시 받아주세요.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       // 요가원 단위 초대(OMS-): 전화 자동매칭 또는 신규 수련생 생성
-      if (isStudioInviteCode(value)) {
-        const res = await studentApi.joinStudioByCode(
-          value,
-          user.id,
-          user.phone ?? null,
-        );
-        setResult({
-          type: "success",
-          title: "요가원 연결 완료",
-          message: `${res.studioName || "요가원"}에 연결되었어요.\n이제 클래스와 일정을 받아볼 수 있어요.`,
-        });
-        return;
-      }
-
-      // 레거시 회원 코드(ONM-)
-      const linked = await studentApi.linkByInviteCode(user.id, value);
-      if (!linked) {
-        setResult({
-          type: "error",
-          title: "코드 확인",
-          message: "사용 가능한 초대 코드가 아니에요. 다시 확인해 주세요.",
-        });
-        return;
-      }
+      const res = await studentApi.joinStudioByCode(
+        value,
+        user.id,
+        user.phone ?? null,
+      );
       setResult({
         type: "success",
-        title: "연결 완료",
-        message: `${linked.teacherStudioName ?? "선생님"} 님과 연결되었어요.`,
+        title: "요가원 연결 완료",
+        message: `${res.studioName || "요가원"}에 연결되었어요.\n이제 클래스와 일정을 받아볼 수 있어요.`,
       });
     } catch (e: any) {
       const msg =
