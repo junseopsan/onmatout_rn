@@ -25,12 +25,13 @@ async function withTeacherStudio(
 ): Promise<RoutineSummary[]> {
   if (routines.length === 0) return [];
   const teacherIds = Array.from(new Set(routines.map((r) => r.teacher_id)));
-  const { data: teachers } = await supabase
-    .from("teacher_profiles")
-    .select("user_id, studio_name")
-    .in("user_id", teacherIds);
+  // 작성자(원장)의 요가원 이름 — 피벗 요가원(pivot_studios) 기준
+  const { data: studios } = await supabase
+    .from("pivot_studios")
+    .select("owner_id, name")
+    .in("owner_id", teacherIds);
   const studioMap = new Map(
-    (teachers ?? []).map((t) => [t.user_id, t.studio_name ?? null]),
+    (studios ?? []).map((s) => [s.owner_id, s.name ?? null]),
   );
   return routines.map((r: any) => {
     const likes: { user_id: string }[] = r.routine_likes ?? [];

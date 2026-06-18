@@ -296,13 +296,15 @@ export const teacherApi = {
         .eq("teacher_id", teacherId)
         .order("created_at", { ascending: false }),
       supabase
-        .from("teacher_profiles")
-        .select("studio_name")
-        .eq("user_id", teacherId)
+        .from("pivot_studios")
+        .select("name")
+        .eq("owner_id", teacherId)
+        .order("created_at", { ascending: true })
+        .limit(1)
         .maybeSingle(),
     ]);
     if (error) throw error;
-    const studioName = profile?.studio_name ?? null;
+    const studioName = profile?.name ?? null;
     return (data ?? []).map((r: any) => {
       const likes: { user_id: string }[] = r.routine_likes ?? [];
       return {

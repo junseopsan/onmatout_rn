@@ -139,13 +139,14 @@ export function RoutineCard({
           <Text style={styles.creatorText} numberOfLines={1}>
             {routine.teacher_studio_name ?? creatorFallback}
           </Text>
-          <View style={styles.creatorDivider} />
-          <Ionicons name="layers-outline" size={12} color={COLORS.textMuted} />
-          <Text style={styles.metaText}>
-            {itemCount > 0 ? `${itemCount}개 아사나` : "아사나 없음"}
-          </Text>
         </View>
         <View style={styles.titleRow}>
+          {itemCount > 0 ? (
+            <View style={styles.countChip}>
+              <Ionicons name="layers-outline" size={11} color={COLORS.textMuted} />
+              <Text style={styles.countChipText}>{itemCount}</Text>
+            </View>
+          ) : null}
           <Text style={[styles.title, { flexShrink: 1 }]} numberOfLines={1}>
             {routine.title}
           </Text>
@@ -288,6 +289,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   metaText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
+  countChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: COLORS.surfaceDark,
+  },
+  countChipText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "700" },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   title: {
     color: COLORS.text,
