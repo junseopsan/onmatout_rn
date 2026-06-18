@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useStudentStudioStore } from "../stores/studentStudioStore";
 import { useAuth } from "./useAuth";
 
@@ -29,6 +29,13 @@ export function useStudentStudios() {
 
   const active = memberships.find((m) => m.studentProfileId === activeProfileId) ?? null;
 
+  // 안정적 참조 — 포커스마다 호출해도 effect 가 자기 자신을 재트리거하지 않게.
+  // (loadMemberships 는 zustand 액션이라 항상 동일 참조)
+  const reloadMemberships = useCallback(
+    () => (user?.id ? loadMemberships(user.id) : Promise.resolve()),
+    [user?.id, loadMemberships],
+  );
+
   return {
     memberships,
     activeMembership: active,
@@ -38,7 +45,6 @@ export function useStudentStudios() {
     loaded,
     error,
     setActiveProfile,
-    reloadMemberships: () =>
-      user?.id ? loadMemberships(user.id) : Promise.resolve(),
+    reloadMemberships,
   };
 }

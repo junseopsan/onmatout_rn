@@ -77,8 +77,13 @@ function fmtDateLabel(iso: string) {
 
 export default function StudentClassesTabScreen() {
   const navigation = useNavigation<Nav>();
-  const { activeMembership, activeStudio, memberships, loaded: studiosLoaded } =
-    useStudentStudios();
+  const {
+    activeMembership,
+    activeStudio,
+    memberships,
+    loaded: studiosLoaded,
+    reloadMemberships,
+  } = useStudentStudios();
 
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
@@ -159,6 +164,15 @@ export default function StudentClassesTabScreen() {
     setClasses(cs);
     setTeacherNames(tn);
   }, [activeMembership]);
+
+  // 탭 포커스 시 멤버십(요가원 가입/해제)도 최신화 — DB에서 바뀐 가입 상태를 반영.
+  // reloadMemberships 는 안정적 참조라 멤버십 변경이 이 effect 를 재트리거하지 않는다.
+  // (멤버십 변경 → activeMembership 변경 → 아래 클래스 로딩 effect 가 클래스를 다시 불러옴)
+  useFocusEffect(
+    useCallback(() => {
+      reloadMemberships();
+    }, [reloadMemberships]),
+  );
 
   useFocusEffect(
     useCallback(() => {
