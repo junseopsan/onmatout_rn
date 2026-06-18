@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../components/ui/Button";
-import { OmIcon } from "../components/ui/OmIcon";
 import { COLORS } from "../constants/Colors";
 import { SPACING } from "../constants/Design";
 import { RootStackParamList } from "../navigation/types";
@@ -24,8 +23,7 @@ const { width } = Dimensions.get("window");
 
 type Slide = {
   key: string;
-  emoji?: string;
-  om?: boolean;
+  kicker: string;
   roles?: boolean;
   title: string;
   desc: string;
@@ -34,39 +32,38 @@ type Slide = {
 const SLIDES: Slide[] = [
   {
     key: "welcome",
-    emoji: "🧘",
-    title: "요가를 일상으로,\n온매아웃",
+    kicker: "ONMATOUT",
+    title: "요가를 일상으로,\n온매트아웃",
     desc: "수련 기록부터 선생님과의 연결까지\n요가 생활을 한 곳에서 이어가세요.",
   },
   {
     key: "roles",
+    kicker: "역할",
     roles: true,
-    title: "수련생, 그리고 선생님",
+    title: "수련생,\n그리고 선생님",
     desc: "누구나 수련생으로 시작해요.\n요가원을 운영한다면 언제든 선생님 역할을 더할 수 있어요.",
   },
   {
     key: "care",
-    emoji: "🤝",
+    kicker: "케어",
     title: "선생님과 함께",
     desc: "출석 체크, 수업권, 복습 시퀀스까지\n수업 밖에서도 이어지는 케어.",
   },
   {
     key: "om",
-    om: true,
-    title: "요가톡, 그리고 옴",
+    kicker: "요가톡",
+    title: "요가톡,\n그리고 옴",
     desc: "선생님께 바로 질문하고\n옴에게 자세, 호흡, 시퀀스를 물어보세요.",
   },
 ];
 
 // 역할 슬라이드에 노출되는 두 역할 설명
-const ROLE_CARDS: { icon: string; label: string; desc: string }[] = [
+const ROLE_CARDS: { label: string; desc: string }[] = [
   {
-    icon: "🧘",
     label: "수련생",
     desc: "수업 신청, 출석과 기록 관리, 선생님과 요가톡",
   },
   {
-    icon: "🏫",
     label: "선생님",
     desc: "요가원, 클래스, 수련생, 수업권 관리 (원장)",
   },
@@ -120,26 +117,16 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((s) => (
           <View key={s.key} style={[styles.slide, { width }]}>
-            <View style={styles.iconCircle}>
-              {s.om ? (
-                <OmIcon size={72} color={COLORS.primary} />
-              ) : s.roles ? (
-                <Text style={styles.emoji}>🧑‍🏫</Text>
-              ) : (
-                <Text style={styles.emoji}>{s.emoji}</Text>
-              )}
-            </View>
+            <View style={styles.accentBar} />
+            <Text style={styles.kicker}>{s.kicker}</Text>
             <Text style={styles.title}>{s.title}</Text>
             <Text style={styles.desc}>{s.desc}</Text>
             {s.roles ? (
               <View style={styles.roleCards}>
                 {ROLE_CARDS.map((r) => (
                   <View key={r.label} style={styles.roleCard}>
-                    <Text style={styles.roleCardIcon}>{r.icon}</Text>
-                    <View style={styles.roleCardBody}>
-                      <Text style={styles.roleCardLabel}>{r.label}</Text>
-                      <Text style={styles.roleCardDesc}>{r.desc}</Text>
-                    </View>
+                    <Text style={styles.roleCardLabel}>{r.label}</Text>
+                    <Text style={styles.roleCardDesc}>{r.desc}</Text>
                   </View>
                 ))}
               </View>
@@ -179,53 +166,56 @@ const styles = StyleSheet.create({
   skipText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: "600" },
   slide: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
-    paddingHorizontal: SPACING.xl,
-    gap: SPACING.md,
+    paddingHorizontal: 28,
   },
-  iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(139, 92, 246, 0.14)",
-    alignItems: "center",
-    justifyContent: "center",
+  accentBar: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: COLORS.primary,
     marginBottom: SPACING.lg,
   },
-  emoji: { fontSize: 60 },
+  kicker: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 3,
+    marginBottom: SPACING.sm,
+  },
   title: {
     color: COLORS.text,
-    fontSize: 24,
-    fontWeight: "800",
-    textAlign: "center",
-    lineHeight: 32,
+    fontSize: 34,
+    fontWeight: "900",
+    lineHeight: 44,
+    letterSpacing: -0.5,
+    marginBottom: SPACING.md,
   },
   desc: {
     color: COLORS.textSecondary,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: "center",
+    fontSize: 16,
+    lineHeight: 26,
   },
   roleCards: {
     width: "100%",
     gap: SPACING.sm,
-    marginTop: SPACING.lg,
+    marginTop: SPACING.xl,
   },
   roleCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
     backgroundColor: COLORS.surface,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     padding: SPACING.md,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
   },
-  roleCardIcon: { fontSize: 24 },
-  roleCardBody: { flex: 1, gap: 2 },
-  roleCardLabel: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
-  roleCardDesc: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 16 },
+  roleCardLabel: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  roleCardDesc: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 18 },
   dots: {
     flexDirection: "row",
     justifyContent: "center",
