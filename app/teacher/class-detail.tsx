@@ -98,6 +98,31 @@ export default function TeacherClassDetailScreen() {
     }
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      "클래스 삭제",
+      "이 클래스를 삭제할까요? 출석 기록과 수련생 배정, 스케줄이 함께 삭제되며 되돌릴 수 없어요. (수련생의 수업권은 유지됩니다)",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await teacherApi.deleteClass(classId);
+              navigation.goBack();
+            } catch (e: any) {
+              Alert.alert(
+                "삭제 실패",
+                e?.message ?? "잠시 후 다시 시도해 주세요.",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading || !cls) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -139,13 +164,24 @@ export default function TeacherClassDetailScreen() {
         onBack={() => navigation.goBack()}
         title={cls.title}
         serif={false}
-        trailing={{
-          kind: "text",
-          label: "수정",
-          tone: "primary",
-          onPress: () =>
-            navigation.navigate("TeacherClassEdit", { classId }),
-        }}
+        trailingSlot={
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={handleDelete}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="trash-outline" size={21} color={COLORS.error} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("TeacherClassEdit", { classId })
+              }
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={styles.headerEdit}>수정</Text>
+            </TouchableOpacity>
+          </View>
+        }
       />
 
       <ScrollView
@@ -449,6 +485,8 @@ function AssignStudentsModal({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 18 },
+  headerEdit: { color: COLORS.primary, fontSize: 15, fontWeight: "600" },
   header: {
     flexDirection: "row",
     alignItems: "center",

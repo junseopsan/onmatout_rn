@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -80,34 +79,6 @@ export default function TeacherClassEditScreen() {
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      "클래스 삭제",
-      "이 클래스를 삭제할까요? 출석 기록과 수련생 배정, 스케줄이 함께 삭제되며 되돌릴 수 없어요. (수련생의 수업권은 유지됩니다)",
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "삭제",
-          style: "destructive",
-          onPress: async () => {
-            setSubmitting(true);
-            try {
-              await teacherApi.deleteClass(classId);
-              // 클래스 상세를 건너뛰고 목록으로 (상세는 이제 없는 클래스)
-              navigation.pop(2);
-            } catch (e: any) {
-              setSubmitting(false);
-              Alert.alert(
-                "삭제 실패",
-                e?.message ?? "잠시 후 다시 시도해 주세요.",
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -161,15 +132,6 @@ export default function TeacherClassEditScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={handleDelete}
-            disabled={submitting}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.deleteText}>클래스 삭제</Text>
-          </TouchableOpacity>
-
           <View style={{ height: 100 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -205,13 +167,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   fabWrap: { position: "absolute", right: SPACING.lg, bottom: SPACING.xl },
-  deleteBtn: {
-    marginTop: SPACING.xl,
-    paddingVertical: 14,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.error,
-    alignItems: "center",
-  },
-  deleteText: { color: COLORS.error, fontSize: 15, fontWeight: "700" },
 });
