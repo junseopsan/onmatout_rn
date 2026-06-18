@@ -543,6 +543,15 @@ export const teacherApi = {
     return data as Class;
   },
 
+  // 클래스 삭제: 출석/스케줄/배정/예약은 CASCADE, 수업권은 보존(SET NULL)
+  async deleteClass(classId: string) {
+    const { error } = await supabase
+      .from("classes")
+      .delete()
+      .eq("id", classId);
+    if (error) throw error;
+  },
+
   async updateStudent(studentProfileId: string, input: StudentProfileUpdate) {
     const { data, error } = await supabase
       .from("student_profiles")
