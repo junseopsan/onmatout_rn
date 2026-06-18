@@ -69,15 +69,6 @@
         {
           "cameraPermission": "선생님 초대 QR을 스캔해 연결하기 위해 카메라를 사용합니다."
         }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000000"
-        }
       ]
     ]
   }
