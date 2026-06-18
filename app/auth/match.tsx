@@ -105,7 +105,7 @@ export default function AuthMatchScreen() {
       setResult({
         type: "error",
         title: "코드 확인",
-        message: "유효하지 않은 초대 링크예요. 선생님께 다시 받아주세요.",
+        message: "유효하지 않은 초대 링크예요.\n선생님께 다시 받아주세요.",
       });
       return;
     }
@@ -134,7 +134,7 @@ export default function AuthMatchScreen() {
     } catch (e: any) {
       const msg =
         e?.message === "STUDIO_NOT_FOUND"
-          ? "유효하지 않은 초대 링크예요. 선생님께 다시 받아주세요."
+          ? "유효하지 않은 초대 링크예요.\n선생님께 다시 받아주세요."
           : (e?.message ?? "잠시 후 다시 시도해 주세요.");
       setResult({ type: "error", title: "연결 실패", message: msg });
     } finally {
