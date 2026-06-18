@@ -143,8 +143,7 @@ export function RoutineCard({
         <View style={styles.titleRow}>
           {itemCount > 0 ? (
             <View style={styles.countChip}>
-              <Ionicons name="layers-outline" size={11} color={COLORS.textMuted} />
-              <Text style={styles.countChipText}>{itemCount}</Text>
+              <Text style={styles.countChipText}>{itemCount}개의 아사나</Text>
             </View>
           ) : null}
           <Text style={[styles.title, { flexShrink: 1 }]} numberOfLines={1}>
@@ -290,15 +289,12 @@ const styles = StyleSheet.create({
   },
   metaText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
   countChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
     backgroundColor: COLORS.surfaceDark,
   },
-  countChipText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "700" },
+  countChipText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: "700" },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   title: {
     color: COLORS.text,
