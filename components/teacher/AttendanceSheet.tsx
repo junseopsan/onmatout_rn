@@ -310,11 +310,6 @@ export function AttendanceSheet({
         </View>
       ) : !isClassDay ? (
         <View style={styles.empty}>
-          <Ionicons
-            name="calendar-outline"
-            size={26}
-            color={COLORS.textMuted}
-          />
           <Text style={styles.emptyText}>이 날은 수업이 없는 날이에요.</Text>
           <Text style={styles.emptySub}>
             수업 요일을 선택하면 출석을 체크할 수 있어요.

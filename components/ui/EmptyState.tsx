@@ -5,6 +5,7 @@ import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 
 interface EmptyStateProps {
+  /** @deprecated 빈 상태 아이콘은 더 이상 렌더링하지 않는다. (호출부 호환을 위해 prop 만 유지) */
   icon?: string;
   title: string;
   description?: string;
@@ -13,7 +14,6 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  icon,
   title,
   description,
   action,
@@ -21,7 +21,6 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <View style={[styles.wrap, style]}>
-      {icon ? <Text style={styles.icon}>{icon}</Text> : null}
       <Text style={styles.title}>{title}</Text>
       {description ? <Text style={styles.desc}>{description}</Text> : null}
       {action ? (
@@ -41,7 +40,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: SPACING.xxl,
   },
-  icon: { fontSize: 44, marginBottom: SPACING.md },
   title: {
     ...TEXT.uiTitle,
     color: COLORS.text,

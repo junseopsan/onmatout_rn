@@ -255,17 +255,15 @@ function StatBlock({
 }
 
 function EmptyHint({
-  icon,
   title,
   description,
 }: {
-  icon: string;
+  icon?: string;
   title: string;
   description: string;
 }) {
   return (
     <View style={styles.emptyBox}>
-      <Text style={styles.emptyIcon}>{icon}</Text>
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptyDescription}>{description}</Text>
     </View>
@@ -369,7 +367,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
   },
-  emptyIcon: { fontSize: 32, marginBottom: 8 },
   emptyTitle: {
     color: COLORS.text,
     fontSize: 15,

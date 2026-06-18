@@ -242,11 +242,6 @@ export default function TeacherClassDetailScreen() {
 
           {members.length === 0 ? (
             <View style={styles.emptyMembers}>
-              <Ionicons
-                name="people-outline"
-                size={28}
-                color={COLORS.textMuted}
-              />
               <Text style={styles.muted}>아직 배정된 수련생이 없어요.</Text>
               <Text style={styles.mutedSub}>
                 + 배정 으로 수련생을 추가해 보세요.

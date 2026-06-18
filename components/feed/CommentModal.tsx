@@ -430,11 +430,6 @@ export default function CommentModal({
             })
           ) : (
             <View style={styles.emptyComments}>
-              <Ionicons
-                name="chatbubble-outline"
-                size={48}
-                color={COLORS.textSecondary}
-              />
               <Text style={styles.emptyCommentsText}>
                 아직 댓글이 없어요.{"\n"}첫 번째 댓글을 작성해보세요!
               </Text>
