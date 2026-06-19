@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 콜드 스타트(RN 초기화) 동안 windowBackground 로 표시되는 스플래시.
+     검정 배경 + 중앙 로고 → expo 스플래시(imageWidth 220)와 자연스럽게 이어진다. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:drawable="@color/splashscreen_background" />
+  <item
+    android:width="260dp"
+    android:height="260dp"
+    android:gravity="center">
+    <bitmap
+      android:gravity="center"
+      android:src="@drawable/splashscreen_logo" />
+  </item>
+</layer-list>
