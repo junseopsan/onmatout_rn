@@ -3,7 +3,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
-import * as ExpoSplashScreen from "expo-splash-screen";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Linking, Platform, View } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
@@ -13,6 +12,7 @@ import { supabase } from "../../lib/supabase";
 import { COLORS } from "../../constants/Colors";
 import { RootStackParamList } from "../../navigation/types";
 import ForceUpdateScreen from "./ForceUpdateScreen";
+import SplashScreen from "./SplashScreen";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -248,11 +248,11 @@ export default function AppContainer() {
       }
     };
 
-    // 버전 체크에 타임아웃 추가 (10초)
+    // 버전 체크 타임아웃 (1.5초) — 네트워크가 느려도 스플래시가 오래 멈추지 않게.
     const timeoutId = setTimeout(() => {
       console.log("[VersionCheck] 타임아웃 - 버전 체크 건너뛰기");
       setVersionChecked(true);
-    }, 10000);
+    }, 1500);
 
     checkAppVersion().finally(() => {
       clearTimeout(timeoutId);
@@ -391,19 +391,10 @@ export default function AppContainer() {
 
   // 앱이 준비되면(로딩/버전체크/리다이렉트 완료) 네이티브 스플래시를 내린다.
   // 그 전까지는 네이티브 스플래시가 화면을 덮으므로 별도 JS 스플래시는 띄우지 않는다.
-  const splashReady =
-    !isLoading &&
-    !authLoading &&
-    versionChecked &&
-    (hasRedirected || !!forceUpdateInfo);
-
-  useEffect(() => {
-    if (splashReady) ExpoSplashScreen.hideAsync().catch(() => {});
-  }, [splashReady]);
-
-  // 로딩/리다이렉트 중: 네이티브 스플래시가 덮고 있으므로 배경색 View 만 둔다.
+  // 인증/버전 체크 동안은 애니메이션 JS 스플래시 표시.
+  // (네이티브 스플래시는 폰트 로딩 직후 _layout 에서 내려가고, 그 자리를 이 스플래시가 잇는다.)
   if (isLoading || authLoading || !versionChecked) {
-    return <View style={{ flex: 1, backgroundColor: COLORS.background }} />;
+    return <SplashScreen />;
   }
 
   // 필수 업데이트 안내 화면 (구버전 사용자)
@@ -416,9 +407,9 @@ export default function AppContainer() {
     );
   }
 
-  // 리다이렉트 진행 중: 네이티브 스플래시가 덮고 있으므로 배경색 View 만 둔다.
+  // 리다이렉트 진행 중: 애니메이션 스플래시 유지.
   if (!hasRedirected) {
-    return <View style={{ flex: 1, backgroundColor: COLORS.background }} />;
+    return <SplashScreen />;
   }
 
   // 리다이렉트 완료 후: null 반환 시 프로덕션에서 검정 화면이 되므로 배경색 View 반환
