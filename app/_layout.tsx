@@ -4,9 +4,8 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
@@ -34,12 +33,6 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     // Newsreader — Latin 인용/이탤릭 액센트 전용 (한글 본문엔 NotoSerifKR 사용)
     Newsreader_400Regular_Italic: require("@expo-google-fonts/newsreader/400Regular_Italic/Newsreader_400Regular_Italic.ttf"),
   });
-
-  // 폰트가 준비되면 네이티브 스플래시를 내린다. 그 직후 AppContainer 의
-  // 애니메이션 스플래시가 이어받아 인증/버전 체크 동안 표시된다 (검정 끊김 방지).
-  useEffect(() => {
-    if (loaded) SplashScreen.hideAsync().catch(() => {});
-  }, [loaded]);
 
   if (!loaded) {
     // 폰트 로딩 중에는 네이티브 스플래시가 위를 덮으므로 빈 검은 화면만 둔다.
