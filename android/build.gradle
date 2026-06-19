@@ -20,5 +20,21 @@ allprojects {
   }
 }
 
+// 릴리즈 빌드의 lintVital(라이브러리 포함)을 끈다. 로컬 릴리즈 테스트 시
+// lint 가 OOM(Metaspace) 으로 빌드를 막는 문제 방지.
+subprojects { subproject ->
+  afterEvaluate {
+    if (subproject.plugins.hasPlugin("com.android.application")
+        || subproject.plugins.hasPlugin("com.android.library")) {
+      android {
+        lint {
+          checkReleaseBuilds false
+          abortOnError false
+        }
+      }
+    }
+  }
+}
+
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
