@@ -35,10 +35,8 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     Newsreader_400Regular_Italic: require("@expo-google-fonts/newsreader/400Regular_Italic/Newsreader_400Regular_Italic.ttf"),
   });
 
-  // 폰트가 준비되면 네이티브 스플래시를 내린다 (그 전까지는 스플래시가 화면을 덮음).
-  useEffect(() => {
-    if (loaded) SplashScreen.hideAsync().catch(() => {});
-  }, [loaded]);
+  // 네이티브 스플래시 숨김은 AppContainer 가 앱 준비 완료 시점에 hideAsync() 로 처리.
+  // (폰트 로딩 완료 시점에 내리면 인증 로딩 동안 두 번째 스플래시가 보임)
 
   if (!loaded) {
     // 폰트 로딩 중에는 네이티브 스플래시가 위를 덮으므로 빈 검은 화면만 둔다.

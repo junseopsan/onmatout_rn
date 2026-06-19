@@ -3,6 +3,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
+import * as ExpoSplashScreen from "expo-splash-screen";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Linking, Platform, View } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
@@ -12,7 +13,6 @@ import { supabase } from "../../lib/supabase";
 import { COLORS } from "../../constants/Colors";
 import { RootStackParamList } from "../../navigation/types";
 import ForceUpdateScreen from "./ForceUpdateScreen";
-import SplashScreen from "./SplashScreen";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -389,14 +389,21 @@ export default function AppContainer() {
     return () => clearTimeout(safetyTimer);
   }, [hasRedirected, forceUpdateInfo, navigation]);
 
-  // 스플래시 화면 표시 중이거나 인증 상태 로딩 중, 또는 버전 체크 중
+  // 앱이 준비되면(로딩/버전체크/리다이렉트 완료) 네이티브 스플래시를 내린다.
+  // 그 전까지는 네이티브 스플래시가 화면을 덮으므로 별도 JS 스플래시는 띄우지 않는다.
+  const splashReady =
+    !isLoading &&
+    !authLoading &&
+    versionChecked &&
+    (hasRedirected || !!forceUpdateInfo);
+
+  useEffect(() => {
+    if (splashReady) ExpoSplashScreen.hideAsync().catch(() => {});
+  }, [splashReady]);
+
+  // 로딩/리다이렉트 중: 네이티브 스플래시가 덮고 있으므로 배경색 View 만 둔다.
   if (isLoading || authLoading || !versionChecked) {
-    console.log("[AppContainer] SplashScreen 표시:", {
-      isLoading,
-      authLoading,
-      versionChecked,
-    });
-    return <SplashScreen />;
+    return <View style={{ flex: 1, backgroundColor: COLORS.background }} />;
   }
 
   // 필수 업데이트 안내 화면 (구버전 사용자)
@@ -409,11 +416,9 @@ export default function AppContainer() {
     );
   }
 
-  // 버전 체크 완료 후에도 리다이렉트가 안된 경우를 위한 안전장치
-  // 리다이렉트가 진행 중이면 SplashScreen을 계속 표시
+  // 리다이렉트 진행 중: 네이티브 스플래시가 덮고 있으므로 배경색 View 만 둔다.
   if (!hasRedirected) {
-    console.log("[AppContainer] 리다이렉트 대기 중 - SplashScreen 표시");
-    return <SplashScreen />;
+    return <View style={{ flex: 1, backgroundColor: COLORS.background }} />;
   }
 
   // 리다이렉트 완료 후: null 반환 시 프로덕션에서 검정 화면이 되므로 배경색 View 반환
