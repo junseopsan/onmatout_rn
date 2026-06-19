@@ -4,8 +4,9 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
@@ -34,9 +35,13 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     Newsreader_400Regular_Italic: require("@expo-google-fonts/newsreader/400Regular_Italic/Newsreader_400Regular_Italic.ttf"),
   });
 
+  // 폰트가 준비되면 네이티브 스플래시를 내린다 (그 전까지는 스플래시가 화면을 덮음).
+  useEffect(() => {
+    if (loaded) SplashScreen.hideAsync().catch(() => {});
+  }, [loaded]);
+
   if (!loaded) {
-    // 폰트 로딩 중에는 SplashScreen과 동일한 검은 화면 표시
-    // "앱 로딩 중..." 텍스트가 보이지 않도록
+    // 폰트 로딩 중에는 네이티브 스플래시가 위를 덮으므로 빈 검은 화면만 둔다.
     return (
       <View
         style={{
