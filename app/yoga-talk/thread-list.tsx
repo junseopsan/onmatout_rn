@@ -21,6 +21,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { OmIcon } from "../../components/ui/OmIcon";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { RenameDialog } from "../../components/ui/RenameDialog";
+import { SearchBar } from "../../components/ui/SearchBar";
 import { Sheet } from "../../components/ui/Sheet";
 import { COLORS } from "../../constants/Colors";
 import { SPACING } from "../../constants/Design";
@@ -1024,6 +1025,20 @@ function NewMessageSheet({
   >([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (!visible) setQuery("");
+  }, [visible]);
+
+  const q = query.trim().toLowerCase();
+  const filteredContacts = q
+    ? contacts.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.subtitle ?? "").toLowerCase().includes(q),
+      )
+    : contacts;
 
   useEffect(() => {
     if (!visible || !currentUserId) return;
@@ -1129,6 +1144,15 @@ function NewMessageSheet({
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.sheetHandle} />
           <Text style={styles.sheetTitle}>새 메시지</Text>
+          {!loading && contacts.length > 0 ? (
+            <View style={styles.sheetSearch}>
+              <SearchBar
+                value={query}
+                onChangeText={setQuery}
+                placeholder="이름 또는 전화번호로 검색"
+              />
+            </View>
+          ) : null}
           {loading ? (
             <ActivityIndicator
               color={COLORS.primary}
@@ -1136,33 +1160,41 @@ function NewMessageSheet({
             />
           ) : contacts.length === 0 ? (
             <Text style={styles.sheetEmpty}>대화할 상대가 없어요.</Text>
+          ) : filteredContacts.length === 0 ? (
+            <Text style={styles.sheetEmpty}>검색 결과가 없어요.</Text>
           ) : (
-            contacts.map((c) => (
-              <TouchableOpacity
-                key={c.id}
-                style={styles.contactRow}
-                onPress={() => startThread(c)}
-                disabled={busyId === c.id}
-                activeOpacity={0.7}
-              >
-                <Avatar name={c.name} colorKey={c.name} size={44} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.contactName}>{c.name}</Text>
-                  {c.subtitle ? (
-                    <Text style={styles.contactSub}>{c.subtitle}</Text>
-                  ) : null}
-                </View>
-                {busyId === c.id ? (
-                  <ActivityIndicator size="small" color={COLORS.primary} />
-                ) : (
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={COLORS.textMuted}
-                  />
-                )}
-              </TouchableOpacity>
-            ))
+            <ScrollView
+              style={styles.sheetList}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {filteredContacts.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.contactRow}
+                  onPress={() => startThread(c)}
+                  disabled={busyId === c.id}
+                  activeOpacity={0.7}
+                >
+                  <Avatar name={c.name} colorKey={c.name} size={44} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.contactName}>{c.name}</Text>
+                    {c.subtitle ? (
+                      <Text style={styles.contactSub}>{c.subtitle}</Text>
+                    ) : null}
+                  </View>
+                  {busyId === c.id ? (
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                  ) : (
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={COLORS.textMuted}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           )}
         </Pressable>
       </Pressable>
@@ -1417,6 +1449,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: 24,
   },
+  sheetSearch: { marginBottom: 8 },
+  sheetList: { maxHeight: 380 },
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
