@@ -18,7 +18,6 @@ import CommentModal from "../../components/feed/CommentModal";
 import StoryShareModal from "../../components/StoryShareModal";
 import { CATEGORIES } from "../../constants/categories";
 import { COLORS } from "../../constants/Colors";
-import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
 import {
   useDeleteRecord,
@@ -100,11 +99,6 @@ export default function RecordDetailScreen() {
       label: "기타",
       color: COLORS.textSecondary,
     };
-  };
-
-  // 상태 정보 가져오기
-  const getStateInfo = (stateId: string) => {
-    return STATES.find((state) => state.id === stateId);
   };
 
   // 기록 삭제
@@ -323,38 +317,6 @@ export default function RecordDetailScreen() {
                         </Text>
                       </YStack>
                     </Card>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* 감정 상태 섹션 */}
-          {record.states && record.states.length > 0 && (
-            <View style={styles.statesSection}>
-              <View style={styles.statesHeader}>
-                <Text style={styles.statesTitle}>수련 상태</Text>
-              </View>
-              <View style={styles.statesContainer}>
-                {record.states.map((stateId: string) => {
-                  const state = getStateInfo(stateId);
-                  if (!state) return null;
-
-                  return (
-                    <View
-                      key={stateId}
-                      style={[
-                        styles.stateChip,
-                        {
-                          borderColor: state.color,
-                          backgroundColor: `${state.color}15`,
-                        },
-                      ]}
-                    >
-                      <Text style={[styles.stateText, { color: state.color }]}>
-                        {state.label}
-                      </Text>
-                    </View>
                   );
                 })}
               </View>

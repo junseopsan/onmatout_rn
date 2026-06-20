@@ -2,7 +2,6 @@ import { Image } from "expo-image";
 import React from "react";
 import { PixelRatio, StyleSheet, Text, View } from "react-native";
 import { COLORS } from "../constants/Colors";
-import { STATES } from "../constants/states";
 import { getAsanaThumbnailSource } from "../lib/asanaImages";
 import { formatDateLetter } from "../lib/utils/dateFormatter";
 import { Record } from "../types/record";
@@ -30,10 +29,6 @@ type StoryShareCardProps =
       record: Record;
       userName?: string;
     };
-
-function getStateInfo(stateId: string) {
-  return STATES.find((x) => x.id === stateId);
-}
 
 export default function StoryShareCard(props: StoryShareCardProps) {
   if (props.mode === "stats") {
@@ -88,7 +83,6 @@ function StoryRecordCard({
   );
   const asanas = record.asanas || [];
   const asanaList = Array.isArray(asanas) ? asanas : [];
-  const states = record.states || [];
   const memo = (record.memo || "").trim();
   const signature =
     userName != null && userName.trim() !== ""
@@ -134,41 +128,10 @@ function StoryRecordCard({
         {memo ? <Text style={styles.recordMemo}>{memo}</Text> : null}
       </View>
 
-      {/* 감정(위, 색상 칩) + 날짜, 닉네임(아래): 우측 끝 정렬 */}
-      {states.length > 0 || dateStr ? (
+      {/* 날짜, 닉네임: 우측 끝 정렬 */}
+      {dateStr ? (
         <View style={styles.recordFooterColumn}>
-          {states.length > 0 ? (
-            <View style={styles.recordStateChipsRow}>
-              {states.map((stateId: string) => {
-                const state = getStateInfo(stateId);
-                if (!state) return null;
-                return (
-                  <View
-                    key={stateId}
-                    style={[
-                      styles.recordStateChip,
-                      {
-                        borderColor: state.color,
-                        backgroundColor: `${state.color}15`,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.recordStateChipText,
-                        { color: state.color },
-                      ]}
-                    >
-                      {state.label}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
-          {dateStr ? (
-            <Text style={styles.recordSignature}>{signature}</Text>
-          ) : null}
+          <Text style={styles.recordSignature}>{signature}</Text>
         </View>
       ) : null}
 

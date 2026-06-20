@@ -24,7 +24,6 @@ import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
-import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
 import { useAuth } from "../../hooks/useAuth";
 import { Asana } from "../../lib/api/asanas";
@@ -49,7 +48,6 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -96,19 +94,6 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
     setSelectedAsanas((prev) => [...prev, ...newAsanas]);
   };
 
-  // 상태 선택/해제
-  const toggleState = (stateId: string) => {
-    setSelectedStates((prev) => {
-      if (prev.includes(stateId)) {
-        return prev.filter((id) => id !== stateId);
-      }
-      if (prev.length >= 3) {
-        Alert.alert("알림", "최대 3개의 상태만 선택할 수 있습니다.");
-        return prev;
-      }
-      return [...prev, stateId];
-    });
-  };
 
   // 닫기 핸들러
   const handleClose = () => {
@@ -151,7 +136,6 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         title: memo.trim() || fallbackTitle,
         asanas: selectedAsanas.map((asana) => asana.id),
         memo: memo.trim(),
-        states: selectedStates,
         photos,
         date: selectedDate.toISOString().split("T")[0], // 선택한 날짜
       };
@@ -228,42 +212,6 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
           )}
         </View>
 
-        {/* 오늘 컨디션 (선택) */}
-        <View style={styles.section}>
-          <SectionLabel>오늘 컨디션 (선택)</SectionLabel>
-          <View style={styles.statesContainer}>
-            {STATES.map((state) => (
-              <TouchableOpacity
-                key={state.id}
-                style={[
-                  styles.stateChip,
-                  {
-                    backgroundColor: COLORS.surface,
-                    borderColor: selectedStates.includes(state.id)
-                      ? state.color
-                      : "#666666",
-                    borderWidth: selectedStates.includes(state.id) ? 2 : 1,
-                  },
-                ]}
-                onPress={() => toggleState(state.id)}
-              >
-                <Text
-                  style={[
-                    styles.stateLabel,
-                    {
-                      color: selectedStates.includes(state.id)
-                        ? state.color
-                        : COLORS.text,
-                    },
-                  ]}
-                >
-                  {state.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.stateSubtitleText}>최대 3개까지 선택</Text>
-        </View>
 
         {/* 메모 작성 (선택) */}
         <View style={styles.section}>

@@ -19,7 +19,6 @@ import { Button } from "../../components/ui/Button";
 import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
 import SimpleDatePicker from "../../components/SimpleDatePicker";
 import { COLORS } from "../../constants/Colors";
-import { STATES } from "../../constants/states";
 import { useNotification } from "../../contexts/NotificationContext";
 import { useAuth } from "../../hooks/useAuth";
 import { useUpdateRecord } from "../../hooks/useRecords";
@@ -42,7 +41,6 @@ export default function EditRecordScreen() {
   );
   const [selectedAsanas, setSelectedAsanas] = useState<Asana[]>([]);
   const [memo, setMemo] = useState("");
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -81,7 +79,6 @@ export default function EditRecordScreen() {
   useEffect(() => {
     if (record) {
       setMemo(record.memo || "");
-      setSelectedStates(record.states || []);
       // 수련 날짜 설정
       const dateStr = record.practice_date || record.date || record.created_at;
       setSelectedDate(new Date(dateStr));
@@ -135,45 +132,25 @@ export default function EditRecordScreen() {
     setSelectedAsanas((prev) => [...prev, ...newAsanas]);
   };
 
-  // 상태 선택/해제
-  const toggleState = (stateId: string) => {
-    setSelectedStates((prev) => {
-      if (prev.includes(stateId)) {
-        return prev.filter((id) => id !== stateId);
-      }
-      if (prev.length >= 3) {
-        Alert.alert("알림", "최대 3개의 상태만 선택할 수 있습니다.");
-        return prev;
-      }
-      return [...prev, stateId];
-    });
-  };
-
   // 수정 저장
   const handleSave = async () => {
     if (selectedAsanas.length === 0) {
-      Alert.alert("알림", "최소 1개의 아사나를 선택해주세요.");
-      return;
-    }
-
-    if (selectedStates.length === 0) {
-      Alert.alert("알림", "상태를 선택해주세요.");
-      return;
-    }
-
-    if (!memo.trim()) {
-      Alert.alert("알림", "메모를 입력해주세요.");
+      Alert.alert("알림", "수련한 아사나를 1개 이상 선택해주세요.");
       return;
     }
 
     try {
       setLoading(true);
 
+      const fallbackTitle =
+        selectedAsanas.length === 1
+          ? selectedAsanas[0].sanskrit_name_kr
+          : `${selectedAsanas[0].sanskrit_name_kr} 외 ${selectedAsanas.length - 1}개`;
+
       const recordData: RecordFormData = {
-        title: memo.trim(),
+        title: memo.trim() || fallbackTitle,
         asanas: selectedAsanas.map((asana) => asana.id),
         memo: memo.trim(),
-        states: selectedStates,
         photos,
         date: selectedDate.toISOString().split("T")[0], // 선택한 날짜
       };
@@ -262,44 +239,6 @@ export default function EditRecordScreen() {
           )}
         </View>
 
-        {/* 상태 선택 */}
-        <View style={styles.section}>
-          <View style={styles.statesContainer}>
-            {STATES.map((state) => (
-              <TouchableOpacity
-                key={state.id}
-                style={[
-                  styles.stateChip,
-                  {
-                    backgroundColor: COLORS.surface,
-                    borderColor: selectedStates.includes(state.id)
-                      ? state.color
-                      : "#666666",
-                    borderWidth: selectedStates.includes(state.id) ? 2 : 1,
-                  },
-                ]}
-                onPress={() => toggleState(state.id)}
-              >
-                <Text
-                  style={[
-                    styles.stateLabel,
-                    {
-                      color: selectedStates.includes(state.id)
-                        ? state.color
-                        : COLORS.text,
-                    },
-                  ]}
-                >
-                  {state.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.stateSubtitleText}>
-            수련 중 느낀 상태를 선택해주세요 (최대 3개)
-          </Text>
-        </View>
-
         {/* 메모 작성 */}
         <View
           style={styles.section}
@@ -376,11 +315,7 @@ export default function EditRecordScreen() {
           title="완료"
           size="large"
           loading={loading}
-          disabled={
-            selectedAsanas.length === 0 ||
-            selectedStates.length === 0 ||
-            memo.trim().length === 0
-          }
+          disabled={selectedAsanas.length === 0}
           onPress={handleSave}
         />
       </View>
