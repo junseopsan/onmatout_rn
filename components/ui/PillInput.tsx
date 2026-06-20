@@ -6,6 +6,7 @@ import {
   TextInput,
   TextInputProps,
   View,
+  ViewStyle,
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { SPACING } from "../../constants/Design";
@@ -17,6 +18,7 @@ interface PillInputProps extends Omit<TextInputProps, "style"> {
   multiline?: boolean;
   required?: boolean;
   suffix?: string;
+  containerStyle?: ViewStyle;
 }
 
 // Floga 스타일 pill 입력 필드
@@ -27,11 +29,12 @@ export function PillInput({
   multiline,
   required,
   suffix,
+  containerStyle,
   ...rest
 }: PillInputProps) {
   const [focused, setFocused] = useState(false);
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, containerStyle]}>
       {label ? (
         <Text style={styles.label}>
           {label}

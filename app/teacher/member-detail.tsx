@@ -791,6 +791,7 @@ export default function TeacherMemberDetailScreen() {
               value={customDraft}
               onChangeText={setCustomDraft}
               placeholder="커스텀 상태 (예: 어깨 회복 중)"
+              containerStyle={{ marginBottom: 0 }}
             />
           </View>
           <Button
