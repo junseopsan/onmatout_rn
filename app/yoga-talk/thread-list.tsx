@@ -80,6 +80,18 @@ export default function YogaTalkThreadListScreen() {
   const { activeStudio } = usePivotStudios();
   const { memberships, loaded: studiosLoaded } = useStudentStudios();
 
+  // 좌측 상단: 폴더 관리 진입 (funnel 아이콘)
+  const headerLeading = (
+    <TouchableOpacity
+      onPress={() => setManageOpen(true)}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      accessibilityLabel="폴더 관리"
+      style={{ marginBottom: -8 }}
+    >
+      <Ionicons name="funnel-outline" size={22} color={COLORS.text} />
+    </TouchableOpacity>
+  );
+
   const headerActions = (
     <View style={styles.headerActions}>
       {isTeacher && activeStudio ? (
@@ -487,18 +499,6 @@ export default function YogaTalkThreadListScreen() {
           />
         ))}
       </ScrollView>
-      <TouchableOpacity
-        style={styles.manageBtn}
-        onPress={() => setManageOpen(true)}
-        accessibilityLabel="폴더 관리"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Ionicons
-          name="folder-outline"
-          size={20}
-          color={COLORS.textSecondary}
-        />
-      </TouchableOpacity>
     </View>
   );
 
@@ -676,7 +676,7 @@ export default function YogaTalkThreadListScreen() {
   if (loading && threads.length === 0) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <PageHeader trailingSlot={headerActions} />
+        <PageHeader eyebrowSlot={headerLeading} trailingSlot={headerActions} />
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
@@ -1258,13 +1258,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     paddingHorizontal: SPACING.lg,
-  },
-  manageBtn: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 4,
   },
   chip: {
     flexDirection: "row",
