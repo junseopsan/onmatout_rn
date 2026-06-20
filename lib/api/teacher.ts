@@ -568,6 +568,29 @@ export const teacherApi = {
     return data as Class;
   },
 
+  // 클래스 스케줄 전체 교체 (기존 삭제 후 재삽입)
+  async replaceClassSchedules(
+    classId: string,
+    schedules: { day_of_week: number; start_time: string; end_time: string }[],
+  ) {
+    const { error: delErr } = await supabase
+      .from("class_schedules")
+      .delete()
+      .eq("class_id", classId);
+    if (delErr) throw delErr;
+    if (schedules.length === 0) return;
+    const rows: ClassScheduleInsert[] = schedules.map((s) => ({
+      class_id: classId,
+      day_of_week: s.day_of_week,
+      start_time: s.start_time,
+      end_time: s.end_time,
+    }));
+    const { error: insErr } = await supabase
+      .from("class_schedules")
+      .insert(rows);
+    if (insErr) throw insErr;
+  },
+
   // 클래스 삭제: 출석/스케줄/배정/예약은 CASCADE, 수업권은 보존(SET NULL)
   async deleteClass(classId: string) {
     const { error } = await supabase
