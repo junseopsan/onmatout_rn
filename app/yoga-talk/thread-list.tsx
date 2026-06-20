@@ -1269,7 +1269,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#F87171",
     borderWidth: 2,
     borderColor: COLORS.background,
   },
@@ -1277,7 +1277,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#F87171",
   },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 2 },
   filterBar: {
