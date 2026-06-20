@@ -20,6 +20,7 @@ import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { IconBadge } from "../../components/ui/IconBadge";
 import { SectionLabel } from "../../components/ui/SectionLabel";
+import { Sheet } from "../../components/ui/Sheet";
 import { StatusChip, type StatusKind } from "../../components/ui/StatusChip";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
 import { COLORS } from "../../constants/Colors";
@@ -58,6 +59,7 @@ export default function TeacherMemberDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isTeacherOfStudio, setIsTeacherOfStudio] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const load = useCallback(async () => {
     const [s, m, a, tp] = await Promise.all([
@@ -179,6 +181,29 @@ export default function TeacherMemberDetailScreen() {
     } catch (e: any) {
       Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
     }
+  };
+
+  const handleRemove = () => {
+    if (!student) return;
+    Alert.alert(
+      "요가원에서 추방",
+      `${student.name} 님을 요가원에서 내보낼까요? 앱 연결이 해제되고 명단에서 보관 처리돼요. 출석, 수업권 등 기록은 보존됩니다.`,
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "추방",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await teacherApi.removeStudentFromStudio(student.id);
+              navigation.goBack();
+            } catch (e: any) {
+              Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   const toggleHold = async () => {
@@ -313,15 +338,18 @@ export default function TeacherMemberDetailScreen() {
         onBack={() => navigation.goBack()}
         title="수련생"
         serif={false}
-        trailing={{
-          kind: "text",
-          label: "수정",
-          tone: "primary",
-          onPress: () =>
-            navigation.navigate("TeacherMemberEdit", {
-              studentProfileId: student.id,
-            }),
-        }}
+        trailingSlot={
+          <TouchableOpacity
+            onPress={() => setMenuOpen(true)}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={22}
+              color={COLORS.text}
+            />
+          </TouchableOpacity>
+        }
       />
 
       <ScrollView
@@ -590,6 +618,40 @@ export default function TeacherMemberDetailScreen() {
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+
+      <Sheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        title={student.name}
+        scrollable={false}
+      >
+        <TouchableOpacity
+          style={styles.menuRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setMenuOpen(false);
+            navigation.navigate("TeacherMemberEdit", {
+              studentProfileId: student.id,
+            });
+          }}
+        >
+          <Ionicons name="create-outline" size={20} color={COLORS.text} />
+          <Text style={styles.menuText}>수정</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            setMenuOpen(false);
+            handleRemove();
+          }}
+        >
+          <Ionicons name="exit-outline" size={20} color={COLORS.error} />
+          <Text style={[styles.menuText, { color: COLORS.error }]}>
+            요가원에서 추방
+          </Text>
+        </TouchableOpacity>
+      </Sheet>
     </SafeAreaView>
   );
 }
@@ -632,6 +694,13 @@ function MembershipBlock({ m }: { m: Membership }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+  },
+  menuText: { color: COLORS.text, fontSize: 16, fontWeight: "600" },
   content: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,

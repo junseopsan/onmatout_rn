@@ -100,6 +100,20 @@ export const teacherApi = {
     return data as StudentProfile;
   },
 
+  // 요가원에서 수련생 추방(연결 해제) — 데이터는 보관.
+  // status=archived + 가입 연결(user_id) 해제. 출석/수업권/기록은 그대로 보존.
+  async removeStudentFromStudio(studentProfileId: string) {
+    const { error } = await supabase
+      .from("student_profiles")
+      .update({
+        status: "archived",
+        user_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", studentProfileId);
+    if (error) throw error;
+  },
+
   async listMyClasses(teacherId: string, studioId?: string | null) {
     let q = supabase
       .from("classes")
