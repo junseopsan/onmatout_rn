@@ -50,11 +50,9 @@ export default function ChatGroupCreateScreen() {
     if (!user?.id) return;
     teacherApi
       .listMyStudents(user.id, studioId)
-      // 앱 가입자(user_id 있음) + 활성 수련생만 그룹에 추가 가능
+      // 앱 가입자(user_id 있음)만 그룹에 추가 가능. (휴식 중이어도 초대는 가능)
       .then((list) =>
-        setStudents(
-          list.filter((s) => !!s.user_id && s.status === "active"),
-        ),
+        setStudents(list.filter((s) => !!s.user_id && s.status !== "archived")),
       )
       .catch(() => undefined)
       .finally(() => setLoading(false));
