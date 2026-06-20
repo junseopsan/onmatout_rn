@@ -186,12 +186,12 @@ export default function TeacherMemberDetailScreen() {
   const handleRemove = () => {
     if (!student) return;
     Alert.alert(
-      "요가원에서 추방",
+      "요가원에서 내보내기",
       `${student.name} 님을 요가원에서 내보낼까요? 앱 연결이 해제되고 명단에서 보관 처리돼요. 출석, 수업권 등 기록은 보존됩니다.`,
       [
         { text: "취소", style: "cancel" },
         {
-          text: "추방",
+          text: "내보내기",
           style: "destructive",
           onPress: async () => {
             try {
@@ -648,7 +648,7 @@ export default function TeacherMemberDetailScreen() {
         >
           <Ionicons name="exit-outline" size={20} color={COLORS.error} />
           <Text style={[styles.menuText, { color: COLORS.error }]}>
-            요가원에서 추방
+            요가원에서 내보내기
           </Text>
         </TouchableOpacity>
       </Sheet>
