@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     fontSize: 12,
-    color: COLORS.primary,
+    color: "#EF4444",
     textDecorationLine: "underline",
     fontWeight: "500",
   },
