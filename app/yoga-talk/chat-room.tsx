@@ -8,6 +8,7 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -59,13 +60,20 @@ export default function ChatRoomScreen() {
 
   const load = async () => {
     try {
+      // 1) 메시지를 먼저 가져와 바로 표시 (로딩 종료)
       const msgs = await chatApi.listMessages(roomId);
       setMessages(msgs);
-      setNames(await chatApi.senderNames(msgs.map((m) => m.sender_id)));
+      setLoading(false);
+
+      // 2) 보낸이 이름 / 도움됐어요는 병렬로 뒤따라 채운다 (메시지 표시를 막지 않음)
       const teacherMsgIds = msgs
         .filter((m) => m.sender_role === "teacher")
         .map((m) => m.id);
-      const rows = await chatApi.listHelpful(teacherMsgIds);
+      const [nameMap, rows] = await Promise.all([
+        chatApi.senderNames(msgs.map((m) => m.sender_id)),
+        chatApi.listHelpful(teacherMsgIds),
+      ]);
+      setNames(nameMap);
       const map: Record<string, { count: number; mine: boolean }> = {};
       for (const r of rows) {
         const cur = map[r.message_id] ?? { count: 0, mine: false };
@@ -76,7 +84,6 @@ export default function ChatRoomScreen() {
       setHelpful(map);
     } catch (e) {
       console.warn("[ChatRoom] load failed", e);
-    } finally {
       setLoading(false);
     }
   };
@@ -168,7 +175,13 @@ export default function ChatRoomScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
-        {loading ? null : messages.length === 0 ? (
+        {loading ? (
+          // 로딩 중에도 flex:1 영역을 차지해 입력창이 항상 하단에 고정되게 한다.
+          <View style={styles.loadingArea}>
+            <ActivityIndicator color={COLORS.primary} />
+            <Text style={styles.loadingText}>대화를 불러오는 중…</Text>
+          </View>
+        ) : messages.length === 0 ? (
           <EmptyState
             icon="💬"
             title="아직 대화가 없어요"
@@ -290,6 +303,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   list: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  loadingArea: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACING.sm,
+  },
+  loadingText: { color: COLORS.textSecondary, fontSize: 13 },
   msgLeft: { alignItems: "flex-start", marginBottom: SPACING.sm },
   msgRight: { alignItems: "flex-end", marginBottom: SPACING.sm },
   sender: {
