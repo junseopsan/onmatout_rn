@@ -15,11 +15,13 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsanaSearchModal from "../../components/AsanaSearchModal";
 import { SelectedAsanaList } from "../../components/record/SelectedAsanaList";
 import SimpleDatePicker from "../../components/SimpleDatePicker";
 import { AlertDialog } from "../../components/ui/AlertDialog";
 import { Button } from "../../components/ui/Button";
+import { DetailHeader } from "../../components/ui/DetailHeader";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
 import { STATES } from "../../constants/states";
@@ -183,21 +185,15 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 헤더 */}
-        <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>수련 기록</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 수련 날짜 선택 */}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <DetailHeader title="수련 기록" serif={false} onBack={handleClose} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* 수련 날짜 선택 */}
         <View style={styles.section}>
           <SectionLabel>수련 날짜</SectionLabel>
           <SimpleDatePicker
@@ -321,18 +317,19 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
 
         {/* 하단 여백 */}
         <View style={styles.bottomSpacing} />
-      </ScrollView>
+        </ScrollView>
 
-      {/* 저장 버튼 */}
-      <View style={styles.bottomActions}>
-        <Button
-          title="저장"
-          size="large"
-          loading={loading}
-          disabled={selectedAsanas.length === 0}
-          onPress={handleSave}
-        />
-      </View>
+        {/* 저장 버튼 */}
+        <View style={styles.bottomActions}>
+          <Button
+            title="저장"
+            size="large"
+            loading={loading}
+            disabled={selectedAsanas.length === 0}
+            onPress={handleSave}
+          />
+        </View>
+      </KeyboardAvoidingView>
 
       {/* 아사나 검색 모달 */}
       <AsanaSearchModal
@@ -341,7 +338,7 @@ export default function NewRecordScreen({ onClose }: NewRecordScreenProps) {
         onSelect={handleAsanaSelect}
         selectedAsanas={selectedAsanas}
       />
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -350,31 +347,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  closeButtonContainer: {
-    alignItems: "flex-end",
-    marginBottom: 8,
-    marginTop: -16,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.surface,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: COLORS.textSecondary,
-    fontWeight: "300",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  headerTitle: { color: COLORS.text, fontSize: 20, fontWeight: "700" },
   header: {
     paddingTop: 60,
     paddingHorizontal: 24,
@@ -393,7 +365,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 80,
+    paddingTop: 12,
   },
   section: {
     backgroundColor: COLORS.surface,
