@@ -46,13 +46,13 @@ const DEFAULT_SCHEDULES: ScheduleEntry[] = [1, 3, 5].map((day) => ({
 }));
 
 const DAY_COLORS: Record<number, string> = {
-  0: "#EF4444", // Sun
-  1: "#3B82F6",
-  2: "#3B82F6",
-  3: "#3B82F6",
-  4: "#3B82F6",
-  5: "#3B82F6",
-  6: "#10B981", // Sat
+  0: "#EF4444", // 일
+  1: "#3B82F6", // 월 (월수금 = 파랑)
+  2: "#F59E0B", // 화 (화목 = 주황)
+  3: "#3B82F6", // 수
+  4: "#F59E0B", // 목
+  5: "#3B82F6", // 금
+  6: "#10B981", // 토
 };
 
 export default function TeacherClassCreateScreen() {
