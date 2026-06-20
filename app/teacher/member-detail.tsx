@@ -534,7 +534,11 @@ export default function TeacherMemberDetailScreen() {
               <Text style={[styles.memo, !student.memo && styles.memoEmpty]}>
                 {student.memo || "메모 추가"}
               </Text>
-              <Ionicons name="pencil" size={12} color={COLORS.textMuted} />
+              <Ionicons
+                name="create-outline"
+                size={16}
+                color={COLORS.primary}
+              />
             </TouchableOpacity>
           )}
         </SurfaceCard>
