@@ -566,7 +566,6 @@ export default function YogaTalkThreadListScreen() {
               <Ionicons name="chatbubbles" size={22} color={COLORS.primary} />
             </View>
           )}
-          {unread ? <View style={styles.avatarUnreadDot} /> : null}
         </View>
         <View style={styles.rowMain}>
           <Text
@@ -639,7 +638,6 @@ export default function YogaTalkThreadListScreen() {
       >
         <View>
           <Avatar name={name} colorKey={name} size={48} />
-          {isUnread ? <View style={styles.avatarUnreadDot} /> : null}
         </View>
         <View style={styles.rowMain}>
           <Text
@@ -1262,17 +1260,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   rowTime: { color: COLORS.textMuted, fontSize: 11 },
-  avatarUnreadDot: {
-    position: "absolute",
-    right: -1,
-    bottom: -1,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#F87171",
-    borderWidth: 2,
-    borderColor: COLORS.background,
-  },
   unreadDot: {
     width: 8,
     height: 8,
