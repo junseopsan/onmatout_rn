@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { IconBadge } from "../../components/ui/IconBadge";
+import { PillInput } from "../../components/ui/PillInput";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { Sheet } from "../../components/ui/Sheet";
 import { StatusChip, type StatusKind } from "../../components/ui/StatusChip";
@@ -60,6 +61,13 @@ export default function TeacherMemberDetailScreen() {
   const [isTeacherOfStudio, setIsTeacherOfStudio] = useState(false);
   const [promoting, setPromoting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // 빠른 수정: 상태 시트 / 메모 인라인
+  const [statusSheetOpen, setStatusSheetOpen] = useState(false);
+  const [customDraft, setCustomDraft] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [memoEditing, setMemoEditing] = useState(false);
+  const [memoDraft, setMemoDraft] = useState("");
+  const [savingMemo, setSavingMemo] = useState(false);
 
   const load = useCallback(async () => {
     const [s, m, a, tp] = await Promise.all([
@@ -204,6 +212,53 @@ export default function TeacherMemberDetailScreen() {
         },
       ],
     );
+  };
+
+  // 빠른 상태 변경: active / paused / custom(=paused + custom_status)
+  const applyStatus = async (
+    mode: "active" | "paused" | "custom",
+    custom?: string,
+  ) => {
+    if (!student) return;
+    if (mode === "custom" && !custom?.trim()) {
+      Alert.alert("입력 확인", "커스텀 상태를 입력해 주세요.");
+      return;
+    }
+    setSavingStatus(true);
+    try {
+      const finalStatus = mode === "active" ? "active" : "paused";
+      const finalCustom = mode === "custom" ? custom!.trim() : null;
+      await teacherApi.updateStudent(student.id, {
+        status: finalStatus,
+        custom_status: finalCustom,
+      } as any);
+      setStudent({
+        ...student,
+        status: finalStatus,
+        custom_status: finalCustom,
+      } as any);
+      setStatusSheetOpen(false);
+      setCustomDraft("");
+    } catch (e: any) {
+      Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSavingStatus(false);
+    }
+  };
+
+  const saveMemo = async () => {
+    if (!student) return;
+    setSavingMemo(true);
+    try {
+      const next = memoDraft.trim() || null;
+      await teacherApi.updateStudent(student.id, { memo: next } as any);
+      setStudent({ ...student, memo: next } as any);
+      setMemoEditing(false);
+    } catch (e: any) {
+      Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSavingMemo(false);
+    }
   };
 
   const toggleHold = async () => {
@@ -373,13 +428,24 @@ export default function TeacherMemberDetailScreen() {
               <Text style={styles.heroName} numberOfLines={1}>
                 {student.name}
               </Text>
-              <StatusChip
-                status={effectiveStatus}
-                customLabel={
-                  (student as any).custom_status as string | null | undefined
-                }
-                size="md"
-              />
+              <TouchableOpacity
+                onPress={() => {
+                  setCustomDraft(
+                    ((student as any).custom_status as string) ?? "",
+                  );
+                  setStatusSheetOpen(true);
+                }}
+                activeOpacity={0.7}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <StatusChip
+                  status={effectiveStatus}
+                  customLabel={
+                    (student as any).custom_status as string | null | undefined
+                  }
+                  size="md"
+                />
+              </TouchableOpacity>
             </View>
           </View>
           <TouchableOpacity
@@ -424,16 +490,53 @@ export default function TeacherMemberDetailScreen() {
               {student.phone ? formatPhone(student.phone) : "전화번호 미수집"}
             </Text>
           </View>
-          {student.memo ? (
-            <View style={styles.memoBlock}>
+          {memoEditing ? (
+            <View style={styles.memoEdit}>
+              <PillInput
+                value={memoDraft}
+                onChangeText={setMemoDraft}
+                placeholder="메모 입력 (예: 오십견 회복 중)"
+                multiline
+                autoFocus
+              />
+              <View style={styles.memoEditActions}>
+                <Button
+                  title="취소"
+                  size="small"
+                  variant="secondary"
+                  onPress={() => setMemoEditing(false)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title="저장"
+                  size="small"
+                  loading={savingMemo}
+                  disabled={savingMemo}
+                  onPress={saveMemo}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.memoBlock}
+              activeOpacity={0.7}
+              onPress={() => {
+                setMemoDraft(student.memo ?? "");
+                setMemoEditing(true);
+              }}
+            >
               <Ionicons
                 name="document-text-outline"
                 size={13}
                 color={COLORS.textMuted}
               />
-              <Text style={styles.memo}>{student.memo}</Text>
-            </View>
-          ) : null}
+              <Text style={[styles.memo, !student.memo && styles.memoEmpty]}>
+                {student.memo || "메모 추가"}
+              </Text>
+              <Ionicons name="pencil" size={12} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
         </SurfaceCard>
 
         {/* 선생님 승급 (원장만 노출) */}
@@ -652,6 +755,49 @@ export default function TeacherMemberDetailScreen() {
           </Text>
         </TouchableOpacity>
       </Sheet>
+
+      <Sheet
+        visible={statusSheetOpen}
+        onClose={() => setStatusSheetOpen(false)}
+        title="상태 변경"
+        scrollable={false}
+      >
+        <TouchableOpacity
+          style={styles.statusOpt}
+          activeOpacity={0.7}
+          disabled={savingStatus}
+          onPress={() => applyStatus("active")}
+        >
+          <View style={[styles.statusDot, { backgroundColor: COLORS.success }]} />
+          <Text style={styles.statusOptText}>수련중 (활성)</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.statusOpt}
+          activeOpacity={0.7}
+          disabled={savingStatus}
+          onPress={() => applyStatus("paused")}
+        >
+          <View style={[styles.statusDot, { backgroundColor: COLORS.warning }]} />
+          <Text style={styles.statusOptText}>휴식중</Text>
+        </TouchableOpacity>
+
+        <View style={styles.statusCustomRow}>
+          <View style={{ flex: 1 }}>
+            <PillInput
+              value={customDraft}
+              onChangeText={setCustomDraft}
+              placeholder="커스텀 상태 (예: 어깨 회복 중)"
+            />
+          </View>
+          <Button
+            title="적용"
+            size="medium"
+            loading={savingStatus}
+            disabled={savingStatus || !customDraft.trim()}
+            onPress={() => applyStatus("custom", customDraft)}
+          />
+        </View>
+      </Sheet>
     </SafeAreaView>
   );
 }
@@ -782,6 +928,7 @@ const styles = StyleSheet.create({
   },
   memoBlock: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginTop: SPACING.sm,
     paddingTop: SPACING.md,
@@ -793,6 +940,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     flex: 1,
+  },
+  memoEmpty: { color: COLORS.textMuted },
+  memoEdit: {
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+  },
+  memoEditActions: { flexDirection: "row", gap: SPACING.sm },
+  statusOpt: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 14,
+  },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  statusOptText: { color: COLORS.text, fontSize: 16, fontWeight: "600" },
+  statusCustomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
   },
   inviteCard: {
     marginBottom: SPACING.md,
