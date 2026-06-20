@@ -1047,16 +1047,18 @@ function NewMessageSheet({
     (async () => {
       try {
         if (isTeacher) {
-          // 선생님: 내 학생 목록
+          // 선생님: 내 학생 목록 — 1:1 채팅도 실시간이라 앱 가입자(user_id 있음)만
           const teacherMod = await import("../../lib/api/teacher");
           const list =
             await teacherMod.teacherApi.listMyStudents(currentUserId);
           setContacts(
-            (list ?? []).map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              subtitle: s.phone ?? undefined,
-            })),
+            (list ?? [])
+              .filter((s: any) => !!s.user_id)
+              .map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                subtitle: s.phone ?? undefined,
+              })),
           );
         } else {
           // 수련생: 담당 선생님 목록 (보통 1명)
@@ -1154,49 +1156,51 @@ function NewMessageSheet({
               />
             </View>
           ) : null}
-          {loading ? (
-            <ActivityIndicator
-              color={COLORS.primary}
-              style={{ marginVertical: 24 }}
-            />
-          ) : contacts.length === 0 ? (
-            <Text style={styles.sheetEmpty}>대화할 상대가 없어요.</Text>
-          ) : filteredContacts.length === 0 ? (
-            <Text style={styles.sheetEmpty}>검색 결과가 없어요.</Text>
-          ) : (
-            <ScrollView
-              style={styles.sheetList}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {filteredContacts.map((c) => (
-                <TouchableOpacity
-                  key={c.id}
-                  style={styles.contactRow}
-                  onPress={() => startThread(c)}
-                  disabled={busyId === c.id}
-                  activeOpacity={0.7}
-                >
-                  <Avatar name={c.name} colorKey={c.name} size={44} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.contactName}>{c.name}</Text>
-                    {c.subtitle ? (
-                      <Text style={styles.contactSub}>{c.subtitle}</Text>
-                    ) : null}
-                  </View>
-                  {busyId === c.id ? (
-                    <ActivityIndicator size="small" color={COLORS.primary} />
-                  ) : (
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color={COLORS.textMuted}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+          {/* 콘텐츠 영역 고정 높이 — 검색 결과 수에 따라 시트 높이가 변하지 않게 */}
+          <View style={styles.sheetContent}>
+            {loading ? (
+              <ActivityIndicator
+                color={COLORS.primary}
+                style={{ marginVertical: 24 }}
+              />
+            ) : contacts.length === 0 ? (
+              <Text style={styles.sheetEmpty}>대화할 상대가 없어요.</Text>
+            ) : filteredContacts.length === 0 ? (
+              <Text style={styles.sheetEmpty}>검색 결과가 없어요.</Text>
+            ) : (
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                {filteredContacts.map((c) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.contactRow}
+                    onPress={() => startThread(c)}
+                    disabled={busyId === c.id}
+                    activeOpacity={0.7}
+                  >
+                    <Avatar name={c.name} colorKey={c.name} size={44} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.contactName}>{c.name}</Text>
+                      {c.subtitle ? (
+                        <Text style={styles.contactSub}>{c.subtitle}</Text>
+                      ) : null}
+                    </View>
+                    {busyId === c.id ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                    ) : (
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={COLORS.textMuted}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -1457,7 +1461,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   sheetSearch: { marginBottom: 8 },
-  sheetList: { maxHeight: 380 },
+  sheetContent: { height: 380 },
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
