@@ -81,17 +81,6 @@ export default function YogaTalkThreadListScreen() {
   const { activeStudio } = usePivotStudios();
   const { memberships, loaded: studiosLoaded } = useStudentStudios();
 
-  // 좌측 상단: 폴더 관리 진입 (funnel 아이콘)
-  const headerLeading = (
-    <TouchableOpacity
-      onPress={() => setManageOpen(true)}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      accessibilityLabel="폴더 관리"
-    >
-      <Ionicons name="funnel-outline" size={22} color={COLORS.text} />
-    </TouchableOpacity>
-  );
-
   const headerActions = (
     <View style={styles.headerActions}>
       {isTeacher && activeStudio ? (
@@ -489,6 +478,18 @@ export default function YogaTalkThreadListScreen() {
           active={filter.kind === "unread"}
           onPress={() => setFilter({ kind: "unread" })}
         />
+        <TouchableOpacity
+          style={styles.folderBtn}
+          onPress={() => setManageOpen(true)}
+          accessibilityLabel="폴더 관리"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name="folder-outline"
+            size={20}
+            color={COLORS.textSecondary}
+          />
+        </TouchableOpacity>
         {folders.map((f) => (
           <FilterChip
             key={f.id}
@@ -676,7 +677,7 @@ export default function YogaTalkThreadListScreen() {
   if (loading && threads.length === 0) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <PageHeader eyebrowSlot={headerLeading} trailingSlot={headerActions} />
+        <PageHeader trailingSlot={headerActions} />
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
@@ -686,7 +687,7 @@ export default function YogaTalkThreadListScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <PageHeader eyebrowSlot={headerLeading} trailingSlot={headerActions} />
+      <PageHeader trailingSlot={headerActions} />
       {filterBar}
 
       <FlatList
@@ -1284,6 +1285,12 @@ const styles = StyleSheet.create({
     paddingRight: SPACING.sm,
   },
   filterScroll: { flex: 1 },
+  folderBtn: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   filterBarContent: {
     flexDirection: "row",
     alignItems: "center",
