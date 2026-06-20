@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   boxFocused: { borderColor: COLORS.primary },
   boxError: { borderColor: COLORS.error },
-  inputRow: { flexDirection: "row", alignItems: "center" },
+  inputRow: { flexDirection: "row", alignItems: "center", minHeight: 24 },
   inputFlex: { flex: 1 },
   inputRightAlign: { textAlign: "right" },
   suffix: {
@@ -120,7 +120,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 6,
   },
-  input: { color: COLORS.text, fontSize: 16, padding: 0 },
+  input: {
+    color: COLORS.text,
+    fontSize: 16,
+    lineHeight: 20,
+    height: 24,
+    padding: 0,
+  },
   inputMulti: { color: COLORS.text, fontSize: 16, padding: 0, minHeight: 60 },
   hint: {
     color: COLORS.textSecondary,
