@@ -20,7 +20,7 @@ import { Chip } from "../../components/ui/Chip";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { PillInput } from "../../components/ui/PillInput";
 import { COLORS } from "../../constants/Colors";
-import { SPACING } from "../../constants/Design";
+import { RADIUS, SPACING } from "../../constants/Design";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { teacherApi } from "../../lib/api/teacher";
@@ -35,8 +35,15 @@ type ScheduleEntry = {
   end_time: string;
 };
 
-const DEFAULT_START = "09:00";
-const DEFAULT_END = "10:30";
+const DEFAULT_START = "19:00";
+const DEFAULT_END = "19:50";
+
+// 클래스 생성 기본 스케줄: 월수금 19:00~19:50
+const DEFAULT_SCHEDULES: ScheduleEntry[] = [1, 3, 5].map((day) => ({
+  day_of_week: day,
+  start_time: DEFAULT_START,
+  end_time: DEFAULT_END,
+}));
 
 const DAY_COLORS: Record<number, string> = {
   0: "#EF4444", // Sun
@@ -56,8 +63,16 @@ export default function TeacherClassCreateScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
+  const [capacity, setCapacity] = useState(10);
+  const MIN_CAPACITY = 1;
+  const MAX_CAPACITY = 50;
+  const adjustCapacity = (delta: number) =>
+    setCapacity((c) =>
+      Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, c + delta)),
+    );
+  const [schedules, setSchedules] = useState<ScheduleEntry[]>(
+    DEFAULT_SCHEDULES,
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const toggleDay = (day: number) => {
@@ -87,7 +102,6 @@ export default function TeacherClassCreateScreen() {
     if (!user?.id || !canSubmit) return;
     setSubmitting(true);
     try {
-      const cap = capacity.trim() ? parseInt(capacity.trim(), 10) : null;
       const cls = await teacherApi.createClass(
         {
           teacher_id: user.id,
@@ -95,7 +109,7 @@ export default function TeacherClassCreateScreen() {
           title: title.trim(),
           description: description.trim() || null,
           location: location.trim() || null,
-          capacity: cap && cap > 0 ? cap : null,
+          capacity,
           is_active: true,
         } as any,
         schedules.map((s) => ({
@@ -145,13 +159,35 @@ export default function TeacherClassCreateScreen() {
             onChangeText={setLocation}
             placeholder="예: 온매트 요가원 A룸"
           />
-          <PillInput
-            label="정원"
-            value={capacity}
-            onChangeText={setCapacity}
-            placeholder="예: 10"
-            keyboardType="numeric"
-          />
+          <Text style={styles.label}>정원</Text>
+          <View style={styles.stepperRow}>
+            <TouchableOpacity
+              style={[
+                styles.stepperBtn,
+                capacity <= MIN_CAPACITY && styles.stepperBtnDisabled,
+              ]}
+              onPress={() => adjustCapacity(-1)}
+              disabled={capacity <= MIN_CAPACITY}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="remove" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+            <View style={styles.stepperValue}>
+              <Text style={styles.stepperValueText}>{capacity}</Text>
+              <Text style={styles.stepperUnit}>명</Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.stepperBtn,
+                capacity >= MAX_CAPACITY && styles.stepperBtnDisabled,
+              ]}
+              onPress={() => adjustCapacity(1)}
+              disabled={capacity >= MAX_CAPACITY}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.label}>요일 / 시간</Text>
           <View style={styles.dayRow}>
@@ -358,6 +394,32 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     paddingHorizontal: 4,
   },
+  stepperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  stepperBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperBtnDisabled: { opacity: 0.4 },
+  stepperValue: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+    gap: 4,
+    minWidth: 72,
+  },
+  stepperValueText: { color: COLORS.text, fontSize: 24, fontWeight: "800" },
+  stepperUnit: { color: COLORS.textSecondary, fontSize: 14 },
   dayRow: {
     flexDirection: "row",
     gap: 6,
