@@ -47,8 +47,9 @@ function dowToday() {
 export default function TeacherClassesTabScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
-  const { studios, activeStudio, isDirectorOfActive } = usePivotStudios();
-  const hasNoStudio = studios.length === 0;
+  const { studios, activeStudio, isDirectorOfActive, loaded } =
+    usePivotStudios();
+  const hasNoStudio = loaded && studios.length === 0;
   const [classes, setClasses] = useState<ClassWithSchedules[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,6 +60,9 @@ export default function TeacherClassesTabScreen() {
 
   const load = useCallback(async () => {
     if (!user?.id) return;
+    // 스튜디오 로딩이 끝나기 전에는 조회하지 않는다. (activeStudio 가 잠깐 null 인
+    // 순간 studio 필터 없이 조회돼 목록이 깜빡이며 사라지던 문제 방지)
+    if (!loaded) return;
     try {
       const data = await teacherApi.listMyClasses(
         user.id,
@@ -70,7 +74,7 @@ export default function TeacherClassesTabScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, activeStudio?.id]);
+  }, [user?.id, activeStudio?.id, loaded]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
