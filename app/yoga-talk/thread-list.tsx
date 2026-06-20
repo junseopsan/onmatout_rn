@@ -86,7 +86,6 @@ export default function YogaTalkThreadListScreen() {
       onPress={() => setManageOpen(true)}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityLabel="폴더 관리"
-      style={{ marginBottom: -8 }}
     >
       <Ionicons name="funnel-outline" size={22} color={COLORS.text} />
     </TouchableOpacity>
@@ -686,7 +685,7 @@ export default function YogaTalkThreadListScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <PageHeader trailingSlot={headerActions} />
+      <PageHeader eyebrowSlot={headerLeading} trailingSlot={headerActions} />
       {filterBar}
 
       <FlatList
