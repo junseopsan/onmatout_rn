@@ -791,15 +791,16 @@ const styles = StyleSheet.create({
   },
   categoryButton: {
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
     borderWidth: 1,
-    minWidth: 80,
-    minHeight: 36, // 고정 높이 설정
+    minWidth: 62,
+    minHeight: 28, // 고정 높이 설정
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
   searchContainer: {
