@@ -182,9 +182,10 @@ export const teacherApi = {
       .eq("class_id", classId)
       .order("joined_at", { ascending: false });
     if (error) throw error;
-    return (data ?? []) as (ClassStudent & {
-      student_profiles: StudentProfile;
-    })[];
+    // student_profiles 조인이 null 인 행(삭제/권한 등)은 제외해 렌더 시 크래시 방지.
+    return ((data ?? []) as any[]).filter(
+      (r) => r.student_profiles != null,
+    ) as (ClassStudent & { student_profiles: StudentProfile })[];
   },
 
   async assignStudentsToClass(classId: string, studentIds: string[]) {
