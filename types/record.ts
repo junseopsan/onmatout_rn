@@ -7,7 +7,7 @@ export interface Record {
   title: string; // 기록 제목
   asanas: string[]; // 선택된 아사나 ID 배열
   memo: string; // 경험 메모 (최대 500자)
-  states: string[]; // 선택된 상태 배열
+  states?: string[]; // (구) 선택된 상태 배열 — 입력 UI 제거됨, 호환용
   photos: string[]; // 사진 URL 배열 (최대 3장)
   created_at: string;
   updated_at: string;
@@ -17,7 +17,7 @@ export interface RecordFormData {
   title: string; // 기록 제목
   asanas: string[];
   memo: string;
-  states: string[];
+  states?: string[];
   photos: string[];
   date?: string; // 선택적 날짜 필드 (기본값: 오늘)
 }
