@@ -13,16 +13,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button } from "../../components/ui/Button";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import Dialog from "../../components/ui/Dialog";
 import { COLORS } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  isStudioInviteCode,
-  studentApi,
-  type MatchCandidate,
-} from "../../lib/api/student";
+import { isStudioInviteCode, studentApi } from "../../lib/api/student";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -31,9 +26,7 @@ export default function AuthMatchScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteProp<RootStackParamList, "AuthMatch">>();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const autoTriedRef = React.useRef(false);
   // 가입/연결 결과 모달 (Alert 대신 공통 Dialog 로 예쁘게)
   const [result, setResult] = useState<{
@@ -42,27 +35,6 @@ export default function AuthMatchScreen() {
     message: string;
   } | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (!user?.phone) {
-        if (mounted) setLoading(false);
-        return;
-      }
-      try {
-        const found = await studentApi.findMatchByPhone(user.phone);
-        if (mounted) setCandidates(found);
-      } catch (e) {
-        console.warn("[AuthMatch] match query failed", e);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [user?.phone]);
-
   const finish = () => {
     navigation.reset({ index: 0, routes: [{ name: "TabNavigator" }] });
   };
@@ -70,32 +42,11 @@ export default function AuthMatchScreen() {
   // 초대 링크로 들어온 경우: 코드 자동 연결 시도 (1회)
   useEffect(() => {
     const c = route.params?.inviteCode?.trim();
-    if (!c || autoTriedRef.current || loading || !user?.id) return;
+    if (!c || autoTriedRef.current || !user?.id) return;
     autoTriedRef.current = true;
     handleCodeSubmit(c);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.params?.inviteCode, loading, user?.id]);
-
-  const handleAccept = async (c: MatchCandidate) => {
-    if (!user?.id) return;
-    setSubmitting(true);
-    try {
-      await studentApi.acceptMatch(user.id, c.studentProfileId);
-      setResult({
-        type: "success",
-        title: "연결 완료",
-        message: `${c.teacherStudioName ?? "선생님"} 님과 연결되었어요.`,
-      });
-    } catch (e: any) {
-      setResult({
-        type: "error",
-        title: "연결 실패",
-        message: e?.message ?? "잠시 후 다시 시도해 주세요.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  }, [route.params?.inviteCode, user?.id]);
 
   const handleCodeSubmit = async (rawCode: string) => {
     const value = (rawCode ?? "").trim();
@@ -142,14 +93,6 @@ export default function AuthMatchScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <ActivityIndicator color={COLORS.primary} style={{ marginTop: 100 }} />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <DetailHeader
@@ -175,28 +118,6 @@ export default function AuthMatchScreen() {
             <Ionicons name="qr-code" size={26} color={COLORS.white} />
             <Text style={styles.qrPrimaryText}>QR 스캔으로 연결</Text>
           </TouchableOpacity>
-
-          {/* 2) 전화번호 자동 매칭 후보 */}
-          {candidates.length > 0 ? (
-            <View style={styles.matchSection}>
-              <Text style={styles.sectionLabel}>나를 등록한 선생님</Text>
-              {candidates.map((c) => (
-                <View key={c.studentProfileId} style={styles.card}>
-                  <Text style={styles.cardEyebrow}>
-                    {c.teacherStudioName ?? "선생님"}
-                  </Text>
-                  <Text style={styles.cardName}>{c.studentName}</Text>
-                  <Button
-                    title="연결 수락"
-                    onPress={() => handleAccept(c)}
-                    disabled={submitting}
-                    loading={submitting}
-                    style={{ marginTop: 12 }}
-                  />
-                </View>
-              ))}
-            </View>
-          ) : null}
 
           {submitting ? (
             <View style={styles.connecting}>

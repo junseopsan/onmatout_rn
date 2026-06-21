@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useCallback } from "react";
+import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MyTeachersBanner } from "../../components/student/MyTeachersBanner";
@@ -12,7 +12,6 @@ import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { useRoles } from "../../hooks/useRoles";
-import { useStudentMatchCheck } from "../../hooks/useStudentMatchCheck";
 import { RootStackParamList } from "../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -21,12 +20,6 @@ export default function DashboardScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
   const { activeRole } = useRoles();
-
-  useStudentMatchCheck(
-    useCallback(() => {
-      navigation.navigate("AuthMatch" as never);
-    }, [navigation]),
-  );
 
   const greeting =
     activeRole === "student" ? "수련 잘 다녀오세요" : "오늘 한 호흡";

@@ -10,14 +10,6 @@ export type StudentTeacherLink = {
   activeMembership: Membership | null;
 };
 
-export type MatchCandidate = {
-  studentProfileId: string;
-  studentName: string;
-  teacherUserId: string;
-  teacherStudioName: string | null;
-  inviteCode: string;
-};
-
 export type StudioJoinResult = {
   studioId: string;
   studioName: string;
@@ -131,49 +123,7 @@ export const studentApi = {
     }));
   },
 
-  // 가입 직후 phone 기반 자동 매칭: user_id 가 NULL 인 student_profiles 중 동일 phone 찾기
-  async findMatchByPhone(phone: string): Promise<MatchCandidate[]> {
-    const variants = phonePatterns(phone);
-    if (variants.length === 0) return [];
-
-    const { data, error } = await supabase
-      .from("student_profiles")
-      .select("id, name, phone, teacher_id, invite_code, user_id")
-      .is("user_id", null)
-      .in("phone", variants);
-    if (error) throw error;
-    if (!data || data.length === 0) return [];
-
-    const teacherIds = Array.from(new Set(data.map((d) => d.teacher_id)));
-    const { data: teachers } = await supabase
-      .from("teacher_profiles")
-      .select("user_id, studio_name")
-      .in("user_id", teacherIds);
-    const studioMap = new Map(
-      (teachers ?? []).map((t) => [t.user_id, t.studio_name ?? null]),
-    );
-
-    return data.map((d) => ({
-      studentProfileId: d.id,
-      studentName: d.name,
-      teacherUserId: d.teacher_id,
-      teacherStudioName: studioMap.get(d.teacher_id) ?? null,
-      inviteCode: d.invite_code,
-    }));
-  },
-
-  async acceptMatch(userId: string, studentProfileId: string) {
-    const { error } = await supabase
-      .from("student_profiles")
-      .update({
-        user_id: userId,
-        invite_code_used_at: new Date().toISOString(),
-      })
-      .eq("id", studentProfileId);
-    if (error) throw error;
-  },
-
-  // 요가원 단위 초대코드(OMS-)로 가입: 서버에서 전화 자동매칭 또는 신규 수련생 생성
+  // 요가원 단위 초대코드(OMS-)로 가입: 서버에서 내보낸 회원 복원 또는 신규 수련생 생성
   async joinStudioByCode(
     code: string,
     userId: string,
