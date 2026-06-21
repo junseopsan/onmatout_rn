@@ -153,6 +153,38 @@ export default function YogaTalkThreadScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);
 
+  // 실시간: 이 대화의 새 메시지를 즉시 반영 (열어둔 채로 상대 메시지 수신)
+  useEffect(() => {
+    const channel = supabase
+      .channel(`yoga_talk_thread:${threadId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "yoga_talk_messages",
+          filter: `thread_id=eq.${threadId}`,
+        },
+        (payload) => {
+          const m = payload.new as YogaTalkMessage;
+          setMessages((prev) =>
+            prev.some((x) => x.id === m.id) ? prev : [...prev, m],
+          );
+          // 상대가 보낸 메시지면 즉시 읽음 처리 (대화를 보고 있으므로)
+          if (m.sender_id !== user?.id) {
+            yogaTalkApi
+              .markThreadRead(threadId)
+              .then(() => notifyYogaTalkRead())
+              .catch(() => undefined);
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [threadId, user?.id]);
+
   const refreshTopics = async () => {
     if (!thread) return;
     setTopicsLoading(true);

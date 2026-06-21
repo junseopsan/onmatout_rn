@@ -41,10 +41,12 @@ export type ThreadSummary = YogaTalkThread & {
   my_read_at: string | null;
   counterpart_read_at: string | null;
   counterpart_user_id: string | null;
+  // 쌍(사제) 단위 안읽음 — 기본 대화 + 토픽 대화를 합산(롤업)한 결과
+  unread: boolean;
 };
 
 export const yogaTalkApi = {
-  // 선생님 측: 페어당 기본 스레드만 (목록 화면)
+  // 선생님 측: 페어당 1행(기본 스레드). 안읽음/미리보기는 토픽 스레드까지 롤업.
   async listAsTeacher(teacherUserId: string): Promise<ThreadSummary[]> {
     const { data, error } = await supabase
       .from("yoga_talk_threads")
@@ -52,25 +54,33 @@ export const yogaTalkApi = {
         "*, classes:class_id(title), student:student_profiles!yoga_talk_threads_student_id_fkey(name)",
       )
       .eq("teacher_id", teacherUserId)
-      .eq("is_default", true)
       .order("last_activity_at", { ascending: false });
     if (error) throw error;
-    return enrichWithLast((data ?? []) as any[], "student");
+    const all = (data ?? []) as any[];
+    return enrichWithLast(
+      all.filter((t) => t.is_default),
+      all,
+      "student",
+    );
   },
 
-  // 수련생 측: 페어당 기본 스레드만
+  // 수련생 측: 페어당 1행(기본 스레드). 안읽음/미리보기는 토픽 스레드까지 롤업.
   async listAsStudent(studentProfileIds: string[]): Promise<ThreadSummary[]> {
     if (studentProfileIds.length === 0) return [];
+    // teacher_id 에는 FK 가 없어 user_profiles 임베드가 불가(에러)하므로
+    // 선생님 이름은 enrichWithLast 에서 별도 조회로 채운다.
     const { data, error } = await supabase
       .from("yoga_talk_threads")
-      .select(
-        "*, classes:class_id(title), teacher:user_profiles!yoga_talk_threads_teacher_id_fkey(name)",
-      )
+      .select("*, classes:class_id(title)")
       .in("student_id", studentProfileIds)
-      .eq("is_default", true)
       .order("last_activity_at", { ascending: false });
     if (error) throw error;
-    return enrichWithLast((data ?? []) as any[], "teacher");
+    const all = (data ?? []) as any[];
+    return enrichWithLast(
+      all.filter((t) => t.is_default),
+      all,
+      "teacher",
+    );
   },
 
   async getOrCreateThread(input: {
@@ -313,30 +323,38 @@ export const yogaTalkApi = {
   },
 };
 
+// defaultRows: 화면에 보일 페어당 기본 스레드 행.
+// allRows: 같은 범위의 모든 스레드(기본 + 토픽) — 안읽음/미리보기 롤업 계산용.
 async function enrichWithLast(
-  rows: any[],
+  defaultRows: any[],
+  allRows: any[],
   counterpartKey: "teacher" | "student",
 ): Promise<ThreadSummary[]> {
-  if (rows.length === 0) return [];
-  const ids = rows.map((r) => r.id);
+  if (defaultRows.length === 0) return [];
+  const allIds = allRows.map((r) => r.id);
 
   const [{ data: msgs }, meAuth, { data: reads }] = await Promise.all([
     supabase
       .from("yoga_talk_messages")
       .select("*")
-      .in("thread_id", ids)
+      .in("thread_id", allIds)
       .order("created_at", { ascending: false }),
     supabase.auth.getUser(),
     supabase
       .from("yoga_talk_thread_reads")
       .select("thread_id, user_id, last_read_at")
-      .in("thread_id", ids),
+      .in("thread_id", allIds),
   ]);
   const myUserId = meAuth.data.user?.id ?? null;
 
+  // 스레드별 최신 메시지 / 최신 '상대' 메시지(내가 안 보낸 것)
   const lastByThread = new Map<string, YogaTalkMessage>();
+  const lastCounterpartByThread = new Map<string, YogaTalkMessage>();
   for (const m of (msgs ?? []) as YogaTalkMessage[]) {
     if (!lastByThread.has(m.thread_id)) lastByThread.set(m.thread_id, m);
+    if (m.sender_id !== myUserId && !lastCounterpartByThread.has(m.thread_id)) {
+      lastCounterpartByThread.set(m.thread_id, m);
+    }
   }
 
   const readByThreadUser = new Map<string, string>(); // `${threadId}|${userId}` → last_read_at
@@ -345,10 +363,12 @@ async function enrichWithLast(
   }
 
   // 학생 user_id 조회 (counterpartKey === "student" 인 경우 teacher 입장에서 학생 user_id 필요)
-  let studentUserIdMap = new Map<string, string | null>();
+  const studentUserIdMap = new Map<string, string | null>();
+  // 선생님 이름 조회 (counterpartKey === "teacher" — teacher_id 에 FK 가 없어 임베드 불가)
+  const teacherNameMap = new Map<string, string | null>();
   if (counterpartKey === "student") {
     const studentProfileIds = Array.from(
-      new Set(rows.map((r) => r.student_id)),
+      new Set(allRows.map((r) => r.student_id)),
     );
     if (studentProfileIds.length > 0) {
       const { data: sps } = await supabase
@@ -359,39 +379,89 @@ async function enrichWithLast(
         studentUserIdMap.set(sp.id, sp.user_id);
       }
     }
+  } else {
+    const teacherIds = Array.from(new Set(allRows.map((r) => r.teacher_id)));
+    if (teacherIds.length > 0) {
+      const { data: tps } = await supabase
+        .from("user_profiles")
+        .select("user_id, name")
+        .in("user_id", teacherIds);
+      for (const tp of (tps ?? []) as any[]) {
+        teacherNameMap.set(tp.user_id, tp.name);
+      }
+    }
   }
 
-  return rows.map((r) => {
+  // 페어(teacher|student) 단위로 스레드 묶기
+  const pairThreads = new Map<string, any[]>();
+  for (const r of allRows) {
+    const k = `${r.teacher_id}|${r.student_id}`;
+    if (!pairThreads.has(k)) pairThreads.set(k, []);
+    pairThreads.get(k)!.push(r);
+  }
+
+  const result = defaultRows.map((r) => {
     const counterpartRaw = r[counterpartKey];
     const counterpart = Array.isArray(counterpartRaw)
       ? counterpartRaw[0]
       : counterpartRaw;
+    const counterpartName =
+      counterpartKey === "teacher"
+        ? teacherNameMap.get(r.teacher_id) ?? null
+        : counterpart?.name ?? null;
     const classRaw = r.classes;
     const classRow = Array.isArray(classRaw) ? classRaw[0] : classRaw;
 
-    // counterpart user_id (read_at lookup용)
-    let counterpartUserId: string | null = null;
-    if (counterpartKey === "teacher") {
-      counterpartUserId = r.teacher_id ?? null;
-    } else {
-      counterpartUserId = studentUserIdMap.get(r.student_id) ?? null;
+    const siblings = pairThreads.get(`${r.teacher_id}|${r.student_id}`) ?? [r];
+
+    // 페어 전체에서 최신 메시지 + 최근 활동 + 안읽음 여부 롤업
+    let lastMsg: YogaTalkMessage | null = null;
+    let lastActivity: string | null = r.last_activity_at ?? null;
+    let pairUnread = false;
+    for (const th of siblings) {
+      const lm = lastByThread.get(th.id);
+      if (lm && (!lastMsg || lm.created_at > lastMsg.created_at)) lastMsg = lm;
+      if (
+        th.last_activity_at &&
+        (!lastActivity || th.last_activity_at > lastActivity)
+      ) {
+        lastActivity = th.last_activity_at;
+      }
+      const lc = lastCounterpartByThread.get(th.id);
+      if (lc) {
+        const myReadTh = readByThreadUser.get(`${th.id}|${myUserId}`) ?? null;
+        if (!myReadTh || myReadTh < lc.created_at) pairUnread = true;
+      }
     }
 
+    // 영수증(읽음/전송됨) 표시는 최신 메시지가 속한 스레드 기준
+    const lastThreadId = lastMsg?.thread_id ?? r.id;
+    const counterpartUserId: string | null =
+      counterpartKey === "teacher"
+        ? r.teacher_id ?? null
+        : studentUserIdMap.get(r.student_id) ?? null;
     const myRead = myUserId
-      ? readByThreadUser.get(`${r.id}|${myUserId}`) ?? null
+      ? readByThreadUser.get(`${lastThreadId}|${myUserId}`) ?? null
       : null;
     const counterpartRead = counterpartUserId
-      ? readByThreadUser.get(`${r.id}|${counterpartUserId}`) ?? null
+      ? readByThreadUser.get(`${lastThreadId}|${counterpartUserId}`) ?? null
       : null;
 
     return {
       ...r,
-      last_message: lastByThread.get(r.id) ?? null,
+      last_activity_at: lastActivity,
+      last_message: lastMsg,
       class_title: classRow?.title ?? null,
-      counterpart_name: counterpart?.name ?? null,
+      counterpart_name: counterpartName,
       my_read_at: myRead,
       counterpart_read_at: counterpartRead,
       counterpart_user_id: counterpartUserId,
+      unread: pairUnread,
     } as ThreadSummary;
   });
+
+  result.sort((a, b) =>
+    (b.last_activity_at ?? "").localeCompare(a.last_activity_at ?? ""),
+  );
+  return result;
 }

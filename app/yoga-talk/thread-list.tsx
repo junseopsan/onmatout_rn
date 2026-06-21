@@ -1,7 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -63,15 +69,9 @@ function ago(ts: string) {
 }
 
 // 1:1 대화의 읽음 상태 — 필터/뱃지 공통 사용
-function threadIsUnread(t: ThreadSummary, isTeacher: boolean): boolean {
-  const lastMsg = t.last_message;
-  if (!lastMsg) return false;
-  const fromMe = isTeacher
-    ? lastMsg.sender_type === "teacher"
-    : lastMsg.sender_type === "student";
-  if (fromMe) return false;
-  const lastTs = lastMsg.created_at ?? null;
-  return !(t.my_read_at && lastTs && t.my_read_at >= lastTs);
+function threadIsUnread(t: ThreadSummary, _isTeacher: boolean): boolean {
+  // 페어(기본+토픽) 롤업 결과를 그대로 사용
+  return !!t.unread;
 }
 
 export default function YogaTalkThreadListScreen() {
@@ -249,6 +249,32 @@ export default function YogaTalkThreadListScreen() {
     }, [load, loadRooms, loadFolders]),
   );
 
+  // 실시간: 목록 화면에 있는 동안 새 메시지가 오면 즉시 목록 갱신
+  // (load/loadRooms 는 매 렌더 새로 생성되므로 ref 로 최신 참조를 호출)
+  const loadRef = useRef(load);
+  loadRef.current = load;
+  const loadRoomsRef = useRef(loadRooms);
+  loadRoomsRef.current = loadRooms;
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`yoga_talk_list:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "yoga_talk_messages" },
+        () => loadRef.current(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages" },
+        () => loadRoomsRef.current(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const openRoom = (r: ChatRoom) => {
     // 들어가는 즉시 읽음 처리 — 돌아왔을 때 안읽음에서 깜빡이지 않도록
     setRoomUnread((prev) => {
@@ -267,10 +293,13 @@ export default function YogaTalkThreadListScreen() {
   };
 
   const openThread = (t: ThreadSummary) => {
-    // 읽음 시각을 낙관적으로 갱신 → 돌아왔을 때 안읽음에서 깜빡임 방지
+    // 읽음을 낙관적으로 갱신 → 돌아왔을 때 안읽음에서 깜빡임 방지.
+    // 안읽음 점은 페어 롤업(unread) 기준이므로 함께 끈다.
     setThreads((prev) =>
       prev.map((x) =>
-        x.id === t.id ? { ...x, my_read_at: new Date().toISOString() } : x,
+        x.id === t.id
+          ? { ...x, my_read_at: new Date().toISOString(), unread: false }
+          : x,
       ),
     );
     navigation.navigate("YogaTalkThread", { threadId: t.id });
@@ -614,7 +643,8 @@ export default function YogaTalkThreadListScreen() {
         else status = "unread";
       }
     }
-    const isUnread = status === "unread";
+    // 안읽음 표시는 페어 롤업(t.unread) 기준 — 토픽 대화의 안읽음도 기본 행에 표시
+    const isUnread = !!t.unread;
 
     // 인스타 스타일 미리보기: 실제 마지막 메시지 + 내가 보낸 건 "나:" prefix
     let preview: string;

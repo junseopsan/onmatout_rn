@@ -250,8 +250,11 @@ export const chatApi = {
   },
 
   // 안읽은 그룹/요가원 방 수 (탭 배지용)
-  async unreadCount(): Promise<number> {
-    const { data, error } = await supabase.rpc("chat_unread_count");
+  // studioIds 를 주면 그 요가원의 방만 카운트 (네비 배지를 현재 보이는 요가원으로 한정).
+  async unreadCount(studioIds?: string[] | null): Promise<number> {
+    const { data, error } = await supabase.rpc("chat_unread_count", {
+      p_studio_ids: studioIds ?? null,
+    });
     if (error) return 0;
     return typeof data === "number" ? data : 0;
   },
