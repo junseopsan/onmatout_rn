@@ -109,6 +109,37 @@ export default function StudentClassesTabScreen() {
   const studio = activeStudio;
   const studentProfileId = activeMembership?.studentProfileId ?? null;
 
+  // 정보 버튼은 즉시 떠야 한다(깜빡임 방지). studioInfo 가 로드되기 전엔
+  // activeMembership 의 요약 정보로 임시 채우고, 로드되면 전체 정보로 교체.
+  const studioForCard = useMemo<StudioFullInfo | null>(() => {
+    if (studioInfo) return studioInfo;
+    if (!activeMembership) return null;
+    return {
+      id: activeMembership.studio.id,
+      name: activeMembership.studio.name,
+      location: activeMembership.studio.location,
+      map_url: null,
+      phone: activeMembership.studio.phone ?? null,
+      hours_text: null,
+      website_url: null,
+      instagram_url: null,
+      kakao_url: null,
+      description: null,
+      policy_text: null,
+      pricing_text: null,
+      pricing_image_url: null,
+      policy_image_url: null,
+      description_image_url: null,
+      rules_image_url: null,
+      photos: [],
+      hours_by_day: null,
+      bank_account: null,
+      cancel_cutoff_hours: 0,
+      qna_enabled: false,
+      ownerName: null,
+    };
+  }, [studioInfo, activeMembership]);
+
   // 요가원 상세 + 활성 수업권 로드
   useEffect(() => {
     if (!activeMembership) {
@@ -392,7 +423,20 @@ export default function StudentClassesTabScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <PageHeader
-        eyebrowSlot={hasMemberships ? <StudentStudioSwitcher /> : undefined}
+        eyebrowSlot={
+          hasMemberships ? (
+            <View style={styles.studioRow}>
+              <StudentStudioSwitcher />
+              {studioForCard ? (
+                <StudioInfoCard
+                  studio={studioForCard}
+                  memberships={activeMemberships}
+                  plans={studioPlans}
+                />
+              ) : null}
+            </View>
+          ) : undefined
+        }
         trailingSlot={
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -424,13 +468,6 @@ export default function StudentClassesTabScreen() {
         />
       ) : (
         <>
-          {studioInfo ? (
-            <StudioInfoCard
-              studio={studioInfo}
-              memberships={activeMemberships}
-              plans={studioPlans}
-            />
-          ) : null}
           <WeekDayStrip
             selected={selectedDate}
             onSelect={setSelectedDate}
@@ -605,6 +642,7 @@ export default function StudentClassesTabScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  studioRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerIconBtn: {
     width: 36,
     height: 36,
@@ -658,7 +696,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.pill,
     backgroundColor: COLORS.primary,
-    minWidth: 76,
+    minWidth: 92,
     alignItems: "center",
   },
   bookBtnText: { color: COLORS.white, fontSize: 12, fontWeight: "700" },
@@ -669,7 +707,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(248, 113, 113, 0.14)",
     borderWidth: 1,
     borderColor: "rgba(248, 113, 113, 0.5)",
-    minWidth: 76,
+    minWidth: 92,
     alignItems: "center",
   },
   bookBtnBookedText: { color: "#F87171", fontSize: 12, fontWeight: "700" },
@@ -680,7 +718,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(245, 158, 11, 0.18)",
     borderWidth: 1,
     borderColor: "rgba(245, 158, 11, 0.5)",
-    minWidth: 76,
+    minWidth: 92,
     alignItems: "center",
   },
   bookBtnWaitlistText: {
@@ -699,7 +737,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(139, 92, 246, 0.12)",
     borderWidth: 1,
     borderColor: "rgba(139, 92, 246, 0.4)",
-    minWidth: 76,
+    minWidth: 92,
   },
   talkBtnText: { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
   daySectionHeader: {
@@ -744,7 +782,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceDark,
     borderWidth: 1,
     borderColor: COLORS.border,
-    minWidth: 76,
+    minWidth: 92,
     alignItems: "center",
   },
   bookBtnPastText: {

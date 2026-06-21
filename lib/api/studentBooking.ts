@@ -33,6 +33,7 @@ export type StudentStudioMembership = {
     id: string;
     name: string;
     location: string | null;
+    phone: string | null;
   };
 };
 
@@ -40,6 +41,7 @@ export type StudioFullInfo = {
   id: string;
   name: string;
   location: string | null;
+  map_url: string | null;
   phone: string | null;
   hours_text: string | null;
   website_url: string | null;
@@ -77,7 +79,7 @@ export const studentBookingApi = {
     const { data: studio, error } = await supabase
       .from("pivot_studios")
       .select(
-        "id, name, location, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, pricing_image_url, policy_image_url, description_image_url, rules_image_url, photos, hours_by_day, bank_account, cancel_cutoff_hours, qna_enabled, owner_id",
+        "id, name, location, map_url, phone, hours_text, website_url, instagram_url, kakao_url, description, policy_text, pricing_text, pricing_image_url, policy_image_url, description_image_url, rules_image_url, photos, hours_by_day, bank_account, cancel_cutoff_hours, qna_enabled, owner_id",
       )
       .eq("id", studioId)
       .maybeSingle();
@@ -96,6 +98,7 @@ export const studentBookingApi = {
       id: studio.id as string,
       name: studio.name as string,
       location: (studio.location as string | null) ?? null,
+      map_url: (studio.map_url as string | null) ?? null,
       phone: (studio.phone as string | null) ?? null,
       hours_text: (studio.hours_text as string | null) ?? null,
       website_url: (studio.website_url as string | null) ?? null,
@@ -151,7 +154,7 @@ export const studentBookingApi = {
     const { data, error } = await supabase
       .from("student_profiles")
       .select(
-        "id, teacher_id, studio_id, studio:pivot_studios(id, name, location)",
+        "id, teacher_id, studio_id, studio:pivot_studios(id, name, location, phone)",
       )
       .eq("user_id", userId)
       .not("studio_id", "is", null)
@@ -168,6 +171,7 @@ export const studentBookingApi = {
             id: studio.id as string,
             name: studio.name as string,
             location: (studio.location as string | null) ?? null,
+            phone: (studio.phone as string | null) ?? null,
           },
         };
       })

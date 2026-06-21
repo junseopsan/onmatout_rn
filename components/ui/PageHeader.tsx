@@ -31,7 +31,15 @@ export function PageHeader({
   return (
     <View style={[styles.wrap, style]}>
       <View style={styles.left}>
-        {eyebrowSlot ? <View style={{ marginBottom: 8 }}>{eyebrowSlot}</View> : null}
+        {eyebrowSlot ? (
+          <View
+            style={
+              eyebrow || title || subtitle ? { marginBottom: 8 } : undefined
+            }
+          >
+            {eyebrowSlot}
+          </View>
+        ) : null}
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         {title ? <SerifTitle size="hero">{title}</SerifTitle> : null}
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}

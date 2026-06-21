@@ -74,9 +74,28 @@ export function StudentStudioSwitcher() {
                     {m.studio.name}
                   </Text>
                   {m.studio.location ? (
-                    <Text style={styles.rowSub} numberOfLines={1}>
-                      {m.studio.location}
-                    </Text>
+                    <View style={styles.rowSubLine}>
+                      <Ionicons
+                        name="location-outline"
+                        size={13}
+                        color={COLORS.textSecondary}
+                      />
+                      <Text style={styles.rowSub} numberOfLines={1}>
+                        {m.studio.location}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {m.studio.phone ? (
+                    <View style={styles.rowSubLine}>
+                      <Ionicons
+                        name="call-outline"
+                        size={13}
+                        color={COLORS.textSecondary}
+                      />
+                      <Text style={styles.rowSub} numberOfLines={1}>
+                        {m.studio.phone}
+                      </Text>
+                    </View>
                   ) : null}
                 </View>
               </TouchableOpacity>
@@ -139,7 +158,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(139, 92, 246, 0.08)",
   },
   rowName: { ...TEXT.bodyMed, color: COLORS.text },
-  rowSub: { ...TEXT.caption, color: COLORS.textSecondary, marginTop: 2 },
+  rowSubLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  rowSub: { ...TEXT.caption, color: COLORS.textSecondary, flex: 1 },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",

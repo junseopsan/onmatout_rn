@@ -37,6 +37,8 @@ interface SheetProps {
   footer?: React.ReactNode;
   scrollable?: boolean;
   maxHeightPct?: number;
+  /** 지정 시 내용과 무관하게 시트 높이를 화면의 이 비율로 고정한다. */
+  heightPct?: number;
   bodyStyle?: ViewStyle;
 }
 
@@ -50,8 +52,10 @@ export function Sheet({
   footer,
   scrollable = true,
   maxHeightPct = 0.85,
+  heightPct,
   bodyStyle,
 }: SheetProps) {
+  const fixedHeight = heightPct ? SCREEN_H * heightPct : undefined;
   const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
   const [rendered, setRendered] = React.useState(visible);
@@ -116,7 +120,9 @@ export function Sheet({
               sheetStyle,
               {
                 paddingBottom: Math.max(insets.bottom, SPACING.lg) + SPACING.md,
-                maxHeight: SCREEN_H * maxHeightPct,
+                ...(fixedHeight
+                  ? { height: fixedHeight }
+                  : { maxHeight: SCREEN_H * maxHeightPct }),
               },
             ]}
           >
@@ -144,7 +150,7 @@ export function Sheet({
 
             {scrollable ? (
               <ScrollView
-                style={styles.body}
+                style={[styles.body, fixedHeight ? styles.bodyFill : null]}
                 contentContainerStyle={[styles.bodyContent, bodyStyle]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -152,7 +158,14 @@ export function Sheet({
                 {children}
               </ScrollView>
             ) : (
-              <View style={[styles.body, styles.bodyContent, bodyStyle]}>
+              <View
+                style={[
+                  styles.body,
+                  fixedHeight ? styles.bodyFill : null,
+                  styles.bodyContent,
+                  bodyStyle,
+                ]}
+              >
                 {children}
               </View>
             )}
@@ -215,6 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceDark,
   },
   body: { flexGrow: 0, flexShrink: 1 },
+  bodyFill: { flexGrow: 1 },
   bodyContent: {
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.sm,

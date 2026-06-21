@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
+  Dimensions,
   Image,
   Linking,
   Pressable,
@@ -64,11 +65,21 @@ function fmtDate(d: string | null): string {
   return d.replaceAll("-", ".");
 }
 
-function chipLabel(memberships: MyMembershipInfo[]): string {
-  const m = memberships[0];
-  const rem = remainingText(m);
-  const base = rem ? `${typeLabel(m)} 잔여 ${rem}` : typeLabel(m);
-  return memberships.length > 1 ? `${base} 외 ${memberships.length - 1}` : base;
+function instaHandle(v: string): string {
+  const s = v.trim();
+  if (s.startsWith("@")) return s;
+  const stripped = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  const m = stripped.match(/instagram\.com\/([^/?#]+)/i);
+  const handle = m ? m[1] : (stripped.replace(/\/+$/, "").split("/").pop() ?? s);
+  return `@${handle.replace(/^@/, "")}`;
+}
+
+function displayUrl(v: string): string {
+  return v
+    .trim()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/+$/, "");
 }
 
 function callPhone(num: string) {
@@ -91,100 +102,132 @@ const DAY_ORDER: { key: string; label: string }[] = [
   { key: "0", label: "일" },
 ];
 
+type TabKey = "mine" | "studio" | "classes";
+
 export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<TabKey>("mine");
   const hasContact =
-    !!studio.phone || !!studio.instagram_url || !!studio.kakao_url;
+    !!studio.phone ||
+    !!studio.instagram_url ||
+    !!studio.kakao_url ||
+    !!studio.website_url;
   const hasPricing =
     plans.length > 0 || !!studio.pricing_text || !!studio.pricing_image_url;
   const hasPolicy =
-    studio.cancel_cutoff_hours > 0 ||
     !!studio.policy_text ||
     !!studio.policy_image_url ||
     !!studio.rules_image_url;
   const hasIntro = !!studio.description || !!studio.description_image_url;
   const hourRows = DAY_ORDER.filter((d) => studio.hours_by_day?.[d.key]);
-  const hasOps = hourRows.length > 0 || !!studio.bank_account;
+  const hasOps = hourRows.length > 0;
   const hasPhotos = studio.photos.length > 0;
-  const hasGuide = hasPricing || hasPolicy || hasIntro || hasOps || hasPhotos;
-
-  if (memberships.length === 0 && !hasContact && !hasGuide) return null;
+  // 요가원 탭은 기본 정보만 (주소/소개/운영/사진/연락처). 수업권 안내·등록/예약·계좌는 수업 탭으로 분리.
+  const hasStudioInfo =
+    !!studio.location || hasIntro || hasOps || hasPhotos || hasContact;
 
   return (
     <>
       <Pressable
-        style={styles.chip}
+        style={styles.infoBtn}
         onPress={() => {
           haptics.select();
           setOpen(true);
         }}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       >
-        <View style={styles.chipIcon}>
-          <Ionicons name="ticket" size={13} color={COLORS.primary} />
-        </View>
-        <Text style={styles.chipText} numberOfLines={1}>
-          {memberships.length > 0 ? chipLabel(memberships) : "요가원 정보"}
-        </Text>
-        <Ionicons name="chevron-forward" size={15} color={COLORS.textMuted} />
+        <Ionicons
+          name="information-circle-outline"
+          size={14}
+          color={COLORS.primary}
+        />
+        <Text style={styles.infoBtnText}>정보</Text>
       </Pressable>
 
-      <Sheet visible={open} onClose={() => setOpen(false)} title={studio.name}>
-        {hasPhotos ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.galleryRow}
-            style={{ marginBottom: 14 }}
-          >
-            {studio.photos.map((url) => (
-              <Image
-                key={url}
-                source={{ uri: url }}
-                style={styles.galleryImg}
-              />
-            ))}
-          </ScrollView>
+      <Sheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        title={studio.name}
+        heightPct={0.75}
+      >
+        <View style={styles.tabBar}>
+          {(
+            [
+              { key: "mine", label: "내 수련권" },
+              { key: "studio", label: "요가원" },
+              { key: "classes", label: "수업" },
+            ] as { key: TabKey; label: string }[]
+          ).map((t) => (
+            <Pressable
+              key={t.key}
+              style={[styles.tabItem, tab === t.key && styles.tabItemOn]}
+              onPress={() => {
+                haptics.select();
+                setTab(t.key);
+              }}
+            >
+              <Text
+                style={[styles.tabText, tab === t.key && styles.tabTextOn]}
+              >
+                {t.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {tab === "mine" ? (
+          memberships.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.empty}>아직 발급받은 수련권이 없어요.</Text>
+              <Text style={styles.emptySub}>
+                수련권이 필요하면 요가원에 문의해 주세요.
+              </Text>
+            </View>
+          ) : (
+            memberships.map((m) => {
+              const rem = remainingText(m);
+              const left = daysLeft(m.end_date);
+              return (
+                <View key={m.id} style={styles.passCard}>
+                  <View style={styles.passTop}>
+                    <Text style={styles.passType}>{typeLabel(m)}</Text>
+                    {m.class_title ? (
+                      <Text style={styles.passClass} numberOfLines={1}>
+                        {m.class_title}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.statRow}>
+                    {rem ? (
+                      <Stat label="잔여" value={`${rem}회`} highlight />
+                    ) : null}
+                    {m.start_date && m.end_date ? (
+                      <Stat
+                        label="기간"
+                        value={`${fmtDate(m.start_date)} ~ ${fmtDate(m.end_date)}`}
+                      />
+                    ) : null}
+                    {left != null ? (
+                      <Stat label="남은 기간" value={`${left}일`} />
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })
+          )
         ) : null}
 
-        {memberships.length > 0 ? (
-          <Text style={styles.sectionLabel}>내 수강권</Text>
+        {tab === "studio" && !hasStudioInfo ? (
+          <View style={styles.emptyWrap}>
+            <Text style={styles.empty}>등록된 안내가 없어요.</Text>
+          </View>
         ) : null}
-        {memberships.length === 0 ? (
-          <Text style={styles.empty}>보유한 수강권이 없어요.</Text>
-        ) : (
-          memberships.map((m) => {
-            const rem = remainingText(m);
-            const left = daysLeft(m.end_date);
-            return (
-              <View key={m.id} style={styles.passCard}>
-                <View style={styles.passTop}>
-                  <Text style={styles.passType}>{typeLabel(m)}</Text>
-                  {m.class_title ? (
-                    <Text style={styles.passClass} numberOfLines={1}>
-                      {m.class_title}
-                    </Text>
-                  ) : null}
-                </View>
-                <View style={styles.statRow}>
-                  {rem ? (
-                    <Stat label="잔여" value={`${rem}회`} highlight />
-                  ) : null}
-                  {m.start_date && m.end_date ? (
-                    <Stat
-                      label="기간"
-                      value={`${fmtDate(m.start_date)} ~ ${fmtDate(m.end_date)}`}
-                    />
-                  ) : null}
-                  {left != null ? (
-                    <Stat label="남은 기간" value={`${left}일`} />
-                  ) : null}
-                </View>
-              </View>
-            );
-          })
-        )}
 
-        {hasIntro ? (
+        {tab === "studio" && hasPhotos ? (
+          <PhotoSlider photos={studio.photos} />
+        ) : null}
+
+        {tab === "studio" && hasIntro ? (
           <View style={styles.guideSection}>
             <Text style={styles.guideTitle}>소개</Text>
             {studio.description ? (
@@ -200,113 +243,66 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
           </View>
         ) : null}
 
-        {hasOps ? (
+        {tab === "studio" && studio.location ? (
           <View style={styles.guideSection}>
-            <Text style={styles.guideTitle}>운영 안내</Text>
-            {hourRows.map((d) => (
-              <View key={d.key} style={styles.hourRow}>
-                <Text style={styles.hourDay}>{d.label}</Text>
-                <Text style={styles.hourVal}>
-                  {studio.hours_by_day?.[d.key]}
+            <Text style={styles.guideTitle}>주소</Text>
+            {studio.map_url ? (
+              <Pressable
+                style={styles.ruleLine}
+                onPress={() => openUrl(studio.map_url!)}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={15}
+                  color={COLORS.primary}
+                />
+                <Text
+                  style={[
+                    styles.guideBody,
+                    { flex: 1, color: COLORS.primary, fontWeight: "700" },
+                  ]}
+                >
+                  {studio.location}
                 </Text>
-              </View>
-            ))}
-            {studio.bank_account ? (
-              <View
-                style={[styles.hourRow, { marginTop: hourRows.length ? 8 : 0 }]}
-              >
-                <Text style={styles.hourDay}>계좌</Text>
-                <Text style={styles.hourVal}>{studio.bank_account}</Text>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
-        {hasPricing ? (
-          <View style={styles.guideSection}>
-            <Text style={styles.guideTitle}>수업권 안내</Text>
-            {plans.map((p) => (
-              <View key={p.id} style={styles.planLine}>
-                {p.image_url ? (
-                  <Image
-                    source={{ uri: p.image_url }}
-                    style={styles.planThumb}
-                  />
-                ) : null}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.planName}>{p.name}</Text>
-                  <Text style={styles.planSummary}>{planSummary(p)}</Text>
-                </View>
-                {p.price != null ? (
-                  <Text style={styles.planPrice}>
-                    {p.price.toLocaleString("en-US")}원
-                  </Text>
-                ) : null}
-              </View>
-            ))}
-            {studio.pricing_text ? (
-              <Text
-                style={[
-                  styles.guideBody,
-                  plans.length > 0 && { marginTop: 10 },
-                ]}
-              >
-                {studio.pricing_text}
-              </Text>
-            ) : null}
-            {studio.pricing_image_url ? (
-              <Image
-                source={{ uri: studio.pricing_image_url }}
-                style={styles.guideImage}
-                resizeMode="contain"
-              />
-            ) : null}
-          </View>
-        ) : null}
-
-        {hasPolicy ? (
-          <View style={styles.guideSection}>
-            <Text style={styles.guideTitle}>등록/예약 안내</Text>
-            {studio.cancel_cutoff_hours > 0 ? (
+                <Ionicons
+                  name="open-outline"
+                  size={14}
+                  color={COLORS.primary}
+                />
+              </Pressable>
+            ) : (
               <View style={styles.ruleLine}>
                 <Ionicons
-                  name="time-outline"
-                  size={14}
-                  color={COLORS.warning}
+                  name="location-outline"
+                  size={15}
+                  color={COLORS.textSecondary}
                 />
-                <Text style={styles.ruleText}>
-                  수업 시작 {studio.cancel_cutoff_hours}시간 전까지 취소 가능
+                <Text style={[styles.guideBody, { flex: 1 }]}>
+                  {studio.location}
                 </Text>
               </View>
-            ) : null}
-            {studio.policy_text ? (
-              <Text
-                style={[
-                  styles.guideBody,
-                  studio.cancel_cutoff_hours > 0 && { marginTop: 8 },
-                ]}
-              >
-                {studio.policy_text}
-              </Text>
-            ) : null}
-            {studio.policy_image_url ? (
-              <Image
-                source={{ uri: studio.policy_image_url }}
-                style={styles.guideImage}
-                resizeMode="contain"
-              />
-            ) : null}
-            {studio.rules_image_url ? (
-              <Image
-                source={{ uri: studio.rules_image_url }}
-                style={styles.guideImage}
-                resizeMode="contain"
-              />
-            ) : null}
+            )}
           </View>
         ) : null}
 
-        {hasContact ? (
+        {tab === "studio" && hasOps ? (
+          <View style={styles.guideSection}>
+            <Text style={styles.guideTitle}>운영 안내</Text>
+            <View style={styles.hourGrid}>
+              {hourRows.map((d) => (
+                <View key={d.key} style={styles.hourRow}>
+                  <Text style={styles.hourDay}>{d.label}</Text>
+                  <Text style={styles.hourVal} numberOfLines={1}>
+                    {studio.hours_by_day?.[d.key]}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+
+        {tab === "studio" && hasContact ? (
           <View style={styles.actionsRow}>
             {studio.phone ? (
               <Pressable
@@ -314,7 +310,9 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
                 style={styles.actionBtn}
               >
                 <Ionicons name="call" size={15} color={COLORS.text} />
-                <Text style={styles.actionText}>전화</Text>
+                <Text style={styles.actionText} numberOfLines={1}>
+                  {studio.phone}
+                </Text>
               </Pressable>
             ) : null}
             {studio.kakao_url ? (
@@ -327,7 +325,9 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
                   size={15}
                   color="#FAE100"
                 />
-                <Text style={styles.actionText}>카카오</Text>
+                <Text style={styles.actionText} numberOfLines={1}>
+                  카카오톡
+                </Text>
               </Pressable>
             ) : null}
             {studio.instagram_url ? (
@@ -336,13 +336,163 @@ export function StudioInfoCard({ studio, memberships, plans = [] }: Props) {
                 style={styles.actionBtn}
               >
                 <Ionicons name="logo-instagram" size={15} color="#E1306C" />
-                <Text style={styles.actionText}>인스타</Text>
+                <Text style={styles.actionText} numberOfLines={1}>
+                  {instaHandle(studio.instagram_url)}
+                </Text>
+              </Pressable>
+            ) : null}
+            {studio.website_url ? (
+              <Pressable
+                onPress={() => openUrl(studio.website_url!)}
+                style={styles.actionBtn}
+              >
+                <Ionicons name="globe-outline" size={15} color={COLORS.text} />
+                <Text style={styles.actionText} numberOfLines={1}>
+                  {displayUrl(studio.website_url)}
+                </Text>
               </Pressable>
             ) : null}
           </View>
         ) : null}
+
+        {tab === "classes" ? (
+          <>
+            {studio.bank_account ? (
+              <View style={styles.accountBox}>
+                <View style={styles.accountHeader}>
+                  <Ionicons
+                    name="card-outline"
+                    size={15}
+                    color={COLORS.primary}
+                  />
+                  <Text style={styles.accountLabel}>계좌번호</Text>
+                </View>
+                <Text style={styles.accountValue} selectable>
+                  {studio.bank_account}
+                </Text>
+              </View>
+            ) : null}
+
+            {hasPricing ? (
+              <View style={styles.guideSection}>
+                <Text style={styles.guideTitle}>수업권 안내</Text>
+                <Text style={styles.guideSubtitle}>
+                  이 요가원에서 운영하는 수강권 종류예요.
+                </Text>
+                {plans.map((p) => (
+                  <View key={p.id} style={styles.planLine}>
+                    {p.image_url ? (
+                      <Image
+                        source={{ uri: p.image_url }}
+                        style={styles.planThumb}
+                      />
+                    ) : null}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.planName}>{p.name}</Text>
+                      <Text style={styles.planSummary}>{planSummary(p)}</Text>
+                    </View>
+                    {p.price != null ? (
+                      <Text style={styles.planPrice}>
+                        {p.price.toLocaleString("en-US")}원
+                      </Text>
+                    ) : null}
+                  </View>
+                ))}
+                {studio.pricing_text ? (
+                  <Text
+                    style={[
+                      styles.guideBody,
+                      plans.length > 0 && { marginTop: 10 },
+                    ]}
+                  >
+                    {studio.pricing_text}
+                  </Text>
+                ) : null}
+                {studio.pricing_image_url ? (
+                  <Image
+                    source={{ uri: studio.pricing_image_url }}
+                    style={styles.guideImage}
+                    resizeMode="contain"
+                  />
+                ) : null}
+                {studio.cancel_cutoff_hours > 0 ? (
+                  <View style={[styles.ruleLine, { marginTop: 10 }]}>
+                    <Ionicons
+                      name="time-outline"
+                      size={14}
+                      color={COLORS.warning}
+                    />
+                    <Text style={styles.ruleText}>
+                      수업 시작 {studio.cancel_cutoff_hours}시간 전까지 취소 가능
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : !studio.bank_account ? (
+              <View style={styles.emptyWrap}>
+                <Text style={styles.empty}>등록된 수업권이 없어요.</Text>
+              </View>
+            ) : null}
+
+            {hasPolicy ? (
+              <View style={styles.guideSection}>
+                <Text style={styles.guideTitle}>등록/예약 안내</Text>
+                {studio.policy_text ? (
+                  <Text style={styles.guideBody}>{studio.policy_text}</Text>
+                ) : null}
+                {studio.policy_image_url ? (
+                  <Image
+                    source={{ uri: studio.policy_image_url }}
+                    style={styles.guideImage}
+                    resizeMode="contain"
+                  />
+                ) : null}
+                {studio.rules_image_url ? (
+                  <Image
+                    source={{ uri: studio.rules_image_url }}
+                    style={styles.guideImage}
+                    resizeMode="contain"
+                  />
+                ) : null}
+              </View>
+            ) : null}
+          </>
+        ) : null}
       </Sheet>
     </>
+  );
+}
+
+function PhotoSlider({ photos }: { photos: string[] }) {
+  const [idx, setIdx] = useState(0);
+  // 시트 본문은 좌우 SPACING.xl 패딩이 있으므로 슬라이드 폭을 거기에 맞춘다.
+  const width = Dimensions.get("window").width - SPACING.xl * 2;
+  return (
+    <View style={styles.sliderWrap}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) =>
+          setIdx(Math.round(e.nativeEvent.contentOffset.x / width))
+        }
+      >
+        {photos.map((url) => (
+          <Image
+            key={url}
+            source={{ uri: url }}
+            style={{ width, height: 200, borderRadius: 12 }}
+          />
+        ))}
+      </ScrollView>
+      {photos.length > 1 ? (
+        <View style={styles.dotsRow}>
+          {photos.map((_, i) => (
+            <View key={i} style={[styles.dot, i === idx && styles.dotOn]} />
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -366,44 +516,86 @@ function Stat({
 }
 
 const styles = StyleSheet.create({
-  chip: {
+  infoBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: RADIUS.lg,
+    gap: 4,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
     backgroundColor: "rgba(139, 92, 246, 0.10)",
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
     borderColor: "rgba(139, 92, 246, 0.4)",
   },
-  chipIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(139, 92, 246, 0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chipText: {
-    flex: 1,
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  sectionLabel: {
-    color: COLORS.textMuted,
+  infoBtnText: {
+    color: COLORS.primary,
     fontSize: 12,
     fontWeight: "700",
-    marginBottom: 8,
+  },
+  tabBar: {
+    flexDirection: "row",
+    gap: 6,
+    backgroundColor: COLORS.surfaceDark,
+    borderRadius: RADIUS.pill,
+    padding: 4,
+    marginBottom: SPACING.lg,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 9,
+    borderRadius: RADIUS.pill,
+  },
+  tabItemOn: {
+    backgroundColor: "rgba(139, 92, 246, 0.18)",
+  },
+  tabText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  tabTextOn: {
+    color: COLORS.primary,
+  },
+  emptyWrap: {
+    paddingVertical: 24,
+    alignItems: "center",
   },
   empty: {
     color: COLORS.textSecondary,
     fontSize: 14,
     textAlign: "center",
-    paddingVertical: 20,
+  },
+  emptySub: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 6,
+  },
+  accountBox: {
+    backgroundColor: "rgba(139, 92, 246, 0.10)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+    padding: 14,
+    gap: 6,
+    marginBottom: 10,
+  },
+  accountHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  accountLabel: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  accountValue: {
+    color: COLORS.text,
+    fontSize: 17,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
   passCard: {
     backgroundColor: COLORS.surfaceDark,
@@ -462,6 +654,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginBottom: 8,
   },
+  guideSubtitle: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: -2,
+    marginBottom: 8,
+  },
   guideBody: {
     color: COLORS.text,
     fontSize: 13,
@@ -503,14 +701,34 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: COLORS.surface,
   },
-  galleryRow: { gap: 8 },
-  galleryImg: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
-    backgroundColor: COLORS.surface,
+  sliderWrap: { marginBottom: 14 },
+  dotsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 8,
   },
-  hourRow: { flexDirection: "row", alignItems: "center", paddingVertical: 3 },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.border,
+  },
+  dotOn: {
+    backgroundColor: COLORS.primary,
+    width: 18,
+  },
+  hourGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  hourRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 3,
+    width: "48%",
+  },
   hourDay: {
     width: 40,
     color: COLORS.textSecondary,
