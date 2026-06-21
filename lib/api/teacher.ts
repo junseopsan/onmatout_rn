@@ -49,7 +49,9 @@ export const teacherApi = {
     let q = supabase
       .from("student_profiles")
       .select("*")
-      .eq("teacher_id", teacherId);
+      .eq("teacher_id", teacherId)
+      // 내보낸(archived) 수련생은 명단에서 제외 — 데이터는 보존되지만 목록엔 안 보임.
+      .neq("status", "archived");
     if (studioId) q = q.eq("studio_id", studioId);
     const { data, error } = await q.order("created_at", { ascending: false });
     if (error) throw error;
