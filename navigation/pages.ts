@@ -48,7 +48,6 @@ import TeacherClassDetailScreen from "../app/teacher/class-detail";
 import TeacherHomeScreen from "../app/teacher/index";
 import TeacherMemberAttendanceScreen from "../app/teacher/member-attendance";
 import TeacherNearbyScreen from "../app/teacher/nearby";
-import TeacherMemberCreateScreen from "../app/teacher/member-create";
 import TeacherStudioInviteScreen from "../app/teacher/studio-invite";
 import TeacherMemberDetailScreen from "../app/teacher/member-detail";
 import TeacherMembershipCreateScreen from "../app/teacher/membership-create";
@@ -260,11 +259,6 @@ export const pageList: PageConfig[] = [
   {
     name: "TeacherHome",
     component: TeacherHomeScreen,
-    options: { headerShown: false },
-  },
-  {
-    name: "TeacherMemberCreate",
-    component: TeacherMemberCreateScreen,
     options: { headerShown: false },
   },
   {

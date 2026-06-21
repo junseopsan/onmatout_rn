@@ -139,10 +139,10 @@ export default function TeacherHomeScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.primaryAction}
-                  onPress={() => navigation.navigate("TeacherMemberCreate")}
+                  onPress={() => navigation.navigate("TeacherStudioInvite")}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.primaryActionText}>+ 등록</Text>
+                  <Text style={styles.primaryActionText}>+ 초대</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -151,7 +151,7 @@ export default function TeacherHomeScreen() {
               <EmptyHint
                 icon="📒"
                 title="아직 수련생이 없어요"
-                description="우측 상단 [등록] 버튼으로 첫 수련생을 추가해 보세요. 등록 즉시 초대 코드가 자동 생성돼요."
+                description="우측 상단 [초대] 버튼으로 요가원 초대 링크/QR을 보내보세요. 수련생이 가입 후 링크나 QR로 들어오면 연결돼요."
               />
             ) : (
               <>

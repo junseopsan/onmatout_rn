@@ -19,7 +19,6 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { FabButton } from "../../components/ui/FabButton";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { Sheet } from "../../components/ui/Sheet";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
@@ -48,13 +47,6 @@ export default function TeacherMembersTabScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
-  const [addSheetOpen, setAddSheetOpen] = useState(false);
-
-  const goAdd = (to: "TeacherMemberCreate" | "TeacherStudioInvite") => {
-    setAddSheetOpen(false);
-    navigation.navigate(to);
-  };
-
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -239,10 +231,12 @@ export default function TeacherMembersTabScreen() {
         <EmptyState
           icon="📒"
           title="아직 수련생이 없어요"
-          description={"등록으로 첫 수련생을 추가하거나,\n우측 상단 초대로 요가원 링크를 보내보세요."}
+          description={
+            "초대 링크나 QR로 요가원에 초대해 보세요.\n수련생이 앱에 가입한 뒤 링크나 QR로 들어오면 연결돼요."
+          }
           action={{
-            label: "수련생 추가",
-            onPress: () => setAddSheetOpen(true),
+            label: "초대 링크 보내기",
+            onPress: () => navigation.navigate("TeacherStudioInvite"),
           }}
         />
       ) : filtered.length === 0 ? (
@@ -312,78 +306,16 @@ export default function TeacherMembersTabScreen() {
       )}
 
       <FabButton
-        label="수련생"
-        onPress={() => setAddSheetOpen(true)}
+        label="초대"
+        onPress={() => navigation.navigate("TeacherStudioInvite")}
         style={styles.fab}
       />
-
-      <Sheet
-        visible={addSheetOpen}
-        onClose={() => setAddSheetOpen(false)}
-        title="수련생 추가"
-        description="직접 등록하거나 초대 링크를 보낼 수 있어요."
-        scrollable={false}
-      >
-        <TouchableOpacity
-          style={styles.addOption}
-          activeOpacity={0.8}
-          onPress={() => goAdd("TeacherMemberCreate")}
-        >
-          <View style={styles.addOptionIcon}>
-            <Ionicons name="person-add-outline" size={22} color={COLORS.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.addOptionTitle}>직접 등록</Text>
-            <Text style={styles.addOptionDesc}>
-              이름, 전화번호를 입력해 명단에 추가
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.addOption}
-          activeOpacity={0.8}
-          onPress={() => goAdd("TeacherStudioInvite")}
-        >
-          <View style={styles.addOptionIcon}>
-            <Ionicons name="share-social-outline" size={22} color={COLORS.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.addOptionTitle}>초대 링크 보내기</Text>
-            <Text style={styles.addOptionDesc}>
-              요가원 링크나 QR로 초대 (가입 시 자동 연결)
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-      </Sheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  addOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-    paddingVertical: SPACING.md,
-  },
-  addOptionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.surfaceDark,
-  },
-  addOptionTitle: { color: COLORS.text, fontSize: 16, fontWeight: "700" },
-  addOptionDesc: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-    marginTop: 2,
-  },
   searchWrap: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
   filterRow: {
     flexDirection: "row",

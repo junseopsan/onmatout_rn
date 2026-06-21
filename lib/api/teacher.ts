@@ -92,19 +92,29 @@ export const teacherApi = {
     return data as StudentProfile;
   },
 
-  async createStudent(input: StudentProfileInsert) {
-    const { data, error } = await supabase
-      .from("student_profiles")
-      .insert(input)
-      .select()
-      .single();
-    if (error) throw error;
-    return data as StudentProfile;
-  },
-
-  // 요가원에서 수련생 내보내기(연결 해제) — 데이터는 보관.
-  // status=archived + 가입 연결(user_id) 해제. 출석/수업권/기록은 그대로 보존.
+  // 요가원에서 수련생 내보내기.
+  //  - 가입한 회원(user_id 있음): 보관(archived) + 연결 해제. 출석/수업권/기록 보존,
+  //    같은 전화번호로 재가입 시 복원.
+  //  - 미가입(직접 추가) 프로필(user_id 없음): 완전 삭제. 계정이 없어 보관 의미가 없고,
+  //    보관해두면 전화번호 매칭으로 되살아나는 부작용만 생긴다.
   async removeStudentFromStudio(studentProfileId: string) {
+    const { data: prof } = await supabase
+      .from("student_profiles")
+      .select("user_id, invite_code_used_at")
+      .eq("id", studentProfileId)
+      .maybeSingle();
+
+    // 가입한 적이 전혀 없는 순수 직접추가 프로필만 완전 삭제.
+    // (가입 이력이 있으면 — 현재 가입중이거나 과거 가입 후 내보내진 회원이면 — 보관 유지)
+    if (prof && prof.user_id == null && prof.invite_code_used_at == null) {
+      const { error } = await supabase
+        .from("student_profiles")
+        .delete()
+        .eq("id", studentProfileId);
+      if (error) throw error;
+      return;
+    }
+
     const { error } = await supabase
       .from("student_profiles")
       .update({

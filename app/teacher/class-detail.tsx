@@ -362,15 +362,12 @@ function AssignStudentsModal({
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [newName, setNewName] = useState("");
-  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (!visible || !teacherId) return;
     setLoading(true);
     setPicked(new Set());
     setQuery("");
-    setNewName("");
     teacherApi
       .listMyStudents(teacherId)
       .then((data) => setAll(data))
@@ -395,27 +392,6 @@ function AssignStudentsModal({
     });
   };
 
-  // 미가입자: 이름만 입력해 즉시 명단 추가 + 배정
-  const handleQuickAdd = async () => {
-    const name = newName.trim();
-    if (!teacherId || !name || adding) return;
-    setAdding(true);
-    try {
-      const created = await teacherApi.createStudent({
-        teacher_id: teacherId,
-        studio_id: studioId,
-        name,
-        invite_code: "",
-      } as any);
-      setNewName("");
-      onSubmit([created.id]);
-    } catch (e: any) {
-      Alert.alert("추가 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
-    } finally {
-      setAdding(false);
-    }
-  };
-
   return (
     <Modal
       visible={visible}
@@ -432,44 +408,20 @@ function AssignStudentsModal({
           </TouchableOpacity>
         </View>
 
-        {/* 미가입자 빠른 추가 */}
-        <View style={styles.quickAddRow}>
-          <View style={{ flex: 1 }}>
-            <PillInput
-              value={newName}
-              onChangeText={setNewName}
-              placeholder="이름으로 바로 추가 (미가입 회원)"
-              onSubmitEditing={handleQuickAdd}
-              returnKeyType="done"
-            />
-          </View>
-          <Button
-            title="추가"
-            size="medium"
-            variant="secondary"
-            disabled={!newName.trim() || adding}
-            loading={adding}
-            onPress={handleQuickAdd}
-          />
-        </View>
-
         {/* 가입 수련생 검색 */}
         <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
           <PillInput
             value={query}
             onChangeText={setQuery}
             placeholder="이름 또는 전화번호로 검색"
+            autoCorrect={false}
           />
         </View>
 
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 24 }} />
-        ) : available.length === 0 ? (
-          <Text style={styles.muted}>
-            {q ? "검색 결과가 없어요." : "배정 가능한 수련생이 없어요."}
-          </Text>
         ) : (
-          <ScrollView style={{ maxHeight: 300 }}>
+          <ScrollView style={{ maxHeight: 340 }} keyboardShouldPersistTaps="handled">
             {available.map((s) => {
               const checked = picked.has(s.id);
               return (
@@ -494,6 +446,12 @@ function AssignStudentsModal({
                 </TouchableOpacity>
               );
             })}
+
+            {available.length === 0 ? (
+              <Text style={styles.pickEmpty}>
+                {q ? "검색 결과가 없어요." : "배정 가능한 수련생이 없어요."}
+              </Text>
+            ) : null}
           </ScrollView>
         )}
 
@@ -559,6 +517,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   muted: { color: COLORS.textSecondary, fontSize: 13 },
+  pickEmpty: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    textAlign: "center",
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+  },
   mutedSub: {
     color: COLORS.textMuted,
     fontSize: 11,
@@ -668,13 +633,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: COLORS.text, fontSize: 17, fontWeight: "600" },
   modalCancel: { color: COLORS.textSecondary, fontSize: 14 },
-  quickAddRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
   pickRow: {
     flexDirection: "row",
     alignItems: "center",

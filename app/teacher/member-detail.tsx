@@ -193,25 +193,25 @@ export default function TeacherMemberDetailScreen() {
 
   const handleRemove = () => {
     if (!student) return;
-    Alert.alert(
-      "요가원에서 내보내기",
-      `${student.name} 님을 요가원에서 내보낼까요? 앱 연결이 해제되고 명단에서 보관 처리돼요. 출석, 수업권 등 기록은 보존됩니다.`,
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "내보내기",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await teacherApi.removeStudentFromStudio(student.id);
-              navigation.goBack();
-            } catch (e: any) {
-              Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
-            }
-          },
+    const isRegistered = !!(student as any).user_id;
+    const message = isRegistered
+      ? `${student.name} 님을 요가원에서 내보낼까요? 앱 연결이 해제되고 명단에서 보관 처리돼요. 출석, 수업권 등 기록은 보존되고, 같은 번호로 재가입하면 복원돼요.`
+      : `${student.name} 님을 명단에서 완전히 삭제할까요? 아직 앱에 가입하지 않은 회원이라 기록과 함께 삭제되며 되돌릴 수 없어요.`;
+    Alert.alert(isRegistered ? "요가원에서 내보내기" : "명단에서 삭제", message, [
+      { text: "취소", style: "cancel" },
+      {
+        text: isRegistered ? "내보내기" : "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await teacherApi.removeStudentFromStudio(student.id);
+            navigation.goBack();
+          } catch (e: any) {
+            Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   // 빠른 상태 변경: active / paused / custom(=paused + custom_status)

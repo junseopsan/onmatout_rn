@@ -16,7 +16,6 @@ export type RootStackParamList = {
   TabNavigator: undefined;
   TeacherTabNavigator: undefined;
   TeacherHome: undefined;
-  TeacherMemberCreate: undefined;
   TeacherStudioInvite: undefined;
   TeacherMemberDetail: { studentProfileId: string };
   TeacherMemberAttendance: { studentProfileId: string };
