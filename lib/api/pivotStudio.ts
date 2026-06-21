@@ -5,6 +5,7 @@ export type PivotStudio = {
   owner_id: string;
   name: string;
   location: string | null;
+  map_url: string | null;
   phone: string | null;
   hours_text: string | null;
   website_url: string | null;
@@ -30,6 +31,7 @@ export type PivotStudio = {
 export type PivotStudioInput = {
   name: string;
   location?: string | null;
+  map_url?: string | null;
   phone?: string | null;
   hours_text?: string | null;
   website_url?: string | null;
@@ -149,6 +151,7 @@ export const pivotStudioApi = {
         owner_id: ownerId,
         name: rest.name,
         location: rest.location ?? null,
+        map_url: rest.map_url ?? null,
         phone: rest.phone ?? null,
         hours_text: rest.hours_text ?? null,
         website_url: rest.website_url ?? null,
@@ -179,6 +182,7 @@ export const pivotStudioApi = {
     };
     if (input.name !== undefined) patch.name = input.name;
     if (input.location !== undefined) patch.location = input.location;
+    if (input.map_url !== undefined) patch.map_url = input.map_url;
     if (input.phone !== undefined) patch.phone = input.phone;
     if (input.hours_text !== undefined) patch.hours_text = input.hours_text;
     if (input.website_url !== undefined) patch.website_url = input.website_url;

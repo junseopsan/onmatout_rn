@@ -106,6 +106,7 @@ export default function TeacherStudioFormScreen() {
 
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [mapUrl, setMapUrl] = useState("");
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
   const [instagram, setInstagram] = useState("");
@@ -139,6 +140,7 @@ export default function TeacherStudioFormScreen() {
         if (mounted && s) {
           setName(s.name);
           setLocation(s.location ?? "");
+          setMapUrl(s.map_url ?? "");
           setPhone(s.phone ?? "");
           setWebsite(s.website_url ?? "");
           setInstagram(s.instagram_url ?? "");
@@ -233,6 +235,7 @@ export default function TeacherStudioFormScreen() {
       const payload = {
         name: name.trim(),
         location: location.trim() || null,
+        map_url: mapUrl.trim() || null,
         phone: phone.trim() || null,
         website_url: website.trim() || null,
         instagram_url: instagram.trim() || null,
@@ -364,6 +367,15 @@ export default function TeacherStudioFormScreen() {
             placeholder="주소를 입력해주세요"
             value={location}
             onChangeText={setLocation}
+          />
+          <PillInput
+            label="주소 링크 (선택)"
+            placeholder="지도 링크를 붙여넣으세요 (네이버/카카오/구글 지도)"
+            hint="입력하면 회원이 주소를 눌렀을 때 이 링크로 열려요."
+            value={mapUrl}
+            onChangeText={setMapUrl}
+            autoCapitalize="none"
+            keyboardType="url"
           />
           <PillInput
             label="연락처"
