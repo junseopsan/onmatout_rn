@@ -204,14 +204,15 @@ export const teacherApi = {
   async listClassStudents(classId: string) {
     const { data, error } = await supabase
       .from("class_students")
-      .select("*, student_profiles(*)")
+      // inner join + status 필터로 내보낸(archived) 학생은 명단에서 제외.
+      .select("*, student_profiles!inner(*)")
       .eq("class_id", classId)
+      .neq("student_profiles.status", "archived")
       .order("joined_at", { ascending: false });
     if (error) throw error;
-    // student_profiles 조인이 null 인 행(삭제/권한 등)은 제외해 렌더 시 크래시 방지.
-    return ((data ?? []) as any[]).filter(
-      (r) => r.student_profiles != null,
-    ) as (ClassStudent & { student_profiles: StudentProfile })[];
+    return ((data ?? []) as any[]) as (ClassStudent & {
+      student_profiles: StudentProfile;
+    })[];
   },
 
   async assignStudentsToClass(classId: string, studentIds: string[]) {
