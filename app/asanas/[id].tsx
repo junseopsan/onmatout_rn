@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Image } from "expo-image";
 import React, {
@@ -17,11 +18,15 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, ScrollView, Text, XStack, YStack } from "tamagui";
+import { DetailHeader } from "../../components/ui/DetailHeader";
 import { COLORS } from "../../constants/Colors";
 import { CATEGORIES } from "../../constants/categories";
+import { useNotification } from "../../contexts/NotificationContext";
 import { useAsanaDetail } from "../../hooks/useAsanas";
+import { haptics } from "../../lib/haptics";
 import { RootStackParamList } from "../../navigation/types";
 import { getAsanaFullImageSource, getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { ASANA_DETAIL_IMAGES } from "./detailImages";
@@ -87,9 +92,26 @@ const ShimmerSkeleton: React.FC<{ style?: ViewStyle }> = ({ style }) => {
 export default function AsanaDetailScreen() {
   const route = useRoute<AsanaDetailRouteProp>();
   const navigation = useNavigation<any>();
+  const { showSnackbar } = useNotification();
   const { id } = route.params;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollRef = useRef<RNScrollView | null>(null);
+
+  // 텍스트(이름/산스크리트어/의미)를 탭하면 클립보드로 복사.
+  const copyText = useCallback(
+    async (value?: string | null) => {
+      const text = (value ?? "").trim();
+      if (!text) return;
+      try {
+        await Clipboard.setStringAsync(text);
+        haptics.success();
+        showSnackbar("클립보드에 복사했어요", "success");
+      } catch {
+        showSnackbar("복사하지 못했어요", "error");
+      }
+    },
+    [showSnackbar],
+  );
 
   // React Query로 아사나 상세 데이터 가져오기
   const {
@@ -212,7 +234,15 @@ export default function AsanaDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: COLORS.background }}
+      edges={["top"]}
+    >
+      <DetailHeader
+        title="아사나 상세"
+        serif={false}
+        onBack={() => navigation.goBack()}
+      />
       <ScrollView
         flex={1}
         showsVerticalScrollIndicator={false}
@@ -311,6 +341,13 @@ export default function AsanaDetailScreen() {
 
         {/* 내용 영역 */}
         <YStack padding="$6" backgroundColor={COLORS.background}>
+          <XStack alignItems="center" gap="$1" marginBottom="$4">
+            <Ionicons name="copy-outline" size={12} color={COLORS.textMuted} />
+            <Text fontSize={12} color={COLORS.textMuted}>
+              이름이나 의미를 탭하면 복사돼요
+            </Text>
+          </XStack>
+
           {/* 제목 섹션 */}
           <YStack marginBottom="$8">
             {/* 아사나 이름과 난이도 */}
@@ -319,7 +356,14 @@ export default function AsanaDetailScreen() {
               alignItems="center"
               marginBottom="$3"
             >
-              <Text fontSize={22} fontWeight="800" color="$text" flex={1}>
+              <Text
+                fontSize={22}
+                fontWeight="800"
+                color="$text"
+                flex={1}
+                onPress={() => copyText(asana?.sanskrit_name_kr)}
+                pressStyle={{ opacity: 0.6 }}
+              >
                 {asana?.sanskrit_name_kr || "아사나"}
               </Text>
               <XStack
@@ -341,6 +385,8 @@ export default function AsanaDetailScreen() {
               color="$textSecondary"
               fontStyle="italic"
               marginBottom="$4"
+              onPress={() => copyText(asana?.sanskrit_name_en)}
+              pressStyle={{ opacity: 0.6 }}
             >
               {asana?.sanskrit_name_en || ""}
             </Text>
@@ -378,7 +424,13 @@ export default function AsanaDetailScreen() {
                   >
                     산스크리트어
                   </Text>
-                  <Text fontSize={20} color="$text" fontWeight="500">
+                  <Text
+                    fontSize={20}
+                    color="$text"
+                    fontWeight="500"
+                    onPress={() => copyText((asana as any).sanskrit_name)}
+                    pressStyle={{ opacity: 0.6 }}
+                  >
                     {(asana as any).sanskrit_name}
                   </Text>
                 </YStack>
@@ -395,7 +447,13 @@ export default function AsanaDetailScreen() {
                   >
                     아사나 의미
                   </Text>
-                  <Text fontSize={16} color="$text" fontWeight="500">
+                  <Text
+                    fontSize={16}
+                    color="$text"
+                    fontWeight="500"
+                    onPress={() => copyText(asana.asana_meaning)}
+                    pressStyle={{ opacity: 0.6 }}
+                  >
                     {asana.asana_meaning}
                   </Text>
                 </YStack>
@@ -424,6 +482,6 @@ export default function AsanaDetailScreen() {
           <YStack height={60} />
         </YStack>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

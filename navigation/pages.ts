@@ -171,21 +171,8 @@ export const pageList: PageConfig[] = [
     name: "AsanaDetail",
     component: AsanaDetailScreen,
     options: {
-      headerShown: true,
-      headerBackTitle: "",
-      headerTitleAlign: "center",
+      headerShown: false,
       gestureEnabled: true,
-      headerBackButtonDisplayMode: "minimal",
-      title: "아사나 상세",
-      headerStyle: {
-        backgroundColor: COLORS.background,
-      },
-      headerTintColor: COLORS.text,
-      headerTitleStyle: {
-        color: COLORS.text,
-        fontSize: 18,
-        fontWeight: "600",
-      },
     },
   },
   {
