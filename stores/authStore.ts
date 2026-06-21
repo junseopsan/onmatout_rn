@@ -437,6 +437,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         const apiSession = response.data?.session || response.session || null;
         const apiUser = response.data?.user || response.user || null;
 
+        // 새 계정 로그인 → 이전 세션의 역할/요가원 선택 잔존 제거 (verifyOTP 와 동일).
+        useRoleStore.getState().reset();
+        useStudioStore.getState().reset();
+        useStudentStudioStore.getState().reset();
+
         set({
           user: apiUser as any,
           session: apiSession,
@@ -517,6 +522,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (response.success) {
         console.log("=== API 성공, 사용자 정보 가져오기 시작 ===");
         console.log("API 응답 데이터:", response.data);
+
+        // 새 계정 로그인 → 이전 세션의 역할/요가원 선택 잔존 제거.
+        // 로그인을 "앱 재시작(새로고침)"과 동일하게 만들어, 이전 계정의
+        // activeStudio/activeRole 가 잠깐 보이는 문제를 막는다.
+        useRoleStore.getState().reset();
+        useStudioStore.getState().reset();
+        useStudentStudioStore.getState().reset();
 
         // API 응답에서 직접 세션과 사용자 정보 가져오기
         const apiSession = response.data?.session || response.session;
