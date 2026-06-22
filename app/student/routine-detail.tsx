@@ -17,7 +17,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { RoutineCommentsPreview } from "../../components/routine/RoutineCommentsPreview";
 import { RoutineCommentsSheet } from "../../components/routine/RoutineCommentsSheet";
 import { DetailHeader } from "../../components/ui/DetailHeader";
-import { Button } from "../../components/ui/Button";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
 import { COLORS } from "../../constants/Colors";
@@ -131,25 +130,35 @@ export default function StudentRoutineDetailScreen() {
           </SurfaceCard>
         ) : null}
 
-        {!isOwner ? (
-          <Button
-            title="내 시퀀스로 가져오기"
-            size="large"
-            loading={cloning}
-            onPress={cloneToMyRoutines}
-            prefix={
-              <Ionicons
-                name="duplicate-outline"
-                size={18}
-                color={COLORS.white}
-              />
-            }
-            style={{ marginBottom: SPACING.md }}
-          />
-        ) : null}
-
         <View style={styles.section}>
-          <SectionLabel>아사나 시퀀스 ({items.length})</SectionLabel>
+          <SectionLabel
+            textStyle={styles.seqTitle}
+            trailing={
+              !isOwner ? (
+                <TouchableOpacity
+                  style={styles.importBtn}
+                  onPress={cloneToMyRoutines}
+                  disabled={cloning}
+                  activeOpacity={0.8}
+                >
+                  {cloning ? (
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="duplicate-outline"
+                        size={14}
+                        color={COLORS.primary}
+                      />
+                      <Text style={styles.importBtnText}>내 시퀀스로</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : null
+            }
+          >
+            아사나 시퀀스 ({items.length})
+          </SectionLabel>
           <View style={styles.grid}>
             {(() => {
               const rows: ItemWithAsana[][] = [];
@@ -298,6 +307,27 @@ const styles = StyleSheet.create({
   card: { marginBottom: SPACING.md },
   description: { ...TEXT.body, color: COLORS.text, lineHeight: 22 },
   section: { marginTop: SPACING.lg },
+  seqTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  importBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.35)",
+  },
+  importBtnText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   itemsCard: { overflow: "hidden" },
   row: {
     flexDirection: "row",
