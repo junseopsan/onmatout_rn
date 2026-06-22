@@ -21,7 +21,7 @@ const DEV_SUPABASE_PUBLISHABLE_KEY =
 
 // 앱 버전 — version 과 runtimeVersion 의 단일 진실 소스. (hilly_rn 동일 패턴)
 // 여기만 올리면 마케팅 버전과 OTA 런타임 버전이 함께 올라간다.
-const APP_VERSION = "2.0.2";
+const APP_VERSION = "2.0.3";
 
 module.exports = () => {
   const isDevConfig = process.env.APP_CONFIG === "development";
