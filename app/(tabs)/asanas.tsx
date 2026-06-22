@@ -676,8 +676,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   favoriteButton: {
-    padding: 8,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
     backgroundColor: COLORS.surface,
   },
   subtitle: {
