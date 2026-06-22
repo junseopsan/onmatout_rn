@@ -276,13 +276,6 @@ export default function YogaTalkThreadScreen() {
     );
   };
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        listRef.current?.scrollToEnd({ animated: false });
-      }, 50);
-    }
-  }, [messages.length]);
 
   const handleSend = async () => {
     if (!user?.id || !input.trim() || !thread) return;
@@ -354,6 +347,9 @@ export default function YogaTalkThreadScreen() {
           ref={listRef}
           contentContainerStyle={styles.listContent}
           data={items}
+          onContentSizeChange={() =>
+            listRef.current?.scrollToEnd({ animated: false })
+          }
           keyExtractor={(it, idx) =>
             it.kind === "date" ? `date-${it.date}` : `msg-${it.msg.id}-${idx}`
           }
