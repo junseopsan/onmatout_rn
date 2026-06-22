@@ -5,7 +5,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Linking } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import Dialog from "../components/ui/Dialog";
 import { useAuth } from "../hooks/useAuth";
+import { useOtaUpdate } from "../hooks/useOtaUpdate";
 import { extractInviteCode } from "../lib/invite";
 import AppNavigator, { navigationRef } from "../navigation";
 import { AppThemeProvider } from "./_layout";
@@ -77,6 +79,25 @@ function InviteLinkListener() {
   return null;
 }
 
+// OTA 업데이트가 준비되면 "지금 다시 시작" 안내. 동의 시 reloadAsync 로 적용.
+function OtaUpdateGate() {
+  const { pending, restart, dismiss } = useOtaUpdate();
+  return (
+    <Dialog
+      visible={pending}
+      type="success"
+      title="업데이트 준비 완료"
+      message="새 버전이 준비됐어요. 지금 다시 시작하면 적용됩니다."
+      showCloseButton={false}
+      onClose={dismiss}
+      buttons={[
+        { text: "나중에", onPress: dismiss, style: "cancel" },
+        { text: "다시 시작", onPress: restart },
+      ]}
+    />
+  );
+}
+
 // 포그라운드 복귀 시 세션 갱신은 Supabase 클라이언트의 autoRefreshToken: true 가 담당.
 // React Query refetchOnWindowFocus 도 끔 — 백그라운드 복귀할 때마다 화면이 로딩으로 돌아가
 // "재시작된 듯한" 체감의 원인이었음.
@@ -101,6 +122,7 @@ export default function App() {
               <StatusBar style="light" />
               <AppNavigator />
               <InviteLinkListener />
+              <OtaUpdateGate />
             </NavigationContainer>
           </AppThemeProvider>
         </SafeAreaProvider>
