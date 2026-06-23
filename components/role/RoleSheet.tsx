@@ -6,6 +6,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { useRoles } from "../../hooks/useRoles";
+import { roleRootRoutes } from "../../navigation/roleRoot";
 import { RootStackParamList } from "../../navigation/types";
 import { Sheet } from "../ui/Sheet";
 
@@ -42,9 +43,7 @@ export function RoleSheet({ visible, onClose }: Props) {
   const goToMode = (role: RoleKey) => {
     navigation.reset({
       index: 0,
-      routes: [
-        { name: role === "teacher" ? "TeacherTabNavigator" : "TabNavigator" },
-      ],
+      routes: roleRootRoutes(role === "teacher"),
     });
   };
 

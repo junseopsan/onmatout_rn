@@ -22,6 +22,7 @@ import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { useProfileStats } from "../../hooks/useDashboard";
 import { useRoles } from "../../hooks/useRoles";
+import { roleRootRoutes } from "../../navigation/roleRoot";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 
@@ -45,9 +46,7 @@ export default function ProfileScreen() {
     await setActiveRole(otherRole);
     navigation.reset({
       index: 0,
-      routes: [
-        { name: otherRole === "teacher" ? "TeacherTabNavigator" : "TabNavigator" },
-      ],
+      routes: roleRootRoutes(otherRole === "teacher"),
     });
   };
 

@@ -8,8 +8,10 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import Dialog from "../components/ui/Dialog";
 import { useAuth } from "../hooks/useAuth";
 import { useOtaUpdate } from "../hooks/useOtaUpdate";
+import { useRoles } from "../hooks/useRoles";
 import { extractInviteCode } from "../lib/invite";
 import AppNavigator, { navigationRef } from "../navigation";
+import { roleRootRoutes } from "../navigation/roleRoot";
 import { AppThemeProvider } from "./_layout";
 
 // 부팅/인증 흐름 중인 라우트 — 여기 머무는 동안엔 초대 처리를 보류한다.
@@ -79,6 +81,45 @@ function InviteLinkListener() {
   return null;
 }
 
+// 역할 ↔ 루트 네비게이터 정합성 보장.
+// AppContainer 의 첫 리다이렉트는 reset 후 자신이 언마운트되어 스스로 교정하지 못한다.
+// (로그인 직후 역할이 늦게 확정되면 teacher 인데 수련생 탭에 떨어지는 문제)
+// 영속 컴포넌트인 여기서 현재 루트와 활성 역할의 불일치를 감시해 올바른 탭으로 바로잡는다.
+function RoleNavigatorGuard() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isTeacher, loaded: rolesLoaded } = useRoles();
+  const [rootName, setRootName] = useState<string | null>(null);
+
+  // 현재 루트(스택 최상위) 추적
+  useEffect(() => {
+    const update = () => {
+      if (!navigationRef.isReady()) return;
+      const st = navigationRef.getRootState();
+      setRootName(
+        st && typeof st.index === "number"
+          ? (st.routes[st.index]?.name ?? null)
+          : null,
+      );
+    };
+    update();
+    const unsub = navigationRef.addListener("state", update);
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || !rolesLoaded) return;
+    // 탭 네비게이터에 있을 때만 교정 (auth/온보딩/상세 흐름은 건드리지 않음)
+    if (rootName !== "TabNavigator" && rootName !== "TeacherTabNavigator") return;
+    const target = isTeacher ? "TeacherTabNavigator" : "TabNavigator";
+    if (rootName === target || !navigationRef.isReady()) return;
+    navigationRef.reset({ index: 0, routes: roleRootRoutes(isTeacher) });
+  }, [isAuthenticated, authLoading, rolesLoaded, isTeacher, rootName]);
+
+  return null;
+}
+
 // OTA 업데이트가 준비되면 "지금 다시 시작" 안내. 동의 시 reloadAsync 로 적용.
 function OtaUpdateGate() {
   const { pending, restart, dismiss } = useOtaUpdate();
@@ -122,6 +163,7 @@ export default function App() {
               <StatusBar style="light" />
               <AppNavigator />
               <InviteLinkListener />
+              <RoleNavigatorGuard />
               <OtaUpdateGate />
             </NavigationContainer>
           </AppThemeProvider>

@@ -10,6 +10,7 @@ import { useRoles } from "../../hooks/useRoles";
 import { registerPushTokenForUser } from "../../lib/pushTokens";
 import { supabase } from "../../lib/supabase";
 import { COLORS } from "../../constants/Colors";
+import { roleRootRoutes } from "../../navigation/roleRoot";
 import { RootStackParamList } from "../../navigation/types";
 import ForceUpdateScreen from "./ForceUpdateScreen";
 import SplashScreen from "./SplashScreen";
@@ -48,8 +49,6 @@ export default function AppContainer() {
   } = useRoles();
   // 역할이 없는 신규 계정은 자동으로 '수련생'으로 시작 (역할 선택 화면 없음)
   const defaultingRoleRef = useRef(false);
-  // 마지막으로 이동시킨 루트 네비게이터 — 역할이 늦게 확정/변경되면 교정하기 위함.
-  const navigatedTargetRef = useRef<string | null>(null);
 
   // 역할 미배정 → 기본값 student 자동 부여 (한 번만)
   useEffect(() => {
@@ -315,16 +314,12 @@ export default function AppContainer() {
       //   - teacher 활성 → TeacherHome
       //   - 그 외(역할 없음 포함) → TabNavigator. 역할 없으면 위 useEffect 가
       //     자동으로 student 를 부여하므로 별도 선택 화면은 띄우지 않는다.
-      let targetRoute: keyof RootStackParamList = "TabNavigator";
-      if (isAuthenticated && rolesLoaded && isTeacher) {
-        targetRoute = "TeacherTabNavigator";
-      }
+      const teacher = isAuthenticated && rolesLoaded && isTeacher;
 
       // 중복 리다이렉트 방지
       setHasRedirected(true);
-      navigatedTargetRef.current = targetRoute;
 
-      console.log("[AppContainer] 리다이렉트 시작:", targetRoute);
+      console.log("[AppContainer] 리다이렉트 시작:", teacher ? "teacher" : "student");
 
       // 약간의 지연을 두어 네비게이션 안정성 확보 (안드로이드에서 더 긴 지연 필요)
       const delay = Platform.OS === "android" ? 500 : 200;
@@ -333,7 +328,7 @@ export default function AppContainer() {
           console.log("[AppContainer] navigation.reset 시도");
           navigation.reset({
             index: 0,
-            routes: [{ name: targetRoute }],
+            routes: roleRootRoutes(teacher),
           });
           console.log("[AppContainer] navigation.reset 성공");
           // 초기화 완료 표시
@@ -376,15 +371,11 @@ export default function AppContainer() {
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (!hasRedirected && !forceUpdateInfo) {
-        const target =
-          isAuthenticated && rolesLoaded && isTeacher
-            ? "TeacherTabNavigator"
-            : "TabNavigator";
-        console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도", target);
+        const teacher = isAuthenticated && rolesLoaded && isTeacher;
+        console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도");
         try {
           setHasRedirected(true);
-          navigatedTargetRef.current = target;
-          navigation.reset({ index: 0, routes: [{ name: target }] });
+          navigation.reset({ index: 0, routes: roleRootRoutes(teacher) });
         } catch (error) {
           console.log("[AppContainer] 안전장치: 리다이렉트 실패:", error);
         }
@@ -394,19 +385,8 @@ export default function AppContainer() {
     return () => clearTimeout(safetyTimer);
   }, [hasRedirected, forceUpdateInfo, navigation, isAuthenticated, rolesLoaded, isTeacher]);
 
-  // 교정: 초기 리다이렉트 이후 역할이 늦게 확정되거나 바뀌면, 현재 루트가 역할과
-  // 어긋날 때 맞는 네비게이터로 다시 이동한다. (teacher 인데 수련생 탭에 떨어진 경우 등)
-  useEffect(() => {
-    if (!hasRedirected || !isAuthenticated || !rolesLoaded) return;
-    const target = isTeacher ? "TeacherTabNavigator" : "TabNavigator";
-    if (navigatedTargetRef.current === target) return;
-    navigatedTargetRef.current = target;
-    try {
-      navigation.reset({ index: 0, routes: [{ name: target }] });
-    } catch {
-      // ignore
-    }
-  }, [hasRedirected, isAuthenticated, rolesLoaded, isTeacher, navigation]);
+  // 역할 ↔ 네비게이터 교정은 영속 컴포넌트 RoleNavigatorGuard(app/index.tsx)가 담당한다.
+  // (AppContainer 는 리다이렉트 후 언마운트되어 스스로 교정할 수 없음)
 
   // 앱이 준비되면(로딩/버전체크/리다이렉트 완료) 네이티브 스플래시를 내린다.
   // 그 전까지는 네이티브 스플래시가 화면을 덮으므로 별도 JS 스플래시는 띄우지 않는다.
