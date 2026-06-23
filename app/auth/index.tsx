@@ -317,7 +317,7 @@ export default function AuthScreen() {
                     rateLimitSeconds !== null
                   }
                 >
-                  <Text style={styles.buttonText}>
+                  <Text style={styles.buttonText} numberOfLines={1}>
                     {loading
                       ? "..."
                       : rateLimitSeconds !== null
@@ -340,17 +340,19 @@ export default function AuthScreen() {
                 <View style={styles.termsContainer}>
                   <Text style={styles.termsText}>
                     로그인 / 회원가입을 진행하면{" "}
-                    <TouchableOpacity
+                    <Text
+                      style={styles.termsLink}
                       onPress={() => navigation.navigate("TermsOfService")}
                     >
-                      <Text style={styles.termsLink}>이용약관</Text>
-                    </TouchableOpacity>{" "}
+                      이용약관
+                    </Text>{" "}
                     및{" "}
-                    <TouchableOpacity
+                    <Text
+                      style={styles.termsLink}
                       onPress={() => navigation.navigate("PrivacyPolicy")}
                     >
-                      <Text style={styles.termsLink}>개인정보처리방침에</Text>
-                    </TouchableOpacity>
+                      개인정보처리방침에
+                    </Text>
                     {"\n"}동의하게 됩니다.
                   </Text>
                 </View>
@@ -462,9 +464,11 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: COLORS.chakraRoot, // 나마스떼 — 빨강 계열
-    padding: 16,
+    height: 52, // 고정 높이 — 텍스트(로딩/나마스떼)에 따라 높이가 안 바뀌게
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 16,
     width: "80%", // 너비를 80%로 제한
     alignSelf: "center", // 중앙 정렬
