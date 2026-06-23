@@ -24,6 +24,7 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PasteSequenceSheet } from "../../components/routine/PasteSequenceSheet";
 import { Button } from "../../components/ui/Button";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { COLORS } from "../../constants/Colors";
@@ -66,6 +67,8 @@ export default function TeacherRoutineCreateScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(editRoutineId);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [visibility, setVisibility] = useState<"private" | "public">("public");
 
   // 편집 모드: 기존 시퀀스 로드해서 초기값으로 설정
   useEffect(() => {
@@ -77,6 +80,9 @@ export default function TeacherRoutineCreateScreen() {
           await teacherApi.getRoutine(editRoutineId);
         if (!mounted) return;
         setTitle(routine.title);
+        setVisibility(
+          (routine as any).visibility === "public" ? "public" : "private",
+        );
         const loaded: Asana[] = rItems.map((it: any) => ({
           ...(it.asanas as any),
         }));
@@ -148,6 +154,19 @@ export default function TeacherRoutineCreateScreen() {
     [items, pushHistory],
   );
 
+  const addManyAsanas = useCallback(
+    (list: Asana[]) => {
+      if (list.length === 0) return;
+      const next = [...items, ...list];
+      setItems(next);
+      pushHistory(next);
+      setTimeout(() => {
+        slotsRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+    },
+    [items, pushHistory],
+  );
+
   const removeAt = useCallback(
     (idx: number) => {
       const next = items.filter((_, i) => i !== idx);
@@ -190,6 +209,7 @@ export default function TeacherRoutineCreateScreen() {
     if (draftId) {
       await teacherApi.updateRoutine(draftId, {
         title: title.trim(),
+        visibility,
         is_draft: isDraft,
       });
       await teacherApi.replaceRoutineItems(draftId, itemRows);
@@ -200,7 +220,7 @@ export default function TeacherRoutineCreateScreen() {
         teacher_id: user.id,
         title: title.trim(),
         description: null,
-        visibility: "private",
+        visibility,
         is_draft: isDraft,
       },
       itemRows,
@@ -290,12 +310,22 @@ export default function TeacherRoutineCreateScreen() {
       </View>
 
       {/* Search */}
-      <View style={styles.searchWrap}>
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="아사나 이름 검색 (한글/영문)"
-        />
+      <View style={[styles.searchWrap, styles.searchRow]}>
+        <View style={{ flex: 1 }}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="아사나 이름 검색 (한글/영문)"
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.pasteBtn}
+          onPress={() => setPasteOpen(true)}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="clipboard-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.pasteBtnText}>붙여넣기</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filter chips */}
@@ -457,6 +487,55 @@ export default function TeacherRoutineCreateScreen() {
         )}
       </View>
 
+      {/* 공개 범위 */}
+      <View style={styles.visRow}>
+        <Text style={styles.visLabel}>공개 범위</Text>
+        <View style={styles.segmented}>
+          <TouchableOpacity
+            style={[styles.segBtn, visibility === "private" && styles.segBtnOn]}
+            onPress={() => setVisibility("private")}
+            activeOpacity={0.85}
+          >
+            <Ionicons
+              name="lock-closed"
+              size={13}
+              color={
+                visibility === "private" ? COLORS.primary : COLORS.textSecondary
+              }
+            />
+            <Text
+              style={[
+                styles.segText,
+                visibility === "private" && styles.segTextOn,
+              ]}
+            >
+              비공개
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.segBtn, visibility === "public" && styles.segBtnOn]}
+            onPress={() => setVisibility("public")}
+            activeOpacity={0.85}
+          >
+            <Ionicons
+              name="earth"
+              size={13}
+              color={
+                visibility === "public" ? COLORS.primary : COLORS.textSecondary
+              }
+            />
+            <Text
+              style={[
+                styles.segText,
+                visibility === "public" && styles.segTextOn,
+              ]}
+            >
+              공개
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Bottom action buttons */}
       <View style={styles.actionRow}>
         <Button
@@ -478,6 +557,13 @@ export default function TeacherRoutineCreateScreen() {
           style={{ flex: 1.4 }}
         />
       </View>
+
+      <PasteSequenceSheet
+        visible={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        asanas={asanas}
+        onConfirm={addManyAsanas}
+      />
     </SafeAreaView>
   );
 }
@@ -604,16 +690,18 @@ const styles = StyleSheet.create({
   iconGroup: { flexDirection: "row", gap: 6 },
   titlePill: {
     flex: 1,
-    backgroundColor: "transparent",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
   },
   titleInput: {
     color: COLORS.text,
     fontSize: 15,
     fontWeight: "600",
     textAlign: "center",
-    padding: 0,
+    paddingVertical: 10,
   },
   slotsWrap: {
     paddingTop: 8,
@@ -720,6 +808,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  pasteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 48,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(139, 92, 246, 0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.35)",
+  },
+  pasteBtnText: { color: COLORS.primary, fontSize: 13, fontWeight: "700" },
   carouselWrap: { flex: 1, justifyContent: "center", paddingVertical: 12 },
   chipsRowWrap: { paddingBottom: 4 },
   noResults: {
@@ -782,6 +883,33 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipText: { color: COLORS.text, fontSize: 13 },
+  visRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  visLabel: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600" },
+  segmented: {
+    flexDirection: "row",
+    backgroundColor: COLORS.surface,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 2,
+  },
+  segBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  segBtnOn: { backgroundColor: "rgba(139, 92, 246, 0.14)" },
+  segText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: "700" },
+  segTextOn: { color: COLORS.primary },
   actionRow: {
     flexDirection: "row",
     gap: 8,
