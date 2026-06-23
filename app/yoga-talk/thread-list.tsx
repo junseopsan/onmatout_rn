@@ -240,6 +240,18 @@ export default function YogaTalkThreadListScreen() {
     memberships,
   ]);
 
+  // 활성 요가원이 바뀌면 이전 요가원의 방 목록(studio 스코프)을 즉시 비운다.
+  // 요가톡 재진입 시 이전 요가원 목록이 잠깐 보이는 깜빡임 방지.
+  // (요가원이 그대로면 실행 안 됨 → 정상 재포커스는 캐시 유지)
+  useEffect(() => {
+    if (!isTeacher) return;
+    setRooms([]);
+    setRoomCounts(new Map());
+    setRoomUnread(new Set());
+    setRoomDigest(new Map());
+    setStudioNames(new Map());
+  }, [activeStudioId, isTeacher]);
+
   useFocusEffect(
     useCallback(() => {
       // 재포커스 시 캐시된 목록 유지, 백그라운드로만 새로고침
