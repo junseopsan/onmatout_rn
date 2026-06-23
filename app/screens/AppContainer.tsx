@@ -48,6 +48,8 @@ export default function AppContainer() {
   } = useRoles();
   // 역할이 없는 신규 계정은 자동으로 '수련생'으로 시작 (역할 선택 화면 없음)
   const defaultingRoleRef = useRef(false);
+  // 마지막으로 이동시킨 루트 네비게이터 — 역할이 늦게 확정/변경되면 교정하기 위함.
+  const navigatedTargetRef = useRef<string | null>(null);
 
   // 역할 미배정 → 기본값 student 자동 부여 (한 번만)
   useEffect(() => {
@@ -320,6 +322,7 @@ export default function AppContainer() {
 
       // 중복 리다이렉트 방지
       setHasRedirected(true);
+      navigatedTargetRef.current = targetRoute;
 
       console.log("[AppContainer] 리다이렉트 시작:", targetRoute);
 
@@ -368,18 +371,20 @@ export default function AppContainer() {
     needsRoleSelection,
   ]);
 
-  // 안전장치: 5초 후에도 리다이렉트가 안 되면 강제로 TabNavigator로 이동 (필수 업데이트 중이면 제외)
+  // 안전장치: 5초 후에도 리다이렉트가 안 되면 강제로 이동 (필수 업데이트 중이면 제외).
+  // 역할이 확정돼 있으면 그 역할에 맞는 네비게이터로 (teacher 인데 수련생으로 가는 것 방지).
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (!hasRedirected && !forceUpdateInfo) {
-        console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도");
+        const target =
+          isAuthenticated && rolesLoaded && isTeacher
+            ? "TeacherTabNavigator"
+            : "TabNavigator";
+        console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도", target);
         try {
           setHasRedirected(true);
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "TabNavigator" }],
-          });
-          console.log("[AppContainer] 안전장치: 리다이렉트 성공");
+          navigatedTargetRef.current = target;
+          navigation.reset({ index: 0, routes: [{ name: target }] });
         } catch (error) {
           console.log("[AppContainer] 안전장치: 리다이렉트 실패:", error);
         }
@@ -387,7 +392,21 @@ export default function AppContainer() {
     }, 5000);
 
     return () => clearTimeout(safetyTimer);
-  }, [hasRedirected, forceUpdateInfo, navigation]);
+  }, [hasRedirected, forceUpdateInfo, navigation, isAuthenticated, rolesLoaded, isTeacher]);
+
+  // 교정: 초기 리다이렉트 이후 역할이 늦게 확정되거나 바뀌면, 현재 루트가 역할과
+  // 어긋날 때 맞는 네비게이터로 다시 이동한다. (teacher 인데 수련생 탭에 떨어진 경우 등)
+  useEffect(() => {
+    if (!hasRedirected || !isAuthenticated || !rolesLoaded) return;
+    const target = isTeacher ? "TeacherTabNavigator" : "TabNavigator";
+    if (navigatedTargetRef.current === target) return;
+    navigatedTargetRef.current = target;
+    try {
+      navigation.reset({ index: 0, routes: [{ name: target }] });
+    } catch {
+      // ignore
+    }
+  }, [hasRedirected, isAuthenticated, rolesLoaded, isTeacher, navigation]);
 
   // 앱이 준비되면(로딩/버전체크/리다이렉트 완료) 네이티브 스플래시를 내린다.
   // 그 전까지는 네이티브 스플래시가 화면을 덮으므로 별도 JS 스플래시는 띄우지 않는다.
