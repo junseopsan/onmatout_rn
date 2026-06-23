@@ -14,6 +14,8 @@ interface StudioState {
   loading: boolean;
   loaded: boolean;
   error: string | null;
+  // 로딩 중 들어온 재호출 요청 — 현재 로드가 끝나면 한 번 더 실행 (첫 racy 로드 self-heal)
+  reloadQueued: boolean;
 }
 
 interface StudioStore extends StudioState {
@@ -30,15 +32,20 @@ const initialState: StudioState = {
   loading: false,
   loaded: false,
   error: null,
+  reloadQueued: false,
 };
 
 export const useStudioStore = create<StudioStore>((set, get) => ({
   ...initialState,
 
   loadStudios: async (ownerId: string) => {
-    // 이미 로딩 중이면 중복 호출 무시 (리렌더 폭주 방지)
-    if (get().loading) return;
-    set({ loading: true, error: null });
+    // 이미 로딩 중이면 즉시 무시하되, 끝난 뒤 한 번 더 돌도록 예약
+    // (로그인 직후 첫 로드가 일부만 받고 굳는 것을 self-heal)
+    if (get().loading) {
+      set({ reloadQueued: true });
+      return;
+    }
+    set({ loading: true, error: null, reloadQueued: false });
     try {
       const studios = await pivotStudioApi.listMyStudios(ownerId);
 
@@ -59,6 +66,11 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
         loading: false,
         loaded: true,
       });
+    }
+    // 로딩 중 들어온 재호출 요청이 있으면 한 번 더 (최신 결과로 수렴)
+    if (get().reloadQueued) {
+      set({ reloadQueued: false });
+      void get().loadStudios(ownerId);
     }
   },
 

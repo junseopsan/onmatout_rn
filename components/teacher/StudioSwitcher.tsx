@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
@@ -17,9 +17,23 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function StudioSwitcher() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
-  const { studios, activeStudio, setActiveStudio, isDirectorOfActive, loaded } =
-    usePivotStudios();
+  const {
+    studios,
+    activeStudio,
+    setActiveStudio,
+    isDirectorOfActive,
+    loaded,
+    reloadStudios,
+  } = usePivotStudios();
   const [open, setOpen] = useState(false);
+
+  // 화면 포커스마다 목록 재호출 — 로그인 직후 첫 로드가 일찍 떠서 일부(소유 요가원)만
+  // 받고 굳는 경우를 self-heal. 스토어 공유라 다른 화면도 함께 갱신된다.
+  useFocusEffect(
+    useCallback(() => {
+      reloadStudios();
+    }, [reloadStudios]),
+  );
 
   if (!loaded) return null;
 
