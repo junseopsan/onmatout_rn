@@ -33,9 +33,10 @@ export function PageHeader({
       <View style={styles.left}>
         {eyebrowSlot ? (
           <View
-            style={
-              eyebrow || title || subtitle ? { marginBottom: 8 } : undefined
-            }
+            style={[
+              styles.eyebrowSlot,
+              eyebrow || title || subtitle ? { marginBottom: 8 } : null,
+            ]}
           >
             {eyebrowSlot}
           </View>
@@ -83,6 +84,9 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   left: { flex: 1 },
+  // trailing 아이콘(36) 유무와 무관하게 eyebrowSlot(요가원 스위처) 위치를 일정하게:
+  // 최소 높이 36 + 하단 정렬 → 어느 탭에서나 같은 자리.
+  eyebrowSlot: { minHeight: 36, justifyContent: "flex-end" },
   eyebrow: {
     ...TEXT.eyebrow,
     color: COLORS.textSecondary,
