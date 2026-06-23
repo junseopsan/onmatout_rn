@@ -35,7 +35,7 @@ export type RootStackParamList = {
   TeacherStudioList: undefined;
   TeacherStudioForm: { studioId?: string } | undefined;
   YogaTalkThreadList: undefined;
-  YogaTalkThread: { threadId: string };
+  YogaTalkThread: { threadId: string; peerName?: string; peerRole?: string };
   ChatRooms: {
     studioId: string;
     studioName?: string;

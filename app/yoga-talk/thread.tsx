@@ -61,6 +61,13 @@ export default function YogaTalkThreadScreen() {
   const threadId = currentThreadId;
 
   const [thread, setThread] = useState<YogaTalkThread | null>(null);
+  // 헤더: 상대방 이름 + 역할(칩). peerName 파라미터가 있으면 깜빡임 없이 즉시 표시.
+  const [headerName, setHeaderName] = useState<string | null>(
+    route.params.peerName ?? null,
+  );
+  const [headerRole, setHeaderRole] = useState<string | null>(
+    route.params.peerRole ?? null,
+  );
   const [messages, setMessages] = useState<YogaTalkMessage[]>([]);
   // 메시지별 도움됐어요: { [messageId]: { count, mine } }
   const [helpful, setHelpful] = useState<
@@ -85,12 +92,35 @@ export default function YogaTalkThreadScreen() {
       const [threadRes, msgs] = await Promise.all([
         supabase
           .from("yoga_talk_threads")
-          .select("*, classes:class_id(title)")
+          .select(
+            "*, classes:class_id(title), student:student_profiles!yoga_talk_threads_student_id_fkey(name)",
+          )
           .eq("id", threadId)
           .maybeSingle(),
         yogaTalkApi.listMessages(threadId),
       ]);
-      if (threadRes.data) setThread(threadRes.data as YogaTalkThread);
+      const th = threadRes.data as any;
+      if (th) {
+        setThread(th as YogaTalkThread);
+        // 보는 사람이 선생님(teacher_id===나)이면 상대는 수련생(칩 없음),
+        // 아니면 상대는 선생님(선생님 칩).
+        const viewerIsTeacher = th.teacher_id === user?.id;
+        if (viewerIsTeacher) {
+          const sName = Array.isArray(th.student)
+            ? th.student[0]?.name
+            : th.student?.name;
+          setHeaderName(sName ?? "수련생");
+          setHeaderRole(null);
+        } else {
+          const { data: tu } = await supabase
+            .from("user_profiles")
+            .select("name")
+            .eq("user_id", th.teacher_id)
+            .maybeSingle();
+          setHeaderName((tu?.name as string) ?? "선생님");
+          setHeaderRole("선생님");
+        }
+      }
       setMessages(msgs);
       await loadHelpful(msgs);
     } catch (e) {
@@ -312,7 +342,11 @@ export default function YogaTalkThreadScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <DetailHeader onBack={() => navigation.goBack()} title="요가톡" />
+        <DetailHeader
+          onBack={() => navigation.goBack()}
+          serif={false}
+          title={headerName ?? "대화"}
+        />
         <ActivityIndicator color={COLORS.primary} style={{ marginTop: 80 }} />
       </SafeAreaView>
     );
@@ -323,7 +357,8 @@ export default function YogaTalkThreadScreen() {
       <DetailHeader
         onBack={() => navigation.goBack()}
         serif={false}
-        title={thread?.title ?? "요가톡"}
+        title={headerName ?? "대화"}
+        titleChip={headerRole ?? undefined}
         trailingSlot={
           <TouchableOpacity
             onPress={openSidebar}

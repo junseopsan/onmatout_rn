@@ -20,6 +20,7 @@ type Trailing =
 interface DetailHeaderProps {
   onBack?: () => void;
   title: string;
+  titleChip?: string;
   eyebrow?: string;
   serif?: boolean;
   trailing?: Trailing;
@@ -33,6 +34,7 @@ interface DetailHeaderProps {
 export function DetailHeader({
   onBack,
   title,
+  titleChip,
   eyebrow,
   serif = true,
   trailing,
@@ -51,6 +53,11 @@ export function DetailHeader({
       {title}
     </Text>
   );
+  const chipNode = titleChip ? (
+    <View style={styles.chip}>
+      <Text style={styles.chipText}>{titleChip}</Text>
+    </View>
+  ) : null;
   return (
     <View style={[styles.wrap, style]}>
       <View style={styles.side}>
@@ -67,20 +74,21 @@ export function DetailHeader({
 
       <View style={styles.center}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-        {hasAvatar ? (
+        {hasAvatar || chipNode ? (
           <View style={styles.titleRow}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-            ) : (
+            ) : avatarIcon ? (
               <View style={styles.avatar}>
                 <Ionicons
-                  name={avatarIcon!}
+                  name={avatarIcon}
                   size={16}
                   color={COLORS.primary}
                 />
               </View>
-            )}
+            ) : null}
             {titleNode}
+            {chipNode}
           </View>
         ) : (
           titleNode
@@ -187,6 +195,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.text,
     textAlign: "center",
+  },
+  chip: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+  },
+  chipText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: COLORS.primary,
+    letterSpacing: 0.2,
   },
   trailingText: {
     fontFamily: TEXT.bodyMed.fontFamily,

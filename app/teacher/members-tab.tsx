@@ -141,7 +141,10 @@ export default function TeacherMembersTabScreen() {
         title: `${s.name} 님과의 대화`,
         category: "general",
       });
-      navigation.navigate("YogaTalkThread", { threadId: thread.id });
+      navigation.navigate("YogaTalkThread", {
+        threadId: thread.id,
+        peerName: s.name,
+      });
     } catch (e: any) {
       Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
     }

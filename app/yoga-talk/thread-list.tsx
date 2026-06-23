@@ -298,8 +298,7 @@ export default function YogaTalkThreadListScreen() {
     const studioName = studioNames.get(r.studio_id) ?? "요가원";
     navigation.navigate("ChatRoom", {
       roomId: r.id,
-      title:
-        r.scope === "studio" ? `${studioName} 전체` : r.title || "그룹 대화",
+      title: r.scope === "studio" ? studioName : r.title || "그룹 대화",
       asTeacher: isTeacher,
     });
   };
@@ -314,7 +313,12 @@ export default function YogaTalkThreadListScreen() {
           : x,
       ),
     );
-    navigation.navigate("YogaTalkThread", { threadId: t.id });
+    navigation.navigate("YogaTalkThread", {
+      threadId: t.id,
+      peerName: t.counterpart_name ?? undefined,
+      // 수련생 뷰어면 상대는 선생님 → 칩 즉시 표시(깜빡임 방지). 선생님 뷰어면 칩 없음.
+      peerRole: isTeacher ? undefined : "선생님",
+    });
   };
 
   // 활성 폴더에 담긴 아이템 키 집합
@@ -571,7 +575,7 @@ export default function YogaTalkThreadListScreen() {
     const unread = roomUnread.has(r.id);
     const studioName = studioNames.get(r.studio_id) ?? "요가원";
     const title =
-      r.scope === "studio" ? `${studioName} 전체 Q&A` : r.title || "그룹 대화";
+      r.scope === "studio" ? studioName : r.title || "그룹 대화";
     const digest = roomDigest.get(r.id);
     // 그룹방도 1:1처럼 최신 메시지를 미리보기로 — 내가 보낸 건 "나:" prefix
     let sub: string;
