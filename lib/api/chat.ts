@@ -215,17 +215,22 @@ export const chatApi = {
     return data as ChatMessage;
   },
 
-  async senderNames(userIds: string[]): Promise<Map<string, string>> {
+  async senderProfiles(
+    userIds: string[],
+  ): Promise<Map<string, { name: string; avatarUrl: string | null }>> {
     const ids = Array.from(new Set(userIds.filter(Boolean)));
     if (ids.length === 0) return new Map();
     const { data } = await supabase
       .from("user_profiles")
-      .select("user_id, name")
+      .select("user_id, name, avatar_url")
       .in("user_id", ids);
     return new Map(
       (data ?? []).map((r: any) => [
         r.user_id as string,
-        (r.name as string) ?? "사용자",
+        {
+          name: (r.name as string) ?? "사용자",
+          avatarUrl: (r.avatar_url as string | null) ?? null,
+        },
       ]),
     );
   },

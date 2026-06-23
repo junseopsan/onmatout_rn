@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import React from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { COLORS } from "../../constants/Colors";
@@ -29,13 +30,34 @@ interface AvatarProps {
   name: string;
   /** 색상 시드 (보통 고유 id). 없으면 name 으로 색을 정함 */
   colorKey?: string;
+  /** 프로필 사진 URL. 있으면 이니셜 대신 이미지 표시 */
+  avatarUrl?: string | null;
   size?: number;
   style?: ViewStyle;
 }
 
-export function Avatar({ name, colorKey, size = 40, style }: AvatarProps) {
+export function Avatar({
+  name,
+  colorKey,
+  avatarUrl,
+  size = 40,
+  style,
+}: AvatarProps) {
   const color = avatarColor(colorKey || name || "?");
   const initial = (name || "?").charAt(0);
+  if (avatarUrl) {
+    return (
+      <Image
+        source={{ uri: avatarUrl }}
+        style={[
+          { width: size, height: size, borderRadius: size / 2 },
+          style as any,
+        ]}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+      />
+    );
+  }
   return (
     <View
       style={[

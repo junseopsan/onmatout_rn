@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Avatar } from "../../components/ui/Avatar";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { COLORS } from "../../constants/Colors";
@@ -49,7 +50,9 @@ export default function ChatRoomScreen() {
 
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [names, setNames] = useState<Map<string, string>>(new Map());
+  const [profiles, setProfiles] = useState<
+    Map<string, { name: string; avatarUrl: string | null }>
+  >(new Map());
   const [helpful, setHelpful] = useState<
     Record<string, { count: number; mine: boolean }>
   >({});
@@ -69,11 +72,11 @@ export default function ChatRoomScreen() {
       const teacherMsgIds = msgs
         .filter((m) => m.sender_role === "teacher")
         .map((m) => m.id);
-      const [nameMap, rows] = await Promise.all([
-        chatApi.senderNames(msgs.map((m) => m.sender_id)),
+      const [profMap, rows] = await Promise.all([
+        chatApi.senderProfiles(msgs.map((m) => m.sender_id)),
         chatApi.listHelpful(teacherMsgIds),
       ]);
-      setNames(nameMap);
+      setProfiles(profMap);
       const map: Record<string, { count: number; mine: boolean }> = {};
       for (const r of rows) {
         const cur = map[r.message_id] ?? { count: 0, mine: false };
@@ -202,70 +205,92 @@ export default function ChatRoomScreen() {
             }
             renderItem={({ item: m }) => {
               const fromMe = m.sender_id === user?.id;
+              const prof = profiles.get(m.sender_id);
+              const name = prof?.name ?? "사용자";
+              const isTeacherMsg = m.sender_role === "teacher";
               const h = helpful[m.id] ?? { count: 0, mine: false };
               const showHelpful =
-                m.sender_role === "teacher" && (!asTeacher || h.count > 0);
-              return (
-                <View style={fromMe ? styles.msgRight : styles.msgLeft}>
-                  {!fromMe ? (
-                    <Text style={styles.sender}>
-                      {names.get(m.sender_id) ?? "사용자"}
-                      {m.sender_role === "teacher" ? " · 선생님" : ""}
-                    </Text>
-                  ) : null}
+                isTeacherMsg && (!asTeacher || h.count > 0);
+
+              const bubble = (
+                <View style={[styles.bubbleRow, fromMe && styles.bubbleRowMine]}>
                   <View
                     style={[
-                      styles.bubbleRow,
-                      fromMe ? styles.bubbleRight : styles.bubbleLeft,
+                      styles.bubble,
+                      fromMe ? styles.bubbleMe : styles.bubbleOther,
+                      isTeacherMsg && !fromMe && styles.bubbleTeacher,
                     ]}
                   >
-                    <View
+                    <Text
                       style={[
-                        styles.bubble,
-                        fromMe ? styles.bubbleMe : styles.bubbleOther,
-                        m.sender_role === "teacher" &&
-                          !fromMe &&
-                          styles.bubbleTeacher,
+                        styles.bubbleText,
+                        fromMe ? styles.bubbleTextMe : styles.bubbleTextOther,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.bubbleText,
-                          fromMe ? styles.bubbleTextMe : styles.bubbleTextOther,
-                        ]}
-                      >
-                        {m.body}
-                      </Text>
-                    </View>
-                    <Text style={styles.bubbleTime}>
-                      {formatTime(m.created_at)}
+                      {m.body}
                     </Text>
                   </View>
-                  {showHelpful ? (
-                    <TouchableOpacity
-                      style={[
-                        styles.helpfulChip,
-                        h.mine && styles.helpfulChipOn,
-                      ]}
-                      onPress={asTeacher ? undefined : () => toggleHelpful(m.id)}
-                      disabled={asTeacher}
-                      activeOpacity={asTeacher ? 1 : 0.7}
-                    >
-                      <Ionicons
-                        name="thumbs-up"
-                        size={11}
-                        color={h.mine ? COLORS.primary : COLORS.textMuted}
-                      />
-                      <Text
-                        style={[
-                          styles.helpfulText,
-                          h.mine && { color: COLORS.primary },
-                        ]}
-                      >
-                        도움됐어요{h.count > 0 ? ` ${h.count}` : ""}
+                  <Text style={styles.bubbleTime}>
+                    {formatTime(m.created_at)}
+                  </Text>
+                </View>
+              );
+
+              const helpfulChip = showHelpful ? (
+                <TouchableOpacity
+                  style={[styles.helpfulChip, h.mine && styles.helpfulChipOn]}
+                  onPress={asTeacher ? undefined : () => toggleHelpful(m.id)}
+                  disabled={asTeacher}
+                  activeOpacity={asTeacher ? 1 : 0.7}
+                >
+                  <Ionicons
+                    name="thumbs-up"
+                    size={11}
+                    color={h.mine ? COLORS.primary : COLORS.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.helpfulText,
+                      h.mine && { color: COLORS.primary },
+                    ]}
+                  >
+                    도움됐어요{h.count > 0 ? ` ${h.count}` : ""}
+                  </Text>
+                </TouchableOpacity>
+              ) : null;
+
+              if (fromMe) {
+                return (
+                  <View style={styles.rowMine}>
+                    {bubble}
+                    {helpfulChip}
+                  </View>
+                );
+              }
+
+              return (
+                <View style={styles.rowOther}>
+                  <Avatar
+                    name={name}
+                    colorKey={m.sender_id}
+                    avatarUrl={prof?.avatarUrl}
+                    size={32}
+                    style={styles.avatar}
+                  />
+                  <View style={styles.contentOther}>
+                    <View style={styles.senderRow}>
+                      <Text style={styles.sender} numberOfLines={1}>
+                        {name}
                       </Text>
-                    </TouchableOpacity>
-                  ) : null}
+                      {isTeacherMsg ? (
+                        <View style={styles.roleChip}>
+                          <Text style={styles.roleChipText}>선생님</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {bubble}
+                    {helpfulChip}
+                  </View>
                 </View>
               );
             }}
@@ -277,7 +302,7 @@ export default function ChatRoomScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder={asTeacher ? "답변 입력" : "질문을 입력해주세요"}
+            placeholder={asTeacher ? "메시지 입력" : "질문을 입력해주세요"}
             placeholderTextColor={COLORS.textSecondary}
             multiline
           />
@@ -310,26 +335,57 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   loadingText: { color: COLORS.textSecondary, fontSize: 13 },
-  msgLeft: { alignItems: "flex-start", marginBottom: SPACING.sm },
-  msgRight: { alignItems: "flex-end", marginBottom: SPACING.sm },
+  rowOther: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: SPACING.md,
+  },
+  rowMine: { alignItems: "flex-end", marginBottom: SPACING.md },
+  avatar: { marginTop: 18 },
+  contentOther: { flex: 1, alignItems: "flex-start" },
+  senderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 3,
+    marginHorizontal: 2,
+  },
   sender: {
     ...TEXT.micro,
     color: COLORS.textSecondary,
-    marginBottom: 3,
-    marginHorizontal: 4,
     fontWeight: "700",
+    maxWidth: 160,
+  },
+  roleChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 999,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+  },
+  roleChipText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: COLORS.primary,
+    letterSpacing: 0.2,
   },
   bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
-  bubbleLeft: { justifyContent: "flex-start" },
-  bubbleRight: { justifyContent: "flex-end", flexDirection: "row-reverse" },
+  bubbleRowMine: { justifyContent: "flex-end", flexDirection: "row-reverse" },
   bubble: {
     maxWidth: "78%",
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 16,
   },
-  bubbleOther: { backgroundColor: COLORS.surface, borderTopLeftRadius: 4 },
-  bubbleTeacher: { borderWidth: 1, borderColor: "rgba(139, 92, 246, 0.4)" },
+  bubbleOther: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  bubbleTeacher: { borderColor: "rgba(139, 92, 246, 0.4)" },
   bubbleMe: { backgroundColor: COLORS.primary, borderTopRightRadius: 4 },
   bubbleText: { ...TEXT.body, lineHeight: 21 },
   bubbleTextOther: { color: COLORS.text },
