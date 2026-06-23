@@ -314,12 +314,16 @@ export default function AppContainer() {
       //   - teacher 활성 → TeacherHome
       //   - 그 외(역할 없음 포함) → TabNavigator. 역할 없으면 위 useEffect 가
       //     자동으로 student 를 부여하므로 별도 선택 화면은 띄우지 않는다.
-      const teacher = isAuthenticated && rolesLoaded && isTeacher;
+      const mode = !isAuthenticated
+        ? "guest"
+        : rolesLoaded && isTeacher
+        ? "teacher"
+        : "student";
 
       // 중복 리다이렉트 방지
       setHasRedirected(true);
 
-      console.log("[AppContainer] 리다이렉트 시작:", teacher ? "teacher" : "student");
+      console.log("[AppContainer] 리다이렉트 시작:", mode);
 
       // 약간의 지연을 두어 네비게이션 안정성 확보 (안드로이드에서 더 긴 지연 필요)
       const delay = Platform.OS === "android" ? 500 : 200;
@@ -328,7 +332,7 @@ export default function AppContainer() {
           console.log("[AppContainer] navigation.reset 시도");
           navigation.reset({
             index: 0,
-            routes: roleRootRoutes(teacher),
+            routes: roleRootRoutes(mode),
           });
           console.log("[AppContainer] navigation.reset 성공");
           // 초기화 완료 표시
@@ -371,11 +375,15 @@ export default function AppContainer() {
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (!hasRedirected && !forceUpdateInfo) {
-        const teacher = isAuthenticated && rolesLoaded && isTeacher;
+        const mode = !isAuthenticated
+          ? "guest"
+          : rolesLoaded && isTeacher
+          ? "teacher"
+          : "student";
         console.log("[AppContainer] 안전장치: 강제 리다이렉트 시도");
         try {
           setHasRedirected(true);
-          navigation.reset({ index: 0, routes: roleRootRoutes(teacher) });
+          navigation.reset({ index: 0, routes: roleRootRoutes(mode) });
         } catch (error) {
           console.log("[AppContainer] 안전장치: 리다이렉트 실패:", error);
         }

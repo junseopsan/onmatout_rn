@@ -46,7 +46,7 @@ export default function ProfileScreen() {
     await setActiveRole(otherRole);
     navigation.reset({
       index: 0,
-      routes: roleRootRoutes(otherRole === "teacher"),
+      routes: roleRootRoutes(otherRole === "teacher" ? "teacher" : "student"),
     });
   };
 

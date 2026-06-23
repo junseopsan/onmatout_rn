@@ -43,7 +43,7 @@ export function RoleSheet({ visible, onClose }: Props) {
   const goToMode = (role: RoleKey) => {
     navigation.reset({
       index: 0,
-      routes: roleRootRoutes(role === "teacher"),
+      routes: roleRootRoutes(role === "teacher" ? "teacher" : "student"),
     });
   };
 

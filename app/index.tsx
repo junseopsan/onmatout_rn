@@ -114,7 +114,10 @@ function RoleNavigatorGuard() {
     if (rootName !== "TabNavigator" && rootName !== "TeacherTabNavigator") return;
     const target = isTeacher ? "TeacherTabNavigator" : "TabNavigator";
     if (rootName === target || !navigationRef.isReady()) return;
-    navigationRef.reset({ index: 0, routes: roleRootRoutes(isTeacher) });
+    navigationRef.reset({
+      index: 0,
+      routes: roleRootRoutes(isTeacher ? "teacher" : "student"),
+    });
   }, [isAuthenticated, authLoading, rolesLoaded, isTeacher, rootName]);
 
   return null;
