@@ -232,7 +232,7 @@ export default function TeacherMembersTabScreen() {
           icon="📒"
           title="아직 수련생이 없어요"
           description={
-            "초대 링크나 QR로 요가원에 초대해 보세요.\n수련생이 앱에 가입한 뒤 링크나 QR로 들어오면 연결돼요."
+            "초대 링크나 QR로 요가원에 초대해 보세요.\n수련생이 앱에 가입한 뒤 링크나\nQR로 들어오면 연결돼요."
           }
           action={{
             label: "초대 링크 보내기",

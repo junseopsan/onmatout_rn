@@ -59,8 +59,8 @@ export default function TeacherStudioInviteScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.subtitle}>
-            이 링크나 QR을 회원에게 보내면 가입할 수 있어요. 가입하면 전화번호로
-            기존 명단과 자동으로 연결돼요.
+            이 링크나 QR을 회원에게 보내면 가입할 수 있어요. 가입하면{"\n"}
+            자동으로 요가원 명단에 연결돼요.
           </Text>
 
           <SurfaceCard style={styles.card}>
