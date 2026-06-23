@@ -6,6 +6,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
+import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { haptics } from "../../lib/haptics";
 import { RootStackParamList } from "../../navigation/types";
@@ -15,6 +16,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function StudioSwitcher() {
   const navigation = useNavigation<Nav>();
+  const { user } = useAuth();
   const { studios, activeStudio, setActiveStudio, isDirectorOfActive, loaded } =
     usePivotStudios();
   const [open, setOpen] = useState(false);
@@ -65,6 +67,7 @@ export function StudioSwitcher() {
         <View style={{ gap: SPACING.sm, marginBottom: SPACING.md }}>
           {studios.map((s) => {
             const isActive = activeStudio?.id === s.id;
+            const isOwner = !!user?.id && s.owner_id === user.id;
             return (
               <TouchableOpacity
                 key={s.id}
@@ -88,6 +91,23 @@ export function StudioSwitcher() {
                       {s.location}
                     </Text>
                   ) : null}
+                </View>
+                <View
+                  style={[
+                    styles.roleBadge,
+                    isOwner ? styles.roleBadgeDirector : styles.roleBadgeTeacher,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.roleBadgeText,
+                      {
+                        color: isOwner ? COLORS.primary : COLORS.textSecondary,
+                      },
+                    ]}
+                  >
+                    {isOwner ? "원장" : "선생님"}
+                  </Text>
                 </View>
               </TouchableOpacity>
             );
