@@ -418,10 +418,11 @@ function AssignStudentsModal({
           />
         </View>
 
+        <View style={styles.pickListWrap}>
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 24 }} />
         ) : (
-          <ScrollView style={{ maxHeight: 340 }} keyboardShouldPersistTaps="handled">
+          <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
             {available.map((s) => {
               const checked = picked.has(s.id);
               return (
@@ -454,6 +455,7 @@ function AssignStudentsModal({
             ) : null}
           </ScrollView>
         )}
+        </View>
 
         <Button
           title={picked.size > 0 ? `${picked.size}명 배정` : "수련생을 선택해 주세요"}
@@ -633,6 +635,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: COLORS.text, fontSize: 17, fontWeight: "600" },
   modalCancel: { color: COLORS.textSecondary, fontSize: 14 },
+  pickListWrap: { height: 340 },
   pickRow: {
     flexDirection: "row",
     alignItems: "center",
