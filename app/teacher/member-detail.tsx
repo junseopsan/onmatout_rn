@@ -30,7 +30,10 @@ import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { pivotStudioApi } from "../../lib/api/pivotStudio";
-import { teacherApi } from "../../lib/api/teacher";
+import {
+  teacherApi,
+  type StudentStatusHistory,
+} from "../../lib/api/teacher";
 import { yogaTalkApi } from "../../lib/api/yogaTalk";
 import { formatPhone } from "../../lib/format";
 import { RootStackParamList } from "../../navigation/types";
@@ -44,6 +47,14 @@ import type {
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "TeacherMemberDetail">;
 
+const statusLabel = (h: StudentStatusHistory) => {
+  if (h.custom_status && h.custom_status.trim()) return h.custom_status.trim();
+  if (h.status === "active") return "수련 중";
+  if (h.status === "paused") return "휴식";
+  if (h.status === "archived") return "내보냄";
+  return h.status;
+};
+
 export default function TeacherMemberDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
@@ -56,6 +67,7 @@ export default function TeacherMemberDetailScreen() {
   const [membershipClass, setMembershipClass] = useState<Class | null>(null);
   const [studioName, setStudioName] = useState<string | null>(null);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const [statusHistory, setStatusHistory] = useState<StudentStatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isTeacherOfStudio, setIsTeacherOfStudio] = useState(false);
@@ -70,18 +82,20 @@ export default function TeacherMemberDetailScreen() {
   const [savingMemo, setSavingMemo] = useState(false);
 
   const load = useCallback(async () => {
-    const [s, m, a, tp] = await Promise.all([
+    const [s, m, a, tp, hist] = await Promise.all([
       teacherApi.getStudent(studentProfileId),
       teacherApi.getStudentMembership(studentProfileId),
       teacherApi.listStudentAttendance(studentProfileId, 20),
       user?.id
         ? teacherApi.getMyTeacherProfile(user.id)
         : Promise.resolve(null),
+      teacherApi.listStudentStatusHistory(studentProfileId),
     ]);
     setStudent(s);
     setMembership(m);
     setAttendance(a);
     setStudioName(tp?.studio_name ?? null);
+    setStatusHistory(hist);
 
     if (m?.class_id) {
       try {
@@ -680,6 +694,40 @@ export default function TeacherMemberDetailScreen() {
           )}
         </View>
 
+        {/* 상태 내역 보기 */}
+        {statusHistory.length > 0 ? (
+          <View style={styles.section}>
+            <SurfaceCard style={styles.card}>
+              <TouchableOpacity
+                style={styles.statusLinkRow}
+                onPress={() =>
+                  navigation.navigate("TeacherMemberStatusHistory", {
+                    studentProfileId: student.id,
+                  })
+                }
+                activeOpacity={0.7}
+              >
+                <IconBadge
+                  name="time-outline"
+                  size={26}
+                  color={COLORS.primary}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.statusLinkText}>상태 내역 보기</Text>
+                  <Text style={styles.statusLinkSub}>
+                    현재 {statusLabel(statusHistory[0])}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={14}
+                  color={COLORS.textMuted}
+                />
+              </TouchableOpacity>
+            </SurfaceCard>
+          </View>
+        ) : null}
+
         {/* 요가원 초대 카드 (앱 미가입 시만) - 화면 최하단 */}
         {!student.user_id && activeStudio?.invite_code ? (
           <View style={styles.section}>
@@ -859,6 +907,17 @@ const styles = StyleSheet.create({
   },
   card: { marginBottom: SPACING.md },
   section: { marginTop: SPACING.lg },
+  statusLinkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  statusLinkText: { ...TEXT.bodyMed, color: COLORS.text, fontWeight: "700" },
+  statusLinkSub: {
+    ...TEXT.caption,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
   hero: {
     flexDirection: "row",
     alignItems: "center",

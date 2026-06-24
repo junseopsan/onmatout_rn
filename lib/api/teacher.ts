@@ -39,6 +39,14 @@ export type TeacherProfile = {
   cancellation_hours_before: number;
 };
 
+export type StudentStatusHistory = {
+  id: string;
+  status: string;
+  custom_status: string | null;
+  source: "student" | "membership";
+  created_at: string;
+};
+
 export type StudentProfileWithSummary = StudentProfile & {
   active_membership?: Membership | null;
   recent_attendance_count?: number;
@@ -163,6 +171,17 @@ export const teacherApi = {
       .limit(limit);
     if (error) throw error;
     return (data ?? []) as AttendanceWithClass[];
+  },
+
+  // 학생 상태(수련 중/휴식/커스텀/내보냄) 변경 이력
+  async listStudentStatusHistory(studentProfileId: string) {
+    const { data, error } = await supabase
+      .from("student_status_history")
+      .select("id, status, custom_status, source, created_at")
+      .eq("student_profile_id", studentProfileId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as StudentStatusHistory[];
   },
 
   async getClass(classId: string) {
