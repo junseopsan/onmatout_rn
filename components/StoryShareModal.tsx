@@ -13,7 +13,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/Colors";
 import { useShareStory } from "../hooks/useShareStory";
 import { Record } from "../types/record";
-import StoryShareCard, { StoryStatsData } from "./StoryShareCard";
+import StoryShareCard, {
+  StorySequenceData,
+  StoryStatsData,
+} from "./StoryShareCard";
 
 type StoryShareModalProps =
   | {
@@ -28,6 +31,14 @@ type StoryShareModalProps =
       mode: "record";
       record: Record;
       userName?: string;
+    }
+  | {
+      visible: boolean;
+      onClose: () => void;
+      mode: "sequence";
+      sequence: StorySequenceData;
+      /** 함께 공유할 링크 텍스트 (있으면 이미지 + 링크 공유) */
+      shareMessage?: string;
     };
 
 export default function StoryShareModal(props: StoryShareModalProps) {
@@ -36,7 +47,9 @@ export default function StoryShareModal(props: StoryShareModalProps) {
   const { shareAsync, isSharing } = useShareStory(cardRef);
 
   const handleShare = async () => {
-    const result = await shareAsync();
+    const result = await shareAsync(
+      props.mode === "sequence" ? props.shareMessage : undefined,
+    );
     if (result.success) {
       props.onClose();
     } else {
@@ -47,6 +60,8 @@ export default function StoryShareModal(props: StoryShareModalProps) {
   const content =
     props.mode === "stats" ? (
       <StoryShareCard mode="stats" stats={props.stats} />
+    ) : props.mode === "sequence" ? (
+      <StoryShareCard mode="sequence" sequence={props.sequence} />
     ) : (
       <StoryShareCard
         mode="record"

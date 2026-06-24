@@ -20,13 +20,11 @@ import { DetailHeader } from "../../components/ui/DetailHeader";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
 import { COLORS } from "../../constants/Colors";
-import { CATEGORIES } from "../../constants/categories";
 import { SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { studentRoutinesApi } from "../../lib/api/routines-student";
 import { getAsanaThumbnailSource } from "../../lib/asanaImages";
-import type { AsanaCategory } from "../../types/asana";
 import { RootStackParamList } from "../../navigation/types";
 import type { Routine, RoutineItem } from "../../types/teacher";
 
@@ -180,11 +178,6 @@ export default function StudentRoutineDetailScreen() {
                       const thumb = getAsanaThumbnailSource(
                         it.asanas.image_number,
                       );
-                      const cat = it.asanas.category_name_en
-                        ? CATEGORIES[
-                            it.asanas.category_name_en as AsanaCategory
-                          ]
-                        : null;
                       const isLastInRow = ci === row.length - 1;
                       return (
                         <React.Fragment key={it.id}>
@@ -197,21 +190,6 @@ export default function StudentRoutineDetailScreen() {
                             }
                             activeOpacity={0.85}
                           >
-                            {cat ? (
-                              <View
-                                style={[
-                                  styles.gridCatBadge,
-                                  { backgroundColor: `${cat.color}CC` },
-                                ]}
-                              >
-                                <Text
-                                  style={styles.gridCatText}
-                                  numberOfLines={1}
-                                >
-                                  {cat.label}
-                                </Text>
-                              </View>
-                            ) : null}
                             <View style={styles.gridImgWrap}>
                               {thumb ? (
                                 <Image

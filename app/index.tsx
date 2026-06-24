@@ -10,6 +10,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useOtaUpdate } from "../hooks/useOtaUpdate";
 import { useRoles } from "../hooks/useRoles";
 import { extractInviteCode } from "../lib/invite";
+import { parseRoutineIdFromUrl } from "../lib/links";
 import AppNavigator, { navigationRef } from "../navigation";
 import { roleRootRoutes } from "../navigation/roleRoot";
 import { AppThemeProvider } from "./_layout";
@@ -33,14 +34,17 @@ const INFLIGHT_ROUTES = new Set([
 function InviteLinkListener() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [pendingCode, setPendingCode] = useState<string | null>(null);
+  const [pendingRoutine, setPendingRoutine] = useState<string | null>(null);
   const [routeName, setRouteName] = useState<string | null>(null);
   const promptedForRef = useRef<string | null>(null);
 
-  // 코드 캡처: cold(getInitialURL) + warm(url 이벤트)
+  // 코드/시퀀스 캡처: cold(getInitialURL) + warm(url 이벤트)
   useEffect(() => {
     const onUrl = (url: string | null) => {
       const code = extractInviteCode(url);
       if (code) setPendingCode(code);
+      const routineId = parseRoutineIdFromUrl(url);
+      if (routineId) setPendingRoutine(routineId);
     };
     Linking.getInitialURL().then(onUrl).catch(() => undefined);
     const sub = Linking.addEventListener("url", ({ url }) => onUrl(url));
@@ -64,19 +68,32 @@ function InviteLinkListener() {
 
   // 소비: 부팅/인증 흐름이 끝난 안정된 화면에서만 처리
   useEffect(() => {
-    if (!pendingCode || authLoading) return;
+    if (authLoading) return;
     if (!routeName || INFLIGHT_ROUTES.has(routeName)) return;
     if (!navigationRef.isReady()) return;
-    if (isAuthenticated) {
-      promptedForRef.current = null;
-      setPendingCode(null);
-      navigationRef.navigate("AuthMatch", { inviteCode: pendingCode });
-    } else if (promptedForRef.current !== pendingCode) {
-      // 게스트가 초대를 받음 → 로그인 유도. 코드는 보관(로그인 완료 후 연결).
-      promptedForRef.current = pendingCode;
-      navigationRef.navigate("Auth");
+
+    // 1) 초대 코드
+    if (pendingCode) {
+      if (isAuthenticated) {
+        promptedForRef.current = null;
+        setPendingCode(null);
+        navigationRef.navigate("AuthMatch", { inviteCode: pendingCode });
+      } else if (promptedForRef.current !== pendingCode) {
+        // 게스트가 초대를 받음 → 로그인 유도. 코드는 보관(로그인 완료 후 연결).
+        promptedForRef.current = pendingCode;
+        navigationRef.navigate("Auth");
+      }
+      return;
     }
-  }, [pendingCode, isAuthenticated, authLoading, routeName]);
+
+    // 2) 시퀀스 공유 링크 — 로그인 상태에서만 해당 시퀀스 상세(뷰어)로 이동
+    //    (수신자가 비소유자일 수 있어 뷰어 화면으로 보냄. 보관 후 로그인 시 소비)
+    if (pendingRoutine && isAuthenticated) {
+      const routineId = pendingRoutine;
+      setPendingRoutine(null);
+      navigationRef.navigate("StudentRoutineDetail", { routineId });
+    }
+  }, [pendingCode, pendingRoutine, isAuthenticated, authLoading, routeName]);
 
   return null;
 }

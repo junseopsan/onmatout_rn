@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
 import { PixelRatio, StyleSheet, Text, View } from "react-native";
@@ -19,6 +20,15 @@ export type StoryStatsData = {
   backgroundAsanaImageNumbers?: string[];
 };
 
+export type StorySequenceData = {
+  title: string;
+  asanas: {
+    image_number: string | null;
+    name: string;
+    category_name_en?: string | null;
+  }[];
+};
+
 type StoryShareCardProps =
   | {
       mode: "stats";
@@ -28,13 +38,153 @@ type StoryShareCardProps =
       mode: "record";
       record: Record;
       userName?: string;
+    }
+  | {
+      mode: "sequence";
+      sequence: StorySequenceData;
     };
 
 export default function StoryShareCard(props: StoryShareCardProps) {
   if (props.mode === "stats") {
     return <StoryStatsCard stats={props.stats} />;
   }
+  if (props.mode === "sequence") {
+    return <StorySequenceCard sequence={props.sequence} />;
+  }
   return <StoryRecordCard record={props.record} userName={props.userName} />;
+}
+
+const SEQ_COLS = 3;
+const SEQ_ARROW_W = 18;
+
+function StorySequenceCard({ sequence }: { sequence: StorySequenceData }) {
+  const list = sequence.asanas ?? [];
+  const n = list.length;
+
+  // 카드 크기: 가로(3열) + 세로 가용공간에 맞춰 동적으로 축소 (스네이크 그리드)
+  const contentW = STORY_CARD_WIDTH - 44;
+  const cardW = Math.floor((contentW - SEQ_ARROW_W * (SEQ_COLS - 1)) / SEQ_COLS);
+  const rowCount = Math.max(1, Math.ceil(n / SEQ_COLS));
+  const availH = STORY_CARD_HEIGHT - 170 - 92; // 헤더 + 푸터 영역 제외
+  const nameH = 18;
+  const cardFromH = Math.floor((availH - rowCount * 18) / rowCount) - nameH;
+  const cardSize = Math.max(40, Math.min(cardW, cardFromH));
+  const gridW = cardSize * SEQ_COLS + SEQ_ARROW_W * (SEQ_COLS - 1);
+
+  const rows: StorySequenceData["asanas"][] = [];
+  for (let i = 0; i < n; i += SEQ_COLS) rows.push(list.slice(i, i + SEQ_COLS));
+
+  return (
+    <View style={[styles.card, styles.seqCard]} collapsable={false}>
+      {/* 배경 장식 */}
+      <View style={styles.seqBlobA} />
+      <View style={styles.seqBlobB} />
+
+      <View style={styles.seqHeader}>
+        <View style={styles.seqAccent} />
+        <Text style={styles.seqTitle} numberOfLines={2}>
+          {sequence.title}
+        </Text>
+      </View>
+
+      <View style={styles.seqGridWrap}>
+        {rows.map((row, rowIdx) => {
+          const reverse = rowIdx % 2 === 1;
+          const lastRow = rowIdx === rows.length - 1;
+          return (
+            <React.Fragment key={rowIdx}>
+              <View
+                style={[
+                  styles.seqRow,
+                  { width: gridW },
+                  reverse && { flexDirection: "row-reverse" },
+                ]}
+              >
+                {row.map((a, ci) => {
+                  const thumb = getAsanaThumbnailSource(a.image_number);
+                  const lastInRow = ci === row.length - 1;
+                  return (
+                    <React.Fragment key={ci}>
+                      <View style={{ width: cardSize }}>
+                        <View
+                          style={[
+                            styles.seqTile,
+                            { width: cardSize, height: cardSize },
+                          ]}
+                        >
+                          {thumb ? (
+                            <Image
+                              source={thumb}
+                              style={styles.seqImg}
+                              contentFit="contain"
+                            />
+                          ) : (
+                            <Text style={styles.seqFallback}>
+                              {a.name.charAt(0)}
+                            </Text>
+                          )}
+                        </View>
+                        <Text style={styles.seqName} numberOfLines={1}>
+                          {a.name}
+                        </Text>
+                      </View>
+                      {!lastInRow ? (
+                        <View
+                          style={[
+                            styles.seqArrow,
+                            { width: SEQ_ARROW_W, height: cardSize },
+                          ]}
+                        >
+                          <Ionicons
+                            name={reverse ? "chevron-back" : "chevron-forward"}
+                            size={14}
+                            color="rgba(139, 92, 246, 0.9)"
+                          />
+                        </View>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
+              </View>
+              {!lastRow ? (
+                <View style={styles.seqDownRow}>
+                  <View style={[styles.seqDownCell, { width: cardSize }]}>
+                    {reverse ? (
+                      <Ionicons
+                        name="chevron-down"
+                        size={14}
+                        color="rgba(139, 92, 246, 0.9)"
+                      />
+                    ) : null}
+                  </View>
+                  <View style={{ width: SEQ_ARROW_W }} />
+                  <View style={[styles.seqDownCell, { width: cardSize }]} />
+                  <View style={{ width: SEQ_ARROW_W }} />
+                  <View style={[styles.seqDownCell, { width: cardSize }]}>
+                    {!reverse ? (
+                      <Ionicons
+                        name="chevron-down"
+                        size={14}
+                        color="rgba(139, 92, 246, 0.9)"
+                      />
+                    ) : null}
+                  </View>
+                </View>
+              ) : null}
+            </React.Fragment>
+          );
+        })}
+      </View>
+
+      <View style={styles.seqFooter}>
+        <Image
+          source={require("../images/onthemat_rm_bg.png")}
+          style={styles.bottomLogo}
+          contentFit="contain"
+        />
+      </View>
+    </View>
+  );
 }
 
 function StoryStatsCard({ stats }: { stats: StoryStatsData }) {
@@ -331,6 +481,109 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     textAlign: "right",
+  },
+  seqCard: {
+    backgroundColor: "#0B0B0F",
+    overflow: "hidden",
+  },
+  seqBlobA: {
+    position: "absolute",
+    top: -90,
+    right: -70,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "rgba(139, 92, 246, 0.22)",
+  },
+  seqBlobB: {
+    position: "absolute",
+    bottom: -70,
+    left: -80,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(99, 102, 241, 0.16)",
+  },
+  seqHeader: {
+    paddingTop: 56,
+    paddingHorizontal: 28,
+    paddingBottom: 6,
+    alignItems: "center",
+    zIndex: 1,
+  },
+  seqAccent: {
+    width: 34,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
+    marginBottom: 14,
+  },
+  seqTitle: {
+    fontSize: 27,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    textAlign: "center",
+    letterSpacing: -0.4,
+    lineHeight: 32,
+  },
+  seqGridWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    zIndex: 1,
+  },
+  seqRow: { flexDirection: "row", alignItems: "flex-start" },
+  seqTile: {
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    padding: 7,
+    position: "relative",
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.6)",
+  },
+  seqNumBadge: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  seqNumText: { color: "#FFFFFF", fontSize: 9, fontWeight: "800" },
+  seqImg: { width: "100%", height: "100%" },
+  seqFallback: { color: "#2D2421", fontSize: 22, fontWeight: "600" },
+  seqName: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 10,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 5,
+  },
+  seqArrow: { alignItems: "center", justifyContent: "center" },
+  seqDownRow: { flexDirection: "row", paddingVertical: 2 },
+  seqDownCell: { alignItems: "center", justifyContent: "center" },
+  seqFooter: {
+    paddingBottom: 30,
+    paddingTop: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    zIndex: 1,
+  },
+  seqFooterMeta: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   bottomBar: {
     paddingBottom: 32,

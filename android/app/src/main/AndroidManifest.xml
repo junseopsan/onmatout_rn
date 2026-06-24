@@ -37,6 +37,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="https" android:host="onmatout.com" android:pathPrefix="/a"/>
+        <data android:scheme="https" android:host="onmatout.com" android:pathPrefix="/r"/>
       </intent-filter>
     </activity>
   </application>

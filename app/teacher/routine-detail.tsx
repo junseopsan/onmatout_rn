@@ -18,6 +18,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { RoutineCommentsPreview } from "../../components/routine/RoutineCommentsPreview";
 import { RoutineCommentsSheet } from "../../components/routine/RoutineCommentsSheet";
+import StoryShareModal from "../../components/StoryShareModal";
+import { buildRoutineShareUrl } from "../../lib/links";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { IconBadge } from "../../components/ui/IconBadge";
@@ -25,14 +27,12 @@ import { SectionLabel } from "../../components/ui/SectionLabel";
 import { Sheet } from "../../components/ui/Sheet";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
 import { COLORS } from "../../constants/Colors";
-import { CATEGORIES } from "../../constants/categories";
 import { RADIUS, SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { teacherApi } from "../../lib/api/teacher";
 import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { RootStackParamList } from "../../navigation/types";
-import type { AsanaCategory } from "../../types/asana";
 import type {
   Class,
   Routine,
@@ -80,6 +80,7 @@ export default function TeacherRoutineDetailScreen() {
   const [shareOpen, setShareOpen] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentRefresh, setCommentRefresh] = useState(0);
 
@@ -284,30 +285,10 @@ export default function TeacherRoutineDetailScreen() {
                         const thumb = getAsanaThumbnailSource(
                           it.asanas.image_number,
                         );
-                        const cat = it.asanas.category_name_en
-                          ? CATEGORIES[
-                              it.asanas.category_name_en as AsanaCategory
-                            ]
-                          : null;
                         const isLastInRow = ci === row.length - 1;
                         return (
                           <React.Fragment key={it.id}>
                             <View style={styles.gridCard}>
-                              {cat ? (
-                                <View
-                                  style={[
-                                    styles.gridCatBadge,
-                                    { backgroundColor: `${cat.color}CC` },
-                                  ]}
-                                >
-                                  <Text
-                                    style={styles.gridCatText}
-                                    numberOfLines={1}
-                                  >
-                                    {cat.label}
-                                  </Text>
-                                </View>
-                              ) : null}
                               <View style={styles.gridImgWrap}>
                                 {thumb ? (
                                   <Image
@@ -439,6 +420,10 @@ export default function TeacherRoutineDetailScreen() {
           await load();
           setShareOpen(false);
         }}
+        onShareStory={() => {
+          setShareOpen(false);
+          setTimeout(() => setStoryOpen(true), 250);
+        }}
       />
 
       <RoutineCommentsSheet
@@ -451,6 +436,21 @@ export default function TeacherRoutineDetailScreen() {
         currentUserId={user?.id}
         ownerId={routine.teacher_id}
       />
+
+      <StoryShareModal
+        visible={storyOpen}
+        onClose={() => setStoryOpen(false)}
+        mode="sequence"
+        shareMessage={`"${routine.title}" 시퀀스를 확인해보세요!\n${buildRoutineShareUrl(routine.id)}`}
+        sequence={{
+          title: routine.title,
+          asanas: items.map((it) => ({
+            image_number: it.asanas.image_number,
+            name: it.asanas.sanskrit_name_kr,
+            category_name_en: it.asanas.category_name_en,
+          })),
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -462,6 +462,7 @@ function ShareSheet({
   teacherId,
   existingShares,
   onShared,
+  onShareStory,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -469,6 +470,7 @@ function ShareSheet({
   teacherId: string;
   existingShares: ShareWithLabel[];
   onShared: () => void;
+  onShareStory: () => void;
 }) {
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<StudentProfile[]>([]);
@@ -516,12 +518,22 @@ function ShareSheet({
   };
 
   return (
-    <Sheet
-      visible={visible}
-      onClose={onClose}
-      title="시퀀스 공유"
-      description="클래스 단위 또는 특정 수련생에게 보낼 수 있어요."
-    >
+    <Sheet visible={visible} onClose={onClose}>
+      <View style={styles.shareHeadRow}>
+        <Text style={styles.shareHeadTitle}>시퀀스 공유</Text>
+        <TouchableOpacity
+          style={styles.storyBtn}
+          onPress={onShareStory}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="share-outline" size={13} color={COLORS.primary} />
+          <Text style={styles.storyBtnText}>스토리에 공유</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.shareHeadDesc}>
+        클래스 단위 또는 특정 수련생에게 보낼 수 있어요.
+      </Text>
+
       {loading ? (
         <ActivityIndicator color={COLORS.primary} style={{ marginVertical: SPACING.xl }} />
       ) : (
@@ -823,6 +835,31 @@ const styles = StyleSheet.create({
   },
   shareTarget: { ...TEXT.bodyMed, color: COLORS.text, flex: 1 },
   shareDate: { ...TEXT.caption, color: COLORS.textMuted },
+  shareHeadRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: SPACING.sm,
+  },
+  shareHeadTitle: { fontSize: 17, fontWeight: "800", color: COLORS.text },
+  shareHeadDesc: {
+    ...TEXT.caption,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    marginBottom: SPACING.lg,
+  },
+  storyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.pill,
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.4)",
+  },
+  storyBtnText: { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
   targetRow: {
     flexDirection: "row",
     alignItems: "center",
