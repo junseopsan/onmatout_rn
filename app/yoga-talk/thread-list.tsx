@@ -115,6 +115,9 @@ export default function YogaTalkThreadListScreen() {
     new Map(),
   );
   const [loading, setLoading] = useState(true);
+  // 첫 진입 시 threads+rooms 가 모두 로드되기 전까진 목록을 그리지 않아,
+  // "threads 먼저 → rooms 와서 재정렬" 깜빡임을 막는다.
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
 
   // 폴더 / 필터
@@ -254,10 +257,15 @@ export default function YogaTalkThreadListScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // 재포커스 시 캐시된 목록 유지, 백그라운드로만 새로고침
-      load();
-      loadRooms();
-      loadFolders();
+      // 재포커스 시 캐시된 목록 유지, 백그라운드로만 새로고침.
+      // 첫 로드는 threads+rooms 가 모두 끝난 뒤에야 목록을 노출(깜빡임 방지).
+      let cancelled = false;
+      Promise.all([load(), loadRooms(), loadFolders()]).finally(() => {
+        if (!cancelled) setInitialLoaded(true);
+      });
+      return () => {
+        cancelled = true;
+      };
     }, [load, loadRooms, loadFolders]),
   );
 
@@ -718,7 +726,7 @@ export default function YogaTalkThreadListScreen() {
     );
   };
 
-  if (loading && threads.length === 0) {
+  if (!initialLoaded) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <PageHeader trailingSlot={headerActions} />

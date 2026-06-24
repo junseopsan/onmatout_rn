@@ -19,6 +19,7 @@ interface RenameDialogProps {
   saveLabel?: string;
   cancelLabel?: string;
   maxLength?: number;
+  multiline?: boolean;
   onCancel: () => void;
   onSubmit: (value: string) => void;
 }
@@ -31,6 +32,7 @@ export function RenameDialog({
   saveLabel = "저장",
   cancelLabel = "취소",
   maxLength = 60,
+  multiline = false,
   onCancel,
   onSubmit,
 }: RenameDialogProps) {
@@ -55,9 +57,11 @@ export function RenameDialog({
             onChangeText={setDraft}
             placeholder={placeholder}
             placeholderTextColor={COLORS.textMuted}
-            style={styles.input}
+            style={[styles.input, multiline && styles.inputMultiline]}
             autoFocus
             maxLength={maxLength}
+            multiline={multiline}
+            textAlignVertical={multiline ? "top" : "center"}
           />
           <View style={styles.actions}>
             <TouchableOpacity
@@ -112,6 +116,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  inputMultiline: { minHeight: 90, maxHeight: 180 },
   actions: {
     flexDirection: "row",
     gap: 8,

@@ -300,6 +300,24 @@ export const yogaTalkApi = {
     return msg as YogaTalkMessage;
   },
 
+  // 본인 메시지 수정 (RLS: sender_id = auth.uid())
+  async editMessage(messageId: string, body: string) {
+    const { error } = await supabase
+      .from("yoga_talk_messages")
+      .update({ body, updated_at: new Date().toISOString() })
+      .eq("id", messageId);
+    if (error) throw error;
+  },
+
+  // 본인 메시지 삭제 (완전 삭제)
+  async deleteMessage(messageId: string) {
+    const { error } = await supabase
+      .from("yoga_talk_messages")
+      .delete()
+      .eq("id", messageId);
+    if (error) throw error;
+  },
+
   async unreadCount(): Promise<number> {
     const { data, error } = await supabase.rpc("yoga_talk_unread_count");
     if (error) throw error;

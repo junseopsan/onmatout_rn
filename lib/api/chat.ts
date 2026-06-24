@@ -22,6 +22,7 @@ export type ChatMessage = {
   sender_role: "teacher" | "student";
   body: string;
   created_at: string;
+  updated_at: string | null;
 };
 
 // 방별 최신 메시지 + 안읽음 여부 (목록 미리보기/정렬용)
@@ -213,6 +214,24 @@ export const chatApi = {
       .single();
     if (error) throw error;
     return data as ChatMessage;
+  },
+
+  // 본인 메시지 수정 (RLS: sender_id = auth.uid())
+  async editMessage(messageId: string, body: string) {
+    const { error } = await supabase
+      .from("chat_messages")
+      .update({ body, updated_at: new Date().toISOString() })
+      .eq("id", messageId);
+    if (error) throw error;
+  },
+
+  // 본인 메시지 삭제 (완전 삭제)
+  async deleteMessage(messageId: string) {
+    const { error } = await supabase
+      .from("chat_messages")
+      .delete()
+      .eq("id", messageId);
+    if (error) throw error;
   },
 
   async senderProfiles(

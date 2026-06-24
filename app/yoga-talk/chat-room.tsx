@@ -9,9 +9,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -50,6 +52,7 @@ export default function ChatRoomScreen() {
 
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [editingMsg, setEditingMsg] = useState<ChatMessage | null>(null);
   const [profiles, setProfiles] = useState<
     Map<string, { name: string; avatarUrl: string | null }>
   >(new Map());
@@ -114,10 +117,46 @@ export default function ChatRoomScreen() {
     !!room && room.scope === "group" && room.created_by === user?.id;
   const headerTitle = room?.title || title || "대화";
 
+  const startEditMsg = (m: ChatMessage) => {
+    setEditingMsg(m);
+    setInput(m.body);
+  };
+
+  const cancelEdit = () => {
+    setEditingMsg(null);
+    setInput("");
+  };
+
   const send = async () => {
     if (!user?.id || !input.trim() || sending) return;
-    setSending(true);
     const body = input.trim();
+
+    // 수정 모드
+    if (editingMsg) {
+      const m = editingMsg;
+      if (body === m.body) {
+        cancelEdit();
+        return;
+      }
+      setSending(true);
+      try {
+        await chatApi.editMessage(m.id, body);
+        const now = new Date().toISOString();
+        setMessages((prev) =>
+          prev.map((x) =>
+            x.id === m.id ? { ...x, body, updated_at: now } : x,
+          ),
+        );
+        cancelEdit();
+      } catch (e: any) {
+        Alert.alert("수정 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
+    setSending(true);
     setInput("");
     try {
       await chatApi.sendMessage({
@@ -150,6 +189,40 @@ export default function ChatRoomScreen() {
     } catch {
       setHelpful((h) => ({ ...h, [messageId]: prev }));
     }
+  };
+
+  const isEdited = (m: ChatMessage) =>
+    !!m.updated_at &&
+    new Date(m.updated_at).getTime() - new Date(m.created_at).getTime() > 2000;
+
+  const onLongPressMsg = (m: ChatMessage) => {
+    Alert.alert("메시지", undefined, [
+      { text: "수정", onPress: () => startEditMsg(m) },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => confirmDeleteMsg(m),
+      },
+      { text: "취소", style: "cancel" },
+    ]);
+  };
+
+  const confirmDeleteMsg = (m: ChatMessage) => {
+    Alert.alert("메시지 삭제", "이 메시지를 완전히 삭제할까요?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await chatApi.deleteMessage(m.id);
+            setMessages((prev) => prev.filter((x) => x.id !== m.id));
+          } catch (e: any) {
+            Alert.alert("실패", e?.message ?? "다시 시도해 주세요.");
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -214,7 +287,11 @@ export default function ChatRoomScreen() {
 
               const bubble = (
                 <View style={[styles.bubbleRow, fromMe && styles.bubbleRowMine]}>
-                  <View
+                  <Pressable
+                    onLongPress={
+                      fromMe ? () => onLongPressMsg(m) : undefined
+                    }
+                    delayLongPress={300}
                     style={[
                       styles.bubble,
                       fromMe ? styles.bubbleMe : styles.bubbleOther,
@@ -229,9 +306,10 @@ export default function ChatRoomScreen() {
                     >
                       {m.body}
                     </Text>
-                  </View>
+                  </Pressable>
                   <Text style={styles.bubbleTime}>
                     {formatTime(m.created_at)}
+                    {isEdited(m) ? " (수정됨)" : ""}
                   </Text>
                 </View>
               );
@@ -297,12 +375,33 @@ export default function ChatRoomScreen() {
           />
         )}
 
+        {editingMsg ? (
+          <View style={styles.editBanner}>
+            <Ionicons name="pencil" size={13} color={COLORS.primary} />
+            <Text style={styles.editBannerText} numberOfLines={1}>
+              메시지 수정 중: {editingMsg.body}
+            </Text>
+            <TouchableOpacity
+              onPress={cancelEdit}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={16} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View style={styles.inputBar}>
           <TextInput
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder={asTeacher ? "메시지 입력" : "질문을 입력해주세요"}
+            placeholder={
+              editingMsg
+                ? "메시지 수정"
+                : asTeacher
+                ? "메시지 입력"
+                : "질문을 입력해주세요"
+            }
             placeholderTextColor={COLORS.textSecondary}
             multiline
           />
@@ -311,7 +410,11 @@ export default function ChatRoomScreen() {
             onPress={send}
             disabled={!input.trim() || sending}
           >
-            <Ionicons name="arrow-up" size={20} color={COLORS.white} />
+            <Ionicons
+              name={editingMsg ? "checkmark" : "arrow-up"}
+              size={20}
+              color={COLORS.white}
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -409,6 +512,21 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   helpfulText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "700" },
+  editBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 8,
+    backgroundColor: "rgba(139, 92, 246, 0.10)",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+  },
+  editBannerText: {
+    ...TEXT.caption,
+    color: COLORS.textSecondary,
+    flex: 1,
+  },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",

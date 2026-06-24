@@ -8,6 +8,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -69,6 +70,7 @@ export default function YogaTalkThreadScreen() {
     route.params.peerRole ?? null,
   );
   const [messages, setMessages] = useState<YogaTalkMessage[]>([]);
+  const [editingMsg, setEditingMsg] = useState<YogaTalkMessage | null>(null);
   // 메시지별 도움됐어요: { [messageId]: { count, mine } }
   const [helpful, setHelpful] = useState<
     Record<string, { count: number; mine: boolean }>
@@ -273,6 +275,51 @@ export default function YogaTalkThreadScreen() {
     }
   };
 
+  const isEdited = (m: YogaTalkMessage) =>
+    !!m.updated_at &&
+    new Date(m.updated_at).getTime() - new Date(m.created_at).getTime() > 2000;
+
+  const onLongPressMsg = (m: YogaTalkMessage) => {
+    Alert.alert("메시지", undefined, [
+      { text: "수정", onPress: () => startEditMsg(m) },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => confirmDeleteMsg(m),
+      },
+      { text: "취소", style: "cancel" },
+    ]);
+  };
+
+  // 수정 모드 진입: 입력창에 기존 메시지를 채운다.
+  const startEditMsg = (m: YogaTalkMessage) => {
+    setEditingMsg(m);
+    setInput(m.body);
+  };
+
+  const cancelEdit = () => {
+    setEditingMsg(null);
+    setInput("");
+  };
+
+  const confirmDeleteMsg = (m: YogaTalkMessage) => {
+    Alert.alert("메시지 삭제", "이 메시지를 완전히 삭제할까요?", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await yogaTalkApi.deleteMessage(m.id);
+            setMessages((prev) => prev.filter((x) => x.id !== m.id));
+          } catch (e: any) {
+            Alert.alert("실패", e?.message ?? "다시 시도해 주세요.");
+          }
+        },
+      },
+    ]);
+  };
+
   const confirmDelete = (t: TopicThreadSummary) => {
     if (t.is_default) {
       Alert.alert("삭제 불가", "기본 대화는 삭제할 수 없어요.");
@@ -308,14 +355,42 @@ export default function YogaTalkThreadScreen() {
 
 
   const handleSend = async () => {
-    if (!user?.id || !input.trim() || !thread) return;
+    if (!user?.id || !input.trim()) return;
+    const body = input.trim();
+
+    // 수정 모드: 기존 메시지 본문 갱신
+    if (editingMsg) {
+      const m = editingMsg;
+      if (body === m.body) {
+        cancelEdit();
+        return;
+      }
+      setSending(true);
+      try {
+        await yogaTalkApi.editMessage(m.id, body);
+        const now = new Date().toISOString();
+        setMessages((prev) =>
+          prev.map((x) =>
+            x.id === m.id ? { ...x, body, updated_at: now } : x,
+          ),
+        );
+        cancelEdit();
+      } catch (e: any) {
+        Alert.alert("수정 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
+    if (!thread) return;
     setSending(true);
     try {
       await yogaTalkApi.sendMessage({
         threadId,
         senderUserId: user.id,
         senderType: isTeacher ? "teacher" : "student",
-        body: input.trim(),
+        body,
       });
       setInput("");
       const msgs = await yogaTalkApi.listMessages(threadId);
@@ -412,7 +487,13 @@ export default function YogaTalkThreadScreen() {
                     fromMe ? styles.bubbleRight : styles.bubbleLeft,
                   ]}
                 >
-                  <View
+                  <Pressable
+                    onLongPress={
+                      m.sender_id === user?.id
+                        ? () => onLongPressMsg(m)
+                        : undefined
+                    }
+                    delayLongPress={300}
                     style={[
                       styles.bubble,
                       fromMe ? styles.bubbleMe : styles.bubbleOther,
@@ -426,9 +507,10 @@ export default function YogaTalkThreadScreen() {
                     >
                       {m.body}
                     </Text>
-                  </View>
+                  </Pressable>
                   <Text style={styles.bubbleTime}>
                     {formatTime(m.created_at)}
+                    {isEdited(m) ? " (수정됨)" : ""}
                   </Text>
                 </View>
                 {showHelpful ? (
@@ -458,15 +540,30 @@ export default function YogaTalkThreadScreen() {
           }}
         />
 
+        {editingMsg ? (
+          <View style={styles.editBanner}>
+            <Ionicons name="pencil" size={13} color={COLORS.primary} />
+            <Text style={styles.editBannerText} numberOfLines={1}>
+              메시지 수정 중: {editingMsg.body}
+            </Text>
+            <TouchableOpacity
+              onPress={cancelEdit}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={16} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View style={styles.inputBar}>
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="메시지 입력"
+            placeholder={editingMsg ? "메시지 수정" : "메시지 입력"}
             placeholderTextColor={COLORS.textMuted}
             style={styles.input}
             multiline
-            maxLength={1000}
+            maxLength={2000}
           />
           <TouchableOpacity
             style={[styles.sendBtn, !input.trim() && { opacity: 0.4 }]}
@@ -474,7 +571,11 @@ export default function YogaTalkThreadScreen() {
             disabled={!input.trim() || sending}
             activeOpacity={0.8}
           >
-            <Ionicons name="send" size={16} color={COLORS.white} />
+            <Ionicons
+              name={editingMsg ? "checkmark" : "send"}
+              size={16}
+              color={COLORS.white}
+            />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -548,6 +649,7 @@ export default function YogaTalkThreadScreen() {
         onCancel={() => setRenaming(null)}
         onSubmit={submitRename}
       />
+
     </SafeAreaView>
   );
 }
@@ -616,6 +718,21 @@ const styles = StyleSheet.create({
   bubbleTextOther: { color: COLORS.text },
   bubbleTextMe: { color: COLORS.white },
   bubbleTime: { ...TEXT.micro, color: COLORS.textMuted, fontSize: 10 },
+  editBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: 8,
+    backgroundColor: "rgba(139, 92, 246, 0.10)",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border,
+  },
+  editBannerText: {
+    ...TEXT.caption,
+    color: COLORS.textSecondary,
+    flex: 1,
+  },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
