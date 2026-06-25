@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DetailHeader } from "../../components/ui/DetailHeader";
+import { EditingBanner } from "../../components/ui/EditingBanner";
 import { RenameDialog } from "../../components/ui/RenameDialog";
 import { SessionRow } from "../../components/ui/SessionRow";
 import { SideSheet } from "../../components/ui/SideSheet";
@@ -541,18 +542,7 @@ export default function YogaTalkThreadScreen() {
         />
 
         {editingMsg ? (
-          <View style={styles.editBanner}>
-            <Ionicons name="pencil" size={13} color={COLORS.primary} />
-            <Text style={styles.editBannerText} numberOfLines={1}>
-              메시지 수정 중: {editingMsg.body}
-            </Text>
-            <TouchableOpacity
-              onPress={cancelEdit}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close" size={16} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <EditingBanner body={editingMsg.body} onCancel={cancelEdit} />
         ) : null}
 
         <View style={styles.inputBar}>
@@ -718,21 +708,6 @@ const styles = StyleSheet.create({
   bubbleTextOther: { color: COLORS.text },
   bubbleTextMe: { color: COLORS.white },
   bubbleTime: { ...TEXT.micro, color: COLORS.textMuted, fontSize: 10 },
-  editBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 8,
-    backgroundColor: "rgba(139, 92, 246, 0.10)",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border,
-  },
-  editBannerText: {
-    ...TEXT.caption,
-    color: COLORS.textSecondary,
-    flex: 1,
-  },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",

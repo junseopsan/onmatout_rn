@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "../../components/ui/Avatar";
 import { DetailHeader } from "../../components/ui/DetailHeader";
+import { EditingBanner } from "../../components/ui/EditingBanner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { COLORS } from "../../constants/Colors";
 import { RADIUS, SPACING } from "../../constants/Design";
@@ -376,18 +377,7 @@ export default function ChatRoomScreen() {
         )}
 
         {editingMsg ? (
-          <View style={styles.editBanner}>
-            <Ionicons name="pencil" size={13} color={COLORS.primary} />
-            <Text style={styles.editBannerText} numberOfLines={1}>
-              메시지 수정 중: {editingMsg.body}
-            </Text>
-            <TouchableOpacity
-              onPress={cancelEdit}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close" size={16} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <EditingBanner body={editingMsg.body} onCancel={cancelEdit} />
         ) : null}
 
         <View style={styles.inputBar}>
@@ -512,21 +502,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   helpfulText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "700" },
-  editBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 8,
-    backgroundColor: "rgba(139, 92, 246, 0.10)",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border,
-  },
-  editBannerText: {
-    ...TEXT.caption,
-    color: COLORS.textSecondary,
-    flex: 1,
-  },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
