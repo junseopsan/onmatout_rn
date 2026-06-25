@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -262,6 +263,55 @@ export default function YogaTalkThreadListScreen() {
     setRoomDigest(new Map());
     setStudioNames(new Map());
   }, [activeStudioId, isTeacher]);
+
+  // ---- 목록 캐시: 콜드 진입 시 마지막 목록을 즉시 보여주고 백그라운드로 갱신 ----
+  const cacheKey =
+    user?.id != null
+      ? `@onmatout/ytlist/${user.id}/${isTeacher ? "t" : "s"}/${
+          activeStudioId ?? "none"
+        }`
+      : null;
+
+  // 마운트/요가원 전환 시 캐시 하이드레이트 → 있으면 즉시 표시(로딩바 없이)
+  useEffect(() => {
+    if (!cacheKey) return;
+    let active = true;
+    AsyncStorage.getItem(cacheKey)
+      .then((raw) => {
+        if (!active || !raw) return;
+        try {
+          const c = JSON.parse(raw);
+          if (Array.isArray(c.threads)) setThreads(c.threads);
+          if (Array.isArray(c.rooms)) setRooms(c.rooms);
+          if (Array.isArray(c.studioNames)) {
+            setStudioNames(new Map(c.studioNames));
+          }
+          setInitialLoaded(true);
+        } catch {
+          // 무시 — 신선 로드가 채움
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [cacheKey]);
+
+  // 목록 변경 시 캐시 저장 (디바운스 — 전환 transient 덮어쓰기 방지)
+  useEffect(() => {
+    if (!cacheKey || !initialLoaded) return;
+    const t = setTimeout(() => {
+      AsyncStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          threads,
+          rooms,
+          studioNames: Array.from(studioNames.entries()),
+        }),
+      ).catch(() => undefined);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [cacheKey, initialLoaded, threads, rooms, studioNames]);
 
   useFocusEffect(
     useCallback(() => {
