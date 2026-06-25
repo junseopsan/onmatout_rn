@@ -213,24 +213,32 @@ export default function YogaTalkThreadListScreen() {
       });
       setRooms(all);
       setStudioNames(new Map(uniq.map((s) => [s.id, s.name])));
-      const [counts, digest] = await Promise.all([
-        chatApi.memberCounts(
-          all.filter((r) => r.scope === "group").map((r) => r.id),
-        ),
-        chatApi.roomDigest(
-          all.map((r) => r.id),
-          user.id,
-        ),
-      ]);
-      setRoomCounts(counts);
-      setRoomDigest(digest);
-      setRoomUnread(
-        new Set(
-          Array.from(digest.entries())
-            .filter(([, v]) => v.unread)
-            .map(([k]) => k),
-        ),
-      );
+
+      // 미리보기/안읽음/멤버수는 목록 표시를 막지 않도록 백그라운드로 채운다.
+      void (async () => {
+        try {
+          const [counts, digest] = await Promise.all([
+            chatApi.memberCounts(
+              all.filter((r) => r.scope === "group").map((r) => r.id),
+            ),
+            chatApi.roomDigest(
+              all.map((r) => r.id),
+              user.id,
+            ),
+          ]);
+          setRoomCounts(counts);
+          setRoomDigest(digest);
+          setRoomUnread(
+            new Set(
+              Array.from(digest.entries())
+                .filter(([, v]) => v.unread)
+                .map(([k]) => k),
+            ),
+          );
+        } catch {
+          // 부가 정보 — 실패해도 목록은 유지
+        }
+      })();
     } catch (e) {
       console.warn("[YogaTalkList] rooms failed", e);
     }
@@ -258,11 +266,12 @@ export default function YogaTalkThreadListScreen() {
   useFocusEffect(
     useCallback(() => {
       // 재포커스 시 캐시된 목록 유지, 백그라운드로만 새로고침.
-      // 첫 로드는 threads+rooms 가 모두 끝난 뒤에야 목록을 노출(깜빡임 방지).
+      // 첫 로드는 목록(대화+방)이 그려지는 즉시 노출 — 미리보기/안읽음/폴더는 백그라운드.
       let cancelled = false;
-      Promise.all([load(), loadRooms(), loadFolders()]).finally(() => {
+      Promise.all([load(), loadRooms()]).finally(() => {
         if (!cancelled) setInitialLoaded(true);
       });
+      loadFolders();
       return () => {
         cancelled = true;
       };
