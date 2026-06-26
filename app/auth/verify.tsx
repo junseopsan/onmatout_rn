@@ -16,6 +16,8 @@ import { COLORS } from "../../constants/Colors";
 import { useNotification } from "../../contexts/NotificationContext";
 import { RootStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
+import { useRoleStore } from "../../stores/roleStore";
+import { generateNickname } from "../../lib/utils/nicknameGenerator";
 
 export default function VerifyScreen() {
   const [code, setCode] = useState("");
@@ -124,10 +126,23 @@ export default function VerifyScreen() {
               routes: [{ name: "TabNavigator" }],
             });
           } else {
-            // 닉네임이 없으면 닉네임 설정 화면으로 이동
+            // 신규 회원 → 요가 테마 랜덤 닉네임 자동 생성 후 온보딩으로
+            try {
+              const nickname = await generateNickname();
+              await useAuthStore.getState().saveUserProfile(nickname);
+              const uid = useAuthStore.getState().user?.id;
+              if (uid) {
+                await useRoleStore
+                  .getState()
+                  .addRole(uid, "student")
+                  .catch(() => undefined);
+              }
+            } catch (e) {
+              console.warn("닉네임 자동 생성 실패", e);
+            }
             navigation.reset({
               index: 0,
-              routes: [{ name: "Nickname" }],
+              routes: [{ name: "Onboarding" }],
             });
           }
         } catch (error) {
