@@ -12,7 +12,7 @@ let thumb = "export const ASANA_THUMBNAILS: Record<string, number> = {\n";
 let full = "export const ASANA_FULL_IMAGES: Record<string, number> = {\n";
 let thumbCount = 0;
 let fullCount = 0;
-for (let i = 1; i <= 183; i++) {
+for (let i = 1; i <= 300; i++) {
   const k = String(i).padStart(3, "0");
   const thumbPath = path.join(thumbDir, `${k}.png`);
   const fullPath = path.join(fullDir, `${k}_001.png`);

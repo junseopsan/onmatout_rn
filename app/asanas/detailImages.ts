@@ -186,5 +186,8 @@ export const ASANA_DETAIL_IMAGES: Record<string, any[]> = {
   "179": [require("../../assets/images/asanas/179_001.png"), require("../../assets/images/asanas/179_002.png"), require("../../assets/images/asanas/179_003.png"), require("../../assets/images/asanas/179_004.png"), require("../../assets/images/asanas/179_005.png")],
   "180": [require("../../assets/images/asanas/180_001.png"), require("../../assets/images/asanas/180_002.png"), require("../../assets/images/asanas/180_003.png"), require("../../assets/images/asanas/180_004.png"), require("../../assets/images/asanas/180_005.png")],
   "181": [require("../../assets/images/asanas/181_001.png")],
-  "182": [require("../../assets/images/asanas/182_001.png")]
+  "182": [require("../../assets/images/asanas/182_001.png")],
+  "183": [require("../../assets/images/asanas/183_001.png"), require("../../assets/images/asanas/183_002.png")],
+  "184": [require("../../assets/images/asanas/184_001.png")],
+  "185": [require("../../assets/images/asanas/185_001.png")]
 };

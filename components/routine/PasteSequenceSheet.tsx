@@ -117,7 +117,7 @@ export function PasteSequenceSheet({
           ? "아사나 이름을 한 줄에 하나씩 붙여넣으면 자동으로 찾아줍니다."
           : "각 줄에 맞는 아사나를 확인하고,\n다르면 후보에서 골라주세요."
       }
-      heightPct={0.85}
+      heightPct={phase === "review" ? 0.85 : undefined}
       scrollable={phase === "review"}
       footer={
         phase === "input" ? (
@@ -240,7 +240,6 @@ export function PasteSequenceSheet({
 
 const styles = StyleSheet.create({
   input: {
-    flex: 1,
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
@@ -249,6 +248,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     ...TEXT.body,
     minHeight: 180,
+    maxHeight: 240,
   },
   row: {
     paddingVertical: SPACING.sm,
