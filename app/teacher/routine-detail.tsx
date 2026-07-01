@@ -441,7 +441,7 @@ export default function TeacherRoutineDetailScreen() {
         visible={storyOpen}
         onClose={() => setStoryOpen(false)}
         mode="sequence"
-        shareMessage={`"${routine.title}" 시퀀스를 확인해보세요!\n${buildRoutineShareUrl(routine.id)}`}
+        shareUrl={buildRoutineShareUrl(routine.id)}
         sequence={{
           title: routine.title,
           asanas: items.map((it) => ({
