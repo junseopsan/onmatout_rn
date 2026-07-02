@@ -189,7 +189,8 @@ export const ASANA_THUMBNAILS: Record<string, number> = {
   "182": require("../assets/images/asanas/thumbnail/182.png"),
   "183": require("../assets/images/asanas/thumbnail/183.png"),
   "184": require("../assets/images/asanas/thumbnail/184.png"),
-  "185": require("../assets/images/asanas/thumbnail/185.png")
+  "185": require("../assets/images/asanas/thumbnail/185.png"),
+  "186": require("../assets/images/asanas/thumbnail/186.png")
 };
 
 export const ASANA_FULL_IMAGES: Record<string, number> = {
@@ -377,7 +378,8 @@ export const ASANA_FULL_IMAGES: Record<string, number> = {
   "182": require("../assets/images/asanas/182_001.png"),
   "183": require("../assets/images/asanas/183_001.png"),
   "184": require("../assets/images/asanas/184_001.png"),
-  "185": require("../assets/images/asanas/185_001.png")
+  "185": require("../assets/images/asanas/185_001.png"),
+  "186": require("../assets/images/asanas/186_001.png")
 };
 
 export function getAsanaThumbnailSource(imageNumber?: string | null): number | null {
