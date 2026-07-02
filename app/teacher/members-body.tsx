@@ -7,18 +7,14 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { StudentRow } from "../../components/teacher/StudentRow";
-import { StudioSwitcher } from "../../components/teacher/StudioSwitcher";
 import { Chip } from "../../components/ui/Chip";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FabButton } from "../../components/ui/FabButton";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { SearchBar } from "../../components/ui/SearchBar";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 import { COLORS } from "../../constants/Colors";
@@ -33,7 +29,9 @@ import type { StudentProfile } from "../../types/teacher";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-export default function TeacherMembersTabScreen() {
+// 수련생 목록 본문 — 클래스 탭의 [수련생] 세그먼트에서 렌더된다.
+// (자체 SafeAreaView/헤더 없이 상위 래퍼의 공용 헤더를 공유)
+export function MembersBody() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuth();
   const { activeStudio } = usePivotStudios();
@@ -194,9 +192,7 @@ export default function TeacherMembersTabScreen() {
   const customMembers = roleFiltered.filter(hasCustom);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <PageHeader eyebrowSlot={<StudioSwitcher />} />
-
+    <View style={styles.fill}>
       {students.length > 0 ? (
         <View style={styles.searchWrap}>
           <SearchBar
@@ -313,12 +309,12 @@ export default function TeacherMembersTabScreen() {
         onPress={() => navigation.navigate("TeacherStudioInvite")}
         style={styles.fab}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+  fill: { flex: 1 },
   searchWrap: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
   filterRow: {
     flexDirection: "row",

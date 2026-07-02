@@ -3,8 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsanasScreen from "../app/(tabs)/asanas";
 import TeacherClassesTabScreen from "../app/teacher/classes-tab";
-import TeacherMembersTabScreen from "../app/teacher/members-tab";
 import TeacherRoutineListScreen from "../app/teacher/routine-list";
 import ProfileScreen from "../app/(tabs)/profile";
 import YogaTalkThreadListScreen from "../app/yoga-talk/thread-list";
@@ -27,8 +27,8 @@ export default function TeacherTabNavigator() {
           let iconName: keyof typeof Ionicons.glyphMap;
           if (route.name === "TeacherClassesTab") {
             iconName = focused ? "calendar" : "calendar-outline";
-          } else if (route.name === "TeacherMembersTab") {
-            iconName = focused ? "people" : "people-outline";
+          } else if (route.name === "TeacherAsanasTab") {
+            iconName = focused ? "fitness" : "fitness-outline";
           } else if (route.name === "TeacherRoutinesTab") {
             iconName = focused ? "list" : "list-outline";
           } else if (route.name === "TeacherProfileTab") {
@@ -66,9 +66,9 @@ export default function TeacherTabNavigator() {
         options={{ tabBarLabel: "클래스" }}
       />
       <Tab.Screen
-        name="TeacherMembersTab"
-        component={TeacherMembersTabScreen}
-        options={{ tabBarLabel: "수련생" }}
+        name="TeacherAsanasTab"
+        component={AsanasScreen}
+        options={{ tabBarLabel: "아사나" }}
       />
       <Tab.Screen
         name="TeacherYogaTalkTab"
