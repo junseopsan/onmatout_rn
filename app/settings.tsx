@@ -26,6 +26,7 @@ import { useNotification } from "../contexts/NotificationContext";
 import { useAuth } from "../hooks/useAuth";
 import { useRoles } from "../hooks/useRoles";
 import { kbApi } from "../lib/api/kb";
+import { legalAPI } from "../lib/api/legal";
 import { nearbyApi } from "../lib/api/nearby";
 import { userAPI } from "../lib/api/user";
 import { getCurrentCoords } from "../lib/location";
@@ -53,6 +54,20 @@ export default function SettingsScreen() {
   const [discoverable, setDiscoverable] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  // 탈퇴 안내 문구: legal_documents(account_deletion) 서버 조회, 실패 시 기본값 유지.
+  const [deletionMessage, setDeletionMessage] = useState<string>(
+    "탈퇴하면 프로필, 역할, 수련 기록, 시퀀스, 수련생 연결, 채팅 등 회원님의 모든 데이터와 계정이 영구 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
+  );
+
+  useEffect(() => {
+    let alive = true;
+    legalAPI.getDoc("account_deletion").then((d) => {
+      if (alive && d?.body) setDeletionMessage(d.body);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -342,7 +357,7 @@ export default function SettingsScreen() {
   const confirmDeleteAccount = () => {
     AlertDialog.confirm(
       "회원 탈퇴",
-      "탈퇴하면 프로필, 역할, 수련 기록, 수련생 연결, 채팅 등 회원님의 모든 데이터와 계정이 영구 삭제되며 복구할 수 없습니다. 계속하시겠어요?",
+      deletionMessage,
       async () => {
         setIsDeletingAccount(true);
         try {
