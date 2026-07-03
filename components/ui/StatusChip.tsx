@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { COLORS } from "../../constants/Colors";
@@ -9,6 +10,8 @@ interface StatusChipProps {
   customLabel?: string | null;
   size?: "sm" | "md";
   showDot?: boolean;
+  // 칩 안 오른쪽에 chevron(>) 표시 — 탭하면 상세로 이동함을 암시
+  trailingChevron?: boolean;
   style?: ViewStyle;
 }
 
@@ -31,6 +34,7 @@ export function StatusChip({
   customLabel,
   size = "sm",
   showDot = false,
+  trailingChevron = false,
   style,
 }: StatusChipProps) {
   const label = customLabel?.trim() || BASE_LABEL[status];
@@ -50,6 +54,14 @@ export function StatusChip({
       <Text style={[text, { color }]} numberOfLines={1}>
         {label}
       </Text>
+      {trailingChevron ? (
+        <Ionicons
+          name="chevron-forward"
+          size={size === "md" ? 13 : 11}
+          color={color}
+          style={{ marginLeft: -1 }}
+        />
+      ) : null}
     </View>
   );
 }

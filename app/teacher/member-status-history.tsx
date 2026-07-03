@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StudentStatusSheet } from "../../components/teacher/StudentStatusSheet";
 import { DetailHeader } from "../../components/ui/DetailHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SurfaceCard } from "../../components/ui/SurfaceCard";
@@ -69,18 +70,28 @@ export default function TeacherMemberStatusHistoryScreen() {
 
   const [items, setItems] = useState<StudentStatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await teacherApi.listStudentStatusHistory(studentProfileId);
+      setItems(data);
+    } catch (e) {
+      console.warn("[MemberStatusHistory] failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [studentProfileId]);
 
   useEffect(() => {
-    let mounted = true;
-    teacherApi
-      .listStudentStatusHistory(studentProfileId)
-      .then((data) => mounted && setItems(data))
-      .catch((e) => console.warn("[MemberStatusHistory] failed", e))
-      .finally(() => mounted && setLoading(false));
-    return () => {
-      mounted = false;
-    };
-  }, [studentProfileId]);
+    load();
+  }, [load]);
+
+  // 현재 커스텀 상태 (프리필용) — 최신 학생 상태 항목 기준
+  const currentCustom = useMemo(
+    () => items.find((i) => i.source === "student")?.custom_status ?? null,
+    [items],
+  );
 
   // items 는 최신순. 라벨/기간은 같은 출처(student/membership)끼리 전이를 보고 판단.
   const rows = useMemo<Row[]>(() => {
@@ -142,6 +153,12 @@ export default function TeacherMemberStatusHistoryScreen() {
         onBack={() => navigation.goBack()}
         title="상태 내역"
         serif={false}
+        trailing={{
+          kind: "text",
+          label: "상태 변경",
+          tone: "primary",
+          onPress: () => setSheetOpen(true),
+        }}
       />
 
       {loading ? (
@@ -184,6 +201,14 @@ export default function TeacherMemberStatusHistoryScreen() {
           <View style={{ height: SPACING.xxl }} />
         </ScrollView>
       )}
+
+      <StudentStatusSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        studentId={studentProfileId}
+        initialCustom={currentCustom}
+        onChanged={load}
+      />
     </SafeAreaView>
   );
 }

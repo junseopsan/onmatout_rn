@@ -30,10 +30,7 @@ import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { usePivotStudios } from "../../hooks/usePivotStudios";
 import { pivotStudioApi } from "../../lib/api/pivotStudio";
-import {
-  teacherApi,
-  type StudentStatusHistory,
-} from "../../lib/api/teacher";
+import { teacherApi } from "../../lib/api/teacher";
 import { yogaTalkApi } from "../../lib/api/yogaTalk";
 import { formatPhone } from "../../lib/format";
 import { RootStackParamList } from "../../navigation/types";
@@ -47,14 +44,6 @@ import type {
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, "TeacherMemberDetail">;
 
-const statusLabel = (h: StudentStatusHistory) => {
-  if (h.custom_status && h.custom_status.trim()) return h.custom_status.trim();
-  if (h.status === "active") return "수련 중";
-  if (h.status === "paused") return "휴식";
-  if (h.status === "archived") return "내보냄";
-  return h.status;
-};
-
 export default function TeacherMemberDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
@@ -67,35 +56,29 @@ export default function TeacherMemberDetailScreen() {
   const [membershipClass, setMembershipClass] = useState<Class | null>(null);
   const [studioName, setStudioName] = useState<string | null>(null);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [statusHistory, setStatusHistory] = useState<StudentStatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isTeacherOfStudio, setIsTeacherOfStudio] = useState(false);
   const [promoting, setPromoting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // 빠른 수정: 상태 시트 / 메모 인라인
-  const [statusSheetOpen, setStatusSheetOpen] = useState(false);
-  const [customDraft, setCustomDraft] = useState("");
-  const [savingStatus, setSavingStatus] = useState(false);
+  // 빠른 수정: 메모 인라인
   const [memoEditing, setMemoEditing] = useState(false);
   const [memoDraft, setMemoDraft] = useState("");
   const [savingMemo, setSavingMemo] = useState(false);
 
   const load = useCallback(async () => {
-    const [s, m, a, tp, hist] = await Promise.all([
+    const [s, m, a, tp] = await Promise.all([
       teacherApi.getStudent(studentProfileId),
       teacherApi.getStudentMembership(studentProfileId),
       teacherApi.listStudentAttendance(studentProfileId, 20),
       user?.id
         ? teacherApi.getMyTeacherProfile(user.id)
         : Promise.resolve(null),
-      teacherApi.listStudentStatusHistory(studentProfileId),
     ]);
     setStudent(s);
     setMembership(m);
     setAttendance(a);
     setStudioName(tp?.studio_name ?? null);
-    setStatusHistory(hist);
 
     if (m?.class_id) {
       try {
@@ -226,38 +209,6 @@ export default function TeacherMemberDetailScreen() {
         },
       },
     ]);
-  };
-
-  // 빠른 상태 변경: active / paused / custom(=paused + custom_status)
-  const applyStatus = async (
-    mode: "active" | "paused" | "custom",
-    custom?: string,
-  ) => {
-    if (!student) return;
-    if (mode === "custom" && !custom?.trim()) {
-      Alert.alert("입력 확인", "커스텀 상태를 입력해 주세요.");
-      return;
-    }
-    setSavingStatus(true);
-    try {
-      const finalStatus = mode === "active" ? "active" : "paused";
-      const finalCustom = mode === "custom" ? custom!.trim() : null;
-      await teacherApi.updateStudent(student.id, {
-        status: finalStatus,
-        custom_status: finalCustom,
-      } as any);
-      setStudent({
-        ...student,
-        status: finalStatus,
-        custom_status: finalCustom,
-      } as any);
-      setStatusSheetOpen(false);
-      setCustomDraft("");
-    } catch (e: any) {
-      Alert.alert("실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
-    } finally {
-      setSavingStatus(false);
-    }
   };
 
   const saveMemo = async () => {
@@ -443,12 +394,11 @@ export default function TeacherMemberDetailScreen() {
                 {student.name}
               </Text>
               <TouchableOpacity
-                onPress={() => {
-                  setCustomDraft(
-                    ((student as any).custom_status as string) ?? "",
-                  );
-                  setStatusSheetOpen(true);
-                }}
+                onPress={() =>
+                  navigation.navigate("TeacherMemberStatusHistory", {
+                    studentProfileId: student.id,
+                  })
+                }
                 activeOpacity={0.7}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
@@ -458,6 +408,7 @@ export default function TeacherMemberDetailScreen() {
                     (student as any).custom_status as string | null | undefined
                   }
                   size="md"
+                  trailingChevron
                 />
               </TouchableOpacity>
             </View>
@@ -618,28 +569,18 @@ export default function TeacherMemberDetailScreen() {
                 )}
                 <MembershipTypePill m={membership} />
               </View>
-              {/* Row 2: 클래스 타이틀(좌) + 기간(우) */}
+              {/* Row 2: 수업권 이름(좌) + 일시정지/재개(우) */}
               <View style={styles.mTitleRow}>
-                <Text style={styles.mClassTitle} numberOfLines={1}>
-                  {membershipClass ? membershipClass.title : "전체 클래스 공통"}
+                <Text
+                  style={[styles.mClassTitle, { flex: 1 }]}
+                  numberOfLines={1}
+                >
+                  {membership.plan_name ??
+                    (membershipClass
+                      ? membershipClass.title
+                      : "전체 클래스 공통")}
                 </Text>
-                <Text style={styles.mDateRange}>
-                  {membership.start_date.slice(5)} ~{" "}
-                  {membership.end_date.slice(5)}
-                </Text>
-              </View>
-              <MembershipBlock m={membership} />
-
-              {isDirectorOfActive ? (
-                <View style={styles.holdRow}>
-                  {membership.status === "paused" ? (
-                    <View style={styles.pausedChip}>
-                      <Ionicons name="pause" size={12} color={COLORS.warning} />
-                      <Text style={styles.pausedChipText}>일시정지됨</Text>
-                    </View>
-                  ) : (
-                    <View />
-                  )}
+                {isDirectorOfActive ? (
                   <TouchableOpacity
                     style={styles.holdBtn}
                     onPress={toggleHold}
@@ -658,8 +599,22 @@ export default function TeacherMemberDetailScreen() {
                       {membership.status === "paused" ? "재개" : "일시정지"}
                     </Text>
                   </TouchableOpacity>
-                </View>
-              ) : null}
+                ) : null}
+              </View>
+              {/* 서브: 기간 + 일시정지 표시 */}
+              <View style={styles.mSubRow}>
+                <Text style={styles.mDateRange}>
+                  {membership.start_date.slice(5)} ~{" "}
+                  {membership.end_date.slice(5)}
+                </Text>
+                {membership.status === "paused" ? (
+                  <View style={styles.pausedChip}>
+                    <Ionicons name="pause" size={12} color={COLORS.warning} />
+                    <Text style={styles.pausedChipText}>일시정지됨</Text>
+                  </View>
+                ) : null}
+              </View>
+              <MembershipBlock m={membership} />
 
               <TouchableOpacity
                 style={styles.mAttendanceLink}
@@ -693,40 +648,6 @@ export default function TeacherMemberDetailScreen() {
             </SurfaceCard>
           )}
         </View>
-
-        {/* 상태 내역 보기 */}
-        {statusHistory.length > 0 ? (
-          <View style={styles.section}>
-            <SurfaceCard style={styles.card}>
-              <TouchableOpacity
-                style={styles.statusLinkRow}
-                onPress={() =>
-                  navigation.navigate("TeacherMemberStatusHistory", {
-                    studentProfileId: student.id,
-                  })
-                }
-                activeOpacity={0.7}
-              >
-                <IconBadge
-                  name="time-outline"
-                  size={26}
-                  color={COLORS.primary}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.statusLinkText}>상태 내역 보기</Text>
-                  <Text style={styles.statusLinkSub}>
-                    현재 {statusLabel(statusHistory[0])}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color={COLORS.textMuted}
-                />
-              </TouchableOpacity>
-            </SurfaceCard>
-          </View>
-        ) : null}
 
         {/* 요가원 초대 카드 (앱 미가입 시만) - 화면 최하단 */}
         {!student.user_id && activeStudio?.invite_code ? (
@@ -808,49 +729,6 @@ export default function TeacherMemberDetailScreen() {
         </TouchableOpacity>
       </Sheet>
 
-      <Sheet
-        visible={statusSheetOpen}
-        onClose={() => setStatusSheetOpen(false)}
-        title="상태 변경"
-        scrollable={false}
-      >
-        <TouchableOpacity
-          style={styles.statusOpt}
-          activeOpacity={0.7}
-          disabled={savingStatus}
-          onPress={() => applyStatus("active")}
-        >
-          <View style={[styles.statusDot, { backgroundColor: COLORS.success }]} />
-          <Text style={styles.statusOptText}>수련중 (활성)</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.statusOpt}
-          activeOpacity={0.7}
-          disabled={savingStatus}
-          onPress={() => applyStatus("paused")}
-        >
-          <View style={[styles.statusDot, { backgroundColor: COLORS.warning }]} />
-          <Text style={styles.statusOptText}>휴식중</Text>
-        </TouchableOpacity>
-
-        <View style={styles.statusCustomRow}>
-          <View style={{ flex: 1 }}>
-            <PillInput
-              value={customDraft}
-              onChangeText={setCustomDraft}
-              placeholder="커스텀 상태 (예: 어깨 회복 중)"
-              containerStyle={{ marginBottom: 0 }}
-            />
-          </View>
-          <Button
-            title="적용"
-            size="medium"
-            loading={savingStatus}
-            disabled={savingStatus || !customDraft.trim()}
-            onPress={() => applyStatus("custom", customDraft)}
-          />
-        </View>
-      </Sheet>
     </SafeAreaView>
   );
 }
@@ -952,6 +830,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   heroChips: { flexDirection: "row", gap: 6, flexWrap: "wrap" },
+  statusChipTap: { flexDirection: "row", alignItems: "center", gap: 2 },
   joinChipRow: {
     flexDirection: "row",
     marginBottom: 8,
@@ -1125,7 +1004,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+  mSubRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
   },
   studioChip: {
     paddingHorizontal: 8,
