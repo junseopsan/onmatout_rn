@@ -13,8 +13,15 @@ export type StudentProfile = Tables<"student_profiles">;
 export type StudentProfileInsert = TablesInsert<"student_profiles">;
 export type StudentProfileUpdate = TablesUpdate<"student_profiles">;
 
-export type Membership = Tables<"memberships">;
-export type MembershipInsert = TablesInsert<"memberships">;
+// 발급된 수련권에 원본 수업권 상품 참조/이름 스냅샷 추가 (생성 타입에 아직 없어 확장)
+export type Membership = Tables<"memberships"> & {
+  plan_id?: string | null;
+  plan_name?: string | null;
+};
+export type MembershipInsert = TablesInsert<"memberships"> & {
+  plan_id?: string | null;
+  plan_name?: string | null;
+};
 export type MembershipType = "count" | "period_weekly" | "period_unlimited";
 
 export type Attendance = Tables<"attendance">;

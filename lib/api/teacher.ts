@@ -153,7 +153,7 @@ export const teacherApi = {
       .eq("student_id", studentProfileId)
       .in("status", ["active", "paused"])
       .order("status", { ascending: true }) // active < paused
-      .order("end_date", { ascending: false })
+      .order("created_at", { ascending: false }) // 가장 최근에 발급한 수련권 우선
       .limit(1)
       .maybeSingle();
     if (error) throw error;
