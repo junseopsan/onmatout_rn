@@ -74,16 +74,6 @@ export default function AsanasScreen() {
     useFavoriteAsanasDetail();
   const { data: favoriteAsanaIds = [] } = useFavoriteAsanas();
 
-  // 디버깅을 위한 로그 추가
-  console.log("아사나 탭 상태:", {
-    isAuthenticated,
-    loading,
-    isLoading,
-    isError,
-    asanasDataLength: asanasData?.pages?.length || 0,
-    favoriteAsanasLength: favoriteAsanas.length,
-  });
-
   const sortAsanasByName = useCallback((list: any[]) => {
     return [...(list || [])].sort((a, b) => {
       const aName = (a?.sanskrit_name_kr || "").trim();
@@ -131,76 +121,27 @@ export default function AsanasScreen() {
   ]);
 
   // 카테고리별 및 즐겨찾기 필터링된 아사나
+  // (allAsanas 가 이미 정렬돼 있고 필터는 순서를 보존하므로 재정렬하지 않는다)
   const filteredAsanas = useMemo(() => {
-    let filtered;
+    let filtered = allAsanas;
 
     // 즐겨찾기 모드인 경우 즐겨찾기 ID 목록을 기준으로 필터링
     if (showFavoritesOnly) {
-      // allAsanas에서 favoriteAsanaIds에 포함된 아사나만 필터링
-      // 이렇게 하면 새로 추가된 즐겨찾기도 즉시 표시됨
-      filtered = allAsanas.filter((asana) =>
-        favoriteAsanaIds.includes(asana.id)
-      );
-    } else {
-      filtered = allAsanas;
+      const favSet = new Set(favoriteAsanaIds);
+      filtered = filtered.filter((asana) => favSet.has(asana.id));
     }
 
     // 카테고리 필터링
     if (selectedCategories.length > 0) {
+      const catSet = new Set(selectedCategories);
       filtered = filtered.filter((asana) => {
-        // category_name_en이 null, undefined, 빈 문자열인 경우 제외
-        if (!asana.category_name_en || asana.category_name_en.trim() === "") {
-          return false;
-        }
-        const matches = selectedCategories.some(
-          (category) => asana.category_name_en?.trim() === category
-        );
-        return matches;
+        const cat = asana.category_name_en?.trim();
+        return !!cat && catSet.has(cat as AsanaCategory);
       });
-
-      // 디버깅: 측굴 카테고리 필터링 시 로그
-      if (selectedCategories.includes("SideBend")) {
-        const sideBendAsanas = allAsanas.filter(
-          (asana) => asana.category_name_en?.trim() === "SideBend"
-        );
-        console.log("측굴 카테고리 필터링:", {
-          selectedCategories,
-          totalAsanas: allAsanas.length,
-          sideBendAsanasCount: sideBendAsanas.length,
-          sideBendAsanas: sideBendAsanas.map((a) => ({
-            id: a.id,
-            name: a.sanskrit_name_kr,
-            category: a.category_name_en,
-          })),
-          filteredCount: filtered.length,
-        });
-      }
     }
 
-    // 디버깅: 필터 적용 후 상태 로그
-    const countsByCategory: Record<string, number> = {};
-    (filtered || []).forEach((a: any) => {
-      const key = (a.category_name_en || "").trim() || "(empty)";
-      countsByCategory[key] = (countsByCategory[key] || 0) + 1;
-    });
-
-    console.log("[Asanas] filteredAsanas 상태", {
-      totalAll: allAsanas.length,
-      totalFiltered: filtered.length,
-      selectedCategories,
-      showFavoritesOnly,
-      favoriteCount: favoriteAsanaIds.length,
-      countsByCategory,
-    });
-
-    return sortAsanasByName(filtered);
-  }, [
-    allAsanas,
-    favoriteAsanaIds,
-    selectedCategories,
-    showFavoritesOnly,
-    sortAsanasByName,
-  ]);
+    return filtered;
+  }, [allAsanas, favoriteAsanaIds, selectedCategories, showFavoritesOnly]);
 
   // 화면이 포커스될 때마다 데이터 새로고침 (상세 화면에서 돌아온 경우 제외)
   useFocusEffect(
@@ -249,9 +190,6 @@ export default function AsanasScreen() {
 
   const handleFavoriteToggle = useCallback(
     (asanaId: string, isFavorite: boolean) => {
-      // 즐겨찾기 상태가 변경되었으므로 관련 캐시 무효화
-      console.log("즐겨찾기 토글:", asanaId, isFavorite);
-
     // 즐겨찾기 해제 시 ID 목록에서만 제거 (목록에는 남아있고 하트만 비어있는 상태로 표시)
     if (!isFavorite) {
       queryClient.setQueryData<string[]>(["favoriteAsanas"], (oldData) => {
@@ -287,13 +225,12 @@ export default function AsanasScreen() {
     setSearchQuery(query);
   };
 
-  // 표시할 아사나 데이터 결정
-  const getDisplayAsanas = () => {
-    if (searchQuery.trim() !== "") {
-      return sortedSearchResults;
-    }
-    return filteredAsanas;
-  };
+  // 표시할 아사나 데이터 결정 (한 번만 계산해 재사용 — 렌더마다 호출 방지)
+  const displayAsanas = useMemo(
+    () =>
+      searchQuery.trim() !== "" ? sortedSearchResults : filteredAsanas,
+    [searchQuery, sortedSearchResults, filteredAsanas],
+  );
 
   const toggleCategory = (category: AsanaCategory) => {
     const currentCategories = selectedCategories;
@@ -445,13 +382,8 @@ export default function AsanasScreen() {
     </View>
   );
 
-  const renderFooter = () => {
-    // 더 이상 로드할 데이터가 없고, 현재 데이터가 있는 경우
-    if (!hasNextPage && allAsanas.length > 0) {
-      return null; // 인스타그램처럼 끝에 아무것도 표시하지 않음
-    }
-
-    // 다음 페이지를 로드 중인 경우 - 작은 인디케이터만 표시
+  const renderFooter = useCallback(() => {
+    // 다음 페이지를 로드 중인 경우에만 작은 인디케이터 표시 (그 외에는 아무것도 없음)
     if (isFetchingNextPage) {
       return (
         <View style={styles.loadingMoreContainer}>
@@ -459,9 +391,8 @@ export default function AsanasScreen() {
         </View>
       );
     }
-
     return null;
-  };
+  }, [isFetchingNextPage]);
 
   // 로딩 중인 경우만 빈 화면 표시 (비수련생도 아사나 탭 접근 가능)
   if (loading) {
@@ -592,7 +523,7 @@ export default function AsanasScreen() {
           </Text>
           <Text style={styles.emptySubText}>다른 검색어를 시도해보세요.</Text>
         </View>
-      ) : getDisplayAsanas().length === 0 ? (
+      ) : displayAsanas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             {showFavoritesOnly
@@ -612,12 +543,12 @@ export default function AsanasScreen() {
         </View>
       ) : (
         <FlatList
-          data={isLoading ? Array(6).fill(null) : getDisplayAsanas()}
+          data={isLoading ? Array(6).fill(null) : displayAsanas}
           renderItem={isLoading ? renderSkeletonItem : renderAsanaCard}
           keyExtractor={(item, index) =>
             isLoading ? `skeleton-${index}` : item.id
           }
-          extraData={[isLoading, isFetchingNextPage, getDisplayAsanas().length]}
+          extraData={favoriteAsanaIds}
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.listContainer}
@@ -630,8 +561,10 @@ export default function AsanasScreen() {
           ListFooterComponent={renderFooter}
           ListFooterComponentStyle={styles.footer}
           removeClippedSubviews={false}
-          maxToRenderPerBatch={12}
-          windowSize={5}
+          // windowSize 를 키워 화면 밖 여러 행을 미리 렌더 → 스크롤 시
+          // 이미지가 뷰포트에 들어오기 전에 디코드되어 "툭툭" 끊김을 줄인다.
+          maxToRenderPerBatch={8}
+          windowSize={11}
           initialNumToRender={12}
           updateCellsBatchingPeriod={50}
           // getItemLayout 제거: numColumns={2}와 함께 사용할 때 정확한 높이 계산이 어려워
