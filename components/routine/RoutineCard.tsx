@@ -15,6 +15,7 @@ export type RoutineCardRoutine = {
   teacher_id: string;
   visibility?: string | null;
   teacher_studio_name: string | null;
+  creator_name?: string | null;
   like_count: number;
   liked_by_me: boolean;
   comment_count: number;
@@ -137,7 +138,7 @@ export function RoutineCard({
         <View style={styles.creatorRow}>
           <Ionicons name="person-circle" size={16} color={COLORS.primary} />
           <Text style={styles.creatorText} numberOfLines={1}>
-            {routine.teacher_studio_name ?? creatorFallback}
+            {routine.teacher_studio_name ?? routine.creator_name ?? creatorFallback}
           </Text>
         </View>
         <View style={styles.titleRow}>

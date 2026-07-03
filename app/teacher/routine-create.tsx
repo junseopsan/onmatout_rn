@@ -52,6 +52,8 @@ export default function TeacherRoutineCreateScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const editRoutineId = route.params?.routineId ?? null;
+  // 학생이 만든/편집한 경우 발행 후 수련생 상세(뷰어)로 돌아간다.
+  const origin = route.params?.origin ?? "teacher";
   const { user } = useAuth();
   const { data: asanas = [], isLoading } = useAllAsanasForFeed();
 
@@ -250,7 +252,11 @@ export default function TeacherRoutineCreateScreen() {
     setSubmitting(true);
     try {
       const id = await persist(false);
-      navigation.replace("TeacherRoutineDetail", { routineId: id });
+      if (origin === "student") {
+        navigation.replace("StudentRoutineDetail", { routineId: id });
+      } else {
+        navigation.replace("TeacherRoutineDetail", { routineId: id });
+      }
     } catch (e: any) {
       Alert.alert("발행 실패", e?.message ?? "잠시 후 다시 시도해 주세요.");
     } finally {

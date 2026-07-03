@@ -12,6 +12,7 @@ export type RoutinePreviewItem = {
 
 export type RoutineSummary = Routine & {
   teacher_studio_name: string | null;
+  creator_name: string | null;
   item_count: number;
   preview: RoutinePreviewItem[];
   like_count: number;
@@ -25,19 +26,23 @@ async function withTeacherStudio(
 ): Promise<RoutineSummary[]> {
   if (routines.length === 0) return [];
   const teacherIds = Array.from(new Set(routines.map((r) => r.teacher_id)));
-  // 작성자(원장)의 요가원 이름 — 피벗 요가원(pivot_studios) 기준
-  const { data: studios } = await supabase
-    .from("pivot_studios")
-    .select("owner_id, name")
-    .in("owner_id", teacherIds);
+  // 작성자의 요가원 이름(원장/선생님) + 작성자 닉네임(수련생 등 요가원 없는 경우 폴백)
+  const [{ data: studios }, { data: profiles }] = await Promise.all([
+    supabase.from("pivot_studios").select("owner_id, name").in("owner_id", teacherIds),
+    supabase.from("user_profiles").select("user_id, name").in("user_id", teacherIds),
+  ]);
   const studioMap = new Map(
     (studios ?? []).map((s) => [s.owner_id, s.name ?? null]),
+  );
+  const nameMap = new Map(
+    (profiles ?? []).map((p) => [p.user_id, p.name ?? null]),
   );
   return routines.map((r: any) => {
     const likes: { user_id: string }[] = r.routine_likes ?? [];
     return {
       ...r,
       teacher_studio_name: studioMap.get(r.teacher_id) ?? null,
+      creator_name: nameMap.get(r.teacher_id) ?? null,
       item_count: r.routine_items?.[0]?.count ?? 0,
       preview: (r.preview ?? []) as RoutinePreviewItem[],
       like_count: likes.length,

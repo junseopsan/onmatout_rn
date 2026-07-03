@@ -31,7 +31,9 @@ export type RootStackParamList = {
   TeacherClassEdit: { classId: string };
   TeacherMemberEdit: { studentProfileId: string };
   TeacherRoutineList: undefined;
-  TeacherRoutineCreate: { routineId?: string } | undefined;
+  TeacherRoutineCreate:
+    | { routineId?: string; origin?: "student" | "teacher" }
+    | undefined;
   TeacherRoutineDetail: { routineId: string };
   TeacherStudioList: undefined;
   TeacherStudioForm: { studioId?: string } | undefined;

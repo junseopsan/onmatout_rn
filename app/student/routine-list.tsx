@@ -12,7 +12,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RoutineCard } from "../../components/routine/RoutineCard";
+import { AlertDialog } from "../../components/ui/AlertDialog";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { FabButton } from "../../components/ui/FabButton";
 import { ListSkeleton } from "../../components/ui/ListSkeleton";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { COLORS } from "../../constants/Colors";
@@ -71,6 +73,17 @@ export default function StudentRoutineListScreen() {
     setRefreshing(false);
   }, [load]);
 
+  const handleCreate = useCallback(() => {
+    if (!user?.id) {
+      AlertDialog.login(
+        () => navigation.navigate("Auth" as never),
+        () => {},
+      );
+      return;
+    }
+    navigation.navigate("TeacherRoutineCreate", { origin: "student" });
+  }, [user?.id, navigation]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <PageHeader />
@@ -104,11 +117,11 @@ export default function StudentRoutineListScreen() {
             icon="📥"
             title="내 시퀀스가 없어요"
             description={
-              "선생님이 클래스 또는 수련생에게\n시퀀스를 보내면여기에 모입니다."
+              "직접 시퀀스를 만들거나,\n선생님이 보내준 시퀀스가 여기에 모입니다."
             }
             action={{
-              label: "전체 보기",
-              onPress: () => setTab("discover"),
+              label: "새 시퀀스 만들기",
+              onPress: handleCreate,
             }}
           />
         ) : (
@@ -146,6 +159,12 @@ export default function StudentRoutineListScreen() {
           ))}
         </ScrollView>
       )}
+
+      <FabButton
+        label="새 시퀀스"
+        onPress={handleCreate}
+        style={styles.fab}
+      />
     </SafeAreaView>
   );
 }
@@ -181,6 +200,12 @@ function SegmentTab({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
+  fab: {
+    position: "absolute",
+    right: SPACING.lg,
+    bottom: SPACING.lg + 8,
+    opacity: 0.94,
+  },
   tabsRow: {
     flexDirection: "row",
     gap: SPACING.sm,

@@ -24,6 +24,7 @@ import { SPACING } from "../../constants/Design";
 import { TEXT } from "../../constants/Typography";
 import { useAuth } from "../../hooks/useAuth";
 import { studentRoutinesApi } from "../../lib/api/routines-student";
+import { teacherApi } from "../../lib/api/teacher";
 import { getAsanaThumbnailSource } from "../../lib/asanaImages";
 import { RootStackParamList } from "../../navigation/types";
 import type { Routine, RoutineItem } from "../../types/teacher";
@@ -104,6 +105,41 @@ export default function StudentRoutineDetailScreen() {
     }
   };
 
+  const confirmDelete = () => {
+    if (!routine) return;
+    Alert.alert("시퀀스 삭제", "이 시퀀스를 삭제할까요? 되돌릴 수 없어요.", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await teacherApi.deleteRoutine(routine.id);
+            navigation.goBack();
+          } catch (e: any) {
+            Alert.alert("삭제 실패", e?.message ?? "다시 시도해 주세요.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const openOwnerMenu = () => {
+    if (!routine) return;
+    Alert.alert("시퀀스 관리", undefined, [
+      {
+        text: "수정",
+        onPress: () =>
+          navigation.navigate("TeacherRoutineCreate", {
+            routineId: routine.id,
+            origin: "student",
+          }),
+      },
+      { text: "삭제", style: "destructive", onPress: confirmDelete },
+      { text: "취소", style: "cancel" },
+    ]);
+  };
+
   if (loading || !routine) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -119,6 +155,11 @@ export default function StudentRoutineDetailScreen() {
         onBack={() => navigation.goBack()}
         title={routine.title}
         serif={false}
+        trailing={
+          isOwner
+            ? { kind: "icon", icon: "ellipsis-horizontal", onPress: openOwnerMenu }
+            : undefined
+        }
       />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
